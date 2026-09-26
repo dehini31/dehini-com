@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Mohammed Dehini — Marketing, e-commerce & SaaS</title>
+<meta name="description" content="Mohammed Dehini, Responsable Marketing chez SPA YINVESTI : 8+ ans en marketing, design et e-commerce, fondateur de Rotinia, Dowaya et Swanbida.">
+<meta property="og:title" content="Mohammed Dehini — Marketing, e-commerce & SaaS">
+<meta property="og:description" content="Responsable Marketing chez SPA YINVESTI. Parcours, expérience et projets réalisés.">
+<meta property="og:url" content="https://dehini.com">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1200&q=70&auto=format&fit=crop">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='16' fill='%230b1020'/><text x='50%25' y='56%25' text-anchor='middle' dominant-baseline='middle' font-family='Arial' font-weight='700' font-size='28' fill='white'>MD</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://images.unsplash.com">
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.460.0/dist/umd/lucide.min.js" defer></script>
+<style>
+  /* ============ Charte (alignée sur YINVESTI v2) ============ */
+  :root{
+    --ink-900:#0b1020; --ink-800:#141a2e; --ink-700:#20283f; --ink-500:#4b5470;
+    --paper-0:#fff; --paper-50:#f7f7f9; --paper-100:#f0f1f4; --paper-200:#e3e5ea; --paper-500:#7c8294; --paper-600:#6b7185;
+    --cobalt-50:#eef2ff; --cobalt-100:#dce4ff; --cobalt-300:#8aa3ff; --cobalt-500:#2f5bff; --cobalt-600:#1f44d6;
+    --gain-50:#ecfdf3; --gain-500:#17b26a; --gain-600:#079455;
+    --brand-blue:#16479D; --brand-green:#4EB648;
+    --fg:var(--ink-900); --fg-2:var(--paper-600);
+    --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:24px;
+    --shadow:0 1px 2px rgba(11,16,32,.04),0 8px 30px -12px rgba(11,16,32,.14);
+    --shadow-lg:0 30px 60px -25px rgba(31,68,214,.35);
+    --max:1180px;
+    --font:"DM Sans","Tajarib",system-ui,-apple-system,"Segoe UI",sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:var(--font);background:var(--paper-50);color:var(--fg);line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  a{color:inherit;text-decoration:none}
+  img{display:block;max-width:100%}
+  .wrap{max-width:var(--max);margin:0 auto;padding:0 20px}
+  i[data-lucide],svg.lucide{width:20px;height:20px;stroke-width:1.8;flex-shrink:0}
+
+  /* Barre de progression de lecture */
+  #progress{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,var(--cobalt-500),var(--gain-500));z-index:60}
+
+  /* Halo qui suit la souris */
+  #glow{position:fixed;width:520px;height:520px;border-radius:50%;pointer-events:none;z-index:0;background:radial-gradient(circle,rgba(47,91,255,.10),transparent 65%);transform:translate(-50%,-50%);left:-600px;top:-600px}
+  @media(hover:none){#glow{display:none}}
+
+  /* ============ Navigation ============ */
+  nav{position:sticky;top:0;z-index:50;background:rgba(247,247,249,.78);backdrop-filter:blur(14px);border-bottom:1px solid transparent;transition:border-color .3s}
+  nav.scrolled{border-color:var(--paper-200)}
+  nav .wrap{display:flex;align-items:center;justify-content:space-between;height:68px;gap:16px}
+  .logo{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:-.02em;font-size:1.08rem;white-space:nowrap}
+  .logo-mark{width:34px;height:34px;border-radius:10px;background:var(--ink-900);color:#fff;display:grid;place-items:center;font-size:.8rem}
+  .logo b{color:var(--cobalt-500)}
+  .links{display:flex;gap:4px;background:var(--paper-0);border:1px solid var(--paper-200);padding:4px;border-radius:999px;box-shadow:var(--shadow)}
+  .links a{font-size:.88rem;color:var(--fg-2);padding:7px 14px;border-radius:999px;transition:.2s}
+  .links a:hover,.links a.on{color:var(--fg);background:var(--paper-100)}
+  @media(max-width:960px){.links{display:none}}
+  @media(max-width:420px){.nav-cta span{display:none}}
+
+  /* ============ Boutons & badges ============ */
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:12px 22px;border-radius:999px;font-weight:600;font-size:.95rem;border:1px solid transparent;transition:transform .2s,background .2s,box-shadow .2s;cursor:pointer;font-family:inherit}
+  .btn:hover{transform:translateY(-2px)}
+  .btn-ink{background:var(--ink-900);color:#fff}
+  .btn-ink:hover{background:var(--ink-800);box-shadow:0 12px 24px -12px rgba(11,16,32,.6)}
+  .btn-cobalt{background:var(--cobalt-500);color:#fff}
+  .btn-cobalt:hover{background:var(--cobalt-600);box-shadow:0 12px 24px -10px rgba(47,91,255,.6)}
+  .btn-line{background:var(--paper-0);border-color:var(--paper-200);color:var(--fg)}
+  .btn-line:hover{border-color:var(--cobalt-300)}
+  .btn svg{width:18px;height:18px}
+  .pill{display:inline-flex;align-items:center;gap:8px;background:var(--paper-0);border:1px solid var(--paper-200);border-radius:999px;padding:6px 8px 6px 14px;font-size:.85rem;box-shadow:var(--shadow)}
+  .pill .tag{background:var(--cobalt-50);color:var(--cobalt-600);font-weight:600;padding:3px 10px;border-radius:999px;font-size:.78rem}
+  .pulse{width:8px;height:8px;border-radius:50%;background:var(--gain-500);box-shadow:0 0 0 0 rgba(23,178,106,.6);animation:pulse 2s infinite}
+  @keyframes pulse{70%{box-shadow:0 0 0 10px rgba(23,178,106,0)}100%{box-shadow:0 0 0 0 rgba(23,178,106,0)}}
+
+  /* ============ Hero ============ */
+  .hero{position:relative;padding:80px 0 0;background:radial-gradient(1100px 520px at 50% -10%,var(--cobalt-50),transparent 70%)}
+  .hero-grid{display:grid;grid-template-columns:1.25fr 1fr;gap:56px;align-items:center;position:relative;z-index:1}
+  @media(max-width:900px){.hero-grid{grid-template-columns:1fr;gap:48px}.hero{padding-top:48px}}
+  h1{font-size:clamp(2.4rem,5.6vw,4.3rem);line-height:1.04;letter-spacing:-.04em;font-weight:800;margin:24px 0 20px}
+  h1 .w{display:inline-block;opacity:0;filter:blur(10px);transform:translateY(14px);animation:wordIn .8s cubic-bezier(.2,.7,.2,1) forwards}
+  h1 .accent{color:var(--cobalt-500)}
+  h1 .soft{color:var(--paper-500)}
+  @keyframes wordIn{to{opacity:1;filter:blur(0);transform:none}}
+  .lead{font-size:1.14rem;color:var(--fg-2);max-width:560px;margin-bottom:30px}
+  .fade-up{opacity:0;transform:translateY(16px);animation:wordIn .8s ease forwards}
+  .cta{display:flex;flex-wrap:wrap;gap:12px}
+
+  .portrait{position:relative;justify-self:center;width:min(400px,86%)}
+  .portrait-card{position:relative;border-radius:28px;overflow:hidden;aspect-ratio:4/5;background:linear-gradient(160deg,var(--brand-blue),var(--ink-900));box-shadow:var(--shadow-lg);transition:transform .2s}
+  .portrait-card img{width:100%;height:100%;object-fit:cover;opacity:.5;mix-blend-mode:luminosity}
+  .portrait-card .mono{position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-size:clamp(5rem,12vw,7.5rem);font-weight:800;letter-spacing:-.05em}
+  .portrait-card .cap{position:absolute;left:18px;right:18px;bottom:18px;background:rgba(255,255,255,.12);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:16px;padding:14px 16px}
+  .portrait-card .cap b{display:block;font-size:1.05rem}
+  .portrait-card .cap span{font-size:.85rem;opacity:.85}
+  .float{position:absolute;display:flex;align-items:center;gap:10px;background:var(--paper-0);border:1px solid var(--paper-200);border-radius:14px;padding:10px 14px;box-shadow:var(--shadow);font-size:.85rem;font-weight:600;animation:floaty 5s ease-in-out infinite;white-space:nowrap}
+  .float .ic{width:32px;height:32px;border-radius:9px;display:grid;place-items:center}
+  .float small{display:block;font-weight:500;color:var(--fg-2);font-size:.74rem}
+  .f1{top:8%;left:-16%}.f1 .ic{background:var(--cobalt-50);color:var(--cobalt-500)}
+  .f2{top:44%;right:-14%;animation-delay:-1.6s}.f2 .ic{background:var(--gain-50);color:var(--gain-600)}
+  .f3{bottom:22%;left:-12%;animation-delay:-3.2s}.f3 .ic{background:#fff4e5;color:#d98a00}
+  @keyframes floaty{50%{transform:translateY(-12px)}}
+  @media(max-width:560px){.f1{left:-8%}.f2{right:-8%}.f3{left:-6%}}
+
+  /* Chiffres */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);margin-top:72px;border-top:1px solid var(--paper-200);position:relative;z-index:1}
+  .stat{padding:26px 20px 6px;border-top:2px solid transparent;margin-top:-1px;transition:border-color .3s}
+  .stat:hover{border-color:var(--cobalt-500)}
+  .stat b{display:block;font-size:clamp(2rem,4vw,2.8rem);letter-spacing:-.04em;line-height:1.1}
+  .stat span{color:var(--fg-2);font-size:.9rem}
+  @media(max-width:720px){.stats{grid-template-columns:repeat(2,1fr)}.stat{padding:20px 8px 6px}}
+
+  /* Défilement des compétences */
+  .marquee{overflow:hidden;border-block:1px solid var(--paper-200);background:var(--paper-0);padding:18px 0;margin-top:48px;-webkit-mask-image:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent);mask-image:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent)}
+  .track{display:flex;gap:40px;width:max-content;animation:scroll 40s linear infinite}
+  .marquee:hover .track{animation-play-state:paused}
+  .track span{display:inline-flex;align-items:center;gap:10px;font-weight:600;color:var(--ink-700);white-space:nowrap}
+  .track svg{color:var(--cobalt-500)}
+  @keyframes scroll{to{transform:translateX(-50%)}}
+
+  /* ============ Sections ============ */
+  section{padding:100px 0;position:relative;z-index:1}
+  @media(max-width:720px){section{padding:72px 0}}
+  .head{max-width:680px;margin-bottom:56px}
+  .head.center{margin-inline:auto;text-align:center}
+  .kicker{display:inline-flex;align-items:center;gap:8px;color:var(--cobalt-600);font-weight:700;font-size:.78rem;text-transform:uppercase;letter-spacing:.14em}
+  .kicker svg{width:16px;height:16px}
+  h2{font-size:clamp(2rem,4vw,3rem);letter-spacing:-.035em;line-height:1.08;margin:12px 0 14px}
+  h2 .accent{color:var(--cobalt-500)}
+  .head p{color:var(--fg-2);font-size:1.05rem}
+
+  .reveal{opacity:0;transform:translateY(28px);transition:opacity .8s cubic-bezier(.2,.7,.2,1),transform .8s cubic-bezier(.2,.7,.2,1)}
+  .reveal.in{opacity:1;transform:none}
+
+  /* ============ Parcours : frise en zig-zag ============ */
+  .journey{position:relative}
+  .rail{position:absolute;left:50%;top:0;bottom:0;width:2px;background:var(--paper-200);transform:translateX(-50%)}
+  .rail-fill{position:absolute;inset:0 0 auto 0;height:0;background:linear-gradient(var(--cobalt-500),var(--gain-500));border-radius:2px}
+  .step{display:grid;grid-template-columns:1fr 1fr;gap:88px;align-items:center;margin-bottom:96px;position:relative}
+  .step:last-child{margin-bottom:0}
+  .step.alt .media{order:2}
+  .node{position:absolute;left:50%;top:50%;width:52px;height:52px;border-radius:50%;background:var(--paper-0);border:2px solid var(--paper-200);transform:translate(-50%,-50%) scale(.8);display:grid;place-items:center;color:var(--paper-500);transition:all .5s cubic-bezier(.2,.7,.2,1);z-index:2}
+  .step.in .node{border-color:var(--cobalt-500);color:var(--cobalt-500);transform:translate(-50%,-50%) scale(1);box-shadow:0 0 0 8px var(--cobalt-50)}
+  .step.current .node{background:var(--cobalt-500);color:#fff}
+
+  .step .media,.step .card-xp{opacity:0;transition:opacity .9s cubic-bezier(.2,.7,.2,1),transform .9s cubic-bezier(.2,.7,.2,1),box-shadow .3s}
+  .step .media{transform:translateX(-40px)}
+  .step .card-xp{transform:translateX(40px)}
+  .step.alt .media{transform:translateX(40px)}
+  .step.alt .card-xp{transform:translateX(-40px)}
+  .step.in .media,.step.in .card-xp{opacity:1;transform:none}
+  .step.in .card-xp{transition-delay:.15s}
+
+  .media{position:relative;border-radius:var(--r-xl);overflow:hidden;aspect-ratio:4/3;box-shadow:var(--shadow);background:var(--ink-900)}
+  .media img{width:100%;height:100%;object-fit:cover;transform:scale(1.15);transition:transform 1.6s cubic-bezier(.2,.7,.2,1)}
+  .step.in .media img{transform:scale(1)}
+  .media::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 35%,rgba(11,16,32,.8))}
+  .scene{position:absolute;right:18px;bottom:18px;width:150px;height:110px;z-index:2;background:rgba(255,255,255,.96);border-radius:16px;box-shadow:0 12px 30px -10px rgba(0,0,0,.4);padding:10px}
+  .scene svg{width:100%;height:100%;overflow:visible}
+  .media .yr{position:absolute;left:20px;bottom:18px;z-index:2;color:#fff;font-weight:800;font-size:2.6rem;letter-spacing:-.04em;line-height:1}
+  .media .yr small{display:block;font-size:.76rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;opacity:.85;margin-bottom:6px}
+
+  .card-xp{background:var(--paper-0);border:1px solid var(--paper-200);border-radius:var(--r-xl);padding:30px;box-shadow:var(--shadow)}
+  .card-xp:hover{box-shadow:var(--shadow-lg)}
+  .xp-ico{width:46px;height:46px;border-radius:12px;background:var(--cobalt-50);color:var(--cobalt-500);display:grid;place-items:center;margin-bottom:16px}
+  .xp-ico svg{width:22px;height:22px}
+  .when{display:inline-flex;align-items:center;gap:6px;font-size:.8rem;font-weight:600;color:var(--fg-2);background:var(--paper-100);padding:4px 10px;border-radius:999px}
+  .when svg{width:14px;height:14px}
+  .when.now{background:var(--gain-50);color:var(--gain-600)}
+  .card-xp h3{font-size:1.4rem;letter-spacing:-.02em;margin:12px 0 2px}
+  .org{color:var(--cobalt-600);font-weight:600}
+  .card-xp p{color:var(--fg-2);margin:12px 0}
+  .card-xp ul{list-style:none;display:grid;gap:8px}
+  .card-xp li{display:flex;gap:10px;align-items:flex-start;font-size:.95rem;color:var(--ink-700)}
+  .card-xp li svg{width:18px;height:18px;color:var(--gain-500);margin-top:3px}
+  .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:16px}
+  .tags span{font-size:.75rem;font-weight:600;padding:4px 10px;border-radius:999px;background:var(--paper-100);color:var(--ink-700)}
+
+  @media(max-width:900px){
+    .rail{left:22px}
+    .step{grid-template-columns:1fr;gap:18px;padding-left:58px;margin-bottom:56px}
+    .step.alt .media{order:0}
+    .step .media,.step .card-xp,.step.alt .media,.step.alt .card-xp{transform:translateY(30px)}
+    .node{left:22px;top:26px;width:44px;height:44px}
+    .scene{width:120px;height:88px}
+    .card-xp{padding:22px}
+  }
+
+  /* --- Animations de scène (déclenchées quand l'étape entre à l'écran) --- */
+  .draw{stroke-dasharray:var(--len,400);stroke-dashoffset:var(--len,400)}
+  .step.in .draw{animation:draw 1.8s .5s ease forwards}
+  @keyframes draw{to{stroke-dashoffset:0}}
+  .pop{opacity:0;transform:scale(0);transform-box:fill-box;transform-origin:center}
+  .step.in .pop{animation:pop .5s cubic-bezier(.3,1.6,.5,1) forwards}
+  @keyframes pop{to{opacity:1;transform:scale(1)}}
+  .grow{transform:scaleY(0);transform-box:fill-box;transform-origin:bottom}
+  .step.in .grow{animation:grow .7s cubic-bezier(.2,.7,.2,1) forwards}
+  @keyframes grow{to{transform:scaleY(1)}}
+  .wave{opacity:0;transform-box:fill-box;transform-origin:left center}
+  .step.in .wave{animation:wave 1.8s ease-out infinite}
+  @keyframes wave{0%{opacity:0;transform:scale(.6)}30%{opacity:1}100%{opacity:0;transform:scale(1.25)}}
+  .rocket{transform:translateY(40px);opacity:0}
+  .step.in .rocket{animation:launch 1.4s .4s cubic-bezier(.2,.7,.2,1) forwards,hover 2.4s 1.8s ease-in-out infinite}
+  @keyframes launch{to{transform:none;opacity:1}}
+  @keyframes hover{0%,100%{transform:none;opacity:1}50%{transform:translateY(-5px);opacity:1}}
+  .flame{transform-box:fill-box;transform-origin:top;animation:flame .25s ease-in-out infinite alternate}
+  @keyframes flame{to{transform:scaleY(1.4)}}
+  .truck{transform:translateX(-90px)}
+  .step.in .truck{animation:drive 3.2s .4s cubic-bezier(.4,0,.2,1) infinite}
+  @keyframes drive{0%{transform:translateX(-90px);opacity:1}55%,85%{transform:translateX(0);opacity:1}100%{transform:translateX(0);opacity:0}}
+  .check{opacity:0;transform-box:fill-box;transform-origin:center}
+  .step.in .check{animation:checkIn 3.2s .4s infinite}
+  @keyframes checkIn{0%,55%{opacity:0;transform:scale(.4)}62%,90%{opacity:1;transform:scale(1)}100%{opacity:0}}
+
+  /* ============ Lancer ton e-com ============ */
+  .launch{position:relative;overflow:hidden;display:grid;grid-template-columns:1.3fr 1fr;gap:48px;align-items:center;background:var(--ink-900);color:#fff;border-radius:32px;padding:56px}
+  .launch::before{content:"";position:absolute;width:600px;height:600px;right:-200px;top:-260px;background:radial-gradient(circle,rgba(47,91,255,.55),transparent 65%)}
+  .launch::after{content:"";position:absolute;width:500px;height:500px;left:-200px;bottom:-300px;background:radial-gradient(circle,rgba(23,178,106,.35),transparent 65%)}
+  .launch>*{position:relative;z-index:1}
+  .launch .kicker{color:var(--cobalt-300)}
+  .launch h2 .accent{color:var(--gain-500)}
+  .launch p{color:#b8bfd6;margin-bottom:24px;max-width:540px}
+  .feat{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:30px}
+  .feat div{display:flex;gap:10px;align-items:center;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:12px;font-size:.9rem}
+  .feat svg{color:var(--gain-500)}
+  .mock{background:#fff;color:var(--fg);border-radius:20px;padding:18px;box-shadow:0 40px 80px -30px rgba(0,0,0,.6);transform:rotate(2deg);transition:transform .4s}
+  .mock:hover{transform:rotate(0) scale(1.02)}
+  .mock-top{display:flex;gap:6px;margin-bottom:14px;align-items:center}.mock-top i{width:10px;height:10px;border-radius:50%;background:var(--paper-200)}
+  .mock-top em{margin-left:auto;font-style:normal;font-size:.7rem;color:var(--fg-2)}
+  .mock-row{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-radius:10px;background:var(--paper-50);margin-bottom:8px;font-size:.82rem;opacity:0;transform:translateX(20px)}
+  .launch.in .mock-row{animation:slideIn .5s forwards}
+  .launch.in .mock-row:nth-of-type(2){animation-delay:.25s}.launch.in .mock-row:nth-of-type(3){animation-delay:.5s}.launch.in .mock-row:nth-of-type(4){animation-delay:.75s}
+  @keyframes slideIn{to{opacity:1;transform:none}}
+  .st{font-size:.72rem;font-weight:700;padding:3px 9px;border-radius:999px;display:inline-flex;gap:4px;align-items:center}
+  .st.ok{background:var(--gain-50);color:var(--gain-600)}.st.go{background:var(--cobalt-50);color:var(--cobalt-600)}.st.wait{background:#fff4e5;color:#b86e00}
+  @media(max-width:900px){.launch{grid-template-columns:1fr;padding:36px 22px}.feat{grid-template-columns:1fr}}
+
+  /* ============ Projets ============ */
+  .filters{display:inline-flex;flex-wrap:wrap;gap:4px;background:var(--paper-0);border:1px solid var(--paper-200);padding:4px;border-radius:24px;margin-bottom:32px;box-shadow:var(--shadow)}
+  .filters button{font:inherit;font-size:.88rem;font-weight:600;padding:8px 16px;border-radius:999px;border:0;background:transparent;color:var(--fg-2);cursor:pointer;display:inline-flex;gap:6px;align-items:center;transition:.2s}
+  .filters button svg{width:16px;height:16px}
+  .filters button.on{background:var(--ink-900);color:#fff}
+  .filters .n{font-size:.72rem;opacity:.6}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:22px}
+  @media(max-width:400px){.grid{grid-template-columns:1fr}}
+  .proj{background:var(--paper-0);border:1px solid var(--paper-200);border-radius:var(--r-xl);overflow:hidden;cursor:pointer;display:flex;flex-direction:column;transition:transform .35s cubic-bezier(.2,.7,.2,1),box-shadow .35s,border-color .35s;animation:cardIn .5s backwards}
+  .proj:hover,.proj:focus-visible{box-shadow:var(--shadow-lg);border-color:var(--cobalt-100);outline:none}
+  @keyframes cardIn{from{opacity:0;transform:translateY(20px) scale(.97)}}
+  .proj .cover{position:relative;aspect-ratio:16/10;overflow:hidden;background:var(--ink-900)}
+  .proj .cover img{width:100%;height:100%;object-fit:cover;transition:transform .8s}
+  .proj:hover .cover img{transform:scale(1.07)}
+  .proj .cover .ci{position:absolute;right:14px;bottom:14px;width:44px;height:44px;border-radius:12px;background:var(--paper-0);color:var(--cobalt-500);display:grid;place-items:center;box-shadow:var(--shadow);transition:transform .4s}
+  .proj:hover .cover .ci{transform:rotate(-8deg) scale(1.1)}
+  .proj .cover .badge{position:absolute;top:14px;left:14px;display:flex;gap:6px;align-items:center;background:rgba(255,255,255,.92);backdrop-filter:blur(6px);border-radius:999px;padding:5px 11px;font-size:.75rem;font-weight:700}
+  .proj .cover .badge svg{width:14px;height:14px;color:var(--cobalt-500)}
+  .proj .cover .live{left:auto;right:14px;background:var(--gain-500);color:#fff}
+  .proj .cover .live svg{color:#fff}
+  .proj .body{padding:22px;display:flex;flex-direction:column;flex:1}
+  .proj h3{font-size:1.15rem;letter-spacing:-.02em;display:flex;justify-content:space-between;gap:10px;align-items:center}
+  .proj h3 svg{color:var(--paper-500);transition:transform .3s,color .3s}
+  .proj:hover h3 svg{transform:translate(3px,-3px);color:var(--cobalt-500)}
+  .proj p{color:var(--fg-2);font-size:.93rem;margin:8px 0 16px;flex:1}
+
+  /* Fenêtre projet */
+  dialog{border:0;border-radius:28px;padding:0;max-width:640px;width:calc(100% - 32px);margin:auto;box-shadow:0 40px 100px -20px rgba(11,16,32,.5);color:var(--fg);font-family:var(--font);overflow:hidden}
+  dialog::backdrop{background:rgba(11,16,32,.55);backdrop-filter:blur(4px)}
+  dialog[open]{animation:dlg .35s cubic-bezier(.2,.7,.2,1)}
+  @keyframes dlg{from{opacity:0;transform:translateY(24px) scale(.97)}}
+  .dlg-cover{aspect-ratio:16/8;overflow:hidden;position:relative;background:var(--ink-900)}
+  .dlg-cover img{width:100%;height:100%;object-fit:cover}
+  .dlg-body{padding:28px}
+  .dlg-body h3{font-size:1.6rem;letter-spacing:-.03em;margin:10px 0}
+  .dlg-body p{color:var(--fg-2);margin-bottom:18px}
+  .x{position:absolute;top:14px;right:14px;z-index:2;width:40px;height:40px;border-radius:50%;border:0;background:rgba(255,255,255,.92);cursor:pointer;display:grid;place-items:center}
+
+  /* ============ Compétences ============ */
+  .skills{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+  @media(max-width:1000px){.skills{grid-template-columns:1fr 1fr}}
+  @media(max-width:560px){.skills{grid-template-columns:1fr}}
+  .sk{background:var(--paper-0);border:1px solid var(--paper-200);border-radius:var(--r-xl);padding:26px;transition:transform .3s,box-shadow .3s,opacity .8s}
+  .sk:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg)}
+  .sk .xp-ico{transition:transform .5s}
+  .sk:hover .xp-ico{transform:rotate(-8deg) scale(1.1)}
+  .sk h3{font-size:1.1rem;margin-bottom:14px}
+  .bar{margin-bottom:12px;font-size:.86rem}
+  .bar div{display:flex;justify-content:space-between;color:var(--ink-700);margin-bottom:5px}
+  .bar i{display:block;height:6px;border-radius:6px;background:var(--paper-100);overflow:hidden}
+  .bar i::after{content:"";display:block;height:100%;width:var(--v);background:linear-gradient(90deg,var(--cobalt-500),var(--gain-500));border-radius:6px;transform:scaleX(0);transform-origin:left;transition:transform 1.4s .2s cubic-bezier(.2,.7,.2,1)}
+  .sk.in .bar i::after{transform:scaleX(1)}
+
+  .edu{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:18px}
+  @media(max-width:900px){.edu{grid-template-columns:1fr}}
+  .edu .card-xp{display:flex;gap:16px;align-items:flex-start;padding:22px}
+  .edu .xp-ico{margin:0}
+  .edu b{display:block;line-height:1.35}
+  .edu small{color:var(--fg-2)}
+
+  /* ============ Contact ============ */
+  .contact{text-align:center;background:linear-gradient(135deg,var(--cobalt-50),var(--gain-50));border:1px solid var(--paper-200);border-radius:32px;padding:72px 24px}
+  .contact p{color:var(--fg-2);max-width:540px;margin:0 auto 30px}
+  .contact .cta{justify-content:center}
+  footer{padding:36px 0;color:var(--fg-2);font-size:.86rem}
+  footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+
+  @media(prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;animation-delay:0s!important;transition-delay:0s!important}
+    html{scroll-behavior:auto}
+  }
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<div id="glow"></div>
+
+<nav id="nav">
+  <div class="wrap">
+    <a href="#top" class="logo"><span class="logo-mark">MD</span>Mohammed <b>Dehini</b></a>
+    <div class="links">
+      <a href="#parcours">Parcours</a>
+      <a href="#lancer">Lancer ton e-com</a>
+      <a href="#projets">Projets</a>
+      <a href="#competences">Compétences</a>
+      <a href="#contact">Contact</a>
+    </div>
+    <a href="#contact" class="btn btn-ink nav-cta" style="padding:10px 16px"><span>Me contacter</span> <i data-lucide="arrow-up-right"></i></a>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div>
+        <span class="pill fade-up"><span class="pulse"></span>Responsable Marketing <span class="tag">SPA YINVESTI</span></span>
+        <h1 id="title">Je transforme les <span class="accent">marques</span> en <span class="accent">croissance</span> <span class="soft">mesurable.</span></h1>
+        <p class="lead fade-up" style="animation-delay:1s">Plus de 8 ans entre design, communication et marketing digital. J'ai lancé trois marques e-commerce, piloté des campagnes Meta &amp; TikTok et construit un SaaS qui automatise l'e-commerce en Algérie.</p>
+        <div class="cta fade-up" style="animation-delay:1.2s">
+          <a href="#parcours" class="btn btn-ink">Découvrir mon parcours <i data-lucide="arrow-down"></i></a>
+          <a href="https://ecom.dehini.com/" target="_blank" rel="noopener" class="btn btn-line"><i data-lucide="rocket"></i> Lancer mon e-commerce</a>
+        </div>
+      </div>
+
+      <div class="portrait fade-up" style="animation-delay:.4s">
+        <div class="portrait-card" id="tilt">
+          <!-- Pour mettre ta photo : remplace l'URL ci-dessous par ta photo (ex. src="moi.jpg"), retire style="opacity…" et supprime le bloc .mono -->
+          <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=900&q=70&auto=format&fit=crop" alt="">
+          <div class="mono">MD</div>
+          <div class="cap"><b>Mohammed Dehini</b><span>Marketing · E-commerce · SaaS — Oran, Algérie</span></div>
+        </div>
+        <div class="float f1"><span class="ic"><i data-lucide="megaphone"></i></span><div>Meta &amp; TikTok Ads<small>Performance marketing</small></div></div>
+        <div class="float f2"><span class="ic"><i data-lucide="trending-up"></i></span><div>3 marques<small>lancées de zéro</small></div></div>
+        <div class="float f3"><span class="ic"><i data-lucide="sparkles"></i></span><div>IA générative<small>Automatisation</small></div></div>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><b data-to="8" data-suffix="+">0</b><span>années d'expérience</span></div>
+      <div class="stat"><b data-to="3">0</b><span>marques e-commerce lancées</span></div>
+      <div class="stat"><b data-to="13" data-suffix="+" id="nbProjets">0</b><span>projets réalisés</span></div>
+      <div class="stat"><b data-to="7">0</b><span>entreprises &amp; startups</span></div>
+    </div>
+  </div>
+
+  <div class="marquee" aria-hidden="true"><div class="track" id="track"></div></div>
+</header>
+
+<!-- ============ PARCOURS ============ -->
+<section id="parcours">
+  <div class="wrap">
+    <div class="head center reveal">
+      <span class="kicker"><i data-lucide="route"></i> Parcours</span>
+      <h2>Du crayon du graphiste à la <span class="accent">direction marketing</span>.</h2>
+      <p>Chaque étape m'a apporté une compétence. Ensemble, elles forment une vision 360° qui relie la marque, la vente et la technologie.</p>
+    </div>
+    <div class="journey" id="journey">
+      <div class="rail"><div class="rail-fill" id="railFill"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ LANCER TON E-COM ============ -->
+<section id="lancer" style="padding-top:20px">
+  <div class="wrap">
+    <div class="launch reveal" id="launch">
+      <div>
+        <span class="kicker"><i data-lucide="graduation-cap"></i> Pour les jeunes qui se lancent</span>
+        <h2>Tu veux lancer ton e-commerce <span class="accent">en Algérie</span> ?</h2>
+        <p>J'ai construit <b style="color:#fff">ecom.dehini.com</b> à partir de ce que j'ai appris en lançant mes propres marques. Une seule plateforme pour démarrer et faire grandir ta boutique en paiement à la livraison.</p>
+        <div class="feat">
+          <div><i data-lucide="phone-call"></i>Commandes &amp; confirmation</div>
+          <div><i data-lucide="truck"></i>Yalidine, ZR Express…</div>
+          <div><i data-lucide="wand-sparkles"></i>Landing pages par IA</div>
+          <div><i data-lucide="chart-line"></i>Pubs Meta &amp; rentabilité</div>
+        </div>
+        <a href="https://ecom.dehini.com/" target="_blank" rel="noopener" class="btn btn-cobalt">Démarrer sur ecom.dehini.com <i data-lucide="arrow-up-right"></i></a>
+      </div>
+      <div class="mock" aria-hidden="true">
+        <div class="mock-top"><i></i><i></i><i></i><em>aperçu</em></div>
+        <div style="font-weight:700;margin-bottom:10px;font-size:.9rem">Commandes du jour</div>
+        <div class="mock-row"><span>#1048 · Oran</span><span class="st ok">Livrée</span></div>
+        <div class="mock-row"><span>#1049 · Alger</span><span class="st go">En route</span></div>
+        <div class="mock-row"><span>#1050 · Sétif</span><span class="st wait">À confirmer</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PROJETS ============ -->
+<section id="projets">
+  <div class="wrap">
+    <div class="head reveal">
+      <span class="kicker"><i data-lucide="layout-grid"></i> Portfolio</span>
+      <h2>Projets <span class="accent">réalisés</span>.</h2>
+      <p>Marques, plateformes SaaS, applications et sites que j'ai lancés ou pilotés. Clique sur une carte pour en savoir plus.</p>
+    </div>
+    <div class="filters" id="filters"></div>
+    <div class="grid" id="grid"></div>
+  </div>
+</section>
+
+<dialog id="dlg">
+  <button class="x" id="dlgClose" aria-label="Fermer"><i data-lucide="x"></i></button>
+  <div class="dlg-cover"><img id="dlgImg" alt=""></div>
+  <div class="dlg-body">
+    <span class="when" id="dlgCat"></span>
+    <h3 id="dlgTitle"></h3>
+    <p id="dlgText"></p>
+    <div class="tags" id="dlgTags" style="margin:0 0 22px"></div>
+    <div id="dlgLink"></div>
+  </div>
+</dialog>
+
+<!-- ============ COMPÉTENCES ============ -->
+<section id="competences" style="background:var(--paper-0);border-block:1px solid var(--paper-200)">
+  <div class="wrap">
+    <div class="head reveal">
+      <span class="kicker"><i data-lucide="sparkles"></i> Compétences</span>
+      <h2>Une boîte à outils <span class="accent">360°</span>.</h2>
+    </div>
+    <div class="skills" id="skills"></div>
+
+    <div class="edu">
+      <div class="card-xp reveal"><span class="xp-ico"><i data-lucide="graduation-cap"></i></span><div><b>Master Communication &amp; Relations publiques</b><small>Univ. Dr Moulay Tahar — Saïda · 2015–2017</small></div></div>
+      <div class="card-xp reveal"><span class="xp-ico"><i data-lucide="book-open"></i></span><div><b>Licence Sciences de l'information &amp; de la communication</b><small>Univ. Djillali Liabès — Sidi Bel Abbès · 2012–2015</small></div></div>
+      <div class="card-xp reveal"><span class="xp-ico"><i data-lucide="languages"></i></span><div><b>Arabe · Français · Anglais</b><small>Maternelle · intermédiaire · intermédiaire</small></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CONTACT ============ -->
+<section id="contact">
+  <div class="wrap">
+    <div class="contact reveal">
+      <span class="kicker"><i data-lucide="message-circle"></i> Contact</span>
+      <h2>Un projet en tête ?</h2>
+      <p>Stratégie de marque, campagnes publicitaires, e-commerce ou outil SaaS : parlons-en. Je suis toujours ouvert aux échanges et aux collaborations.</p>
+      <div class="cta">
+        <a class="btn btn-ink" href="mailto:dehinimohammed@gmail.com"><i data-lucide="mail"></i> dehinimohammed@gmail.com</a>
+        <a class="btn btn-line" href="https://wa.me/213540722838" target="_blank" rel="noopener"><i data-lucide="message-circle"></i> WhatsApp</a>
+        <a class="btn btn-line" href="https://www.linkedin.com/in/mohammed-dehini-14120b108" target="_blank" rel="noopener"><i data-lucide="linkedin"></i> LinkedIn</a>
+        <a class="btn btn-line" href="https://github.com/dehini31" target="_blank" rel="noopener"><i data-lucide="github"></i> GitHub</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer><div class="wrap"><span>© <span id="y"></span> Mohammed Dehini — dehini.com</span><span>Photos : Unsplash · Icônes : Lucide</span></div></footer>
+
+<script>
+/* ======================================================================
+   CONTENU — modifie ces listes pour mettre à jour la page
+   img   : identifiant de photo Unsplash (gratuite)
+   icon  : nom d'icône Lucide (voir lucide.dev/icons)
+   scene : animation de l'étape (yinvesti | shop | rocket | building | megaphone | design)
+   ====================================================================== */
+const U = (id, w = 900) => `https://images.unsplash.com/${id}?w=${w}&q=70&auto=format&fit=crop`;
+
+const EXPERIENCES = [
+  { year: "2026", label: "Aujourd'hui", now: true, role: "Responsable Marketing", org: "SPA YINVESTI", icon: "chart-no-axes-combined",
+    scene: "yinvesti", img: "photo-1579532537598-459ecdaf39cc", when: "2026 — aujourd'hui",
+    text: "Pilotage du marketing de la première plateforme algérienne de financement participatif en capital, halal et agréée COSOB.",
+    points: ["Acquisition des investisseurs et des porteurs de projets", "Landing page ECSEL EXPO 2026 et formulaires d'inscription", "Outil de diagnostic des porteurs de projets"],
+    tags: ["Fintech", "Acquisition", "Événementiel"] },
+  { year: "2024", label: "Fondateur", role: "Responsable ventes en ligne", org: "ROTINIA — boutique en ligne", icon: "shopping-bag",
+    scene: "shop", img: "photo-1586528116311-ad8dd3c8310d", when: "Janv. 2024 — Avr. 2026",
+    text: "Création d'une marque e-commerce de A à Z, qui a donné naissance à un SaaS d'automatisation pour les e-commerçants.",
+    points: ["Boutique Shopify : catalogue, prix, conversion", "Campagnes Meta Ads & TikTok Ads pilotées par les KPIs", "Logistique COD avec Yalidine et Guepex"],
+    tags: ["Shopify", "Meta Ads", "TikTok Ads", "COD"] },
+  { year: "2023", label: "Marque", role: "Responsable de Marque", org: "BUILD PROM — promotion immobilière", icon: "building-2",
+    scene: "building", img: "photo-1486406146926-c627a92ad1ab", when: "Janv. 2023 — Déc. 2023",
+    text: "Définition et déploiement de l'identité visuelle, plans marketing pour accroître la notoriété, coordination des équipes créatives.",
+    tags: ["Branding", "Plan marketing", "Immobilier"] },
+  { year: "2022", label: "CEO", role: "Fondateur & CEO", org: "SARL DOWAYA — startup", icon: "rocket",
+    scene: "rocket", img: "photo-1556761175-b413da4baf72", when: "Août 2022 — Déc. 2025",
+    text: "Direction de la startup et du développement de Dowaya Manager, un SaaS pour faire grandir l'e-commerce algérien.",
+    points: ["Stratégie publicitaire et pilotage de l'application", "Budgets, plannings, reporting, prestataires", "Relation client et satisfaction"],
+    tags: ["SaaS", "Management", "Produit"] },
+  { year: "2019", label: "Communication", role: "Chargé de Communication", org: "TWO-B Textile — linge de bain", icon: "megaphone",
+    scene: "megaphone", img: "photo-1542744173-8e7e53415bb0", when: "Août 2019 — Déc. 2021",
+    text: "Stratégie de communication avec la direction commerciale : photos, fiches produits, catalogues et campagnes, image de marque B2B.",
+    tags: ["Communication", "Catalogues", "B2B"] },
+  { year: "2017", label: "Design", role: "Graphiste", org: "Futur Print · NewCom", icon: "pen-tool",
+    scene: "design", img: "photo-1626785774573-4b799315345d", when: "Oct. 2017 — Sept. 2019",
+    text: "Identités visuelles, logos, chartes graphiques, affiches, enseignes, dépliants, mise en page print et packaging.",
+    tags: ["Illustrator", "Photoshop", "Packaging"] },
+];
+
+// cat : Marque | SaaS | Fintech | Mobile — url : lien public ("" si privé)
+const PROJECTS = [
+  { title: "Dowaya Manager", cat: "SaaS", icon: "package", img: "photo-1460925895917-afdab827c52f",
+    text: "La plateforme pour les jeunes qui lancent leur e-commerce : commandes, confirmation, transporteurs, WhatsApp, pubs Meta, caisse et rentabilité.",
+    stack: ["Yalidine", "ZR Express", "Meta CAPI", "WhatsApp"], url: "https://ecom.dehini.com/" },
+  { title: "YINVESTI — Landing investisseurs", cat: "Fintech", icon: "handshake", img: "photo-1600880292203-757bb62b4baf",
+    text: "Landing page de rencontre investisseurs / porteurs de projets pour ECSEL EXPO 2026.", stack: ["Marketing", "Événementiel"], url: "" },
+  { title: "YINVESTI — Diagnostic", cat: "Fintech", icon: "clipboard-check", img: "photo-1554224155-6726b3ff858f",
+    text: "Auto-évaluation des porteurs de projets pour une plateforme de crowdfunding agréée COSOB, avec back-office.", stack: ["Next.js", "Back-office"], url: "https://yinvesti-diagnostic.vercel.app" },
+  { title: "Rotinia", cat: "Marque", icon: "shopping-bag", img: "photo-1586528116311-ad8dd3c8310d",
+    text: "Marque e-commerce créée de zéro : boutique Shopify, publicité Meta & TikTok, livraison COD partout en Algérie.", stack: ["Shopify", "Meta Ads", "TikTok Ads"], url: "" },
+  { title: "Swanbida", cat: "Marque", icon: "store", img: "photo-1556742049-0cfed4f6a45d",
+    text: "Troisième marque e-commerce lancée : boutique en ligne sur son propre domaine, vente en paiement à la livraison, gérée avec Dowaya Manager.", stack: ["E-commerce", "COD"], url: "" },
+  { title: "Identités visuelles & print", cat: "Marque", icon: "palette", img: "photo-1561070791-2526d30994b5",
+    text: "Logos, chartes graphiques, catalogues, packaging et campagnes pour Build Prom, TWO-B Textile, Futur Print et NewCom.", stack: ["Illustrator", "Photoshop"], url: "" },
+  { title: "Landing pages par IA", cat: "SaaS", icon: "wand-sparkles", img: "photo-1551288049-bebda4e38f71",
+    text: "Génération de pages de vente optimisées par IA et pages boutique avec QR code, reliées au suivi Meta.", stack: ["IA", "Conversion"], url: "" },
+  { title: "Easy COD — App Shopify", cat: "SaaS", icon: "shopping-cart", img: "photo-1556742049-0cfed4f6a45d",
+    text: "Application Shopify pour la prise de commande en paiement à la livraison.", stack: ["Shopify", "COD"], url: "" },
+  { title: "Rotinia Manager", cat: "SaaS", icon: "refresh-cw", img: "photo-1460925895917-afdab827c52f",
+    text: "Tableau de bord de gestion et de synchronisation des commandes de plusieurs boutiques.", stack: ["Automatisation"], url: "" },
+  { title: "Dowaya — Recherche de produits", cat: "SaaS", icon: "search", img: "photo-1551288049-bebda4e38f71",
+    text: "Outil de recherche active de produits pour les e-commerçants.", stack: ["E-commerce"], url: "" },
+  { title: "Secrétaire — Assistant IA", cat: "Mobile", icon: "bot", img: "photo-1512941937669-90a1b58e7e9c",
+    text: "Application Android d'assistant personnel propulsé par l'IA.", stack: ["Android", "IA"], url: "https://github.com/dehini31/secretaire" },
+  { title: "Application e-commerce Android", cat: "Mobile", icon: "smartphone", img: "photo-1512941937669-90a1b58e7e9c",
+    text: "Application mobile compagnon de la plateforme pour gérer ses commandes en déplacement.", stack: ["Android"], url: "" },
+  { title: "MilleImpacts", cat: "Marque", icon: "sprout", img: "photo-1522202176988-66273c2fd55f",
+    text: "Plateforme pour transformer l'influence en impact positif.", stack: ["Influence", "Impact"], url: "" },
+];
+
+const SKILLS = [
+  { title: "Marketing digital", icon: "target", items: [["Meta Ads", 95], ["TikTok Ads", 85], ["Stratégie d'acquisition", 90]] },
+  { title: "E-commerce", icon: "shopping-cart", items: [["Shopify", 90], ["Modèle COD", 95], ["Landing pages", 90]] },
+  { title: "Design & marque", icon: "palette", items: [["Identité visuelle", 95], ["Suite Adobe", 90], ["Montage vidéo", 80]] },
+  { title: "IA & management", icon: "brain", items: [["IA générative", 90], ["Automatisation", 85], ["Gestion de projet", 90]] },
+];
+
+const MARQUEE = [["megaphone","Meta Ads"],["music-2","TikTok Ads"],["shopping-bag","Shopify"],["truck","Cash on Delivery"],["pen-tool","Illustrator"],["image","Photoshop"],["clapperboard","Premiere Pro"],["film","After Effects"],["sparkles","IA générative"],["workflow","Automatisation"],["layout-template","Landing pages"],["chart-pie","Analyse KPIs"]];
+
+/* ======================================================================
+   Scènes animées (SVG) — une par étape du parcours
+   ====================================================================== */
+const SCENES = {
+  yinvesti: `<svg viewBox="0 0 130 90">
+    <rect class="grow" x="8" y="58" width="14" height="24" rx="3" fill="#dce4ff" style="animation-delay:.3s"/>
+    <rect class="grow" x="30" y="46" width="14" height="36" rx="3" fill="#b9c8ff" style="animation-delay:.45s"/>
+    <rect class="grow" x="52" y="36" width="14" height="46" rx="3" fill="#8aa3ff" style="animation-delay:.6s"/>
+    <rect class="grow" x="74" y="24" width="14" height="58" rx="3" fill="#5b7cff" style="animation-delay:.75s"/>
+    <rect class="grow" x="96" y="10" width="14" height="72" rx="3" fill="#2f5bff" style="animation-delay:.9s"/>
+    <polyline class="draw" style="--len:160" points="15,54 37,42 59,32 81,20 103,6" fill="none" stroke="#17b26a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle class="pop" cx="103" cy="6" r="5" fill="#17b26a" style="animation-delay:2.1s"/></svg>`,
+  shop: `<svg viewBox="0 0 130 90">
+    <line x1="4" y1="76" x2="126" y2="76" stroke="#e3e5ea" stroke-width="3" stroke-dasharray="6 5"/>
+    <g transform="translate(94 30)"><path d="M2 20 L16 8 L30 20 V46 H2 Z" fill="#eef2ff" stroke="#2f5bff" stroke-width="2.5" stroke-linejoin="round"/><rect x="12" y="32" width="8" height="14" fill="#2f5bff"/></g>
+    <g class="truck"><g transform="translate(28 44)"><rect x="0" y="4" width="34" height="22" rx="3" fill="#2f5bff"/><path d="M34 10 H46 L54 18 V26 H34 Z" fill="#1f44d6"/><circle cx="10" cy="28" r="5" fill="#0b1020"/><circle cx="44" cy="28" r="5" fill="#0b1020"/><text x="17" y="19" font-size="9" font-weight="700" fill="#fff" text-anchor="middle" font-family="Arial">COD</text></g></g>
+    <g class="check"><circle cx="110" cy="16" r="10" fill="#17b26a"/><path d="M105 16 L108.5 19.5 L115 12.5" stroke="#fff" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g></svg>`,
+  rocket: `<svg viewBox="0 0 130 90">
+    <circle class="pop" cx="20" cy="18" r="2" fill="#8aa3ff" style="animation-delay:.2s"/><circle class="pop" cx="108" cy="30" r="2.5" fill="#8aa3ff" style="animation-delay:.5s"/><circle class="pop" cx="30" cy="62" r="1.8" fill="#5ee3a4" style="animation-delay:.8s"/><circle class="pop" cx="100" cy="70" r="2" fill="#5ee3a4" style="animation-delay:1s"/>
+    <path class="draw" style="--len:120" d="M65 92 C60 76 70 70 65 64" stroke="#dce4ff" stroke-width="6" fill="none" stroke-linecap="round"/>
+    <g class="rocket"><g transform="translate(65 40)">
+      <path class="flame" d="M-6 22 Q0 38 6 22 Z" fill="#f59e0b"/>
+      <path d="M0 -34 C14 -20 14 6 10 22 H-10 C-14 6 -14 -20 0 -34 Z" fill="#2f5bff"/>
+      <circle cy="-8" r="6" fill="#fff" stroke="#1f44d6" stroke-width="2"/>
+      <path d="M-10 8 L-20 22 L-10 20 Z M10 8 L20 22 L10 20 Z" fill="#17b26a"/></g></g></svg>`,
+  building: `<svg viewBox="0 0 130 90">
+    <line x1="4" y1="84" x2="126" y2="84" stroke="#e3e5ea" stroke-width="3"/>
+    <rect class="grow" x="14" y="44" width="26" height="40" rx="2" fill="#dce4ff" style="animation-delay:.3s"/>
+    <rect class="grow" x="48" y="10" width="34" height="74" rx="2" fill="#2f5bff" style="animation-delay:.5s"/>
+    <rect class="grow" x="90" y="30" width="26" height="54" rx="2" fill="#8aa3ff" style="animation-delay:.7s"/>
+    ${[18, 30, 42, 54, 66].map((y, i) => `<rect class="pop" x="55" y="${y}" width="7" height="6" fill="#fff" style="animation-delay:${1.1 + i * .12}s"/><rect class="pop" x="68" y="${y}" width="7" height="6" fill="#fff" style="animation-delay:${1.16 + i * .12}s"/>`).join("")}
+    <path class="pop" d="M65 0 L70 8 H60 Z" fill="#17b26a" style="animation-delay:1.9s"/></svg>`,
+  megaphone: `<svg viewBox="0 0 130 90">
+    <g transform="translate(14 20)">
+      <path d="M0 16 H14 L50 0 V48 L14 32 H0 Z" fill="#2f5bff" stroke="#1f44d6" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M10 32 L16 52 H26 L22 34" fill="#1f44d6"/>
+      <path class="wave" d="M60 14 Q70 24 60 34" stroke="#17b26a" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+      <path class="wave" d="M70 6 Q86 24 70 42" stroke="#17b26a" stroke-width="3.5" fill="none" stroke-linecap="round" style="animation-delay:.3s"/>
+      <path class="wave" d="M80 -2 Q102 24 80 50" stroke="#8aa3ff" stroke-width="3.5" fill="none" stroke-linecap="round" style="animation-delay:.6s"/></g></svg>`,
+  design: `<svg viewBox="0 0 130 90">
+    <path class="draw" style="--len:230" d="M10 70 C30 10 60 10 70 45 S110 80 120 20" stroke="#2f5bff" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+    <rect class="pop" x="6" y="66" width="8" height="8" fill="#fff" stroke="#0b1020" stroke-width="1.5" style="animation-delay:.4s"/>
+    <rect class="pop" x="66" y="41" width="8" height="8" fill="#fff" stroke="#0b1020" stroke-width="1.5" style="animation-delay:1.3s"/>
+    <rect class="pop" x="116" y="16" width="8" height="8" fill="#fff" stroke="#0b1020" stroke-width="1.5" style="animation-delay:2.2s"/>
+    <line class="pop" x1="70" y1="45" x2="92" y2="30" stroke="#8aa3ff" stroke-width="1.5" style="animation-delay:1.4s"/><circle class="pop" cx="92" cy="30" r="3" fill="#8aa3ff" style="animation-delay:1.5s"/>
+    <circle class="pop" cx="18" cy="14" r="7" fill="#2f5bff" style="animation-delay:2.3s"/><circle class="pop" cx="32" cy="14" r="7" fill="#17b26a" style="animation-delay:2.4s"/><circle class="pop" cx="46" cy="14" r="7" fill="#f59e0b" style="animation-delay:2.5s"/></svg>`,
+};
+
+/* ====================================================================== */
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const ico = n => `<i data-lucide="${n}"></i>`;
+const drawIcons = () => window.lucide && lucide.createIcons();
+
+// Parcours
+document.getElementById("journey").insertAdjacentHTML("beforeend", EXPERIENCES.map((x, i) => `
+  <div class="step${i % 2 ? " alt" : ""}${i === 0 ? " current" : ""}">
+    <div class="node">${ico(x.icon)}</div>
+    <div class="media">
+      <img src="${U(x.img)}" alt="" loading="lazy">
+      <div class="yr"><small>${esc(x.label)}</small>${esc(x.year)}</div>
+      <div class="scene" aria-hidden="true">${SCENES[x.scene] || ""}</div>
+    </div>
+    <article class="card-xp">
+      <span class="xp-ico">${ico(x.icon)}</span>
+      <span class="when${x.now ? " now" : ""}">${ico(x.now ? "circle-dot" : "calendar")} ${esc(x.when)}</span>
+      <h3>${esc(x.role)}</h3>
+      <div class="org">${esc(x.org)}</div>
+      <p>${esc(x.text)}</p>
+      ${x.points ? `<ul>${x.points.map(p => `<li>${ico("circle-check")}<span>${esc(p)}</span></li>`).join("")}</ul>` : ""}
+      <div class="tags">${x.tags.map(t => `<span>${esc(t)}</span>`).join("")}</div>
+    </article>
+  </div>`).join(""));
+
+// Défilement des compétences (dupliqué pour une boucle continue)
+document.getElementById("track").innerHTML = [...MARQUEE, ...MARQUEE].map(([i, t]) => `<span>${ico(i)}${esc(t)}</span>`).join("");
+
+// Compétences
+document.getElementById("skills").innerHTML = SKILLS.map(s => `
+  <div class="sk reveal"><span class="xp-ico">${ico(s.icon)}</span><h3>${esc(s.title)}</h3>
+  ${s.items.map(([n, v]) => `<div class="bar"><div><span>${esc(n)}</span><span>${v}%</span></div><i style="--v:${v}%"></i></div>`).join("")}</div>`).join("");
+
+// Projets + filtres
+const grid = document.getElementById("grid"), filters = document.getElementById("filters");
+const catIcons = { Tous: "layout-grid", Marque: "gem", SaaS: "cloud", Fintech: "landmark", Mobile: "smartphone" };
+const cats = ["Tous", ...new Set(PROJECTS.map(p => p.cat))];
+filters.innerHTML = cats.map(c => `<button data-cat="${c}">${ico(catIcons[c] || "tag")}${c} <span class="n">${c === "Tous" ? PROJECTS.length : PROJECTS.filter(p => p.cat === c).length}</span></button>`).join("");
+document.getElementById("nbProjets").dataset.to = PROJECTS.length;
+
+function renderProjects(cat) {
+  grid.innerHTML = PROJECTS.map((p, i) => ({ p, i })).filter(({ p }) => cat === "Tous" || p.cat === cat).map(({ p, i }, k) => `
+    <article class="proj" data-i="${i}" style="animation-delay:${k * 60}ms" tabindex="0" role="button" aria-label="${esc(p.title)}">
+      <div class="cover"><img src="${U(p.img, 700)}" alt="" loading="lazy">
+        <span class="badge">${ico(catIcons[p.cat] || "tag")}${esc(p.cat)}</span>
+        ${p.url ? `<span class="badge live">${ico("radio")}En ligne</span>` : ""}
+        <span class="ci">${ico(p.icon)}</span></div>
+      <div class="body"><h3><span>${esc(p.title)}</span>${ico("arrow-up-right")}</h3><p>${esc(p.text)}</p>
+        <div class="tags" style="margin:0">${p.stack.map(s => `<span>${esc(s)}</span>`).join("")}</div></div>
+    </article>`).join("");
+  filters.querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.cat === cat));
+  drawIcons();
+  bindTilt(grid.querySelectorAll(".proj"), 6);
+}
+filters.addEventListener("click", e => { const b = e.target.closest("button"); if (b) renderProjects(b.dataset.cat); });
+
+// Fenêtre de détail
+const dlg = document.getElementById("dlg");
+function openProject(i) {
+  const p = PROJECTS[i];
+  document.getElementById("dlgImg").src = U(p.img, 1100);
+  document.getElementById("dlgCat").innerHTML = `${ico(catIcons[p.cat] || "tag")} ${esc(p.cat)}`;
+  document.getElementById("dlgTitle").textContent = p.title;
+  document.getElementById("dlgText").textContent = p.text;
+  document.getElementById("dlgTags").innerHTML = p.stack.map(s => `<span>${esc(s)}</span>`).join("");
+  document.getElementById("dlgLink").innerHTML = p.url
+    ? `<a class="btn btn-cobalt" href="${esc(p.url)}" target="_blank" rel="noopener">Voir le projet ${ico("arrow-up-right")}</a>`
+    : `<span class="when">${ico("lock")} Projet privé — démo sur demande</span>`;
+  drawIcons();
+  dlg.showModal();
+}
+grid.addEventListener("click", e => { const c = e.target.closest(".proj"); if (c) openProject(+c.dataset.i); });
+grid.addEventListener("keydown", e => { const c = e.target.closest(".proj"); if (c && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); openProject(+c.dataset.i); } });
+document.getElementById("dlgClose").onclick = () => dlg.close();
+dlg.addEventListener("click", e => { if (e.target === dlg) dlg.close(); });
+
+// Titre : apparition mot par mot (effet flou → net, comme YINVESTI)
+(function () {
+  const h = document.getElementById("title"), parts = [];
+  h.childNodes.forEach(node => {
+    const cls = node.nodeType === 1 ? node.className : "";
+    node.textContent.split(/\s+/).filter(Boolean).forEach(w => parts.push([w, cls]));
+  });
+  h.innerHTML = parts.map(([w, c], n) => `<span class="w ${c}" style="animation-delay:${n * 90 + 150}ms">${esc(w)}</span>`).join(" ");
+})();
+
+// Compteurs animés
+function countUp(el) {
+  const to = +el.dataset.to, suf = el.dataset.suffix || "", t0 = performance.now(), d = 1400;
+  (function f(t) { const k = Math.min(1, (t - t0) / d); el.textContent = Math.round(to * (1 - Math.pow(1 - k, 3))) + suf; if (k < 1) requestAnimationFrame(f); })(t0);
+}
+
+// Apparitions au défilement
+const io = new IntersectionObserver(es => es.forEach(e => {
+  if (!e.isIntersecting) return;
+  e.target.classList.add("in");
+  if (e.target.dataset.to) countUp(e.target);
+  io.unobserve(e.target);
+}), { threshold: .2 });
+document.querySelectorAll(".reveal,.step,.stat b").forEach(el => io.observe(el));
+
+// Étape courante (celle au centre de l'écran)
+const steps = [...document.querySelectorAll(".step")];
+const io2 = new IntersectionObserver(es => es.forEach(e => {
+  if (e.isIntersecting) { steps.forEach(s => s.classList.remove("current")); e.target.classList.add("current"); }
+}), { rootMargin: "-45% 0px -45% 0px" });
+steps.forEach(s => io2.observe(s));
+
+// Défilement : barre de lecture, remplissage de la frise, menu actif
+const bar = document.getElementById("progress"), fill = document.getElementById("railFill"), journey = document.getElementById("journey"), nav = document.getElementById("nav");
+const navLinks = [...document.querySelectorAll(".links a")].map(a => [a, document.querySelector(a.getAttribute("href"))]);
+let ticking = false;
+function onScroll() {
+  ticking = false;
+  const h = document.documentElement, y = h.scrollTop;
+  bar.style.width = (y / Math.max(1, h.scrollHeight - h.clientHeight) * 100) + "%";
+  nav.classList.toggle("scrolled", y > 10);
+  const r = journey.getBoundingClientRect();
+  fill.style.height = Math.min(1, Math.max(0, (innerHeight * .55 - r.top) / r.height)) * 100 + "%";
+  let cur = null; navLinks.forEach(([a, s]) => { if (s && s.getBoundingClientRect().top < innerHeight * .4) cur = a; });
+  navLinks.forEach(([a]) => a.classList.toggle("on", a === cur));
+}
+addEventListener("scroll", () => { if (!ticking) { ticking = true; requestAnimationFrame(onScroll); } }, { passive: true });
+onScroll();
+
+// Halo qui suit la souris
+const glow = document.getElementById("glow");
+addEventListener("pointermove", e => { glow.style.left = e.clientX + "px"; glow.style.top = e.clientY + "px"; }, { passive: true });
+
+// Effet 3D au survol
+function bindTilt(els, max) {
+  if (matchMedia("(hover:none),(prefers-reduced-motion:reduce)").matches) return;
+  els.forEach(el => {
+    el.addEventListener("pointermove", e => {
+      const r = el.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5;
+      el.style.transform = `perspective(900px) rotateY(${x * max}deg) rotateX(${-y * max}deg) translateY(-4px)`;
+    });
+    el.addEventListener("pointerleave", () => el.style.transform = "");
+  });
+}
+bindTilt([document.getElementById("tilt")], 10);
+
+renderProjects("Tous");
+document.getElementById("y").textContent = new Date().getFullYear();
+drawIcons();
+addEventListener("DOMContentLoaded", drawIcons);
+</script>
+</body>
+</html>
