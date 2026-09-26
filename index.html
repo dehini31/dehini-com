@@ -476,6 +476,7 @@
    ====================================================================== */
 const U = (id, w = 900) => `https://images.unsplash.com/${id}?w=${w}&q=70&auto=format&fit=crop`;
 
+// Du plus récent au plus ancien ici ; la page les affiche du plus ancien au plus récent.
 const EXPERIENCES = [
   { year: "2026", label: "Aujourd'hui", now: true, role: "Responsable Marketing", org: "SPA YINVESTI", icon: "chart-no-axes-combined",
     scene: "yinvesti", img: "photo-1579532537598-459ecdaf39cc", when: "2026 — aujourd'hui",
@@ -599,8 +600,8 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;",
 const ico = n => `<i data-lucide="${n}"></i>`;
 const drawIcons = () => window.lucide && lucide.createIcons();
 
-// Parcours
-document.getElementById("journey").insertAdjacentHTML("beforeend", EXPERIENCES.map((x, i) => `
+// Parcours — affiché dans l'ordre chronologique : du premier poste (2017) jusqu'à aujourd'hui
+document.getElementById("journey").insertAdjacentHTML("beforeend", [...EXPERIENCES].reverse().map((x, i) => `
   <div class="step${i % 2 ? " alt" : ""}${i === 0 ? " current" : ""}">
     <div class="node">${ico(x.icon)}</div>
     <div class="media">
