@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Administration — dehini.com</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.460.0/dist/umd/lucide.min.js" defer></script>
+<style>
+  :root{
+    --ink-900:#0b1020;--ink-700:#20283f;--ink-500:#4b5470;
+    --paper-0:#fff;--paper-50:#f7f7f9;--paper-100:#f0f1f4;--paper-200:#e3e5ea;--paper-500:#7c8294;--paper-600:#6b7185;
+    --cobalt-50:#eef2ff;--cobalt-500:#2f5bff;--cobalt-600:#1f44d6;
+    --gain-500:#17b26a;--gain-600:#079455;--danger:#dc2626;--danger-50:#fef2f2;
+    --font:"DM Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+    --shadow:0 1px 2px rgba(11,16,32,.04),0 8px 30px -12px rgba(11,16,32,.14);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:var(--font);background:var(--paper-50);color:var(--ink-900);line-height:1.5}
+  input,textarea,select,button{font:inherit;color:inherit}
+  a{color:var(--cobalt-600)}
+  .hidden{display:none!important}
+
+  /* ---- Connexion ---- */
+  #loginView{min-height:100vh;display:grid;place-items:center;padding:20px}
+  #loginView form{width:min(360px,100%);background:var(--paper-0);border:1px solid var(--paper-200);border-radius:20px;padding:32px;box-shadow:var(--shadow)}
+  #loginView h1{font-size:1.3rem;margin:0 0 4px;letter-spacing:-.02em}
+  #loginView p{color:var(--paper-600);font-size:.9rem;margin:0 0 20px}
+  #loginView input{width:100%;padding:12px 14px;border:1px solid var(--paper-200);border-radius:10px;margin-bottom:14px}
+  #loginView button{width:100%;padding:12px;border:0;border-radius:10px;background:var(--ink-900);color:#fff;font-weight:600;cursor:pointer}
+  .err{color:var(--danger);font-size:.85rem;min-height:1.2em;margin-top:10px}
+
+  /* ---- Coquille de l'appli ---- */
+  #appView{display:flex;min-height:100vh}
+  aside{width:230px;flex:none;background:var(--ink-900);color:#fff;padding:20px 14px;position:sticky;top:0;height:100vh;overflow:auto}
+  aside h2{font-size:1rem;margin:0 0 18px;padding:0 8px}
+  aside h2 b{color:#8aa3ff}
+  aside nav a{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;color:#c7cce0;font-size:.9rem;margin-bottom:2px;cursor:pointer}
+  aside nav a.on,aside nav a:hover{background:rgba(255,255,255,.08);color:#fff}
+  aside .foot{margin-top:24px;padding-top:14px;border-top:1px solid rgba(255,255,255,.12);display:flex;flex-direction:column;gap:8px}
+  aside .foot a,aside .foot button{color:#c7cce0;font-size:.82rem;background:none;border:0;text-align:left;cursor:pointer;padding:4px 8px}
+
+  main{flex:1;min-width:0;padding:28px 34px 80px}
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:26px;flex-wrap:wrap}
+  .topbar h1{font-size:1.5rem;letter-spacing:-.02em;margin:0}
+  #saveBtn{background:var(--cobalt-500);color:#fff;border:0;padding:11px 20px;border-radius:999px;font-weight:600;cursor:pointer;display:inline-flex;gap:8px;align-items:center}
+  #saveBtn:hover{background:var(--cobalt-600)}
+  #saveBtn:disabled{opacity:.6;cursor:default}
+  #status{font-size:.82rem;color:var(--paper-600)}
+  #status.ok{color:var(--gain-600)}
+  #status.err{color:var(--danger)}
+
+  .tab{display:none}
+  .tab.on{display:block}
+  .section-intro{background:var(--paper-0);border:1px solid var(--paper-200);border-radius:16px;padding:20px;margin-bottom:20px}
+  .section-intro .row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:700px){.section-intro .row{grid-template-columns:1fr}}
+
+  .adm-field{display:block;margin-bottom:14px;font-size:.86rem}
+  .adm-field>span{display:block;margin-bottom:6px;color:var(--ink-700);font-weight:600}
+  .adm-field input[type=text],.adm-field input[type=number],.adm-field textarea,.adm-field select{width:100%;padding:10px 12px;border:1px solid var(--paper-200);border-radius:10px;background:#fff}
+  .adm-field textarea{resize:vertical;min-height:64px}
+  .adm-field input[type=checkbox]{width:16px;height:16px;margin-right:8px;vertical-align:-2px}
+  .hint{color:var(--paper-500);font-size:.78rem;margin-top:4px}
+
+  .adm-card{background:var(--paper-0);border:1px solid var(--paper-200);border-radius:16px;margin-bottom:16px;overflow:hidden}
+  .adm-card-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--paper-100);font-size:.88rem}
+  .adm-card-head b{font-weight:700}
+  .adm-card-actions{display:flex;gap:4px}
+  .adm-card-actions button{border:1px solid var(--paper-200);background:#fff;border-radius:8px;width:30px;height:30px;cursor:pointer}
+  .adm-card-actions button:hover{border-color:var(--cobalt-500)}
+  .adm-card-actions button[data-act=del]{color:var(--danger)}
+  .adm-card-body{padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+  .adm-card-body .adm-field.full{grid-column:1/-1}
+  @media(max-width:700px){.adm-card-body{grid-template-columns:1fr}}
+
+  .btn-add{display:inline-flex;align-items:center;gap:6px;padding:10px 16px;border-radius:10px;border:1px dashed var(--paper-500);background:#fff;color:var(--ink-700);font-weight:600;cursor:pointer;margin-top:4px}
+  .btn-add:hover{border-color:var(--cobalt-500);color:var(--cobalt-600)}
+
+  .adm-image{display:flex;flex-direction:column;gap:8px}
+  .adm-image img{width:100%;max-width:220px;aspect-ratio:16/10;object-fit:cover;border-radius:10px;border:1px solid var(--paper-200);background:var(--paper-100)}
+  .adm-image input[type=file]{font-size:.8rem}
+
+  .adm-row{display:flex;gap:8px;margin-bottom:8px;align-items:center}
+  .adm-row input{flex:1;padding:9px 11px;border:1px solid var(--paper-200);border-radius:8px}
+  .adm-row button{border:1px solid var(--paper-200);background:#fff;border-radius:8px;width:32px;height:32px;cursor:pointer;color:var(--danger);flex:none}
+
+  #toast{position:fixed;right:18px;bottom:18px;background:var(--ink-900);color:#fff;padding:12px 18px;border-radius:12px;font-size:.88rem;box-shadow:var(--shadow);transform:translateY(20px);opacity:0;pointer-events:none;transition:.25s;z-index:99}
+  #toast.show{transform:none;opacity:1}
+  #toast.err{background:var(--danger)}
+
+  @media(max-width:820px){
+    #appView{flex-direction:column}
+    aside{position:relative;width:auto;height:auto}
+    aside nav{display:flex;flex-wrap:wrap;gap:4px}
+    main{padding:20px}
+  }
+</style>
+</head>
+<body>
+
+<div id="loginView">
+  <form id="loginForm">
+    <h1>Administration</h1>
+    <p>dehini.com — accès réservé</p>
+    <input type="password" id="pw" placeholder="Mot de passe" autocomplete="current-password" required>
+    <button type="submit">Se connecter</button>
+    <div class="err" id="loginErr"></div>
+  </form>
+</div>
+
+<div id="appView" class="hidden">
+  <aside>
+    <h2>dehini<b>.com</b></h2>
+    <nav id="tabsNav">
+      <a data-tab="hero">Accueil (hero)</a>
+      <a data-tab="parcours">Parcours</a>
+      <a data-tab="lancer">Lancer ton e-com</a>
+      <a data-tab="projets">Projets</a>
+      <a data-tab="competences">Compétences</a>
+      <a data-tab="contact">Contact</a>
+      <a data-tab="divers">Divers</a>
+    </nav>
+    <div class="foot">
+      <a href="../" target="_blank" rel="noopener">↗ Voir le site</a>
+      <button id="logoutBtn" type="button">Se déconnecter</button>
+    </div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <h1 id="tabTitle">Accueil</h1>
+      <div style="display:flex;align-items:center;gap:14px">
+        <span id="status"></span>
+        <button id="saveBtn" type="button">Enregistrer</button>
+      </div>
+    </div>
+
+    <div class="tab" data-tab="hero">
+      <div class="section-intro">
+        <div class="row">
+          <label class="adm-field"><span>Texte du badge</span><input type="text" data-b="hero.badgeText"></label>
+          <label class="adm-field"><span>Étiquette du badge (optionnel)</span><input type="text" data-b="hero.badgeTag"></label>
+        </div>
+        <label class="adm-field"><span>Titre principal</span><textarea data-b="hero.title"></textarea>
+          <div class="hint">**mot** = accent bleu, __mot__ = grisé. Exemple : Je transforme les **marques** en **croissance** __mesurable.__</div></label>
+        <label class="adm-field"><span>Texte d'introduction</span><textarea data-b="hero.lead"></textarea></label>
+        <div class="row">
+          <div>
+            <b class="hint" style="display:block;margin-bottom:6px">Bouton principal</b>
+            <label class="adm-field"><span>Texte</span><input type="text" data-b="hero.ctaPrimary.label"></label>
+            <label class="adm-field"><span>Lien</span><input type="text" data-b="hero.ctaPrimary.href"></label>
+            <label class="adm-field"><span>Icône (lucide.dev/icons)</span><input type="text" data-b="hero.ctaPrimary.icon"></label>
+          </div>
+          <div>
+            <b class="hint" style="display:block;margin-bottom:6px">Bouton secondaire</b>
+            <label class="adm-field"><span>Texte</span><input type="text" data-b="hero.ctaSecondary.label"></label>
+            <label class="adm-field"><span>Lien</span><input type="text" data-b="hero.ctaSecondary.href"></label>
+            <label class="adm-field"><span>Icône</span><input type="text" data-b="hero.ctaSecondary.icon"></label>
+          </div>
+        </div>
+        <div class="row">
+          <label class="adm-field"><span>Photo de portrait</span></label>
+          <div></div>
+        </div>
+        <div id="heroPortraitImg"></div>
+        <div class="row" style="margin-top:10px">
+          <label class="adm-field"><span>Initiales affichées sur la photo</span><input type="text" data-b="hero.portraitMonogram"></label>
+          <label class="adm-field"><span>Nom affiché</span><input type="text" data-b="hero.portraitName"></label>
+        </div>
+        <label class="adm-field"><span>Sous-titre affiché</span><input type="text" data-b="hero.portraitSubtitle"></label>
+      </div>
+
+      <h3>Badges flottants sur la photo</h3>
+      <div id="heroBadges"></div>
+
+      <h3>Chiffres clés</h3>
+      <div id="heroStats"></div>
+    </div>
+
+    <div class="tab" data-tab="parcours">
+      <div class="section-intro">
+        <label class="adm-field"><span>Kicker</span><input type="text" data-b="parcours.kicker"></label>
+        <label class="adm-field"><span>Titre</span><textarea data-b="parcours.title"></textarea>
+          <div class="hint">**mot** = accent bleu.</div></label>
+        <label class="adm-field"><span>Texte</span><textarea data-b="parcours.text"></textarea></label>
+      </div>
+      <h3>Étapes du parcours</h3>
+      <p class="hint" style="margin-bottom:14px">La première carte ci-dessous est la plus récente ; elle s'affiche en dernier sur le site (ordre chronologique).</p>
+      <div id="experiencesList"></div>
+    </div>
+
+    <div class="tab" data-tab="lancer">
+      <div class="section-intro">
+        <label class="adm-field"><span>Kicker</span><input type="text" data-b="lancer.kicker"></label>
+        <label class="adm-field"><span>Titre</span><textarea data-b="lancer.title"></textarea>
+          <div class="hint">**mot** = accent vert.</div></label>
+        <label class="adm-field"><span>Texte</span><textarea data-b="lancer.text"></textarea>
+          <div class="hint">**mot** = en gras blanc.</div></label>
+        <div class="row">
+          <label class="adm-field"><span>Texte du bouton</span><input type="text" data-b="lancer.cta.label"></label>
+          <label class="adm-field"><span>Lien du bouton</span><input type="text" data-b="lancer.cta.href"></label>
+        </div>
+      </div>
+      <h3>Points clés (icône + texte)</h3>
+      <div id="lancerFeatures"></div>
+    </div>
+
+    <div class="tab" data-tab="projets">
+      <div class="section-intro">
+        <label class="adm-field"><span>Kicker</span><input type="text" data-b="projets.kicker"></label>
+        <label class="adm-field"><span>Titre</span><textarea data-b="projets.title"></textarea>
+          <div class="hint">**mot** = accent bleu.</div></label>
+        <label class="adm-field"><span>Texte</span><textarea data-b="projets.text"></textarea></label>
+      </div>
+      <h3>Projets</h3>
+      <div id="projectsList"></div>
+    </div>
+
+    <div class="tab" data-tab="competences">
+      <div class="section-intro">
+        <label class="adm-field"><span>Kicker</span><input type="text" data-b="competences.kicker"></label>
+        <label class="adm-field"><span>Titre</span><textarea data-b="competences.title"></textarea>
+          <div class="hint">**mot** = accent bleu.</div></label>
+      </div>
+      <h3>Groupes de compétences</h3>
+      <div id="skillsList"></div>
+      <h3 style="margin-top:28px">Formation & langues</h3>
+      <div id="educationList"></div>
+    </div>
+
+    <div class="tab" data-tab="contact">
+      <div class="section-intro">
+        <label class="adm-field"><span>Kicker</span><input type="text" data-b="contact.kicker"></label>
+        <label class="adm-field"><span>Titre</span><textarea data-b="contact.title"></textarea></label>
+        <label class="adm-field"><span>Texte</span><textarea data-b="contact.text"></textarea></label>
+      </div>
+      <h3>Liens de contact</h3>
+      <div id="contactLinksList"></div>
+    </div>
+
+    <div class="tab" data-tab="divers">
+      <h3>Bandeau défilant de compétences (page d'accueil)</h3>
+      <div id="marqueeList"></div>
+    </div>
+  </main>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const API = 'api.php';
+let STATE = null, CSRF = null, DIRTY = false;
+
+const $ = s => document.querySelector(s);
+const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const drawIcons = () => window.lucide && lucide.createIcons();
+
+function getPath(obj, path) { return path.split('.').reduce((o, k) => (o == null ? o : o[/^\d+$/.test(k) ? +k : k]), obj); }
+function setPath(obj, path, value) {
+  const parts = path.split('.'); let o = obj;
+  for (let i = 0; i < parts.length - 1; i++) { const k = /^\d+$/.test(parts[i]) ? +parts[i] : parts[i]; o = o[k]; }
+  const last = parts[parts.length - 1];
+  o[/^\d+$/.test(last) ? +last : last] = value;
+}
+function resolveAdminImg(id, w = 300) {
+  if (!id) return '';
+  if (/^https?:\/\//.test(id)) return id;
+  if (id.startsWith('uploads/')) return '../' + id;
+  if (id.startsWith('/')) return id;
+  return `https://images.unsplash.com/${id}?w=${w}&q=60&auto=format&fit=crop`;
+}
+function toast(msg, isErr) {
+  const t = $('#toast'); t.textContent = msg; t.className = isErr ? 'show err' : 'show';
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.className = '', 2600);
+}
+function markDirty() { DIRTY = true; $('#status').textContent = 'Modifications non enregistrées'; $('#status').className = ''; }
+
+/* ---------------- connexion ---------------- */
+$('#loginForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  $('#loginErr').textContent = '';
+  try {
+    const r = await fetch(API + '?action=login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: $('#pw').value }) });
+    const d = await r.json();
+    if (!r.ok) { $('#loginErr').textContent = d.error || 'Erreur de connexion.'; return; }
+    CSRF = d.csrf;
+    await boot();
+  } catch (err) { $('#loginErr').textContent = 'Serveur injoignable.'; }
+});
+
+$('#logoutBtn').addEventListener('click', async () => {
+  await fetch(API + '?action=logout', { method: 'POST' }).catch(() => {});
+  location.reload();
+});
+
+async function boot() {
+  const r = await fetch(API + '?action=data');
+  if (!r.ok) { toast('Impossible de charger le contenu.', true); return; }
+  STATE = await r.json();
+  $('#loginView').classList.add('hidden');
+  $('#appView').classList.remove('hidden');
+  renderAll();
+}
+
+// Session déjà valide (cookie encore actif) ?
+(async function tryAutoLogin() {
+  try {
+    const r = await fetch(API + '?action=session');
+    if (r.ok) { const d = await r.json(); CSRF = d.csrf; await boot(); }
+  } catch (e) {}
+})();
+
+/* ---------------- onglets ---------------- */
+document.querySelectorAll('#tabsNav a').forEach(a => a.addEventListener('click', () => {
+  document.querySelectorAll('#tabsNav a').forEach(x => x.classList.toggle('on', x === a));
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.dataset.tab === a.dataset.tab));
+  $('#tabTitle').textContent = a.textContent;
+}));
+document.querySelector('#tabsNav a').classList.add('on');
+
+/* ---------------- champs liés directement (data-b) ---------------- */
+document.body.addEventListener('input', e => {
+  const b = e.target.dataset.b;
+  if (!b || !STATE) return;
+  setPath(STATE, b, e.target.value);
+  markDirty();
+});
+
+/* ---------------- constructeur de listes réutilisable ---------------- */
+function repeater(containerSel, arr, fields, opts) {
+  const c = $(containerSel); c.innerHTML = '';
+  arr.forEach((item, idx) => {
+    const card = el('div', 'adm-card');
+    const head = el('div', 'adm-card-head', `<b>${esc(opts.label ? opts.label(item, idx) : '#' + (idx + 1))}</b>`);
+    const actions = el('div', 'adm-card-actions');
+    const up = el('button', '', '↑'), down = el('button', '', '↓'), del = el('button', '', '✕');
+    up.type = down.type = del.type = 'button';
+    del.dataset.act = 'del';
+    up.onclick = () => { if (idx > 0) { [arr[idx - 1], arr[idx]] = [arr[idx], arr[idx - 1]]; markDirty(); repeater(containerSel, arr, fields, opts); } };
+    down.onclick = () => { if (idx < arr.length - 1) { [arr[idx + 1], arr[idx]] = [arr[idx], arr[idx + 1]]; markDirty(); repeater(containerSel, arr, fields, opts); } };
+    del.onclick = () => { if (confirm('Supprimer cet élément ?')) { arr.splice(idx, 1); markDirty(); repeater(containerSel, arr, fields, opts); } };
+    actions.append(up, down, del);
+    head.appendChild(actions);
+    card.appendChild(head);
+    const body = el('div', 'adm-card-body');
+    fields.forEach(f => body.appendChild(fieldEl(item, f)));
+    card.appendChild(body);
+    c.appendChild(card);
+  });
+  const addBtn = el('button', 'btn-add', '+ Ajouter');
+  addBtn.type = 'button';
+  addBtn.onclick = () => { arr.push(JSON.parse(JSON.stringify(opts.empty))); markDirty(); repeater(containerSel, arr, fields, opts); };
+  c.appendChild(addBtn);
+  drawIcons();
+}
+
+function fieldEl(item, f) {
+  const wrap = el('label', 'adm-field' + (f.full ? ' full' : ''));
+  wrap.appendChild(el('span', '', esc(f.label)));
+  let input;
+  if (f.type === 'textarea') {
+    input = el('textarea'); input.value = item[f.key] || ''; input.rows = f.rows || 3;
+    input.oninput = () => { item[f.key] = input.value; markDirty(); };
+  } else if (f.type === 'list') {
+    input = el('input'); input.type = 'text'; input.value = (item[f.key] || []).join(' | ');
+    input.placeholder = 'séparés par |';
+    input.oninput = () => { item[f.key] = input.value.split('|').map(s => s.trim()).filter(Boolean); markDirty(); };
+  } else if (f.type === 'checkbox') {
+    wrap.innerHTML = '';
+    input = el('input'); input.type = 'checkbox'; input.checked = !!item[f.key];
+    input.onchange = () => { item[f.key] = input.checked; markDirty(); };
+    wrap.appendChild(input);
+    wrap.appendChild(document.createTextNode(f.label));
+    return wrap;
+  } else if (f.type === 'select') {
+    input = el('select');
+    (f.options || []).forEach(o => { const op = el('option', '', esc(o)); op.value = o; input.appendChild(op); });
+    input.value = item[f.key] || (f.options || [])[0] || '';
+    input.onchange = () => { item[f.key] = input.value; markDirty(); };
+  } else if (f.type === 'pairs') {
+    input = el('textarea'); input.rows = f.rows || 4;
+    input.value = (item[f.key] || []).map(([n, v]) => `${n}:${v}`).join('\n');
+    input.placeholder = 'Nom:pourcentage — une ligne par compétence';
+    input.oninput = () => {
+      item[f.key] = input.value.split('\n').map(l => l.trim()).filter(Boolean).map(l => {
+        const i = l.lastIndexOf(':');
+        return i === -1 ? [l, 80] : [l.slice(0, i).trim(), Math.max(0, Math.min(100, parseInt(l.slice(i + 1)) || 0))];
+      });
+      markDirty();
+    };
+  } else if (f.type === 'image') {
+    const box = el('div', 'adm-image');
+    const preview = el('img'); preview.src = resolveAdminImg(item[f.key]); preview.onerror = () => preview.style.visibility = 'hidden';
+    const txt = el('input'); txt.type = 'text'; txt.value = item[f.key] || ''; txt.placeholder = 'id Unsplash ou uploads/...';
+    txt.oninput = () => { item[f.key] = txt.value; preview.style.visibility = ''; preview.src = resolveAdminImg(txt.value); markDirty(); };
+    const file = el('input'); file.type = 'file'; file.accept = 'image/*';
+    file.onchange = () => { if (file.files[0]) uploadFile(file.files[0], url => { item[f.key] = url; txt.value = url; preview.style.visibility = ''; preview.src = resolveAdminImg(url); markDirty(); }); };
+    box.append(preview, txt, file);
+    wrap.appendChild(box);
+    return wrap;
+  } else if (f.type === 'number') {
+    input = el('input'); input.type = 'number'; input.value = item[f.key] ?? 0;
+    input.oninput = () => { item[f.key] = +input.value; markDirty(); };
+  } else {
+    input = el('input'); input.type = 'text'; input.value = item[f.key] || '';
+    input.oninput = () => { item[f.key] = input.value; markDirty(); };
+  }
+  wrap.appendChild(input);
+  return wrap;
+}
+
+function uploadFile(file, onDone) {
+  const fd = new FormData(); fd.append('file', file); fd.append('csrf', CSRF);
+  toast('Envoi de l\'image…');
+  fetch(API + '?action=upload', { method: 'POST', body: fd }).then(r => r.json()).then(d => {
+    if (d.url) { onDone(d.url); toast('Image envoyée ✓'); }
+    else toast(d.error || 'Échec de l\'envoi.', true);
+  }).catch(() => toast('Échec de l\'envoi.', true));
+}
+
+/* ---------------- rendu de chaque onglet ---------------- */
+function bindField(sel) { document.querySelectorAll(sel + ' [data-b]').forEach(inp => { inp.value = getPath(STATE, inp.dataset.b) ?? ''; }); }
+
+function renderAll() {
+  // Champs simples liés par data-b
+  document.querySelectorAll('[data-b]').forEach(inp => { inp.value = getPath(STATE, inp.dataset.b) ?? ''; });
+
+  // Hero : photo
+  $('#heroPortraitImg').innerHTML = '';
+  $('#heroPortraitImg').appendChild(fieldEl(STATE.hero, { key: 'portraitImg', label: '', type: 'image' }));
+
+  // Hero : badges
+  repeater('#heroBadges', STATE.hero.badges, [
+    { key: 'icon', label: 'Icône' }, { key: 'title', label: 'Titre' }, { key: 'subtitle', label: 'Sous-titre' },
+  ], { label: (b) => b.title || 'Badge', empty: { icon: 'sparkles', title: 'Nouveau', subtitle: '' } });
+
+  // Hero : stats
+  repeater('#heroStats', STATE.hero.stats, [
+    { key: 'label', label: 'Libellé', full: true },
+    { key: 'to', label: 'Nombre', type: 'number' },
+    { key: 'suffix', label: 'Suffixe (ex. +)' },
+  ], { label: (s) => s.label || 'Chiffre', empty: { to: 0, suffix: '', label: 'Nouveau chiffre' } });
+
+  // Parcours : expériences
+  repeater('#experiencesList', STATE.experiences, [
+    { key: 'role', label: 'Poste', full: true },
+    { key: 'org', label: 'Entreprise', full: true },
+    { key: 'year', label: 'Année affichée' },
+    { key: 'label', label: 'Étiquette (ex. Fondateur)' },
+    { key: 'when', label: 'Période affichée' },
+    { key: 'now', label: 'Poste actuel', type: 'checkbox' },
+    { key: 'icon', label: 'Icône' },
+    { key: 'scene', label: 'Animation', type: 'select', options: ['yinvesti', 'shop', 'rocket', 'building', 'megaphone', 'design'] },
+    { key: 'img', label: 'Photo', type: 'image', full: true },
+    { key: 'text', label: 'Texte', type: 'textarea', full: true },
+    { key: 'points', label: 'Points clés', type: 'list', full: true },
+    { key: 'tags', label: 'Étiquettes', type: 'list', full: true },
+  ], { label: (x) => `${x.year} · ${x.role}`, empty: { year: new Date().getFullYear() + '', label: '', now: false, role: 'Nouveau poste', org: '', icon: 'sparkles', scene: 'design', img: '', when: '', text: '', points: [], tags: [] } });
+
+  // Lancer
+  repeater('#lancerFeatures', STATE.lancer.features, [
+    { key: 'icon', label: 'Icône' }, { key: 'label', label: 'Texte' },
+  ], { label: (f) => f.label || 'Point', empty: { icon: 'sparkles', label: 'Nouveau point' } });
+
+  // Projets
+  repeater('#projectsList', STATE.projects, [
+    { key: 'title', label: 'Titre', full: true },
+    { key: 'cat', label: 'Catégorie (Marque / SaaS / Fintech / Mobile…)' },
+    { key: 'icon', label: 'Icône' },
+    { key: 'img', label: 'Image', type: 'image', full: true },
+    { key: 'text', label: 'Description', type: 'textarea', full: true },
+    { key: 'stack', label: 'Étiquettes techniques', type: 'list', full: true },
+    { key: 'url', label: 'Lien du projet (vide = privé)', full: true },
+  ], { label: (p) => p.title || 'Projet', empty: { title: 'Nouveau projet', cat: 'SaaS', icon: 'sparkles', img: '', text: '', stack: [], url: '' } });
+
+  // Compétences
+  repeater('#skillsList', STATE.skills, [
+    { key: 'title', label: 'Titre du groupe' }, { key: 'icon', label: 'Icône' },
+    { key: 'items', label: 'Compétences (une par ligne : Nom:pourcentage)', type: 'pairs', full: true },
+  ], { label: (s) => s.title || 'Groupe', empty: { title: 'Nouveau groupe', icon: 'sparkles', items: [] } });
+
+  // Formation
+  repeater('#educationList', STATE.education, [
+    { key: 'icon', label: 'Icône' }, { key: 'title', label: 'Titre', full: true }, { key: 'subtitle', label: 'Sous-titre', full: true },
+  ], { label: (e) => e.title || 'Formation', empty: { icon: 'graduation-cap', title: '', subtitle: '' } });
+
+  // Contact : liens
+  repeater('#contactLinksList', STATE.contact.links, [
+    { key: 'icon', label: 'Icône' },
+    { key: 'style', label: 'Style', type: 'select', options: ['primary', 'line'] },
+    { key: 'label', label: 'Texte affiché' },
+    { key: 'href', label: 'Lien (mailto:, https://wa.me/…)' },
+  ], { label: (l) => l.label || 'Lien', empty: { icon: 'link', label: 'Nouveau lien', href: '', style: 'line' } });
+
+  // Divers : marquee (paires [icône, texte])
+  renderMarquee();
+
+  drawIcons();
+}
+
+function renderMarquee() {
+  const c = $('#marqueeList'); c.innerHTML = '';
+  (STATE.marquee || []).forEach((pair, idx) => {
+    const row = el('div', 'adm-row');
+    const ic = el('input'); ic.value = pair[0]; ic.placeholder = 'icône (lucide.dev/icons)';
+    ic.oninput = () => { pair[0] = ic.value; markDirty(); };
+    const tx = el('input'); tx.value = pair[1]; tx.placeholder = 'texte';
+    tx.oninput = () => { pair[1] = tx.value; markDirty(); };
+    const del = el('button', '', '✕'); del.type = 'button';
+    del.onclick = () => { STATE.marquee.splice(idx, 1); markDirty(); renderMarquee(); };
+    row.append(ic, tx, del);
+    c.appendChild(row);
+  });
+  const add = el('button', 'btn-add', '+ Ajouter'); add.type = 'button';
+  add.onclick = () => { STATE.marquee.push(['sparkles', 'Nouveau']); markDirty(); renderMarquee(); };
+  c.appendChild(add);
+}
+
+/* ---------------- enregistrement ---------------- */
+$('#saveBtn').addEventListener('click', async () => {
+  $('#saveBtn').disabled = true;
+  $('#status').textContent = 'Enregistrement…'; $('#status').className = '';
+  try {
+    const r = await fetch(API + '?action=save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data: STATE, csrf: CSRF }) });
+    const d = await r.json();
+    if (!r.ok) { $('#status').textContent = d.error || 'Échec de l\'enregistrement.'; $('#status').className = 'err'; toast(d.error || 'Échec', true); return; }
+    DIRTY = false;
+    const now = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    $('#status').textContent = 'Enregistré à ' + now; $('#status').className = 'ok';
+    toast('Enregistré ✓');
+  } catch (e) {
+    $('#status').textContent = 'Serveur injoignable.'; $('#status').className = 'err';
+  } finally { $('#saveBtn').disabled = false; }
+});
+
+addEventListener('beforeunload', e => { if (DIRTY) { e.preventDefault(); e.returnValue = ''; } });
+addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); $('#saveBtn').click(); } });
+</script>
+</body>
+</html>

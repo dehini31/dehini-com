@@ -1,0 +1,12 @@
+# data.json suivi par Git n'est que le CONTENU INITIAL (sert à amorcer le
+# serveur au premier déploiement). Une fois installé, il est modifié depuis
+# /admin directement sur le serveur et n'est plus synchronisé avec Git — le
+# déploiement automatique ne le touche plus jamais (voir README.md).
+
+# Secret de l'admin : jamais commité.
+/admin/config.php
+
+# Images envoyées depuis /admin.
+/uploads/*
+!/uploads/.gitkeep
+!/uploads/.htaccess

@@ -1,0 +1,555 @@
+{
+    "hero": {
+        "badgeText": "Responsable Marketing",
+        "badgeTag": "SPA YINVESTI",
+        "title": "Je transforme les **marques** en **croissance** __mesurable.__",
+        "lead": "Plus de 8 ans entre design, communication et marketing digital. J'ai lancé trois marques e-commerce, piloté des campagnes Meta & TikTok et construit un SaaS qui automatise l'e-commerce en Algérie.",
+        "ctaPrimary": {
+            "label": "Découvrir mon parcours",
+            "href": "#parcours",
+            "icon": "arrow-down"
+        },
+        "ctaSecondary": {
+            "label": "Lancer mon e-commerce",
+            "href": "https://ecom.dehini.com/",
+            "icon": "rocket"
+        },
+        "portraitImg": "photo-1460925895917-afdab827c52f",
+        "portraitMonogram": "MD",
+        "portraitName": "Mohammed Dehini",
+        "portraitSubtitle": "Marketing · E-commerce · SaaS — Oran, Algérie",
+        "badges": [
+            {
+                "icon": "megaphone",
+                "title": "Meta & TikTok Ads",
+                "subtitle": "Performance marketing"
+            },
+            {
+                "icon": "trending-up",
+                "title": "3 marques",
+                "subtitle": "lancées de zéro"
+            },
+            {
+                "icon": "sparkles",
+                "title": "IA générative",
+                "subtitle": "Automatisation"
+            }
+        ],
+        "stats": [
+            {
+                "to": 8,
+                "suffix": "+",
+                "label": "années d'expérience"
+            },
+            {
+                "to": 3,
+                "suffix": "",
+                "label": "marques e-commerce lancées"
+            },
+            {
+                "auto": "projects",
+                "suffix": "+",
+                "label": "projets réalisés"
+            },
+            {
+                "to": 7,
+                "suffix": "",
+                "label": "entreprises & startups"
+            }
+        ]
+    },
+    "parcours": {
+        "kicker": "Parcours",
+        "title": "Du crayon du graphiste à la **direction marketing**.",
+        "text": "Chaque étape m'a apporté une compétence. Ensemble, elles forment une vision 360° qui relie la marque, la vente et la technologie."
+    },
+    "experiences": [
+        {
+            "year": "2026",
+            "label": "Aujourd'hui",
+            "now": true,
+            "role": "Responsable Marketing",
+            "org": "SPA YINVESTI",
+            "icon": "chart-no-axes-combined",
+            "scene": "yinvesti",
+            "img": "photo-1579532537598-459ecdaf39cc",
+            "when": "2026 — aujourd'hui",
+            "text": "Pilotage du marketing de la première plateforme algérienne de financement participatif en capital, halal et agréée COSOB.",
+            "points": [
+                "Acquisition des investisseurs et des porteurs de projets",
+                "Landing page ECSEL EXPO 2026 et formulaires d'inscription",
+                "Outil de diagnostic des porteurs de projets"
+            ],
+            "tags": [
+                "Fintech",
+                "Acquisition",
+                "Événementiel"
+            ]
+        },
+        {
+            "year": "2024",
+            "label": "Fondateur",
+            "now": false,
+            "role": "Responsable ventes en ligne",
+            "org": "ROTINIA — boutique en ligne",
+            "icon": "shopping-bag",
+            "scene": "shop",
+            "img": "photo-1586528116311-ad8dd3c8310d",
+            "when": "Janv. 2024 — Avr. 2026",
+            "text": "Création d'une marque e-commerce de A à Z, qui a donné naissance à un SaaS d'automatisation pour les e-commerçants.",
+            "points": [
+                "Boutique Shopify : catalogue, prix, conversion",
+                "Campagnes Meta Ads & TikTok Ads pilotées par les KPIs",
+                "Logistique COD avec Yalidine et Guepex"
+            ],
+            "tags": [
+                "Shopify",
+                "Meta Ads",
+                "TikTok Ads",
+                "COD"
+            ]
+        },
+        {
+            "year": "2023",
+            "label": "Marque",
+            "now": false,
+            "role": "Responsable de Marque",
+            "org": "BUILD PROM — promotion immobilière",
+            "icon": "building-2",
+            "scene": "building",
+            "img": "photo-1486406146926-c627a92ad1ab",
+            "when": "Janv. 2023 — Déc. 2023",
+            "text": "Définition et déploiement de l'identité visuelle, plans marketing pour accroître la notoriété, coordination des équipes créatives.",
+            "points": [],
+            "tags": [
+                "Branding",
+                "Plan marketing",
+                "Immobilier"
+            ]
+        },
+        {
+            "year": "2022",
+            "label": "CEO",
+            "now": false,
+            "role": "Fondateur & CEO",
+            "org": "SARL DOWAYA — startup",
+            "icon": "rocket",
+            "scene": "rocket",
+            "img": "photo-1556761175-b413da4baf72",
+            "when": "Août 2022 — Déc. 2025",
+            "text": "Direction de la startup et du développement de Dowaya Manager, un SaaS pour faire grandir l'e-commerce algérien.",
+            "points": [
+                "Stratégie publicitaire et pilotage de l'application",
+                "Budgets, plannings, reporting, prestataires",
+                "Relation client et satisfaction"
+            ],
+            "tags": [
+                "SaaS",
+                "Management",
+                "Produit"
+            ]
+        },
+        {
+            "year": "2019",
+            "label": "Communication",
+            "now": false,
+            "role": "Chargé de Communication",
+            "org": "TWO-B Textile — linge de bain",
+            "icon": "megaphone",
+            "scene": "megaphone",
+            "img": "photo-1542744173-8e7e53415bb0",
+            "when": "Août 2019 — Déc. 2021",
+            "text": "Stratégie de communication avec la direction commerciale : photos, fiches produits, catalogues et campagnes, image de marque B2B.",
+            "points": [],
+            "tags": [
+                "Communication",
+                "Catalogues",
+                "B2B"
+            ]
+        },
+        {
+            "year": "2017",
+            "label": "Design",
+            "now": false,
+            "role": "Graphiste",
+            "org": "Futur Print · NewCom",
+            "icon": "pen-tool",
+            "scene": "design",
+            "img": "photo-1626785774573-4b799315345d",
+            "when": "Oct. 2017 — Sept. 2019",
+            "text": "Identités visuelles, logos, chartes graphiques, affiches, enseignes, dépliants, mise en page print et packaging.",
+            "points": [],
+            "tags": [
+                "Illustrator",
+                "Photoshop",
+                "Packaging"
+            ]
+        }
+    ],
+    "lancer": {
+        "kicker": "Pour les jeunes qui se lancent",
+        "title": "Tu veux lancer ton e-commerce **en Algérie** ?",
+        "text": "J'ai construit **ecom.dehini.com** à partir de ce que j'ai appris en lançant mes propres marques. Une seule plateforme pour démarrer et faire grandir ta boutique en paiement à la livraison.",
+        "features": [
+            {
+                "icon": "phone-call",
+                "label": "Commandes & confirmation"
+            },
+            {
+                "icon": "truck",
+                "label": "Yalidine, ZR Express…"
+            },
+            {
+                "icon": "wand-sparkles",
+                "label": "Landing pages par IA"
+            },
+            {
+                "icon": "chart-line",
+                "label": "Pubs Meta & rentabilité"
+            }
+        ],
+        "cta": {
+            "label": "Démarrer sur ecom.dehini.com",
+            "href": "https://ecom.dehini.com/"
+        }
+    },
+    "projets": {
+        "kicker": "Portfolio",
+        "title": "Projets **réalisés**.",
+        "text": "Marques, plateformes SaaS, applications et sites que j'ai lancés ou pilotés. Clique sur une carte pour en savoir plus."
+    },
+    "projects": [
+        {
+            "title": "Dowaya Manager",
+            "cat": "SaaS",
+            "icon": "package",
+            "img": "photo-1460925895917-afdab827c52f",
+            "text": "La plateforme pour les jeunes qui lancent leur e-commerce : commandes, confirmation, transporteurs, WhatsApp, pubs Meta, caisse et rentabilité.",
+            "stack": [
+                "Yalidine",
+                "ZR Express",
+                "Meta CAPI",
+                "WhatsApp"
+            ],
+            "url": "https://ecom.dehini.com/"
+        },
+        {
+            "title": "YINVESTI — Landing investisseurs",
+            "cat": "Fintech",
+            "icon": "handshake",
+            "img": "photo-1600880292203-757bb62b4baf",
+            "text": "Landing page de rencontre investisseurs / porteurs de projets pour ECSEL EXPO 2026.",
+            "stack": [
+                "Marketing",
+                "Événementiel"
+            ],
+            "url": ""
+        },
+        {
+            "title": "YINVESTI — Diagnostic",
+            "cat": "Fintech",
+            "icon": "clipboard-check",
+            "img": "photo-1554224155-6726b3ff858f",
+            "text": "Auto-évaluation des porteurs de projets pour une plateforme de crowdfunding agréée COSOB, avec back-office.",
+            "stack": [
+                "Next.js",
+                "Back-office"
+            ],
+            "url": "https://yinvesti-diagnostic.vercel.app"
+        },
+        {
+            "title": "Rotinia",
+            "cat": "Marque",
+            "icon": "shopping-bag",
+            "img": "photo-1586528116311-ad8dd3c8310d",
+            "text": "Marque e-commerce créée de zéro : boutique Shopify, publicité Meta & TikTok, livraison COD partout en Algérie.",
+            "stack": [
+                "Shopify",
+                "Meta Ads",
+                "TikTok Ads"
+            ],
+            "url": ""
+        },
+        {
+            "title": "Swanbida",
+            "cat": "Marque",
+            "icon": "store",
+            "img": "photo-1556742049-0cfed4f6a45d",
+            "text": "Troisième marque e-commerce lancée : boutique en ligne sur son propre domaine, vente en paiement à la livraison, gérée avec Dowaya Manager.",
+            "stack": [
+                "E-commerce",
+                "COD"
+            ],
+            "url": ""
+        },
+        {
+            "title": "Identités visuelles & print",
+            "cat": "Marque",
+            "icon": "palette",
+            "img": "photo-1561070791-2526d30994b5",
+            "text": "Logos, chartes graphiques, catalogues, packaging et campagnes pour Build Prom, TWO-B Textile, Futur Print et NewCom.",
+            "stack": [
+                "Illustrator",
+                "Photoshop"
+            ],
+            "url": ""
+        },
+        {
+            "title": "Landing pages par IA",
+            "cat": "SaaS",
+            "icon": "wand-sparkles",
+            "img": "photo-1551288049-bebda4e38f71",
+            "text": "Génération de pages de vente optimisées par IA et pages boutique avec QR code, reliées au suivi Meta.",
+            "stack": [
+                "IA",
+                "Conversion"
+            ],
+            "url": ""
+        },
+        {
+            "title": "Easy COD — App Shopify",
+            "cat": "SaaS",
+            "icon": "shopping-cart",
+            "img": "photo-1556742049-0cfed4f6a45d",
+            "text": "Application Shopify pour la prise de commande en paiement à la livraison.",
+            "stack": [
+                "Shopify",
+                "COD"
+            ],
+            "url": ""
+        },
+        {
+            "title": "Rotinia Manager",
+            "cat": "SaaS",
+            "icon": "refresh-cw",
+            "img": "photo-1460925895917-afdab827c52f",
+            "text": "Tableau de bord de gestion et de synchronisation des commandes de plusieurs boutiques.",
+            "stack": [
+                "Automatisation"
+            ],
+            "url": ""
+        },
+        {
+            "title": "Dowaya — Recherche de produits",
+            "cat": "SaaS",
+            "icon": "search",
+            "img": "photo-1551288049-bebda4e38f71",
+            "text": "Outil de recherche active de produits pour les e-commerçants.",
+            "stack": [
+                "E-commerce"
+            ],
+            "url": ""
+        },
+        {
+            "title": "Secrétaire — Assistant IA",
+            "cat": "Mobile",
+            "icon": "bot",
+            "img": "photo-1512941937669-90a1b58e7e9c",
+            "text": "Application Android d'assistant personnel propulsé par l'IA.",
+            "stack": [
+                "Android",
+                "IA"
+            ],
+            "url": "https://github.com/dehini31/secretaire"
+        },
+        {
+            "title": "Application e-commerce Android",
+            "cat": "Mobile",
+            "icon": "smartphone",
+            "img": "photo-1512941937669-90a1b58e7e9c",
+            "text": "Application mobile compagnon de la plateforme pour gérer ses commandes en déplacement.",
+            "stack": [
+                "Android"
+            ],
+            "url": ""
+        },
+        {
+            "title": "MilleImpacts",
+            "cat": "Marque",
+            "icon": "sprout",
+            "img": "photo-1522202176988-66273c2fd55f",
+            "text": "Plateforme pour transformer l'influence en impact positif.",
+            "stack": [
+                "Influence",
+                "Impact"
+            ],
+            "url": ""
+        }
+    ],
+    "competences": {
+        "kicker": "Compétences",
+        "title": "Une boîte à outils **360°**."
+    },
+    "skills": [
+        {
+            "title": "Marketing digital",
+            "icon": "target",
+            "items": [
+                [
+                    "Meta Ads",
+                    95
+                ],
+                [
+                    "TikTok Ads",
+                    85
+                ],
+                [
+                    "Stratégie d'acquisition",
+                    90
+                ]
+            ]
+        },
+        {
+            "title": "E-commerce",
+            "icon": "shopping-cart",
+            "items": [
+                [
+                    "Shopify",
+                    90
+                ],
+                [
+                    "Modèle COD",
+                    95
+                ],
+                [
+                    "Landing pages",
+                    90
+                ]
+            ]
+        },
+        {
+            "title": "Design & marque",
+            "icon": "palette",
+            "items": [
+                [
+                    "Identité visuelle",
+                    95
+                ],
+                [
+                    "Suite Adobe",
+                    90
+                ],
+                [
+                    "Montage vidéo",
+                    80
+                ]
+            ]
+        },
+        {
+            "title": "IA & management",
+            "icon": "brain",
+            "items": [
+                [
+                    "IA générative",
+                    90
+                ],
+                [
+                    "Automatisation",
+                    85
+                ],
+                [
+                    "Gestion de projet",
+                    90
+                ]
+            ]
+        }
+    ],
+    "education": [
+        {
+            "icon": "graduation-cap",
+            "title": "Master Communication & Relations publiques",
+            "subtitle": "Univ. Dr Moulay Tahar — Saïda · 2015–2017"
+        },
+        {
+            "icon": "book-open",
+            "title": "Licence Sciences de l'information & de la communication",
+            "subtitle": "Univ. Djillali Liabès — Sidi Bel Abbès · 2012–2015"
+        },
+        {
+            "icon": "languages",
+            "title": "Arabe · Français · Anglais",
+            "subtitle": "Maternelle · intermédiaire · intermédiaire"
+        }
+    ],
+    "marquee": [
+        [
+            "megaphone",
+            "Meta Ads"
+        ],
+        [
+            "music-2",
+            "TikTok Ads"
+        ],
+        [
+            "shopping-bag",
+            "Shopify"
+        ],
+        [
+            "truck",
+            "Cash on Delivery"
+        ],
+        [
+            "pen-tool",
+            "Illustrator"
+        ],
+        [
+            "image",
+            "Photoshop"
+        ],
+        [
+            "clapperboard",
+            "Premiere Pro"
+        ],
+        [
+            "film",
+            "After Effects"
+        ],
+        [
+            "sparkles",
+            "IA générative"
+        ],
+        [
+            "workflow",
+            "Automatisation"
+        ],
+        [
+            "layout-template",
+            "Landing pages"
+        ],
+        [
+            "chart-pie",
+            "Analyse KPIs"
+        ]
+    ],
+    "contact": {
+        "kicker": "Contact",
+        "title": "Un projet en tête ?",
+        "text": "Stratégie de marque, campagnes publicitaires, e-commerce ou outil SaaS : parlons-en. Je suis toujours ouvert aux échanges et aux collaborations.",
+        "links": [
+            {
+                "icon": "mail",
+                "label": "dehinimohammed@gmail.com",
+                "href": "mailto:dehinimohammed@gmail.com",
+                "style": "primary"
+            },
+            {
+                "icon": "message-circle",
+                "label": "WhatsApp",
+                "href": "https://wa.me/213540722838",
+                "style": "line"
+            },
+            {
+                "icon": "linkedin",
+                "label": "LinkedIn",
+                "href": "https://www.linkedin.com/in/mohammed-dehini-14120b108",
+                "style": "line"
+            },
+            {
+                "icon": "github",
+                "label": "GitHub",
+                "href": "https://github.com/dehini31",
+                "style": "line"
+            }
+        ]
+    }
+}

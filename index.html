@@ -37,6 +37,7 @@
   body{font-family:var(--font);background:var(--paper-50);color:var(--fg);line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
   a{color:inherit;text-decoration:none}
   img{display:block;max-width:100%}
+  strong{font-weight:700;color:var(--ink-900)}
   .wrap{max-width:var(--max);margin:0 auto;padding:0 20px}
   i[data-lucide],svg.lucide{width:20px;height:20px;stroke-width:1.8;flex-shrink:0}
 
@@ -101,6 +102,7 @@
   .f1{top:8%;left:-16%}.f1 .ic{background:var(--cobalt-50);color:var(--cobalt-500)}
   .f2{top:44%;right:-14%;animation-delay:-1.6s}.f2 .ic{background:var(--gain-50);color:var(--gain-600)}
   .f3{bottom:22%;left:-12%;animation-delay:-3.2s}.f3 .ic{background:#fff4e5;color:#d98a00}
+  .float:nth-child(n+5){top:auto;bottom:4%;right:-10%;left:auto;animation-delay:-2.4s}
   @keyframes floaty{50%{transform:translateY(-12px)}}
   @media(max-width:560px){.f1{left:-8%}.f2{right:-8%}.f3{left:-6%}}
 
@@ -222,6 +224,7 @@
   .launch .kicker{color:var(--cobalt-300)}
   .launch h2 .accent{color:var(--gain-500)}
   .launch p{color:#b8bfd6;margin-bottom:24px;max-width:540px}
+  .launch p strong{color:#fff}
   .feat{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:30px}
   .feat div{display:flex;gap:10px;align-items:center;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:12px;font-size:.9rem}
   .feat svg{color:var(--gain-500)}
@@ -304,6 +307,8 @@
   footer{padding:36px 0;color:var(--fg-2);font-size:.86rem}
   footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
 
+  #dataWarn{display:none;position:fixed;left:16px;right:16px;bottom:16px;z-index:70;background:#7c1d1d;color:#fff;padding:12px 16px;border-radius:12px;font-size:.85rem;box-shadow:var(--shadow-lg)}
+
   @media(prefers-reduced-motion:reduce){
     *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;animation-delay:0s!important;transition-delay:0s!important}
     html{scroll-behavior:auto}
@@ -313,6 +318,7 @@
 <body>
 <div id="progress"></div>
 <div id="glow"></div>
+<div id="dataWarn">Le contenu n'a pas pu être chargé depuis data.json — une version de secours minimale est affichée.</div>
 
 <nav id="nav">
   <div class="wrap">
@@ -332,34 +338,16 @@
   <div class="wrap">
     <div class="hero-grid">
       <div>
-        <span class="pill fade-up"><span class="pulse"></span>Responsable Marketing <span class="tag">SPA YINVESTI</span></span>
-        <h1 id="title">Je transforme les <span class="accent">marques</span> en <span class="accent">croissance</span> <span class="soft">mesurable.</span></h1>
-        <p class="lead fade-up" style="animation-delay:1s">Plus de 8 ans entre design, communication et marketing digital. J'ai lancé trois marques e-commerce, piloté des campagnes Meta &amp; TikTok et construit un SaaS qui automatise l'e-commerce en Algérie.</p>
-        <div class="cta fade-up" style="animation-delay:1.2s">
-          <a href="#parcours" class="btn btn-ink">Découvrir mon parcours <i data-lucide="arrow-down"></i></a>
-          <a href="https://ecom.dehini.com/" target="_blank" rel="noopener" class="btn btn-line"><i data-lucide="rocket"></i> Lancer mon e-commerce</a>
-        </div>
+        <span class="pill fade-up" id="heroBadge"></span>
+        <h1 id="title"></h1>
+        <p class="lead fade-up" id="heroLead" style="animation-delay:1s"></p>
+        <div class="cta fade-up" id="heroCta" style="animation-delay:1.2s"></div>
       </div>
 
-      <div class="portrait fade-up" style="animation-delay:.4s">
-        <div class="portrait-card" id="tilt">
-          <!-- Pour mettre ta photo : remplace l'URL ci-dessous par ta photo (ex. src="moi.jpg"), retire style="opacity…" et supprime le bloc .mono -->
-          <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=900&q=70&auto=format&fit=crop" alt="">
-          <div class="mono">MD</div>
-          <div class="cap"><b>Mohammed Dehini</b><span>Marketing · E-commerce · SaaS — Oran, Algérie</span></div>
-        </div>
-        <div class="float f1"><span class="ic"><i data-lucide="megaphone"></i></span><div>Meta &amp; TikTok Ads<small>Performance marketing</small></div></div>
-        <div class="float f2"><span class="ic"><i data-lucide="trending-up"></i></span><div>3 marques<small>lancées de zéro</small></div></div>
-        <div class="float f3"><span class="ic"><i data-lucide="sparkles"></i></span><div>IA générative<small>Automatisation</small></div></div>
-      </div>
+      <div class="portrait fade-up" id="heroPortrait" style="animation-delay:.4s"></div>
     </div>
 
-    <div class="stats">
-      <div class="stat"><b data-to="8" data-suffix="+">0</b><span>années d'expérience</span></div>
-      <div class="stat"><b data-to="3">0</b><span>marques e-commerce lancées</span></div>
-      <div class="stat"><b data-to="13" data-suffix="+" id="nbProjets">0</b><span>projets réalisés</span></div>
-      <div class="stat"><b data-to="7">0</b><span>entreprises &amp; startups</span></div>
-    </div>
+    <div class="stats" id="heroStats"></div>
   </div>
 
   <div class="marquee" aria-hidden="true"><div class="track" id="track"></div></div>
@@ -369,9 +357,9 @@
 <section id="parcours">
   <div class="wrap">
     <div class="head center reveal">
-      <span class="kicker"><i data-lucide="route"></i> Parcours</span>
-      <h2>Du crayon du graphiste à la <span class="accent">direction marketing</span>.</h2>
-      <p>Chaque étape m'a apporté une compétence. Ensemble, elles forment une vision 360° qui relie la marque, la vente et la technologie.</p>
+      <span class="kicker" id="parcoursKicker"></span>
+      <h2 id="parcoursTitle"></h2>
+      <p id="parcoursText"></p>
     </div>
     <div class="journey" id="journey">
       <div class="rail"><div class="rail-fill" id="railFill"></div></div>
@@ -384,16 +372,11 @@
   <div class="wrap">
     <div class="launch reveal" id="launch">
       <div>
-        <span class="kicker"><i data-lucide="graduation-cap"></i> Pour les jeunes qui se lancent</span>
-        <h2>Tu veux lancer ton e-commerce <span class="accent">en Algérie</span> ?</h2>
-        <p>J'ai construit <b style="color:#fff">ecom.dehini.com</b> à partir de ce que j'ai appris en lançant mes propres marques. Une seule plateforme pour démarrer et faire grandir ta boutique en paiement à la livraison.</p>
-        <div class="feat">
-          <div><i data-lucide="phone-call"></i>Commandes &amp; confirmation</div>
-          <div><i data-lucide="truck"></i>Yalidine, ZR Express…</div>
-          <div><i data-lucide="wand-sparkles"></i>Landing pages par IA</div>
-          <div><i data-lucide="chart-line"></i>Pubs Meta &amp; rentabilité</div>
-        </div>
-        <a href="https://ecom.dehini.com/" target="_blank" rel="noopener" class="btn btn-cobalt">Démarrer sur ecom.dehini.com <i data-lucide="arrow-up-right"></i></a>
+        <span class="kicker" id="lancerKicker"></span>
+        <h2 id="lancerTitle"></h2>
+        <p id="lancerText"></p>
+        <div class="feat" id="lancerFeat"></div>
+        <a href="#" target="_blank" rel="noopener" class="btn btn-cobalt" id="lancerCta"></a>
       </div>
       <div class="mock" aria-hidden="true">
         <div class="mock-top"><i></i><i></i><i></i><em>aperçu</em></div>
@@ -410,9 +393,9 @@
 <section id="projets">
   <div class="wrap">
     <div class="head reveal">
-      <span class="kicker"><i data-lucide="layout-grid"></i> Portfolio</span>
-      <h2>Projets <span class="accent">réalisés</span>.</h2>
-      <p>Marques, plateformes SaaS, applications et sites que j'ai lancés ou pilotés. Clique sur une carte pour en savoir plus.</p>
+      <span class="kicker" id="projetsKicker"></span>
+      <h2 id="projetsTitle"></h2>
+      <p id="projetsText"></p>
     </div>
     <div class="filters" id="filters"></div>
     <div class="grid" id="grid"></div>
@@ -435,16 +418,11 @@
 <section id="competences" style="background:var(--paper-0);border-block:1px solid var(--paper-200)">
   <div class="wrap">
     <div class="head reveal">
-      <span class="kicker"><i data-lucide="sparkles"></i> Compétences</span>
-      <h2>Une boîte à outils <span class="accent">360°</span>.</h2>
+      <span class="kicker" id="skillsKicker"></span>
+      <h2 id="skillsTitle"></h2>
     </div>
     <div class="skills" id="skills"></div>
-
-    <div class="edu">
-      <div class="card-xp reveal"><span class="xp-ico"><i data-lucide="graduation-cap"></i></span><div><b>Master Communication &amp; Relations publiques</b><small>Univ. Dr Moulay Tahar — Saïda · 2015–2017</small></div></div>
-      <div class="card-xp reveal"><span class="xp-ico"><i data-lucide="book-open"></i></span><div><b>Licence Sciences de l'information &amp; de la communication</b><small>Univ. Djillali Liabès — Sidi Bel Abbès · 2012–2015</small></div></div>
-      <div class="card-xp reveal"><span class="xp-ico"><i data-lucide="languages"></i></span><div><b>Arabe · Français · Anglais</b><small>Maternelle · intermédiaire · intermédiaire</small></div></div>
-    </div>
+    <div class="edu" id="eduList"></div>
   </div>
 </section>
 
@@ -452,15 +430,10 @@
 <section id="contact">
   <div class="wrap">
     <div class="contact reveal">
-      <span class="kicker"><i data-lucide="message-circle"></i> Contact</span>
-      <h2>Un projet en tête ?</h2>
-      <p>Stratégie de marque, campagnes publicitaires, e-commerce ou outil SaaS : parlons-en. Je suis toujours ouvert aux échanges et aux collaborations.</p>
-      <div class="cta">
-        <a class="btn btn-ink" href="mailto:dehinimohammed@gmail.com"><i data-lucide="mail"></i> dehinimohammed@gmail.com</a>
-        <a class="btn btn-line" href="https://wa.me/213540722838" target="_blank" rel="noopener"><i data-lucide="message-circle"></i> WhatsApp</a>
-        <a class="btn btn-line" href="https://www.linkedin.com/in/mohammed-dehini-14120b108" target="_blank" rel="noopener"><i data-lucide="linkedin"></i> LinkedIn</a>
-        <a class="btn btn-line" href="https://github.com/dehini31" target="_blank" rel="noopener"><i data-lucide="github"></i> GitHub</a>
-      </div>
+      <span class="kicker" id="contactKicker"></span>
+      <h2 id="contactTitle"></h2>
+      <p id="contactText"></p>
+      <div class="cta" id="contactLinks"></div>
     </div>
   </div>
 </section>
@@ -469,83 +442,34 @@
 
 <script>
 /* ======================================================================
-   CONTENU — modifie ces listes pour mettre à jour la page
-   img   : identifiant de photo Unsplash (gratuite)
-   icon  : nom d'icône Lucide (voir lucide.dev/icons)
-   scene : animation de l'étape (yinvesti | shop | rocket | building | megaphone | design)
+   Le contenu (textes, expériences, projets, compétences, liens) vit dans
+   data.json, à la racine du site, et se modifie depuis /admin — jamais
+   directement dans ce fichier.
    ====================================================================== */
-const U = (id, w = 900) => `https://images.unsplash.com/${id}?w=${w}&q=70&auto=format&fit=crop`;
 
-// Du plus récent au plus ancien ici ; la page les affiche du plus ancien au plus récent.
-const EXPERIENCES = [
-  { year: "2026", label: "Aujourd'hui", now: true, role: "Responsable Marketing", org: "SPA YINVESTI", icon: "chart-no-axes-combined",
-    scene: "yinvesti", img: "photo-1579532537598-459ecdaf39cc", when: "2026 — aujourd'hui",
-    text: "Pilotage du marketing de la première plateforme algérienne de financement participatif en capital, halal et agréée COSOB.",
-    points: ["Acquisition des investisseurs et des porteurs de projets", "Landing page ECSEL EXPO 2026 et formulaires d'inscription", "Outil de diagnostic des porteurs de projets"],
-    tags: ["Fintech", "Acquisition", "Événementiel"] },
-  { year: "2024", label: "Fondateur", role: "Responsable ventes en ligne", org: "ROTINIA — boutique en ligne", icon: "shopping-bag",
-    scene: "shop", img: "photo-1586528116311-ad8dd3c8310d", when: "Janv. 2024 — Avr. 2026",
-    text: "Création d'une marque e-commerce de A à Z, qui a donné naissance à un SaaS d'automatisation pour les e-commerçants.",
-    points: ["Boutique Shopify : catalogue, prix, conversion", "Campagnes Meta Ads & TikTok Ads pilotées par les KPIs", "Logistique COD avec Yalidine et Guepex"],
-    tags: ["Shopify", "Meta Ads", "TikTok Ads", "COD"] },
-  { year: "2023", label: "Marque", role: "Responsable de Marque", org: "BUILD PROM — promotion immobilière", icon: "building-2",
-    scene: "building", img: "photo-1486406146926-c627a92ad1ab", when: "Janv. 2023 — Déc. 2023",
-    text: "Définition et déploiement de l'identité visuelle, plans marketing pour accroître la notoriété, coordination des équipes créatives.",
-    tags: ["Branding", "Plan marketing", "Immobilier"] },
-  { year: "2022", label: "CEO", role: "Fondateur & CEO", org: "SARL DOWAYA — startup", icon: "rocket",
-    scene: "rocket", img: "photo-1556761175-b413da4baf72", when: "Août 2022 — Déc. 2025",
-    text: "Direction de la startup et du développement de Dowaya Manager, un SaaS pour faire grandir l'e-commerce algérien.",
-    points: ["Stratégie publicitaire et pilotage de l'application", "Budgets, plannings, reporting, prestataires", "Relation client et satisfaction"],
-    tags: ["SaaS", "Management", "Produit"] },
-  { year: "2019", label: "Communication", role: "Chargé de Communication", org: "TWO-B Textile — linge de bain", icon: "megaphone",
-    scene: "megaphone", img: "photo-1542744173-8e7e53415bb0", when: "Août 2019 — Déc. 2021",
-    text: "Stratégie de communication avec la direction commerciale : photos, fiches produits, catalogues et campagnes, image de marque B2B.",
-    tags: ["Communication", "Catalogues", "B2B"] },
-  { year: "2017", label: "Design", role: "Graphiste", org: "Futur Print · NewCom", icon: "pen-tool",
-    scene: "design", img: "photo-1626785774573-4b799315345d", when: "Oct. 2017 — Sept. 2019",
-    text: "Identités visuelles, logos, chartes graphiques, affiches, enseignes, dépliants, mise en page print et packaging.",
-    tags: ["Illustrator", "Photoshop", "Packaging"] },
-];
+// Version minimale affichée uniquement si data.json est introuvable.
+const FALLBACK_DATA = {
+  hero: { badgeText: "Bienvenue", badgeTag: "", title: "Le contenu de cette page est en cours de chargement.",
+    lead: "Si ce message persiste, data.json est introuvable sur le serveur.", ctaPrimary: { label: "Rafraîchir", href: "#", icon: "refresh-cw" },
+    ctaSecondary: { label: "ecom.dehini.com", href: "https://ecom.dehini.com/", icon: "rocket" },
+    portraitImg: "photo-1460925895917-afdab827c52f", portraitMonogram: "MD", portraitName: "Mohammed Dehini", portraitSubtitle: "",
+    badges: [], stats: [] },
+  parcours: { kicker: "Parcours", title: "Parcours", text: "" },
+  experiences: [],
+  lancer: { kicker: "", title: "ecom.dehini.com", text: "", features: [], cta: { label: "Ouvrir", href: "https://ecom.dehini.com/" } },
+  projets: { kicker: "Portfolio", title: "Projets", text: "" },
+  projects: [],
+  competences: { kicker: "Compétences", title: "Compétences" },
+  skills: [], education: [], marquee: [],
+  contact: { kicker: "Contact", title: "Contact", text: "", links: [
+    { icon: "mail", label: "dehinimohammed@gmail.com", href: "mailto:dehinimohammed@gmail.com", style: "primary" } ] }
+};
 
-// cat : Marque | SaaS | Fintech | Mobile — url : lien public ("" si privé)
-const PROJECTS = [
-  { title: "Dowaya Manager", cat: "SaaS", icon: "package", img: "photo-1460925895917-afdab827c52f",
-    text: "La plateforme pour les jeunes qui lancent leur e-commerce : commandes, confirmation, transporteurs, WhatsApp, pubs Meta, caisse et rentabilité.",
-    stack: ["Yalidine", "ZR Express", "Meta CAPI", "WhatsApp"], url: "https://ecom.dehini.com/" },
-  { title: "YINVESTI — Landing investisseurs", cat: "Fintech", icon: "handshake", img: "photo-1600880292203-757bb62b4baf",
-    text: "Landing page de rencontre investisseurs / porteurs de projets pour ECSEL EXPO 2026.", stack: ["Marketing", "Événementiel"], url: "" },
-  { title: "YINVESTI — Diagnostic", cat: "Fintech", icon: "clipboard-check", img: "photo-1554224155-6726b3ff858f",
-    text: "Auto-évaluation des porteurs de projets pour une plateforme de crowdfunding agréée COSOB, avec back-office.", stack: ["Next.js", "Back-office"], url: "https://yinvesti-diagnostic.vercel.app" },
-  { title: "Rotinia", cat: "Marque", icon: "shopping-bag", img: "photo-1586528116311-ad8dd3c8310d",
-    text: "Marque e-commerce créée de zéro : boutique Shopify, publicité Meta & TikTok, livraison COD partout en Algérie.", stack: ["Shopify", "Meta Ads", "TikTok Ads"], url: "" },
-  { title: "Swanbida", cat: "Marque", icon: "store", img: "photo-1556742049-0cfed4f6a45d",
-    text: "Troisième marque e-commerce lancée : boutique en ligne sur son propre domaine, vente en paiement à la livraison, gérée avec Dowaya Manager.", stack: ["E-commerce", "COD"], url: "" },
-  { title: "Identités visuelles & print", cat: "Marque", icon: "palette", img: "photo-1561070791-2526d30994b5",
-    text: "Logos, chartes graphiques, catalogues, packaging et campagnes pour Build Prom, TWO-B Textile, Futur Print et NewCom.", stack: ["Illustrator", "Photoshop"], url: "" },
-  { title: "Landing pages par IA", cat: "SaaS", icon: "wand-sparkles", img: "photo-1551288049-bebda4e38f71",
-    text: "Génération de pages de vente optimisées par IA et pages boutique avec QR code, reliées au suivi Meta.", stack: ["IA", "Conversion"], url: "" },
-  { title: "Easy COD — App Shopify", cat: "SaaS", icon: "shopping-cart", img: "photo-1556742049-0cfed4f6a45d",
-    text: "Application Shopify pour la prise de commande en paiement à la livraison.", stack: ["Shopify", "COD"], url: "" },
-  { title: "Rotinia Manager", cat: "SaaS", icon: "refresh-cw", img: "photo-1460925895917-afdab827c52f",
-    text: "Tableau de bord de gestion et de synchronisation des commandes de plusieurs boutiques.", stack: ["Automatisation"], url: "" },
-  { title: "Dowaya — Recherche de produits", cat: "SaaS", icon: "search", img: "photo-1551288049-bebda4e38f71",
-    text: "Outil de recherche active de produits pour les e-commerçants.", stack: ["E-commerce"], url: "" },
-  { title: "Secrétaire — Assistant IA", cat: "Mobile", icon: "bot", img: "photo-1512941937669-90a1b58e7e9c",
-    text: "Application Android d'assistant personnel propulsé par l'IA.", stack: ["Android", "IA"], url: "https://github.com/dehini31/secretaire" },
-  { title: "Application e-commerce Android", cat: "Mobile", icon: "smartphone", img: "photo-1512941937669-90a1b58e7e9c",
-    text: "Application mobile compagnon de la plateforme pour gérer ses commandes en déplacement.", stack: ["Android"], url: "" },
-  { title: "MilleImpacts", cat: "Marque", icon: "sprout", img: "photo-1522202176988-66273c2fd55f",
-    text: "Plateforme pour transformer l'influence en impact positif.", stack: ["Influence", "Impact"], url: "" },
-];
-
-const SKILLS = [
-  { title: "Marketing digital", icon: "target", items: [["Meta Ads", 95], ["TikTok Ads", 85], ["Stratégie d'acquisition", 90]] },
-  { title: "E-commerce", icon: "shopping-cart", items: [["Shopify", 90], ["Modèle COD", 95], ["Landing pages", 90]] },
-  { title: "Design & marque", icon: "palette", items: [["Identité visuelle", 95], ["Suite Adobe", 90], ["Montage vidéo", 80]] },
-  { title: "IA & management", icon: "brain", items: [["IA générative", 90], ["Automatisation", 85], ["Gestion de projet", 90]] },
-];
-
-const MARQUEE = [["megaphone","Meta Ads"],["music-2","TikTok Ads"],["shopping-bag","Shopify"],["truck","Cash on Delivery"],["pen-tool","Illustrator"],["image","Photoshop"],["clapperboard","Premiere Pro"],["film","After Effects"],["sparkles","IA générative"],["workflow","Automatisation"],["layout-template","Landing pages"],["chart-pie","Analyse KPIs"]];
+const img = (id, w = 900) => {
+  if (!id) return "";
+  if (/^https?:\/\//.test(id) || id.startsWith("uploads/") || id.startsWith("/")) return id;
+  return `https://images.unsplash.com/${id}?w=${w}&q=70&auto=format&fit=crop`;
+};
 
 /* ======================================================================
    Scènes animées (SVG) — une par étape du parcours
@@ -596,54 +520,40 @@ const SCENES = {
 };
 
 /* ====================================================================== */
-const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-const ico = n => `<i data-lucide="${n}"></i>`;
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const ico = n => `<i data-lucide="${n || "circle"}"></i>`;
 const drawIcons = () => window.lucide && lucide.createIcons();
 
-// Parcours — affiché dans l'ordre chronologique : du premier poste (2017) jusqu'à aujourd'hui
-document.getElementById("journey").insertAdjacentHTML("beforeend", [...EXPERIENCES].reverse().map((x, i) => `
-  <div class="step${i % 2 ? " alt" : ""}${i === 0 ? " current" : ""}">
-    <div class="node">${ico(x.icon)}</div>
-    <div class="media">
-      <img src="${U(x.img)}" alt="" loading="lazy">
-      <div class="yr"><small>${esc(x.label)}</small>${esc(x.year)}</div>
-      <div class="scene" aria-hidden="true">${SCENES[x.scene] || ""}</div>
-    </div>
-    <article class="card-xp">
-      <span class="xp-ico">${ico(x.icon)}</span>
-      <span class="when${x.now ? " now" : ""}">${ico(x.now ? "circle-dot" : "calendar")} ${esc(x.when)}</span>
-      <h3>${esc(x.role)}</h3>
-      <div class="org">${esc(x.org)}</div>
-      <p>${esc(x.text)}</p>
-      ${x.points ? `<ul>${x.points.map(p => `<li>${ico("circle-check")}<span>${esc(p)}</span></li>`).join("")}</ul>` : ""}
-      <div class="tags">${x.tags.map(t => `<span>${esc(t)}</span>`).join("")}</div>
-    </article>
-  </div>`).join(""));
+// Texte enrichi minimal : **accent bleu**, __texte grisé__, sinon <strong> pour le gras.
+function md(str) {
+  return esc(str).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+}
+function mdAccent(str) {
+  return esc(str).replace(/\*\*(.+?)\*\*/g, '<span class="accent">$1</span>');
+}
+function renderHeroTitle(str) {
+  const tokens = String(str || "").match(/\*\*[^*]+\*\*|__[^_]+__|\S+/g) || [];
+  return tokens.map((t, i) => {
+    let cls = "w", text = t, m;
+    if ((m = t.match(/^\*\*([^*]+)\*\*$/))) { cls = "w accent"; text = m[1]; }
+    else if ((m = t.match(/^__([^_]+)__$/))) { cls = "w soft"; text = m[1]; }
+    return `<span class="${cls}" style="animation-delay:${i * 90 + 150}ms">${esc(text)}</span>`;
+  }).join(" ");
+}
 
-// Défilement des compétences (dupliqué pour une boucle continue)
-document.getElementById("track").innerHTML = [...MARQUEE, ...MARQUEE].map(([i, t]) => `<span>${ico(i)}${esc(t)}</span>`).join("");
-
-// Compétences
-document.getElementById("skills").innerHTML = SKILLS.map(s => `
-  <div class="sk reveal"><span class="xp-ico">${ico(s.icon)}</span><h3>${esc(s.title)}</h3>
-  ${s.items.map(([n, v]) => `<div class="bar"><div><span>${esc(n)}</span><span>${v}%</span></div><i style="--v:${v}%"></i></div>`).join("")}</div>`).join("");
-
-// Projets + filtres
-const grid = document.getElementById("grid"), filters = document.getElementById("filters");
 const catIcons = { Tous: "layout-grid", Marque: "gem", SaaS: "cloud", Fintech: "landmark", Mobile: "smartphone" };
-const cats = ["Tous", ...new Set(PROJECTS.map(p => p.cat))];
-filters.innerHTML = cats.map(c => `<button data-cat="${c}">${ico(catIcons[c] || "tag")}${c} <span class="n">${c === "Tous" ? PROJECTS.length : PROJECTS.filter(p => p.cat === c).length}</span></button>`).join("");
-document.getElementById("nbProjets").dataset.to = PROJECTS.length;
+let PROJECTS = [];
+const grid = document.getElementById("grid"), filters = document.getElementById("filters");
 
 function renderProjects(cat) {
   grid.innerHTML = PROJECTS.map((p, i) => ({ p, i })).filter(({ p }) => cat === "Tous" || p.cat === cat).map(({ p, i }, k) => `
     <article class="proj" data-i="${i}" style="animation-delay:${k * 60}ms" tabindex="0" role="button" aria-label="${esc(p.title)}">
-      <div class="cover"><img src="${U(p.img, 700)}" alt="" loading="lazy">
+      <div class="cover"><img src="${img(p.img, 700)}" alt="" loading="lazy">
         <span class="badge">${ico(catIcons[p.cat] || "tag")}${esc(p.cat)}</span>
         ${p.url ? `<span class="badge live">${ico("radio")}En ligne</span>` : ""}
         <span class="ci">${ico(p.icon)}</span></div>
       <div class="body"><h3><span>${esc(p.title)}</span>${ico("arrow-up-right")}</h3><p>${esc(p.text)}</p>
-        <div class="tags" style="margin:0">${p.stack.map(s => `<span>${esc(s)}</span>`).join("")}</div></div>
+        <div class="tags" style="margin:0">${(p.stack || []).map(s => `<span>${esc(s)}</span>`).join("")}</div></div>
     </article>`).join("");
   filters.querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.cat === cat));
   drawIcons();
@@ -651,15 +561,14 @@ function renderProjects(cat) {
 }
 filters.addEventListener("click", e => { const b = e.target.closest("button"); if (b) renderProjects(b.dataset.cat); });
 
-// Fenêtre de détail
 const dlg = document.getElementById("dlg");
 function openProject(i) {
   const p = PROJECTS[i];
-  document.getElementById("dlgImg").src = U(p.img, 1100);
+  document.getElementById("dlgImg").src = img(p.img, 1100);
   document.getElementById("dlgCat").innerHTML = `${ico(catIcons[p.cat] || "tag")} ${esc(p.cat)}`;
   document.getElementById("dlgTitle").textContent = p.title;
   document.getElementById("dlgText").textContent = p.text;
-  document.getElementById("dlgTags").innerHTML = p.stack.map(s => `<span>${esc(s)}</span>`).join("");
+  document.getElementById("dlgTags").innerHTML = (p.stack || []).map(s => `<span>${esc(s)}</span>`).join("");
   document.getElementById("dlgLink").innerHTML = p.url
     ? `<a class="btn btn-cobalt" href="${esc(p.url)}" target="_blank" rel="noopener">Voir le projet ${ico("arrow-up-right")}</a>`
     : `<span class="when">${ico("lock")} Projet privé — démo sur demande</span>`;
@@ -671,60 +580,11 @@ grid.addEventListener("keydown", e => { const c = e.target.closest(".proj"); if 
 document.getElementById("dlgClose").onclick = () => dlg.close();
 dlg.addEventListener("click", e => { if (e.target === dlg) dlg.close(); });
 
-// Titre : apparition mot par mot (effet flou → net, comme YINVESTI)
-(function () {
-  const h = document.getElementById("title"), parts = [];
-  h.childNodes.forEach(node => {
-    const cls = node.nodeType === 1 ? node.className : "";
-    node.textContent.split(/\s+/).filter(Boolean).forEach(w => parts.push([w, cls]));
-  });
-  h.innerHTML = parts.map(([w, c], n) => `<span class="w ${c}" style="animation-delay:${n * 90 + 150}ms">${esc(w)}</span>`).join(" ");
-})();
-
-// Compteurs animés
 function countUp(el) {
   const to = +el.dataset.to, suf = el.dataset.suffix || "", t0 = performance.now(), d = 1400;
   (function f(t) { const k = Math.min(1, (t - t0) / d); el.textContent = Math.round(to * (1 - Math.pow(1 - k, 3))) + suf; if (k < 1) requestAnimationFrame(f); })(t0);
 }
 
-// Apparitions au défilement
-const io = new IntersectionObserver(es => es.forEach(e => {
-  if (!e.isIntersecting) return;
-  e.target.classList.add("in");
-  if (e.target.dataset.to) countUp(e.target);
-  io.unobserve(e.target);
-}), { threshold: .2 });
-document.querySelectorAll(".reveal,.step,.stat b").forEach(el => io.observe(el));
-
-// Étape courante (celle au centre de l'écran)
-const steps = [...document.querySelectorAll(".step")];
-const io2 = new IntersectionObserver(es => es.forEach(e => {
-  if (e.isIntersecting) { steps.forEach(s => s.classList.remove("current")); e.target.classList.add("current"); }
-}), { rootMargin: "-45% 0px -45% 0px" });
-steps.forEach(s => io2.observe(s));
-
-// Défilement : barre de lecture, remplissage de la frise, menu actif
-const bar = document.getElementById("progress"), fill = document.getElementById("railFill"), journey = document.getElementById("journey"), nav = document.getElementById("nav");
-const navLinks = [...document.querySelectorAll(".links a")].map(a => [a, document.querySelector(a.getAttribute("href"))]);
-let ticking = false;
-function onScroll() {
-  ticking = false;
-  const h = document.documentElement, y = h.scrollTop;
-  bar.style.width = (y / Math.max(1, h.scrollHeight - h.clientHeight) * 100) + "%";
-  nav.classList.toggle("scrolled", y > 10);
-  const r = journey.getBoundingClientRect();
-  fill.style.height = Math.min(1, Math.max(0, (innerHeight * .55 - r.top) / r.height)) * 100 + "%";
-  let cur = null; navLinks.forEach(([a, s]) => { if (s && s.getBoundingClientRect().top < innerHeight * .4) cur = a; });
-  navLinks.forEach(([a]) => a.classList.toggle("on", a === cur));
-}
-addEventListener("scroll", () => { if (!ticking) { ticking = true; requestAnimationFrame(onScroll); } }, { passive: true });
-onScroll();
-
-// Halo qui suit la souris
-const glow = document.getElementById("glow");
-addEventListener("pointermove", e => { glow.style.left = e.clientX + "px"; glow.style.top = e.clientY + "px"; }, { passive: true });
-
-// Effet 3D au survol
 function bindTilt(els, max) {
   if (matchMedia("(hover:none),(prefers-reduced-motion:reduce)").matches) return;
   els.forEach(el => {
@@ -735,12 +595,158 @@ function bindTilt(els, max) {
     el.addEventListener("pointerleave", () => el.style.transform = "");
   });
 }
-bindTilt([document.getElementById("tilt")], 10);
 
-renderProjects("Tous");
-document.getElementById("y").textContent = new Date().getFullYear();
-drawIcons();
-addEventListener("DOMContentLoaded", drawIcons);
+/* ======================================================================
+   Construction de la page à partir des données (data.json ou secours)
+   ====================================================================== */
+function render(data) {
+  // Hero
+  document.getElementById("heroBadge").innerHTML = `<span class="pulse"></span>${esc(data.hero.badgeText)}${data.hero.badgeTag ? ` <span class="tag">${esc(data.hero.badgeTag)}</span>` : ""}`;
+  document.getElementById("title").innerHTML = renderHeroTitle(data.hero.title);
+  document.getElementById("heroLead").innerHTML = md(data.hero.lead);
+  const cp = data.hero.ctaPrimary || {}, cs = data.hero.ctaSecondary || {};
+  document.getElementById("heroCta").innerHTML = `
+    <a href="${esc(cp.href || "#")}" class="btn btn-ink">${esc(cp.label || "")} ${ico(cp.icon)}</a>
+    ${cs.label ? `<a href="${esc(cs.href || "#")}" target="_blank" rel="noopener" class="btn btn-line">${ico(cs.icon)} ${esc(cs.label)}</a>` : ""}`;
+
+  document.getElementById("heroPortrait").innerHTML = `
+    <div class="portrait-card" id="tilt">
+      <img src="${img(data.hero.portraitImg, 900)}" alt="">
+      <div class="mono">${esc(data.hero.portraitMonogram || "")}</div>
+      <div class="cap"><b>${esc(data.hero.portraitName)}</b><span>${esc(data.hero.portraitSubtitle)}</span></div>
+    </div>
+    ${(data.hero.badges || []).map((b, i) => `<div class="float f${(i % 3) + 1}"><span class="ic">${ico(b.icon)}</span><div>${esc(b.title)}<small>${esc(b.subtitle)}</small></div></div>`).join("")}`;
+
+  document.getElementById("heroStats").innerHTML = (data.hero.stats || []).map(s => {
+    const to = s.auto === "projects" ? data.projects.length : (s.to || 0);
+    return `<div class="stat"><b data-to="${to}" data-suffix="${esc(s.suffix || "")}">0</b><span>${esc(s.label)}</span></div>`;
+  }).join("");
+
+  // Parcours
+  document.getElementById("parcoursKicker").innerHTML = `${ico("route")} ${esc(data.parcours.kicker)}`;
+  document.getElementById("parcoursTitle").innerHTML = mdAccent(data.parcours.title);
+  document.getElementById("parcoursText").textContent = data.parcours.text;
+
+  document.getElementById("journey").insertAdjacentHTML("beforeend", [...data.experiences].reverse().map((x, i) => `
+    <div class="step${i % 2 ? " alt" : ""}${i === 0 ? " current" : ""}">
+      <div class="node">${ico(x.icon)}</div>
+      <div class="media">
+        <img src="${img(x.img)}" alt="" loading="lazy">
+        <div class="yr"><small>${esc(x.label)}</small>${esc(x.year)}</div>
+        <div class="scene" aria-hidden="true">${SCENES[x.scene] || ""}</div>
+      </div>
+      <article class="card-xp">
+        <span class="xp-ico">${ico(x.icon)}</span>
+        <span class="when${x.now ? " now" : ""}">${ico(x.now ? "circle-dot" : "calendar")} ${esc(x.when)}</span>
+        <h3>${esc(x.role)}</h3>
+        <div class="org">${esc(x.org)}</div>
+        <p>${esc(x.text)}</p>
+        ${x.points && x.points.length ? `<ul>${x.points.map(p => `<li>${ico("circle-check")}<span>${esc(p)}</span></li>`).join("")}</ul>` : ""}
+        <div class="tags">${(x.tags || []).map(t => `<span>${esc(t)}</span>`).join("")}</div>
+      </article>
+    </div>`).join(""));
+
+  // Défilement des compétences (dupliqué pour une boucle continue)
+  document.getElementById("track").innerHTML = [...data.marquee, ...data.marquee].map(([i, t]) => `<span>${ico(i)}${esc(t)}</span>`).join("");
+
+  // Lancer ton e-com
+  document.getElementById("lancerKicker").innerHTML = `${ico("graduation-cap")} ${esc(data.lancer.kicker)}`;
+  document.getElementById("lancerTitle").innerHTML = mdAccent(data.lancer.title);
+  document.getElementById("lancerText").innerHTML = md(data.lancer.text);
+  document.getElementById("lancerFeat").innerHTML = (data.lancer.features || []).map(f => `<div>${ico(f.icon)}${esc(f.label)}</div>`).join("");
+  const lc = document.getElementById("lancerCta");
+  lc.href = (data.lancer.cta || {}).href || "#";
+  lc.innerHTML = `${esc((data.lancer.cta || {}).label || "")} ${ico("arrow-up-right")}`;
+
+  // Projets
+  document.getElementById("projetsKicker").innerHTML = `${ico("layout-grid")} ${esc(data.projets.kicker)}`;
+  document.getElementById("projetsTitle").innerHTML = mdAccent(data.projets.title);
+  document.getElementById("projetsText").textContent = data.projets.text;
+
+  PROJECTS = data.projects || [];
+  const cats = ["Tous", ...new Set(PROJECTS.map(p => p.cat))];
+  filters.innerHTML = cats.map(c => `<button data-cat="${c}">${ico(catIcons[c] || "tag")}${c} <span class="n">${c === "Tous" ? PROJECTS.length : PROJECTS.filter(p => p.cat === c).length}</span></button>`).join("");
+  renderProjects("Tous");
+
+  // Compétences + formation
+  document.getElementById("skillsKicker").innerHTML = `${ico("sparkles")} ${esc(data.competences.kicker)}`;
+  document.getElementById("skillsTitle").innerHTML = mdAccent(data.competences.title);
+  document.getElementById("skills").innerHTML = (data.skills || []).map(s => `
+    <div class="sk reveal"><span class="xp-ico">${ico(s.icon)}</span><h3>${esc(s.title)}</h3>
+    ${(s.items || []).map(([n, v]) => `<div class="bar"><div><span>${esc(n)}</span><span>${v}%</span></div><i style="--v:${v}%"></i></div>`).join("")}</div>`).join("");
+  document.getElementById("eduList").innerHTML = (data.education || []).map(e => `
+    <div class="card-xp reveal"><span class="xp-ico">${ico(e.icon)}</span><div><b>${esc(e.title)}</b><small>${esc(e.subtitle)}</small></div></div>`).join("");
+
+  // Contact
+  document.getElementById("contactKicker").innerHTML = `${ico("message-circle")} ${esc(data.contact.kicker)}`;
+  document.getElementById("contactTitle").innerHTML = mdAccent(data.contact.title);
+  document.getElementById("contactText").textContent = data.contact.text;
+  document.getElementById("contactLinks").innerHTML = (data.contact.links || []).map(l => {
+    const cls = l.style === "primary" ? "btn btn-ink" : "btn btn-line";
+    const target = /^mailto:/.test(l.href || "") ? "" : ' target="_blank" rel="noopener"';
+    return `<a class="${cls}" href="${esc(l.href)}"${target}>${ico(l.icon)} ${esc(l.label)}</a>`;
+  }).join("");
+
+  document.getElementById("y").textContent = new Date().getFullYear();
+
+  drawIcons();
+  bindTilt([document.getElementById("tilt")], 10);
+
+  // Apparitions au défilement (sur les nœuds qu'on vient de créer)
+  const io = new IntersectionObserver(es => es.forEach(e => {
+    if (!e.isIntersecting) return;
+    e.target.classList.add("in");
+    if (e.target.dataset.to) countUp(e.target);
+    io.unobserve(e.target);
+  }), { threshold: .2 });
+  document.querySelectorAll(".reveal,.step,.stat b,.sk").forEach(el => io.observe(el));
+
+  // Étape courante (celle au centre de l'écran)
+  const steps = [...document.querySelectorAll(".step")];
+  const io2 = new IntersectionObserver(es => es.forEach(e => {
+    if (e.isIntersecting) { steps.forEach(s => s.classList.remove("current")); e.target.classList.add("current"); }
+  }), { rootMargin: "-45% 0px -45% 0px" });
+  steps.forEach(s => io2.observe(s));
+}
+
+// Défilement : barre de lecture, remplissage de la frise, menu actif
+const bar = document.getElementById("progress"), fillEl = document.getElementById("railFill"), journey = document.getElementById("journey"), nav = document.getElementById("nav");
+const navLinks = [...document.querySelectorAll(".links a")].map(a => [a, document.querySelector(a.getAttribute("href"))]);
+let ticking = false;
+function onScroll() {
+  ticking = false;
+  const h = document.documentElement, y = h.scrollTop;
+  bar.style.width = (y / Math.max(1, h.scrollHeight - h.clientHeight) * 100) + "%";
+  nav.classList.toggle("scrolled", y > 10);
+  const r = journey.getBoundingClientRect();
+  fillEl.style.height = Math.min(1, Math.max(0, (innerHeight * .55 - r.top) / r.height)) * 100 + "%";
+  let cur = null; navLinks.forEach(([a, s]) => { if (s && s.getBoundingClientRect().top < innerHeight * .4) cur = a; });
+  navLinks.forEach(([a]) => a.classList.toggle("on", a === cur));
+}
+addEventListener("scroll", () => { if (!ticking) { ticking = true; requestAnimationFrame(onScroll); } }, { passive: true });
+onScroll();
+
+// Halo qui suit la souris
+const glow = document.getElementById("glow");
+addEventListener("pointermove", e => { glow.style.left = e.clientX + "px"; glow.style.top = e.clientY + "px"; }, { passive: true });
+
+// Chargement des données puis rendu
+(async function init() {
+  let data = FALLBACK_DATA;
+  try {
+    const r = await fetch("data.json", { cache: "no-store" });
+    if (r.ok) {
+      const d = await r.json();
+      if (d && typeof d === "object" && d.hero && d.projects) data = d;
+      else document.getElementById("dataWarn").style.display = "block";
+    } else {
+      document.getElementById("dataWarn").style.display = "block";
+    }
+  } catch (e) {
+    document.getElementById("dataWarn").style.display = "block";
+  }
+  render(data);
+})();
 </script>
 </body>
 </html>
