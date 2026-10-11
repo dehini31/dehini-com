@@ -23,6 +23,7 @@ mkdir -p ~/public_html/admin ~/public_html/uploads
 cp -f dehini-com/index.html ~/public_html/index.html
 cp -f dehini-com/admin/index.html dehini-com/admin/api.php dehini-com/admin/.htaccess ~/public_html/admin/
 cp -f dehini-com/uploads/.htaccess ~/public_html/uploads/.htaccess
+cp -rf dehini-com/img ~/public_html/
 ```
 
 ### 2. Créer le mot de passe de l'admin
@@ -52,7 +53,7 @@ depuis `/admin`, jamais depuis ce dépôt.
 Dans **cPanel → Tâches Cron**, toutes les 5 minutes :
 
 ```bash
-cd ~/dehini-com && git pull -q && cp -f index.html ~/public_html/index.html && cp -f admin/index.html admin/api.php admin/.htaccess ~/public_html/admin/ && cp -f uploads/.htaccess ~/public_html/uploads/.htaccess
+cd ~/dehini-com && git pull -q && cp -f index.html ~/public_html/index.html && cp -f admin/index.html admin/api.php admin/.htaccess ~/public_html/admin/ && cp -f uploads/.htaccess ~/public_html/uploads/.htaccess && cp -rf img ~/public_html/
 ```
 
 Cette commande ne touche jamais `data.json`, `admin/config.php` ni les images envoyées dans

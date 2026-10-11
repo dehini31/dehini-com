@@ -268,7 +268,7 @@ function setPath(obj, path, value) {
 function resolveAdminImg(id, w = 300) {
   if (!id) return '';
   if (/^https?:\/\//.test(id)) return id;
-  if (id.startsWith('uploads/')) return '../' + id;
+  if (/^(uploads|img)\//.test(id)) return '../' + id;
   if (id.startsWith('/')) return id;
   return `https://images.unsplash.com/${id}?w=${w}&q=60&auto=format&fit=crop`;
 }

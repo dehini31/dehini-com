@@ -14,8 +14,8 @@
             "href": "https://ecom.dehini.com/",
             "icon": "rocket"
         },
-        "portraitImg": "photo-1460925895917-afdab827c52f",
-        "portraitMonogram": "MD",
+        "portraitImg": "img/mohammed-portrait.jpg",
+        "portraitMonogram": "",
         "portraitName": "Mohammed Dehini",
         "portraitSubtitle": "Marketing · E-commerce · SaaS — Oran, Algérie",
         "badges": [
@@ -72,7 +72,7 @@
             "org": "SPA YINVESTI",
             "icon": "chart-no-axes-combined",
             "scene": "yinvesti",
-            "img": "photo-1579532537598-459ecdaf39cc",
+            "img": "img/mohammed-yinvesti.jpg",
             "when": "2026 — aujourd'hui",
             "text": "Pilotage du marketing de la première plateforme algérienne de financement participatif en capital, halal et agréée COSOB.",
             "points": [
