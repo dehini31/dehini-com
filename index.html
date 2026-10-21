@@ -91,12 +91,9 @@
 
   .portrait{position:relative;justify-self:center;width:min(400px,86%)}
   .portrait-card{position:relative;border-radius:28px;overflow:hidden;aspect-ratio:4/5;background:linear-gradient(160deg,var(--brand-blue),var(--ink-900));box-shadow:var(--shadow-lg);transition:transform .2s}
-  .portrait-card img{width:100%;height:100%;object-fit:cover;opacity:.5;mix-blend-mode:luminosity}
-  .portrait-card .mono{position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-size:clamp(5rem,12vw,7.5rem);font-weight:800;letter-spacing:-.05em}
-  /* Vraie photo (pas d'initiales) : couleurs d'origine, visage cadré en haut */
-  .portrait-card.photo img{opacity:1;mix-blend-mode:normal;object-position:50% 45%}
-  .portrait-card.photo::after{content:"";position:absolute;inset:55% 0 0;background:linear-gradient(transparent,rgba(11,16,32,.75))}
-  .portrait-card.photo .mono{display:none}
+  /* Photo en couleurs d'origine, visage cadré en haut */
+  .portrait-card img{width:100%;height:100%;object-fit:cover;object-position:50% 45%}
+  .portrait-card::after{content:"";position:absolute;inset:55% 0 0;background:linear-gradient(transparent,rgba(11,16,32,.75))}
   .portrait-card .cap{z-index:1;position:absolute;left:18px;right:18px;bottom:18px;background:rgba(255,255,255,.12);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:16px;padding:14px 16px}
   .portrait-card .cap b{display:block;font-size:1.05rem}
   .portrait-card .cap span{font-size:.85rem;opacity:.85}
@@ -393,7 +390,7 @@ const FALLBACK_DATA = {
   hero: { badgeText: "Bienvenue", badgeTag: "", title: "Le contenu de cette page est en cours de chargement.",
     lead: "Si ce message persiste, data.json est introuvable sur le serveur.", ctaPrimary: { label: "Rafraîchir", href: "#", icon: "refresh-cw" },
     ctaSecondary: { label: "ecom.dehini.com", href: "https://ecom.dehini.com/", icon: "rocket" },
-    portraitImg: "photo-1460925895917-afdab827c52f", portraitMonogram: "MD", portraitName: "Mohammed Dehini", portraitSubtitle: "",
+    portraitImg: "photo-1460925895917-afdab827c52f", portraitName: "Mohammed Dehini", portraitSubtitle: "",
     badges: [], stats: [] },
   parcours: { kicker: "Parcours", title: "Parcours", text: "" },
   experiences: [],
@@ -511,9 +508,8 @@ function render(data) {
     ${cs.label ? `<a href="${esc(cs.href || "#")}" target="_blank" rel="noopener" class="btn btn-line">${ico(cs.icon)} ${esc(cs.label)}</a>` : ""}`;
 
   document.getElementById("heroPortrait").innerHTML = `
-    <div class="portrait-card${data.hero.portraitMonogram ? "" : " photo"}" id="tilt">
+    <div class="portrait-card" id="tilt">
       <img src="${img(data.hero.portraitImg, 900)}" alt="">
-      <div class="mono">${esc(data.hero.portraitMonogram || "")}</div>
       <div class="cap"><b>${esc(data.hero.portraitName)}</b><span>${esc(data.hero.portraitSubtitle)}</span></div>
     </div>
     ${(data.hero.badges || []).map((b, i) => `<div class="float f${(i % 3) + 1}"><span class="ic">${ico(b.icon)}</span><div>${esc(b.title)}<small>${esc(b.subtitle)}</small></div></div>`).join("")}`;
