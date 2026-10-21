@@ -91,12 +91,9 @@
 
   .portrait{position:relative;justify-self:center;width:min(400px,86%)}
   .portrait-card{position:relative;border-radius:28px;overflow:hidden;aspect-ratio:4/5;background:linear-gradient(160deg,var(--brand-blue),var(--ink-900));box-shadow:var(--shadow-lg);transition:transform .2s}
-  .portrait-card img{width:100%;height:100%;object-fit:cover;opacity:.5;mix-blend-mode:luminosity}
-  .portrait-card .mono{position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-size:clamp(5rem,12vw,7.5rem);font-weight:800;letter-spacing:-.05em}
-  /* Vraie photo (pas d'initiales) : couleurs d'origine, visage cadré en haut */
-  .portrait-card.photo img{opacity:1;mix-blend-mode:normal;object-position:50% 45%}
-  .portrait-card.photo::after{content:"";position:absolute;inset:55% 0 0;background:linear-gradient(transparent,rgba(11,16,32,.75))}
-  .portrait-card.photo .mono{display:none}
+  /* Photo en couleurs d'origine, visage cadré en haut */
+  .portrait-card img{width:100%;height:100%;object-fit:cover;object-position:50% 45%}
+  .portrait-card::after{content:"";position:absolute;inset:55% 0 0;background:linear-gradient(transparent,rgba(11,16,32,.75))}
   .portrait-card .cap{z-index:1;position:absolute;left:18px;right:18px;bottom:18px;background:rgba(255,255,255,.12);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:16px;padding:14px 16px}
   .portrait-card .cap b{display:block;font-size:1.05rem}
   .portrait-card .cap span{font-size:.85rem;opacity:.85}
@@ -162,7 +159,7 @@
   .media{position:relative;border-radius:var(--r-xl);overflow:hidden;aspect-ratio:4/3;box-shadow:var(--shadow);background:var(--ink-900)}
   .media img{width:100%;height:100%;object-fit:cover;transform:scale(1.15);transition:transform 1.6s cubic-bezier(.2,.7,.2,1)}
   .step.in .media img{transform:scale(1)}
-  .media img[src^="img/"],.proj .cover img[src^="img/"],.dlg-cover img[src^="img/"]{object-position:50% 30%}
+  .media img[src^="img/"]{object-position:50% 30%}
   .media::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 35%,rgba(11,16,32,.8))}
   .scene{position:absolute;right:18px;bottom:18px;width:150px;height:110px;z-index:2;background:rgba(255,255,255,.96);border-radius:16px;box-shadow:0 12px 30px -10px rgba(0,0,0,.4);padding:10px}
   .scene svg{width:100%;height:100%;overflow:visible}
@@ -245,44 +242,6 @@
   .st.ok{background:var(--gain-50);color:var(--gain-600)}.st.go{background:var(--cobalt-50);color:var(--cobalt-600)}.st.wait{background:#fff4e5;color:#b86e00}
   @media(max-width:900px){.launch{grid-template-columns:1fr;padding:36px 22px}.feat{grid-template-columns:1fr}}
 
-  /* ============ Projets ============ */
-  .filters{display:inline-flex;flex-wrap:wrap;gap:4px;background:var(--paper-0);border:1px solid var(--paper-200);padding:4px;border-radius:24px;margin-bottom:32px;box-shadow:var(--shadow)}
-  .filters button{font:inherit;font-size:.88rem;font-weight:600;padding:8px 16px;border-radius:999px;border:0;background:transparent;color:var(--fg-2);cursor:pointer;display:inline-flex;gap:6px;align-items:center;transition:.2s}
-  .filters button svg{width:16px;height:16px}
-  .filters button.on{background:var(--ink-900);color:#fff}
-  .filters .n{font-size:.72rem;opacity:.6}
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:22px}
-  @media(max-width:400px){.grid{grid-template-columns:1fr}}
-  .proj{background:var(--paper-0);border:1px solid var(--paper-200);border-radius:var(--r-xl);overflow:hidden;cursor:pointer;display:flex;flex-direction:column;transition:transform .35s cubic-bezier(.2,.7,.2,1),box-shadow .35s,border-color .35s;animation:cardIn .5s backwards}
-  .proj:hover,.proj:focus-visible{box-shadow:var(--shadow-lg);border-color:var(--cobalt-100);outline:none}
-  @keyframes cardIn{from{opacity:0;transform:translateY(20px) scale(.97)}}
-  .proj .cover{position:relative;aspect-ratio:16/10;overflow:hidden;background:var(--ink-900)}
-  .proj .cover img{width:100%;height:100%;object-fit:cover;transition:transform .8s}
-  .proj:hover .cover img{transform:scale(1.07)}
-  .proj .cover .ci{position:absolute;right:14px;bottom:14px;width:44px;height:44px;border-radius:12px;background:var(--paper-0);color:var(--cobalt-500);display:grid;place-items:center;box-shadow:var(--shadow);transition:transform .4s}
-  .proj:hover .cover .ci{transform:rotate(-8deg) scale(1.1)}
-  .proj .cover .badge{position:absolute;top:14px;left:14px;display:flex;gap:6px;align-items:center;background:rgba(255,255,255,.92);backdrop-filter:blur(6px);border-radius:999px;padding:5px 11px;font-size:.75rem;font-weight:700}
-  .proj .cover .badge svg{width:14px;height:14px;color:var(--cobalt-500)}
-  .proj .cover .live{left:auto;right:14px;background:var(--gain-500);color:#fff}
-  .proj .cover .live svg{color:#fff}
-  .proj .body{padding:22px;display:flex;flex-direction:column;flex:1}
-  .proj h3{font-size:1.15rem;letter-spacing:-.02em;display:flex;justify-content:space-between;gap:10px;align-items:center}
-  .proj h3 svg{color:var(--paper-500);transition:transform .3s,color .3s}
-  .proj:hover h3 svg{transform:translate(3px,-3px);color:var(--cobalt-500)}
-  .proj p{color:var(--fg-2);font-size:.93rem;margin:8px 0 16px;flex:1}
-
-  /* Fenêtre projet */
-  dialog{border:0;border-radius:28px;padding:0;max-width:640px;width:calc(100% - 32px);margin:auto;box-shadow:0 40px 100px -20px rgba(11,16,32,.5);color:var(--fg);font-family:var(--font);overflow:hidden}
-  dialog::backdrop{background:rgba(11,16,32,.55);backdrop-filter:blur(4px)}
-  dialog[open]{animation:dlg .35s cubic-bezier(.2,.7,.2,1)}
-  @keyframes dlg{from{opacity:0;transform:translateY(24px) scale(.97)}}
-  .dlg-cover{aspect-ratio:16/8;overflow:hidden;position:relative;background:var(--ink-900)}
-  .dlg-cover img{width:100%;height:100%;object-fit:cover}
-  .dlg-body{padding:28px}
-  .dlg-body h3{font-size:1.6rem;letter-spacing:-.03em;margin:10px 0}
-  .dlg-body p{color:var(--fg-2);margin-bottom:18px}
-  .x{position:absolute;top:14px;right:14px;z-index:2;width:40px;height:40px;border-radius:50%;border:0;background:rgba(255,255,255,.92);cursor:pointer;display:grid;place-items:center}
-
   /* ============ Compétences ============ */
   .skills{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
   @media(max-width:1000px){.skills{grid-template-columns:1fr 1fr}}
@@ -331,7 +290,6 @@
     <div class="links">
       <a href="#parcours">Parcours</a>
       <a href="#lancer">Lancer ton e-com</a>
-      <a href="#projets">Projets</a>
       <a href="#competences">Compétences</a>
       <a href="#contact">Contact</a>
     </div>
@@ -394,31 +352,6 @@
   </div>
 </section>
 
-<!-- ============ PROJETS ============ -->
-<section id="projets">
-  <div class="wrap">
-    <div class="head reveal">
-      <span class="kicker" id="projetsKicker"></span>
-      <h2 id="projetsTitle"></h2>
-      <p id="projetsText"></p>
-    </div>
-    <div class="filters" id="filters"></div>
-    <div class="grid" id="grid"></div>
-  </div>
-</section>
-
-<dialog id="dlg">
-  <button class="x" id="dlgClose" aria-label="Fermer"><i data-lucide="x"></i></button>
-  <div class="dlg-cover"><img id="dlgImg" alt=""></div>
-  <div class="dlg-body">
-    <span class="when" id="dlgCat"></span>
-    <h3 id="dlgTitle"></h3>
-    <p id="dlgText"></p>
-    <div class="tags" id="dlgTags" style="margin:0 0 22px"></div>
-    <div id="dlgLink"></div>
-  </div>
-</dialog>
-
 <!-- ============ COMPÉTENCES ============ -->
 <section id="competences" style="background:var(--paper-0);border-block:1px solid var(--paper-200)">
   <div class="wrap">
@@ -457,12 +390,11 @@ const FALLBACK_DATA = {
   hero: { badgeText: "Bienvenue", badgeTag: "", title: "Le contenu de cette page est en cours de chargement.",
     lead: "Si ce message persiste, data.json est introuvable sur le serveur.", ctaPrimary: { label: "Rafraîchir", href: "#", icon: "refresh-cw" },
     ctaSecondary: { label: "ecom.dehini.com", href: "https://ecom.dehini.com/", icon: "rocket" },
-    portraitImg: "photo-1460925895917-afdab827c52f", portraitMonogram: "MD", portraitName: "Mohammed Dehini", portraitSubtitle: "",
+    portraitImg: "photo-1460925895917-afdab827c52f", portraitName: "Mohammed Dehini", portraitSubtitle: "",
     badges: [], stats: [] },
   parcours: { kicker: "Parcours", title: "Parcours", text: "" },
   experiences: [],
   lancer: { kicker: "", title: "ecom.dehini.com", text: "", features: [], cta: { label: "Ouvrir", href: "https://ecom.dehini.com/" } },
-  projets: { kicker: "Portfolio", title: "Projets", text: "" },
   projects: [],
   competences: { kicker: "Compétences", title: "Compétences" },
   skills: [], education: [], marquee: [],
@@ -546,45 +478,6 @@ function renderHeroTitle(str) {
   }).join(" ");
 }
 
-const catIcons = { Tous: "layout-grid", Marque: "gem", SaaS: "cloud", Fintech: "landmark", Mobile: "smartphone" };
-let PROJECTS = [];
-const grid = document.getElementById("grid"), filters = document.getElementById("filters");
-
-function renderProjects(cat) {
-  grid.innerHTML = PROJECTS.map((p, i) => ({ p, i })).filter(({ p }) => cat === "Tous" || p.cat === cat).map(({ p, i }, k) => `
-    <article class="proj" data-i="${i}" style="animation-delay:${k * 60}ms" tabindex="0" role="button" aria-label="${esc(p.title)}">
-      <div class="cover"><img src="${img(p.img, 700)}" alt="" loading="lazy">
-        <span class="badge">${ico(catIcons[p.cat] || "tag")}${esc(p.cat)}</span>
-        ${p.url ? `<span class="badge live">${ico("radio")}En ligne</span>` : ""}
-        <span class="ci">${ico(p.icon)}</span></div>
-      <div class="body"><h3><span>${esc(p.title)}</span>${ico("arrow-up-right")}</h3><p>${esc(p.text)}</p>
-        <div class="tags" style="margin:0">${(p.stack || []).map(s => `<span>${esc(s)}</span>`).join("")}</div></div>
-    </article>`).join("");
-  filters.querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.cat === cat));
-  drawIcons();
-  bindTilt(grid.querySelectorAll(".proj"), 6);
-}
-filters.addEventListener("click", e => { const b = e.target.closest("button"); if (b) renderProjects(b.dataset.cat); });
-
-const dlg = document.getElementById("dlg");
-function openProject(i) {
-  const p = PROJECTS[i];
-  document.getElementById("dlgImg").src = img(p.img, 1100);
-  document.getElementById("dlgCat").innerHTML = `${ico(catIcons[p.cat] || "tag")} ${esc(p.cat)}`;
-  document.getElementById("dlgTitle").textContent = p.title;
-  document.getElementById("dlgText").textContent = p.text;
-  document.getElementById("dlgTags").innerHTML = (p.stack || []).map(s => `<span>${esc(s)}</span>`).join("");
-  document.getElementById("dlgLink").innerHTML = p.url
-    ? `<a class="btn btn-cobalt" href="${esc(p.url)}" target="_blank" rel="noopener">Voir le projet ${ico("arrow-up-right")}</a>`
-    : `<span class="when">${ico("lock")} Projet privé — démo sur demande</span>`;
-  drawIcons();
-  dlg.showModal();
-}
-grid.addEventListener("click", e => { const c = e.target.closest(".proj"); if (c) openProject(+c.dataset.i); });
-grid.addEventListener("keydown", e => { const c = e.target.closest(".proj"); if (c && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); openProject(+c.dataset.i); } });
-document.getElementById("dlgClose").onclick = () => dlg.close();
-dlg.addEventListener("click", e => { if (e.target === dlg) dlg.close(); });
-
 function countUp(el) {
   const to = +el.dataset.to, suf = el.dataset.suffix || "", t0 = performance.now(), d = 1400;
   (function f(t) { const k = Math.min(1, (t - t0) / d); el.textContent = Math.round(to * (1 - Math.pow(1 - k, 3))) + suf; if (k < 1) requestAnimationFrame(f); })(t0);
@@ -615,9 +508,8 @@ function render(data) {
     ${cs.label ? `<a href="${esc(cs.href || "#")}" target="_blank" rel="noopener" class="btn btn-line">${ico(cs.icon)} ${esc(cs.label)}</a>` : ""}`;
 
   document.getElementById("heroPortrait").innerHTML = `
-    <div class="portrait-card${data.hero.portraitMonogram ? "" : " photo"}" id="tilt">
+    <div class="portrait-card" id="tilt">
       <img src="${img(data.hero.portraitImg, 900)}" alt="">
-      <div class="mono">${esc(data.hero.portraitMonogram || "")}</div>
       <div class="cap"><b>${esc(data.hero.portraitName)}</b><span>${esc(data.hero.portraitSubtitle)}</span></div>
     </div>
     ${(data.hero.badges || []).map((b, i) => `<div class="float f${(i % 3) + 1}"><span class="ic">${ico(b.icon)}</span><div>${esc(b.title)}<small>${esc(b.subtitle)}</small></div></div>`).join("")}`;
@@ -662,16 +554,6 @@ function render(data) {
   const lc = document.getElementById("lancerCta");
   lc.href = (data.lancer.cta || {}).href || "#";
   lc.innerHTML = `${esc((data.lancer.cta || {}).label || "")} ${ico("arrow-up-right")}`;
-
-  // Projets
-  document.getElementById("projetsKicker").innerHTML = `${ico("layout-grid")} ${esc(data.projets.kicker)}`;
-  document.getElementById("projetsTitle").innerHTML = mdAccent(data.projets.title);
-  document.getElementById("projetsText").textContent = data.projets.text;
-
-  PROJECTS = data.projects || [];
-  const cats = ["Tous", ...new Set(PROJECTS.map(p => p.cat))];
-  filters.innerHTML = cats.map(c => `<button data-cat="${c}">${ico(catIcons[c] || "tag")}${c} <span class="n">${c === "Tous" ? PROJECTS.length : PROJECTS.filter(p => p.cat === c).length}</span></button>`).join("");
-  renderProjects("Tous");
 
   // Compétences + formation
   document.getElementById("skillsKicker").innerHTML = `${ico("sparkles")} ${esc(data.competences.kicker)}`;
