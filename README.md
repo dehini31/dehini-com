@@ -74,8 +74,10 @@ Dans l'onglet **Projets**, chaque projet a une photo, un titre, une description 
 un **document PDF** (bouton « Choisir un fichier », 30 Mo max). Sur le site, le projet affiche
 alors le badge « PDF interactif » et un bouton **Feuilleter le document** : le PDF s'ouvre
 comme un livre dont on tourne les pages (glisser le coin, clic, flèches du clavier, balayage
-sur mobile), avec zoom, plein écran, liens cliquables et téléchargement. Un PDF au format
-paysage (présentation) s'affiche une page à la fois.
+sur mobile), avec zoom, plein écran, liens cliquables et téléchargement. Sur téléphone ou
+fenêtre étroite, les pages s'affichent une par une ; la double page n'apparaît que lorsque
+l'écran est assez large pour deux pages en pleine hauteur. Un PDF au format paysage
+(présentation) s'affiche toujours une page à la fois.
 
 Si l'envoi d'un PDF échoue avec « Fichier trop lourd pour le serveur », la limite PHP de
 l'hébergeur est trop basse : le fichier `admin/.user.ini` la relève à 32 Mo, et sinon il faut
