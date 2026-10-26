@@ -9,7 +9,7 @@ Site personnel de Mohammed Dehini.
   plus synchronisé avec Git (voir « Comment ça se met à jour »).
 - `admin/` — back-office protégé par mot de passe pour modifier textes, images et liens sans
   toucher au code.
-- `uploads/` — images envoyées depuis l'admin (ignoré par Git).
+- `uploads/` — images et PDF envoyés depuis l'admin (ignoré par Git).
 - `elbahiferti/` — page vitrine du laboratoire ELBAHI FERTI — DIAG PMA, publiée sur
   `https://dehini.com/elbahiferti/`. Page statique autonome (français / arabe), ses images et la
   vidéo du logo sont dans `elbahiferti/assets/`. Elle ne dépend ni de `data.json` ni de l'admin.
@@ -24,7 +24,7 @@ Dans le **Terminal cPanel** :
 cd ~ && git clone https://github.com/dehini31/dehini-com.git
 mkdir -p ~/public_html/admin ~/public_html/uploads
 cp -f dehini-com/index.html ~/public_html/index.html
-cp -f dehini-com/admin/index.html dehini-com/admin/api.php dehini-com/admin/.htaccess ~/public_html/admin/
+cp -f dehini-com/admin/index.html dehini-com/admin/api.php dehini-com/admin/.htaccess dehini-com/admin/.user.ini ~/public_html/admin/
 cp -f dehini-com/uploads/.htaccess ~/public_html/uploads/.htaccess
 cp -rf dehini-com/img ~/public_html/
 cp -rf dehini-com/elbahiferti ~/public_html/
@@ -57,7 +57,7 @@ depuis `/admin`, jamais depuis ce dépôt.
 Dans **cPanel → Tâches Cron**, toutes les 5 minutes :
 
 ```bash
-cd ~/dehini-com && git pull -q && cp -f index.html ~/public_html/index.html && cp -f admin/index.html admin/api.php admin/.htaccess ~/public_html/admin/ && cp -f uploads/.htaccess ~/public_html/uploads/.htaccess && cp -rf img ~/public_html/ && cp -rf elbahiferti ~/public_html/
+cd ~/dehini-com && git pull -q && cp -f index.html ~/public_html/index.html && cp -f admin/index.html admin/api.php admin/.htaccess admin/.user.ini ~/public_html/admin/ && cp -f uploads/.htaccess ~/public_html/uploads/.htaccess && cp -rf img ~/public_html/ && cp -rf elbahiferti ~/public_html/
 ```
 
 Cette commande ne touche jamais `data.json`, `admin/config.php` ni les images envoyées dans
@@ -71,6 +71,22 @@ Cette commande ne touche jamais `data.json`, `admin/config.php` ni les images en
    un lien, ajouter/supprimer/réordonner une expérience ou un projet avec les flèches et le ✕.
 4. Cliquer sur **Enregistrer** (ou Ctrl+S). Le site est mis à jour immédiatement, sans
    attendre le cron.
+
+### Projets avec PDF interactif
+
+Dans l'onglet **Projets**, chaque projet a une photo, un titre, une description et, en option,
+un **document PDF** (bouton « Choisir un fichier », 30 Mo max). Sur le site, le projet affiche
+alors le badge « PDF interactif » et un bouton **Feuilleter le document** : le PDF s'ouvre
+comme un livre dont on tourne les pages (glisser le coin, clic, flèches du clavier, balayage
+sur mobile), avec zoom, plein écran, liens cliquables et téléchargement. Sur téléphone ou
+fenêtre étroite, les pages s'affichent une par une ; la double page n'apparaît que lorsque
+l'écran est assez large pour deux pages en pleine hauteur. Un PDF au format paysage
+(présentation) s'affiche toujours une page à la fois.
+
+Si l'envoi d'un PDF échoue avec « Fichier trop lourd pour le serveur », la limite PHP de
+l'hébergeur est trop basse : le fichier `admin/.user.ini` la relève à 32 Mo, et sinon il faut
+régler `upload_max_filesize = 32M` et `post_max_size = 34M` dans **cPanel → MultiPHP INI
+Editor**.
 
 Dans les champs de titre, `**mot**` affiche le mot en bleu (accent) et, sur le titre principal
 uniquement, `__mot__` l'affiche en gris clair.
@@ -89,7 +105,8 @@ pas mis à jour automatiquement après coup.
 
 - L'admin est protégé par mot de passe (haché avec `password_hash`, jamais stocké en clair) et
   un jeton anti-CSRF sur chaque écriture.
-- Les images envoyées sont vérifiées (type réel de l'image, taille max 6 Mo) et le dossier
-  `uploads/` refuse d'exécuter un script.
+- Les fichiers envoyés sont vérifiés sur leur contenu réel, pas sur leur nom : images (jpg, png,
+  webp, gif — 6 Mo max) ou PDF (signature `%PDF-` — 30 Mo max). Le dossier `uploads/` refuse
+  d'exécuter un script.
 - `admin/config.php` contient le hash du mot de passe : il est exclu de Git (`.gitignore`) et
   bloqué en accès direct par `admin/.htaccess`.

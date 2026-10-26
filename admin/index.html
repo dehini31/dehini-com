@@ -81,6 +81,11 @@
   .adm-image{display:flex;flex-direction:column;gap:8px}
   .adm-image img{width:100%;max-width:220px;aspect-ratio:16/10;object-fit:cover;border-radius:10px;border:1px solid var(--paper-200);background:var(--paper-100)}
   .adm-image input[type=file]{font-size:.8rem}
+  .adm-pdf{display:flex;flex-direction:column;gap:8px}
+  .adm-pdf .adm-pdf-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .adm-pdf .adm-pdf-row a,.adm-pdf .adm-pdf-row button{font-size:.8rem;padding:6px 10px;border:1px solid var(--paper-200);border-radius:8px;background:#fff;cursor:pointer;text-decoration:none}
+  .adm-pdf .adm-pdf-row button{color:var(--danger)}
+  .adm-pdf input[type=file]{font-size:.8rem}
 
   .adm-row{display:flex;gap:8px;margin-bottom:8px;align-items:center}
   .adm-row input{flex:1;padding:9px 11px;border:1px solid var(--paper-200);border-radius:8px}
@@ -271,6 +276,12 @@ function resolveAdminImg(id, w = 300) {
   if (id.startsWith('/')) return id;
   return `https://images.unsplash.com/${id}?w=${w}&q=60&auto=format&fit=crop`;
 }
+// Fichier hébergé sur le site (PDF) : chemin relatif à la racine du site.
+function resolveAdminFile(path) {
+  if (!path) return '';
+  if (/^https?:\/\//.test(path) || path.startsWith('/')) return path;
+  return '../' + path;
+}
 function toast(msg, isErr) {
   const t = $('#toast'); t.textContent = msg; t.className = isErr ? 'show err' : 'show';
   clearTimeout(toast._t); toast._t = setTimeout(() => t.className = '', 2600);
@@ -400,6 +411,28 @@ function fieldEl(item, f) {
     box.append(preview, txt, file);
     wrap.appendChild(box);
     return wrap;
+  } else if (f.type === 'pdf') {
+    const box = el('div', 'adm-pdf');
+    const txt = el('input'); txt.type = 'text'; txt.value = item[f.key] || ''; txt.placeholder = 'uploads/....pdf — vide = pas de document';
+    const row = el('div', 'adm-pdf-row');
+    const open = el('a', '', '↗ Ouvrir le PDF'); open.target = '_blank'; open.rel = 'noopener';
+    const clear = el('button', '', '✕ Retirer'); clear.type = 'button';
+    const sync = () => { open.href = resolveAdminFile(item[f.key]); open.hidden = clear.hidden = !item[f.key]; };
+    txt.oninput = () => { item[f.key] = txt.value.trim(); sync(); markDirty(); };
+    clear.onclick = () => { item[f.key] = ''; txt.value = ''; sync(); markDirty(); };
+    const file = el('input'); file.type = 'file'; file.accept = 'application/pdf,.pdf';
+    file.onchange = () => {
+      const fl = file.files[0];
+      if (!fl) return;
+      if (fl.size > 30 * 1024 * 1024) { toast('PDF trop lourd (max 30 Mo).', true); file.value = ''; return; }
+      uploadFile(fl, url => { item[f.key] = url; txt.value = url; sync(); markDirty(); });
+    };
+    row.append(open, clear);
+    box.append(txt, row, file);
+    sync();
+    wrap.appendChild(box);
+    if (f.hint) wrap.appendChild(el('div', 'hint', esc(f.hint)));
+    return wrap;
   } else if (f.type === 'number') {
     input = el('input'); input.type = 'number'; input.value = item[f.key] ?? 0;
     input.oninput = () => { item[f.key] = +input.value; markDirty(); };
@@ -413,9 +446,9 @@ function fieldEl(item, f) {
 
 function uploadFile(file, onDone) {
   const fd = new FormData(); fd.append('file', file); fd.append('csrf', CSRF);
-  toast('Envoi de l\'image…');
+  toast('Envoi du fichier…');
   fetch(API + '?action=upload', { method: 'POST', body: fd }).then(r => r.json()).then(d => {
-    if (d.url) { onDone(d.url); toast('Image envoyée ✓'); }
+    if (d.url) { onDone(d.url); toast('Fichier envoyé ✓'); }
     else toast(d.error || 'Échec de l\'envoi.', true);
   }).catch(() => toast('Échec de l\'envoi.', true));
 }
@@ -469,11 +502,13 @@ function renderAll() {
     { key: 'title', label: 'Titre', full: true },
     { key: 'cat', label: 'Catégorie (Marque / SaaS / Fintech / Mobile…)' },
     { key: 'icon', label: 'Icône' },
-    { key: 'img', label: 'Image', type: 'image', full: true },
-    { key: 'text', label: 'Description', type: 'textarea', full: true },
+    { key: 'img', label: 'Photo du projet', type: 'image', full: true },
+    { key: 'text', label: 'Description', type: 'textarea', full: true, rows: 4 },
+    { key: 'pdf', label: 'Document PDF (optionnel)', type: 'pdf', full: true,
+      hint: 'Sur le site, le PDF s\'ouvre comme un livre à feuilleter : pages qui tournent, zoom, plein écran, liens cliquables et téléchargement. Max 30 Mo.' },
     { key: 'stack', label: 'Étiquettes techniques', type: 'list', full: true },
-    { key: 'url', label: 'Lien du projet (vide = privé)', full: true },
-  ], { label: (p) => p.title || 'Projet', empty: { title: 'Nouveau projet', cat: 'SaaS', icon: 'sparkles', img: '', text: '', stack: [], url: '' } });
+    { key: 'url', label: 'Lien du projet (optionnel)', full: true },
+  ], { label: (p) => p.title || 'Projet', empty: { title: 'Nouveau projet', cat: 'SaaS', icon: 'sparkles', img: '', text: '', pdf: '', stack: [], url: '' } });
 
   // Compétences
   repeater('#skillsList', STATE.skills, [

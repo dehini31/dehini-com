@@ -37,6 +37,7 @@
   body{font-family:var(--font);background:var(--paper-50);color:var(--fg);line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
   a{color:inherit;text-decoration:none}
   img{display:block;max-width:100%}
+  [hidden]{display:none!important}
   strong{font-weight:700;color:var(--ink-900)}
   .wrap{max-width:var(--max);margin:0 auto;padding:0 20px}
   i[data-lucide],svg.lucide{width:20px;height:20px;stroke-width:1.8;flex-shrink:0}
@@ -159,7 +160,7 @@
   .media{position:relative;border-radius:var(--r-xl);overflow:hidden;aspect-ratio:4/3;box-shadow:var(--shadow);background:var(--ink-900)}
   .media img{width:100%;height:100%;object-fit:cover;transform:scale(1.15);transition:transform 1.6s cubic-bezier(.2,.7,.2,1)}
   .step.in .media img{transform:scale(1)}
-  .media img[src^="img/"]{object-position:50% 30%}
+  .media img[src^="img/"],.proj .cover img[src^="img/"],.dlg-cover img[src^="img/"]{object-position:50% 30%}
   .media::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 35%,rgba(11,16,32,.8))}
   .scene{position:absolute;right:18px;bottom:18px;width:150px;height:110px;z-index:2;background:rgba(255,255,255,.96);border-radius:16px;box-shadow:0 12px 30px -10px rgba(0,0,0,.4);padding:10px}
   .scene svg{width:100%;height:100%;overflow:visible}
@@ -242,6 +243,94 @@
   .st.ok{background:var(--gain-50);color:var(--gain-600)}.st.go{background:var(--cobalt-50);color:var(--cobalt-600)}.st.wait{background:#fff4e5;color:#b86e00}
   @media(max-width:900px){.launch{grid-template-columns:1fr;padding:36px 22px}.feat{grid-template-columns:1fr}}
 
+  /* ============ Projets ============ */
+  .filters{display:inline-flex;flex-wrap:wrap;gap:4px;background:var(--paper-0);border:1px solid var(--paper-200);padding:4px;border-radius:24px;margin-bottom:32px;box-shadow:var(--shadow)}
+  .filters button{font:inherit;font-size:.88rem;font-weight:600;padding:8px 16px;border-radius:999px;border:0;background:transparent;color:var(--fg-2);cursor:pointer;display:inline-flex;gap:6px;align-items:center;transition:.2s}
+  .filters button svg{width:16px;height:16px}
+  .filters button.on{background:var(--ink-900);color:#fff}
+  .filters .n{font-size:.72rem;opacity:.6}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:22px}
+  @media(max-width:400px){.grid{grid-template-columns:1fr}}
+  .proj{background:var(--paper-0);border:1px solid var(--paper-200);border-radius:var(--r-xl);overflow:hidden;cursor:pointer;display:flex;flex-direction:column;transition:transform .35s cubic-bezier(.2,.7,.2,1),box-shadow .35s,border-color .35s;animation:cardIn .5s backwards}
+  .proj:hover,.proj:focus-visible{box-shadow:var(--shadow-lg);border-color:var(--cobalt-100);outline:none}
+  @keyframes cardIn{from{opacity:0;transform:translateY(20px) scale(.97)}}
+  .proj .cover{position:relative;aspect-ratio:16/10;overflow:hidden;background:linear-gradient(160deg,var(--brand-blue),var(--ink-900))}
+  .proj .cover img{width:100%;height:100%;object-fit:cover;transition:transform .8s}
+  .proj:hover .cover img{transform:scale(1.07)}
+  .proj .cover .ci{position:absolute;right:14px;bottom:14px;width:44px;height:44px;border-radius:12px;background:var(--paper-0);color:var(--cobalt-500);display:grid;place-items:center;box-shadow:var(--shadow);transition:transform .4s}
+  .proj:hover .cover .ci{transform:rotate(-8deg) scale(1.1)}
+  .proj .cover .badge{position:absolute;top:14px;left:14px;display:flex;gap:6px;align-items:center;background:rgba(255,255,255,.92);backdrop-filter:blur(6px);border-radius:999px;padding:5px 11px;font-size:.75rem;font-weight:700}
+  .proj .cover .badge svg{width:14px;height:14px;color:var(--cobalt-500)}
+  .proj .cover .live{left:auto;right:14px;background:var(--gain-500);color:#fff}
+  .proj .cover .live svg{color:#fff}
+  .proj .cover .doc{top:auto;bottom:14px;background:var(--ink-900);color:#fff}
+  .proj .cover .doc svg{color:var(--cobalt-300)}
+  .proj .body{padding:22px;display:flex;flex-direction:column;flex:1}
+  .proj h3{font-size:1.15rem;letter-spacing:-.02em;display:flex;justify-content:space-between;gap:10px;align-items:center}
+  .proj h3 svg{color:var(--paper-500);transition:transform .3s,color .3s}
+  .proj:hover h3 svg{transform:translate(3px,-3px);color:var(--cobalt-500)}
+  .proj p{color:var(--fg-2);font-size:.93rem;margin:8px 0 16px;flex:1}
+
+  /* Fenêtre projet */
+  dialog{border:0;border-radius:28px;padding:0;max-width:640px;width:calc(100% - 32px);margin:auto;box-shadow:0 40px 100px -20px rgba(11,16,32,.5);color:var(--fg);font-family:var(--font);overflow:hidden}
+  dialog::backdrop{background:rgba(11,16,32,.55);backdrop-filter:blur(4px)}
+  dialog[open]{animation:dlg .35s cubic-bezier(.2,.7,.2,1)}
+  @keyframes dlg{from{opacity:0;transform:translateY(24px) scale(.97)}}
+  html:has(dialog[open]){overflow:hidden}
+  .dlg-cover{aspect-ratio:16/8;overflow:hidden;position:relative;background:linear-gradient(160deg,var(--brand-blue),var(--ink-900))}
+  .dlg-cover img{width:100%;height:100%;object-fit:cover}
+  .dlg-cover .open-doc{position:absolute;inset:0;display:grid;place-items:center;border:0;background:rgba(11,16,32,.35);color:#fff;cursor:pointer;font:inherit;font-weight:700;opacity:0;transition:opacity .3s}
+  .dlg-cover .open-doc span{display:inline-flex;gap:8px;align-items:center;background:rgba(11,16,32,.75);backdrop-filter:blur(6px);padding:10px 18px;border-radius:999px}
+  .dlg-cover:hover .open-doc,.dlg-cover .open-doc:focus-visible{opacity:1}
+  .dlg-body{padding:28px;max-height:55vh;overflow:auto}
+  .dlg-body h3{font-size:1.6rem;letter-spacing:-.03em;margin:10px 0}
+  .dlg-body p{color:var(--fg-2);margin-bottom:18px;white-space:pre-line}
+  .dlg-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  .x{position:absolute;top:14px;right:14px;z-index:2;width:40px;height:40px;border-radius:50%;border:0;background:rgba(255,255,255,.92);cursor:pointer;display:grid;place-items:center}
+
+  /* ============ Lecteur PDF interactif (livre à feuilleter) ============ */
+  dialog.reader{max-width:none;max-height:none;width:100%;height:100%;border-radius:0;background:var(--ink-900);color:#fff;box-shadow:none}
+  .rd-shell:focus{outline:none}
+  .rd-shell{position:relative;width:100%;height:100%;display:grid;grid-template-rows:auto 1fr auto;background:radial-gradient(900px 500px at 50% 40%,var(--ink-700),var(--ink-900))}
+  .rd-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.08)}
+  .rd-title{display:flex;align-items:center;gap:10px;font-weight:700;min-width:0}
+  .rd-title span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rd-title svg{color:var(--cobalt-300)}
+  .rd-tools{display:flex;align-items:center;gap:6px;flex:none}
+  .rd-tools button,.rd-tools a{width:40px;height:40px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#fff;display:grid;place-items:center;cursor:pointer;transition:background .2s}
+  .rd-tools button:hover,.rd-tools a:hover,.rd-tools button.on{background:var(--cobalt-500);border-color:var(--cobalt-500)}
+  .rd-count{font-weight:600;white-space:nowrap;min-width:64px}
+  .rd-stage{position:relative;overflow:hidden;margin:0 64px}
+  .rd-stage .rd-host{position:absolute;inset:18px 0}
+  .rd-host .stf__wrapper{height:100%}
+  .pg{background:#fff;overflow:hidden;color:var(--paper-500)}
+  .pg img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none;user-select:none;-webkit-user-drag:none}
+  .pg .pg-wait{position:absolute;inset:0;display:grid;place-items:center;font-size:.8rem}
+  .pg.ok .pg-wait{display:none}
+  .pg .lk{position:absolute;display:block;border-radius:3px;transition:background .2s}
+  .pg .lk:hover{background:rgba(47,91,255,.18);box-shadow:0 0 0 2px rgba(47,91,255,.45)}
+  .rd-nav{position:absolute;top:50%;transform:translateY(-50%);z-index:3;width:46px;height:46px;border-radius:50%;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.08);color:#fff;display:grid;place-items:center;cursor:pointer;transition:background .2s,opacity .2s}
+  .rd-nav:hover{background:var(--cobalt-500)}
+  .rd-nav:disabled{opacity:.25;cursor:default;background:rgba(255,255,255,.08)}
+  .rd-nav.prev{left:10px}.rd-nav.next{right:10px}
+  .rd-foot{display:flex;align-items:center;gap:14px;padding:12px 20px 16px;font-size:.8rem;color:#b8bfd6}
+  .rd-foot input{flex:1;accent-color:var(--cobalt-500)}
+  .rd-msg{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:24px;color:#b8bfd6;z-index:2}
+  .rd-msg:empty{display:none}
+  .rd-msg .spin{display:block;animation:spin 1s linear infinite;margin:0 auto 10px;width:28px;height:28px;color:var(--cobalt-300)}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .rd-zoom{position:absolute;inset:0;z-index:4;overflow:auto;background:var(--ink-900);cursor:grab;touch-action:pan-x pan-y pinch-zoom}
+  .rd-zoom.drag{cursor:grabbing}
+  .rd-zoom img{max-width:none;margin:0 auto 12px;background:#fff;user-select:none;-webkit-user-drag:none}
+  @media(max-width:720px){
+    .rd-stage{margin:0}
+    .rd-stage .rd-host{inset:10px 8px}
+    .rd-nav{top:auto;bottom:62px;transform:none;width:40px;height:40px}
+    .rd-bar{padding:10px 12px}
+    .rd-tools{gap:4px}
+    .rd-tools button,.rd-tools a{width:36px;height:36px}
+  }
+
   /* ============ Compétences ============ */
   .skills{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
   @media(max-width:1000px){.skills{grid-template-columns:1fr 1fr}}
@@ -290,6 +379,7 @@
     <div class="links">
       <a href="#parcours">Parcours</a>
       <a href="#lancer">Lancer ton e-com</a>
+      <a href="#projets">Projets</a>
       <a href="#competences">Compétences</a>
       <a href="#contact">Contact</a>
     </div>
@@ -352,6 +442,56 @@
   </div>
 </section>
 
+<!-- ============ PROJETS ============ -->
+<section id="projets">
+  <div class="wrap">
+    <div class="head reveal">
+      <span class="kicker" id="projetsKicker"></span>
+      <h2 id="projetsTitle"></h2>
+      <p id="projetsText"></p>
+    </div>
+    <div class="filters" id="filters"></div>
+    <div class="grid" id="grid"></div>
+  </div>
+</section>
+
+<dialog id="dlg">
+  <button class="x" id="dlgClose" aria-label="Fermer"><i data-lucide="x"></i></button>
+  <div class="dlg-cover" id="dlgCover"><img id="dlgImg" alt=""></div>
+  <div class="dlg-body">
+    <span class="when" id="dlgCat"></span>
+    <h3 id="dlgTitle"></h3>
+    <p id="dlgText"></p>
+    <div class="tags" id="dlgTags" style="margin:0 0 22px"></div>
+    <div class="dlg-actions" id="dlgLink"></div>
+  </div>
+</dialog>
+
+<!-- Lecteur PDF : le document s'affiche comme un livre qu'on feuillette -->
+<dialog id="reader" class="reader" aria-label="Lecteur de document">
+  <div class="rd-shell" id="rdShell" tabindex="-1" autofocus>
+    <div class="rd-bar">
+      <div class="rd-title"><i data-lucide="book-open"></i><span id="rdTitle"></span></div>
+      <div class="rd-tools">
+        <button type="button" id="rdZoom" title="Zoomer sur la page" aria-label="Zoomer sur la page"><i data-lucide="zoom-in"></i></button>
+        <button type="button" id="rdFull" title="Plein écran" aria-label="Plein écran"><i data-lucide="maximize"></i></button>
+        <a id="rdDl" href="#" download title="Télécharger le PDF" aria-label="Télécharger le PDF"><i data-lucide="download"></i></a>
+        <button type="button" id="rdClose" title="Fermer" aria-label="Fermer"><i data-lucide="x"></i></button>
+      </div>
+    </div>
+    <div class="rd-stage" id="rdStage">
+      <div class="rd-msg" id="rdMsg"></div>
+      <div class="rd-zoom" id="rdZoomView" hidden></div>
+    </div>
+    <div class="rd-foot">
+      <span class="rd-count" id="rdCount"></span>
+      <input type="range" id="rdRange" min="1" max="1" value="1" aria-label="Aller à la page">
+    </div>
+    <button type="button" class="rd-nav prev" id="rdPrev" aria-label="Page précédente"><i data-lucide="chevron-left"></i></button>
+    <button type="button" class="rd-nav next" id="rdNext" aria-label="Page suivante"><i data-lucide="chevron-right"></i></button>
+  </div>
+</dialog>
+
 <!-- ============ COMPÉTENCES ============ -->
 <section id="competences" style="background:var(--paper-0);border-block:1px solid var(--paper-200)">
   <div class="wrap">
@@ -395,6 +535,7 @@ const FALLBACK_DATA = {
   parcours: { kicker: "Parcours", title: "Parcours", text: "" },
   experiences: [],
   lancer: { kicker: "", title: "ecom.dehini.com", text: "", features: [], cta: { label: "Ouvrir", href: "https://ecom.dehini.com/" } },
+  projets: { kicker: "Portfolio", title: "Projets", text: "" },
   projects: [],
   competences: { kicker: "Compétences", title: "Compétences" },
   skills: [], education: [], marquee: [],
@@ -478,6 +619,295 @@ function renderHeroTitle(str) {
   }).join(" ");
 }
 
+/* ======================================================================
+   Projets : cartes filtrables + fenêtre de détail
+   ====================================================================== */
+const catIcons = { Tous: "layout-grid", Marque: "gem", SaaS: "cloud", Fintech: "landmark", Mobile: "smartphone" };
+let PROJECTS = [];
+const grid = document.getElementById("grid"), filters = document.getElementById("filters");
+
+function renderProjects(cat) {
+  grid.innerHTML = PROJECTS.map((p, i) => ({ p, i })).filter(({ p }) => cat === "Tous" || p.cat === cat).map(({ p, i }, k) => `
+    <article class="proj" data-i="${i}" style="animation-delay:${k * 60}ms" tabindex="0" role="button" aria-label="${esc(p.title)}">
+      <div class="cover">${p.img ? `<img src="${esc(img(p.img, 700))}" alt="" loading="lazy">` : ""}
+        ${p.cat ? `<span class="badge">${ico(catIcons[p.cat] || "tag")}${esc(p.cat)}</span>` : ""}
+        ${p.url ? `<span class="badge live">${ico("radio")}En ligne</span>` : ""}
+        ${p.pdf ? `<span class="badge doc">${ico("book-open")}PDF interactif</span>` : ""}
+        <span class="ci">${ico(p.icon)}</span></div>
+      <div class="body"><h3><span>${esc(p.title)}</span>${ico("arrow-up-right")}</h3><p>${esc(p.text)}</p>
+        <div class="tags" style="margin:0">${(p.stack || []).map(s => `<span>${esc(s)}</span>`).join("")}</div></div>
+    </article>`).join("");
+  filters.querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.cat === cat));
+  drawIcons();
+  bindTilt(grid.querySelectorAll(".proj"), 6);
+}
+filters.addEventListener("click", e => { const b = e.target.closest("button"); if (b) renderProjects(b.dataset.cat); });
+
+const dlg = document.getElementById("dlg");
+function openProject(i) {
+  const p = PROJECTS[i];
+  const im = document.getElementById("dlgImg");
+  im.hidden = !p.img;
+  im.src = p.img ? img(p.img, 1100) : "";
+  const cover = document.getElementById("dlgCover");
+  cover.querySelector(".open-doc")?.remove();
+  if (p.pdf) cover.insertAdjacentHTML("beforeend", `<button type="button" class="open-doc" data-read="${i}"><span>${ico("book-open")} Feuilleter le document</span></button>`);
+  document.getElementById("dlgCat").innerHTML = `${ico(catIcons[p.cat] || "tag")} ${esc(p.cat)}`;
+  document.getElementById("dlgCat").hidden = !p.cat;
+  document.getElementById("dlgTitle").textContent = p.title;
+  document.getElementById("dlgText").textContent = p.text;
+  document.getElementById("dlgTags").innerHTML = (p.stack || []).map(s => `<span>${esc(s)}</span>`).join("");
+  document.getElementById("dlgLink").innerHTML =
+    (p.pdf ? `<button type="button" class="btn btn-cobalt" data-read="${i}">${ico("book-open")} Feuilleter le document</button>` : "") +
+    (p.url ? `<a class="btn ${p.pdf ? "btn-line" : "btn-cobalt"}" href="${esc(p.url)}" target="_blank" rel="noopener">Voir le projet ${ico("arrow-up-right")}</a>` : "") +
+    (!p.pdf && !p.url ? `<span class="when">${ico("lock")} Projet privé — démo sur demande</span>` : "");
+  drawIcons();
+  dlg.showModal();
+}
+grid.addEventListener("click", e => { const c = e.target.closest(".proj"); if (c) openProject(+c.dataset.i); });
+grid.addEventListener("keydown", e => { const c = e.target.closest(".proj"); if (c && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); openProject(+c.dataset.i); } });
+document.getElementById("dlgClose").onclick = () => dlg.close();
+dlg.addEventListener("click", e => {
+  const r = e.target.closest("[data-read]");
+  if (r) openReader(PROJECTS[+r.dataset.read]);
+  else if (e.target === dlg) dlg.close();
+});
+
+/* ======================================================================
+   Lecteur PDF interactif : PDF.js dessine les pages, StPageFlip les fait
+   tourner comme un livre (glisser le coin, clic, flèches du clavier,
+   balayage sur mobile). Les deux bibliothèques ne sont téléchargées qu'à
+   la première ouverture d'un document.
+   ====================================================================== */
+const PDFJS = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38";
+const PAGEFLIP = "https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.js";
+let readerLibs = null;
+function loadReaderLibs() {
+  return readerLibs ||= Promise.all([
+    import(`${PDFJS}/legacy/build/pdf.min.mjs`).then(m => { m.GlobalWorkerOptions.workerSrc = `${PDFJS}/legacy/build/pdf.worker.min.mjs`; return m; }),
+    window.St || new Promise((ok, ko) => { const s = document.createElement("script"); s.src = PAGEFLIP; s.onload = ok; s.onerror = ko; document.head.appendChild(s); }),
+  ]).then(([pdfjs]) => pdfjs).catch(e => { readerLibs = null; throw e; });
+}
+
+const reader = document.getElementById("reader"), rdShell = document.getElementById("rdShell"), rdStage = document.getElementById("rdStage");
+const rdMsg = document.getElementById("rdMsg"), rdCount = document.getElementById("rdCount"), rdRange = document.getElementById("rdRange");
+const rdPrev = document.getElementById("rdPrev"), rdNext = document.getElementById("rdNext");
+const rdZoom = document.getElementById("rdZoom"), rdZoomView = document.getElementById("rdZoomView"), rdFull = document.getElementById("rdFull");
+let RD = null, rdSeq = 0; // RD : document ouvert (pdf, livre, pages, images) ; rdSeq invalide les chargements d'un document refermé
+
+function setMsg(html) { rdMsg.innerHTML = html; drawIcons(); }
+
+// Dessine une page du PDF dans une image (JPEG) ; résultat mis en cache par page.
+async function pageToUrl(R, page, width) {
+  const vp = page.getViewport({ scale: width / page.getViewport({ scale: 1 }).width });
+  const c = document.createElement("canvas");
+  c.width = Math.ceil(vp.width); c.height = Math.ceil(vp.height);
+  await page.render({ canvasContext: c.getContext("2d"), viewport: vp }).promise;
+  const blob = await new Promise(ok => c.toBlob(ok, "image/jpeg", .9));
+  c.width = c.height = 0;
+  if (R !== RD) return null; // document refermé pendant le rendu
+  const url = URL.createObjectURL(blob);
+  R.urls.push(url);
+  return url;
+}
+
+async function destIndex(doc, dest) {
+  try {
+    const d = typeof dest === "string" ? await doc.getDestination(dest) : dest;
+    const ref = d && d[0];
+    return ref == null ? null : typeof ref === "number" ? ref : await doc.getPageIndex(ref);
+  } catch { return null; }
+}
+
+function renderPage(i) {
+  const R = RD;
+  if (!R || !R.book || i < 0 || i >= R.n) return Promise.resolve();
+  return R.cache[i] ||= (async () => {
+    const page = await R.doc.getPage(i + 1);
+    const url = await pageToUrl(R, page, R.px);
+    if (!url) return;
+    const el = R.pages[i];
+    el.insertAdjacentHTML("beforeend", `<img src="${url}" alt="Page ${i + 1}">`);
+    el.classList.add("ok");
+    // Liens du PDF rendus cliquables (sites, e-mails, renvois vers une autre page),
+    // seulement si la page a le même format que le livre pour rester bien alignés.
+    const vp = page.getViewport({ scale: 1 });
+    if (Math.abs(vp.width / vp.height - R.ratio) > .02) return;
+    for (const a of await page.getAnnotations()) {
+      if (a.subtype !== "Link") continue;
+      const [x1, y1, x2, y2] = vp.convertToViewportRectangle(a.rect);
+      const box = `left:${Math.min(x1, x2) / vp.width * 100}%;top:${Math.min(y1, y2) / vp.height * 100}%;width:${Math.abs(x2 - x1) / vp.width * 100}%;height:${Math.abs(y2 - y1) / vp.height * 100}%`;
+      if (a.url && /^(https?:|mailto:|tel:)/i.test(a.url)) {
+        el.insertAdjacentHTML("beforeend", `<a class="lk" style="${box}" href="${esc(a.url)}" target="_blank" rel="noopener" title="${esc(a.url)}"></a>`);
+      } else if (a.dest) {
+        const to = await destIndex(R.doc, a.dest);
+        if (to != null) el.insertAdjacentHTML("beforeend", `<a class="lk" style="${box}" href="#" data-goto="${to}" title="Page ${to + 1}"></a>`);
+      }
+    }
+  })().catch(() => {});
+}
+
+function syncReader() {
+  const R = RD;
+  if (!R || !R.book) return;
+  const i = R.book.getCurrentPageIndex(), n = R.n;
+  const two = R.book.getOrientation() === "landscape" && !(R.cover && i === 0) && i + 1 < n;
+  rdCount.textContent = `${two ? `${i + 1}–${i + 2}` : i + 1} / ${n}`;
+  rdRange.value = i + 1;
+  rdPrev.disabled = i <= 0;
+  rdNext.disabled = i >= n - (two ? 2 : 1);
+  // Pages visibles d'abord, puis les suivantes et précédentes
+  [0, 1, 2, 3, -1, -2, 4, 5].reduce((q, d) => q.then(() => renderPage(i + d)), Promise.resolve());
+}
+
+// Libère le document ouvert (livre, PDF, images) et invalide ses chargements en cours.
+function cleanupReader() {
+  rdSeq++;
+  const R = RD;
+  RD = null;
+  closeZoom();
+  setMsg("");
+  if (!R) return;
+  if (R.book) {
+    try { R.book.getRender().render = () => {}; R.book.destroy(); } catch {} // StPageFlip ne stoppe pas sa boucle d'animation seul
+  }
+  R.host?.remove();
+  R.task?.destroy();
+  R.urls.forEach(u => URL.revokeObjectURL(u));
+}
+
+// StPageFlip passe en page par page quand la zone fait moins de 2 × minWidth.
+// On ne garde la double page que si deux pages y tiennent presque en pleine hauteur :
+// sur téléphone ou fenêtre étroite, une seule page, plus grande et plus lisible.
+function minPageWidth(R) {
+  return R.single ? 1e5 : Math.max(120, Math.round(R.host.clientHeight * R.ratio * .9));
+}
+// Recalcul à chaque redimensionnement ou rotation du téléphone. Écouteur posé avant
+// celui de StPageFlip (créé à l'ouverture d'un document), donc appelé avant lui.
+addEventListener("resize", () => { if (RD?.book) RD.book.getSettings().minWidth = minPageWidth(RD); });
+
+async function openReader(p) {
+  if (!p || !p.pdf) return;
+  cleanupReader();
+  const id = rdSeq;
+  RD = { id, cache: [], urls: [] };
+  document.getElementById("rdTitle").textContent = p.title || "Document";
+  const dl = document.getElementById("rdDl");
+  dl.href = p.pdf;
+  dl.download = (p.title || "document").replace(/[\\/:*?"<>|]+/g, "-") + ".pdf";
+  rdCount.textContent = ""; rdRange.max = 1; rdRange.value = 1; rdPrev.disabled = rdNext.disabled = true;
+  rdRange.hidden = rdZoom.hidden = true; // affichés une fois le document chargé
+  setMsg(`<div><i data-lucide="loader-circle" class="spin"></i><span id="rdPct">Chargement du document…</span></div>`);
+  if (!reader.open) reader.showModal();
+  try {
+    const pdfjs = await loadReaderLibs();
+    if (id !== rdSeq) return;
+    const task = RD.task = pdfjs.getDocument({ url: p.pdf, isEvalSupported: false, cMapUrl: `${PDFJS}/cmaps/`, cMapPacked: true, standardFontDataUrl: `${PDFJS}/standard_fonts/` });
+    task.onProgress = ({ loaded, total }) => { const el = document.getElementById("rdPct"); if (el && total) el.textContent = `Chargement du document… ${Math.min(100, Math.round(loaded / total * 100))} %`; };
+    const doc = await task.promise;
+    if (id !== rdSeq) return;
+    const base = (await doc.getPage(1)).getViewport({ scale: 1 });
+    if (id !== rdSeq) return;
+    const n = doc.numPages, ratio = base.width / base.height;
+    // Pages à l'italienne (présentation) : toujours une page à la fois. Sinon double
+    // page avec couverture, mais seulement sur un écran assez large (voir minPageWidth).
+    const single = ratio > 1.05 || n === 1;
+    Object.assign(RD, { doc, n, ratio, single, cover: !single });
+    RD.pages = Array.from({ length: n }, (_, k) => {
+      const d = document.createElement("div");
+      d.className = "pg";
+      d.innerHTML = `<span class="pg-wait">${k + 1}</span>`;
+      return d;
+    });
+    const host = RD.host = document.createElement("div");
+    host.className = "rd-host";
+    rdStage.appendChild(host);
+    const book = new St.PageFlip(host, {
+      width: Math.round(base.width), height: Math.round(base.height), size: "stretch",
+      minWidth: minPageWidth(RD), maxWidth: 2000, minHeight: 100, maxHeight: 2000,
+      autoSize: false, usePortrait: true, showCover: !single, mobileScrollSupport: false,
+      maxShadowOpacity: .45, flippingTime: 750,
+    });
+    book.loadFromHTML(RD.pages);
+    host.style.minWidth = host.style.minHeight = ""; // StPageFlip impose ces minimums au conteneur : inutiles ici
+    book.update();
+    RD.book = book;
+    // Résolution des images : largeur affichée d'une page × densité de l'écran, avec une marge
+    RD.px = Math.round(Math.min(2200, Math.max(700, book.getBoundsRect().pageWidth * Math.min(devicePixelRatio || 1, 2) * 1.25)));
+    book.on("flip", syncReader);
+    book.on("changeOrientation", syncReader);
+    rdRange.max = n;
+    rdRange.hidden = n < 2;
+    rdZoom.hidden = false;
+    setMsg("");
+    syncReader();
+  } catch (e) {
+    if (id !== rdSeq) return;
+    setMsg(`<div>${ico("triangle-alert")}<p style="margin:10px 0 18px">Impossible d'afficher ce document ici.</p><a class="btn btn-cobalt" href="${esc(p.pdf)}" target="_blank" rel="noopener">${ico("file-text")} Ouvrir le PDF</a></div>`);
+  }
+}
+
+reader.addEventListener("close", () => {
+  if (reader.open) return; // rouvert entre-temps : openReader a déjà fait le ménage
+  if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  cleanupReader();
+});
+reader.addEventListener("cancel", e => { if (!rdZoomView.hidden) { e.preventDefault(); closeZoom(); } });
+document.getElementById("rdClose").onclick = () => reader.close();
+rdPrev.onclick = () => { closeZoom(); RD?.book?.flipPrev(); };
+rdNext.onclick = () => { closeZoom(); RD?.book?.flipNext(); };
+rdRange.oninput = () => { rdCount.textContent = `${rdRange.value} / ${RD?.n || 1}`; };
+rdRange.onchange = () => { if (RD?.book) { closeZoom(); RD.book.turnToPage(+rdRange.value - 1); syncReader(); } };
+reader.addEventListener("keydown", e => {
+  if (e.target === rdRange) return;
+  if (e.key === "ArrowRight" || e.key === "PageDown") { e.preventDefault(); rdNext.click(); }
+  else if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); rdPrev.click(); }
+});
+rdStage.addEventListener("click", e => {
+  const a = e.target.closest("a[data-goto]");
+  if (a && RD?.book) { e.preventDefault(); RD.book.flip(+a.dataset.goto); }
+});
+
+// Plein écran (masqué si le navigateur ne le permet pas, ex. iPhone)
+if (!rdShell.requestFullscreen) rdFull.hidden = true;
+rdFull.onclick = () => document.fullscreenElement ? document.exitFullscreen() : rdShell.requestFullscreen().catch(() => {});
+document.addEventListener("fullscreenchange", () => { rdFull.innerHTML = ico(document.fullscreenElement ? "minimize" : "maximize"); drawIcons(); });
+
+// Zoom : la ou les pages affichées en haute définition, déplaçables à la souris ou au doigt
+function closeZoom() {
+  rdZoomView.hidden = true;
+  rdZoomView.innerHTML = "";
+  rdZoom.classList.remove("on");
+}
+rdZoom.onclick = async () => {
+  const R = RD;
+  if (!R || !R.book) return;
+  if (!rdZoomView.hidden) return closeZoom();
+  const i = R.book.getCurrentPageIndex();
+  const idx = R.book.getOrientation() === "landscape" && !(R.cover && i === 0) && i + 1 < R.n ? [i, i + 1] : [i];
+  const w = Math.round(Math.min(2400, Math.max(rdStage.clientWidth, R.book.getBoundsRect().pageWidth * 2)));
+  rdZoom.classList.add("on");
+  rdZoomView.hidden = false;
+  rdZoomView.innerHTML = `<div class="rd-msg"><i data-lucide="loader-circle" class="spin"></i></div>`;
+  drawIcons();
+  try {
+    const urls = [];
+    for (const k of idx) urls.push(await pageToUrl(R, await R.doc.getPage(k + 1), Math.min(4000, w * Math.min(devicePixelRatio || 1, 2))));
+    if (R !== RD || rdZoomView.hidden) return;
+    rdZoomView.innerHTML = urls.map((u, j) => `<img src="${u}" alt="Page ${idx[j] + 1}" style="width:${w}px">`).join("");
+    rdZoomView.scrollLeft = (rdZoomView.scrollWidth - rdZoomView.clientWidth) / 2;
+  } catch { closeZoom(); }
+};
+let pan = null;
+rdZoomView.addEventListener("pointerdown", e => {
+  if (e.pointerType !== "mouse") return;
+  e.preventDefault();
+  pan = { x: e.clientX, y: e.clientY, l: rdZoomView.scrollLeft, t: rdZoomView.scrollTop };
+  rdZoomView.classList.add("drag");
+});
+addEventListener("pointermove", e => { if (pan) { rdZoomView.scrollLeft = pan.l - (e.clientX - pan.x); rdZoomView.scrollTop = pan.t - (e.clientY - pan.y); } });
+addEventListener("pointerup", () => { pan = null; rdZoomView.classList.remove("drag"); });
+
 function countUp(el) {
   const to = +el.dataset.to, suf = el.dataset.suffix || "", t0 = performance.now(), d = 1400;
   (function f(t) { const k = Math.min(1, (t - t0) / d); el.textContent = Math.round(to * (1 - Math.pow(1 - k, 3))) + suf; if (k < 1) requestAnimationFrame(f); })(t0);
@@ -554,6 +984,18 @@ function render(data) {
   const lc = document.getElementById("lancerCta");
   lc.href = (data.lancer.cta || {}).href || "#";
   lc.innerHTML = `${esc((data.lancer.cta || {}).label || "")} ${ico("arrow-up-right")}`;
+
+  // Projets
+  const pj = data.projets || {};
+  document.getElementById("projetsKicker").innerHTML = `${ico("layout-grid")} ${esc(pj.kicker)}`;
+  document.getElementById("projetsTitle").innerHTML = mdAccent(pj.title);
+  document.getElementById("projetsText").textContent = pj.text || "";
+  PROJECTS = data.projects || [];
+  document.getElementById("projets").hidden = !PROJECTS.length;
+  const cats = ["Tous", ...new Set(PROJECTS.map(p => p.cat).filter(Boolean))];
+  filters.hidden = cats.length < 3;
+  filters.innerHTML = cats.map(c => `<button data-cat="${esc(c)}">${ico(catIcons[c] || "tag")}${esc(c)} <span class="n">${c === "Tous" ? PROJECTS.length : PROJECTS.filter(p => p.cat === c).length}</span></button>`).join("");
+  renderProjects("Tous");
 
   // Compétences + formation
   document.getElementById("skillsKicker").innerHTML = `${ico("sparkles")} ${esc(data.competences.kicker)}`;
