@@ -776,6 +776,16 @@ function cleanupReader() {
   R.urls.forEach(u => URL.revokeObjectURL(u));
 }
 
+// StPageFlip passe en page par page quand la zone fait moins de 2 × minWidth.
+// On ne garde la double page que si deux pages y tiennent presque en pleine hauteur :
+// sur téléphone ou fenêtre étroite, une seule page, plus grande et plus lisible.
+function minPageWidth(R) {
+  return R.single ? 1e5 : Math.max(120, Math.round(R.host.clientHeight * R.ratio * .9));
+}
+// Recalcul à chaque redimensionnement ou rotation du téléphone. Écouteur posé avant
+// celui de StPageFlip (créé à l'ouverture d'un document), donc appelé avant lui.
+addEventListener("resize", () => { if (RD?.book) RD.book.getSettings().minWidth = minPageWidth(RD); });
+
 async function openReader(p) {
   if (!p || !p.pdf) return;
   cleanupReader();
@@ -799,10 +809,10 @@ async function openReader(p) {
     const base = (await doc.getPage(1)).getViewport({ scale: 1 });
     if (id !== rdSeq) return;
     const n = doc.numPages, ratio = base.width / base.height;
-    // Pages à l'italienne (présentation) : une page à la fois. Sinon double page
-    // avec couverture dès que l'écran est assez large.
+    // Pages à l'italienne (présentation) : toujours une page à la fois. Sinon double
+    // page avec couverture, mais seulement sur un écran assez large (voir minPageWidth).
     const single = ratio > 1.05 || n === 1;
-    Object.assign(RD, { doc, n, ratio, cover: !single });
+    Object.assign(RD, { doc, n, ratio, single, cover: !single });
     RD.pages = Array.from({ length: n }, (_, k) => {
       const d = document.createElement("div");
       d.className = "pg";
@@ -814,12 +824,12 @@ async function openReader(p) {
     rdStage.appendChild(host);
     const book = new St.PageFlip(host, {
       width: Math.round(base.width), height: Math.round(base.height), size: "stretch",
-      minWidth: single ? 1e5 : 240, maxWidth: 2000, minHeight: 100, maxHeight: 2000,
+      minWidth: minPageWidth(RD), maxWidth: 2000, minHeight: 100, maxHeight: 2000,
       autoSize: false, usePortrait: true, showCover: !single, mobileScrollSupport: false,
       maxShadowOpacity: .45, flippingTime: 750,
     });
     book.loadFromHTML(RD.pages);
-    host.style.minWidth = host.style.minHeight = ""; // minWidth géant = astuce pour forcer une page à la fois
+    host.style.minWidth = host.style.minHeight = ""; // StPageFlip impose ces minimums au conteneur : inutiles ici
     book.update();
     RD.book = book;
     // Résolution des images : largeur affichée d'une page × densité de l'écran, avec une marge
