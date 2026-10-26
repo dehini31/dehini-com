@@ -8,7 +8,7 @@
  *   GET  session                              -> {ok, csrf} ou 401
  *   GET  data                                 -> contenu de data.json (auth requise)
  *   POST save     {data, csrf}                -> écrit data.json (auth requise)
- *   POST upload   multipart: file, csrf       -> {ok, url} (auth requise)
+ *   POST upload   multipart: file, csrf       -> {ok, url} (auth requise) — image ou PDF
  */
 declare(strict_types=1);
 
@@ -140,27 +140,40 @@ switch ($action) {
 
     case 'upload': {
         require_auth();
+        // Au-delà de post_max_size, PHP vide $_POST et $_FILES : sans ce test, l'erreur
+        // affichée serait « jeton invalide » au lieu de « fichier trop lourd ».
+        if (empty($_POST) && empty($_FILES) && (int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
+            fail('Fichier trop lourd pour le serveur (limite PHP post_max_size : ' . ini_get('post_max_size') . ').');
+        }
         require_csrf_token((string) ($_POST['csrf'] ?? ''));
 
-        if (empty($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
-            fail("Envoi du fichier échoué.");
+        $err = $_FILES['file']['error'] ?? UPLOAD_ERR_NO_FILE;
+        if ($err === UPLOAD_ERR_INI_SIZE || $err === UPLOAD_ERR_FORM_SIZE) {
+            fail('Fichier trop lourd pour le serveur (limite PHP upload_max_filesize : ' . ini_get('upload_max_filesize') . ').');
         }
+        if ($err !== UPLOAD_ERR_OK) fail("Envoi du fichier échoué.");
         $f = $_FILES['file'];
-        if ($f['size'] > 6 * 1024 * 1024) fail('Image trop lourde (max 6 Mo).');
 
-        $info = @getimagesize($f['tmp_name']);
-        $allowed = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif'];
-        if (!$info || !isset($allowed[$info['mime']])) {
-            fail("Format d'image non accepté (jpg, png, webp, gif uniquement).");
+        // PDF : reconnu à sa signature « %PDF- » en tête de fichier, pas à son nom.
+        if (@file_get_contents($f['tmp_name'], false, null, 0, 5) === '%PDF-') {
+            if ($f['size'] > 30 * 1024 * 1024) fail('PDF trop lourd (max 30 Mo).');
+            $ext = 'pdf';
+        } else {
+            if ($f['size'] > 6 * 1024 * 1024) fail('Image trop lourde (max 6 Mo).');
+            $info = @getimagesize($f['tmp_name']);
+            $allowed = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif'];
+            if (!$info || !isset($allowed[$info['mime']])) {
+                fail("Format non accepté (jpg, png, webp, gif ou pdf uniquement).");
+            }
+            $ext = $allowed[$info['mime']];
         }
-        $ext = $allowed[$info['mime']];
 
         if (!is_dir($UPLOADS_DIR) && !mkdir($UPLOADS_DIR, 0755, true) && !is_dir($UPLOADS_DIR)) {
             fail("Impossible de créer le dossier uploads/.", 500);
         }
         $name = bin2hex(random_bytes(8)) . '.' . $ext;
         $dest = $UPLOADS_DIR . '/' . $name;
-        if (!move_uploaded_file($f['tmp_name'], $dest)) fail("Impossible d'enregistrer l'image.", 500);
+        if (!move_uploaded_file($f['tmp_name'], $dest)) fail("Impossible d'enregistrer le fichier.", 500);
         @chmod($dest, 0644);
 
         ok(['url' => 'uploads/' . $name]);
