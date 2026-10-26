@@ -10,6 +10,9 @@ Site personnel de Mohammed Dehini.
 - `admin/` — back-office protégé par mot de passe pour modifier textes, images et liens sans
   toucher au code.
 - `uploads/` — images et PDF envoyés depuis l'admin (ignoré par Git).
+- `elbahiferti/` — page vitrine du laboratoire ELBAHI FERTI — DIAG PMA, publiée sur
+  `https://dehini.com/elbahiferti/`. Page statique autonome (français / arabe), ses images et la
+  vidéo du logo sont dans `elbahiferti/assets/`. Elle ne dépend ni de `data.json` ni de l'admin.
 
 ## Installation (serveur dzSecurity, compte cPanel `dehini91`)
 
@@ -24,6 +27,7 @@ cp -f dehini-com/index.html ~/public_html/index.html
 cp -f dehini-com/admin/index.html dehini-com/admin/api.php dehini-com/admin/.htaccess dehini-com/admin/.user.ini ~/public_html/admin/
 cp -f dehini-com/uploads/.htaccess ~/public_html/uploads/.htaccess
 cp -rf dehini-com/img ~/public_html/
+cp -rf dehini-com/elbahiferti ~/public_html/
 ```
 
 ### 2. Créer le mot de passe de l'admin
@@ -53,11 +57,11 @@ depuis `/admin`, jamais depuis ce dépôt.
 Dans **cPanel → Tâches Cron**, toutes les 5 minutes :
 
 ```bash
-cd ~/dehini-com && git pull -q && cp -f index.html ~/public_html/index.html && cp -f admin/index.html admin/api.php admin/.htaccess admin/.user.ini ~/public_html/admin/ && cp -f uploads/.htaccess ~/public_html/uploads/.htaccess && cp -rf img ~/public_html/
+cd ~/dehini-com && git pull -q && cp -f index.html ~/public_html/index.html && cp -f admin/index.html admin/api.php admin/.htaccess admin/.user.ini ~/public_html/admin/ && cp -f uploads/.htaccess ~/public_html/uploads/.htaccess && cp -rf img ~/public_html/ && cp -rf elbahiferti ~/public_html/
 ```
 
 Cette commande ne touche jamais `data.json`, `admin/config.php` ni les images envoyées dans
-`uploads/` : seul le code (`index.html`, `admin/*.php`) est mis à jour.
+`uploads/` : seul le code (`index.html`, `admin/*.php`, `elbahiferti/`) est mis à jour.
 
 ## Utiliser l'admin
 
