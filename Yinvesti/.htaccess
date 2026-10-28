@@ -1,0 +1,16 @@
+Options -Indexes
+DirectoryIndex index.html
+
+# Fichiers internes : jamais servis directement.
+<FilesMatch "^(_lib\.php|config\.php|config\.example\.php)$">
+  Require all denied
+</FilesMatch>
+
+# Police et images : mises en cache 30 jours.
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType font/otf "access plus 30 days"
+  ExpiresByType application/vnd.ms-opentype "access plus 30 days"
+  ExpiresByType image/png "access plus 30 days"
+  ExpiresByType image/jpeg "access plus 30 days"
+</IfModule>

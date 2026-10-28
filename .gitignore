@@ -10,3 +10,6 @@
 /uploads/*
 !/uploads/.gitkeep
 !/uploads/.htaccess
+
+# Réglages de la préinscription Yinvesti (adresse e-mail, dossier) : serveur seulement.
+/Yinvesti/config.php

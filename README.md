@@ -24,6 +24,7 @@ cp -f dehini-com/index.html ~/public_html/index.html
 cp -f dehini-com/admin/index.html dehini-com/admin/api.php dehini-com/admin/.htaccess ~/public_html/admin/
 cp -f dehini-com/uploads/.htaccess ~/public_html/uploads/.htaccess
 cp -rf dehini-com/img ~/public_html/
+mkdir -p ~/public_html/Yinvesti && cp -rf dehini-com/Yinvesti/. ~/public_html/Yinvesti/
 ```
 
 ### 2. Créer le mot de passe de l'admin
@@ -53,11 +54,35 @@ depuis `/admin`, jamais depuis ce dépôt.
 Dans **cPanel → Tâches Cron**, toutes les 5 minutes :
 
 ```bash
-cd ~/dehini-com && git pull -q && cp -f index.html ~/public_html/index.html && cp -f admin/index.html admin/api.php admin/.htaccess ~/public_html/admin/ && cp -f uploads/.htaccess ~/public_html/uploads/.htaccess && cp -rf img ~/public_html/
+cd ~/dehini-com && git pull -q && cp -f index.html ~/public_html/index.html && cp -f admin/index.html admin/api.php admin/.htaccess ~/public_html/admin/ && cp -f uploads/.htaccess ~/public_html/uploads/.htaccess && cp -rf img ~/public_html/ && mkdir -p ~/public_html/Yinvesti && cp -rf Yinvesti/. ~/public_html/Yinvesti/
 ```
 
 Cette commande ne touche jamais `data.json`, `admin/config.php` ni les images envoyées dans
 `uploads/` : seul le code (`index.html`, `admin/*.php`) est mis à jour.
+
+## Page Yinvesti × African Startup Conference 2026 (`/Yinvesti`)
+
+Page vitrine de préinscription au crowdfunding Yinvesti pendant l'ASC 2026 (5 – 7 décembre,
+CIC Alger), en coordination avec Algeria Venture. Français, arabe et anglais.
+
+- `Yinvesti/index.html` — la page (aucune dépendance, aucun build).
+- `Yinvesti/candidature.php` — reçoit le formulaire : fiche JSON, ligne dans
+  `candidatures.csv` (ouvrable dans Excel) et document joint, rangés **hors du site** dans
+  `~/yinvesti-candidatures/`. Envoie un accusé de réception au porteur.
+- `https://dehini.com/Yinvesti/candidatures.php` — liste des candidatures, fiches, documents
+  joints et export CSV. **Même mot de passe que `/admin`.**
+
+Réglages (une fois, sur le serveur) :
+
+```bash
+cp ~/public_html/Yinvesti/config.example.php ~/public_html/Yinvesti/config.php
+nano ~/public_html/Yinvesti/config.php   # adresse qui reçoit chaque candidature
+```
+
+`config.php` n'est jamais envoyé sur GitHub et n'est pas écrasé par le cron. Pour accepter des
+pitch decks jusqu'à 25 Mo : **cPanel → MultiPHP INI Editor** → `upload_max_filesize = 26M` et
+`post_max_size = 28M` (sinon la page affiche un message clair et propose d'envoyer un fichier
+plus léger).
 
 ## Utiliser l'admin
 
@@ -89,3 +114,6 @@ pas mis à jour automatiquement après coup.
   `uploads/` refuse d'exécuter un script.
 - `admin/config.php` contient le hash du mot de passe : il est exclu de Git (`.gitignore`) et
   bloqué en accès direct par `admin/.htaccess`.
+- Préinscriptions Yinvesti : stockées hors de `public_html`, liste et téléchargements réservés à
+  l'admin connecté ; champ piège anti-robots, 5 envois max par heure et par IP, types de
+  fichiers contrôlés (PDF, PowerPoint, Word, ZIP).
