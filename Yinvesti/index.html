@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Yinvesti × ASC 2026 — Levez des fonds pendant l'African Startup Conference</title>
-<meta name="description" content="Porteurs de projet et entreprises : candidatez au financement participatif Yinvesti et rencontrez notre équipe pendant l'African Startup Conference 2026, du 5 au 7 décembre au CIC d'Alger. En coordination avec Algeria Venture.">
+<title>Yinvesti × ASC 2026 — Financez votre projet pendant l'African Startup Conference</title>
+<meta name="description" content="Startups et porteurs de projet : candidatez à la première campagne de financement participatif Yinvesti pendant l'African Startup Conference 2026, avec un lancement officiel des campagnes le dimanche 6 décembre à Alger. En coordination avec Algeria Venture.">
 <meta name="theme-color" content="#091C3F">
 <meta property="og:title" content="Yinvesti × African Startup Conference 2026">
-<meta property="og:description" content="Levez des fonds pendant l'ASC 2026 : préinscription gratuite au crowdfunding Yinvesti, rendez-vous du 5 au 7 décembre au CIC d'Alger.">
+<meta property="og:description" content="Une nouvelle opportunité de financer votre projet pendant l'ASC 2026 : préinscription gratuite, lancement officiel des campagnes le 6 décembre au CIC d'Alger.">
 <meta property="og:image" content="assets/asc-2026.jpg">
 <link rel="icon" href="assets/yinvesti-blanc.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -89,7 +89,7 @@ header{position:sticky;top:0;z-index:60;background:rgba(9,28,63,.86);backdrop-fi
 .pill{display:inline-flex;align-items:center;gap:10px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.05);border-radius:999px;padding:6px 14px 6px 6px;font-size:13px;font-weight:600;color:#dbe6f8;margin-bottom:24px}
 html[dir="rtl"] .pill{padding:6px 6px 6px 14px}
 .pill img{width:28px;height:28px;border-radius:50%;object-fit:cover}
-.hero h1{font-size:clamp(36px,5.4vw,66px);margin-bottom:22px}
+.hero h1{font-size:clamp(34px,4.6vw,58px);margin-bottom:22px}
 .hero h1 em{font-style:normal;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;position:relative;white-space:nowrap}
 .hero h1 em::after{content:'';position:absolute;inset-inline:0;bottom:-.06em;height:.09em;border-radius:9px;background:var(--grad);transform:scaleX(0);transform-origin:left;animation:trait 1.1s .7s cubic-bezier(.2,.7,.2,1) forwards}
 html[dir="rtl"] .hero h1 em::after{transform-origin:right}
@@ -202,53 +202,78 @@ html[dir="rtl"] .obtenir::after{inset:auto auto -60px -40px}
 .chiffres .wrap{position:relative}
 .grille-c{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:16px}
 .chiffre{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:var(--r);padding:26px}
-.chiffre b{display:block;font-family:'Sora',sans-serif;font-size:clamp(34px,4vw,50px);font-weight:800;line-height:1.1;margin-bottom:6px}
-.chiffre b small{font-size:.45em;color:#9fb2d3;font-weight:700}
+.chiffre>b{display:block;font-family:'Sora',sans-serif;font-size:clamp(34px,4vw,50px);font-weight:800;line-height:1.1;margin-bottom:6px}
+.chiffre>b small{font-size:.45em;color:#9fb2d3;font-weight:700}
 .chiffre>span{color:#a9bcdc;font-size:15px}
 .chiffre.grand{display:flex;flex-direction:column;justify-content:flex-end;background:linear-gradient(160deg,rgba(78,182,72,.22),rgba(22,71,157,.25));border-color:rgba(78,182,72,.35)}
 .pipe-t{margin:34px 0 14px;font-family:var(--titre);font-size:18px;color:#dbe6f8}
-.chiffre.grand b{font-size:clamp(48px,6vw,78px);background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
-.pipeline{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
-.pipeline .chiffre b{font-size:clamp(30px,3.2vw,40px);color:var(--green)}
+.chiffre.grand>b{font-size:clamp(48px,6vw,78px);background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.pipeline{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.chiffre.grand .ops{margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.12);color:#dbe6f8;font-size:15px}
+.chiffre.grand .ops strong{font-family:'Sora',sans-serif;font-size:22px;color:#fff}
+.paie{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.paie>span{background:rgba(255,255,255,.08);border-radius:999px;padding:4px 11px;font-size:12.5px;color:#dbe6f8}
+.paie strong{color:var(--green)}
+.badge-m{display:inline-block;margin-top:12px;background:var(--blue);color:#fff;border-radius:999px;padding:4px 12px;font-style:normal;font-size:12.5px;font-weight:700}
+.chiffre.vous{background:linear-gradient(160deg,rgba(78,182,72,.18),rgba(22,71,157,.2));border-color:rgba(78,182,72,.35)}
+.chiffre.vous>b{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.pipeline .chiffre>b{font-size:clamp(30px,3.2vw,40px);color:var(--green)}
 .barre{height:6px;border-radius:9px;background:rgba(255,255,255,.1);margin-top:14px;overflow:hidden}
 .barre i{display:block;height:100%;width:0;background:var(--grad);border-radius:9px;transition:width 1.4s cubic-bezier(.2,.7,.2,1)}
 .note{color:#7f93b7;font-size:13px;margin-top:18px;text-align:center}
 
-/* Parcours */
-.frise{position:relative;display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
-.frise .rail{position:absolute;top:31px;inset-inline:6%;height:4px;border-radius:9px;background:var(--line)}
-.frise .rail i{display:block;height:100%;width:0;border-radius:9px;background:var(--grad);transition:width .2s linear}
-html[dir="rtl"] .frise .rail i{margin-inline-start:auto}
-.phase{position:relative;text-align:center}
-.phase .rond{position:relative;z-index:1;width:66px;height:66px;margin:0 auto 22px;border-radius:50%;display:grid;place-items:center;background:#fff;border:4px solid var(--line);font-family:'Sora',sans-serif;font-weight:800;font-size:20px;color:var(--mut);transition:all .4s}
-.phase.atteint .rond{border-color:transparent;background:var(--grad);color:#fff;box-shadow:0 14px 30px -12px rgba(22,71,157,.6)}
-.phase .carte-p{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:24px 20px;text-align:start;height:calc(100% - 88px);transition:transform .3s,box-shadow .3s}
-.phase .carte-p:hover{transform:translateY(-4px);box-shadow:0 26px 50px -34px rgba(9,28,63,.45)}
-.phase .tag{display:inline-block;font-size:12px;font-weight:700;border-radius:999px;padding:4px 11px;background:var(--sky);color:var(--blue);margin-bottom:12px}
-.phase.asc .carte-p{background:var(--navy);color:#fff;border-color:var(--navy)}
-.phase.asc .tag{background:var(--green);color:#fff}
-.phase.asc p{color:#c1cfe7}
-.phase h3{font-size:18px;margin-bottom:8px}
-.phase p{color:var(--mut);font-size:14.5px}
-
-/* Jours ASC */
-.jours-s{background:var(--sky)}
-.agenda{display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1.3fr;gap:14px;align-items:stretch}
-.jour{position:relative;background:#fff;border:2px solid var(--line);border-radius:var(--r);padding:22px 18px;text-align:center;transition:transform .25s,border-color .25s,box-shadow .25s}
-.jour:hover{transform:translateY(-4px)}
-.jour[aria-pressed="true"]{border-color:var(--green);box-shadow:0 22px 44px -26px rgba(78,182,72,.8)}
-.jour[aria-pressed="true"]::after{content:'✓';position:absolute;top:10px;inset-inline-end:12px;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;font-size:13px;font-weight:800;display:grid;place-items:center}
-.jour small{display:block;font-size:13px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.08em}
-html[lang="ar"] .jour small{letter-spacing:0}
-.jour b{display:block;font-family:'Sora',sans-serif;font-size:46px;line-height:1.1;margin:6px 0 2px;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
-.jour span{display:block;font-weight:700}
-.jour em{display:block;font-style:normal;font-size:13px;color:var(--mut);margin-top:10px}
-.jour.apres b{font-size:30px;padding:12px 0 6px}
-.lieu-c{background:var(--navy);color:#fff;border-radius:var(--r);padding:24px;display:flex;flex-direction:column;gap:10px;justify-content:center}
-.lieu-c svg{width:30px;height:30px;color:var(--green)}
-.lieu-c b{font-family:var(--titre);font-size:18px;line-height:1.3}
-.lieu-c span{color:#a9bcdc;font-size:14px}
-.lieu-c a{color:var(--green);font-weight:700;font-size:14px}
+/* Calendrier prévisionnel : étapes + encart du lancement du 6 décembre */
+.chrono-g{display:grid;grid-template-columns:1fr 370px;grid-template-areas:"liste cal";gap:48px;align-items:start}
+.chrono-l{grid-area:liste;position:relative}
+.chrono-l::before{content:'';position:absolute;top:26px;bottom:60px;inset-inline-start:23px;width:4px;border-radius:9px;background:var(--line)}
+.chrono-l .fil{position:absolute;top:26px;inset-inline-start:23px;width:4px;height:0;border-radius:9px;background:var(--grad);z-index:1;transition:height .15s linear}
+.chrono{list-style:none;display:grid;gap:14px}
+.jalon{position:relative;display:grid;grid-template-columns:50px 1fr;gap:18px;align-items:start}
+.jalon .pt{position:relative;z-index:2;width:50px;height:50px;border-radius:50%;display:grid;place-items:center;background:#fff;border:3px solid var(--line);font-family:'Sora',sans-serif;font-weight:800;font-size:15px;color:var(--mut);transition:all .4s}
+.jalon.atteint .pt{background:var(--grad);border-color:transparent;color:#fff;box-shadow:0 12px 26px -12px rgba(22,71,157,.6)}
+.carte-j{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px 20px;transition:transform .3s,box-shadow .3s}
+.carte-j:hover{transform:translateY(-2px);box-shadow:0 22px 44px -32px rgba(9,28,63,.45)}
+.carte-j small{font-size:12px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.08em}
+html[lang="ar"] .carte-j small{letter-spacing:0;font-size:13px}
+.carte-j h3{font-size:17.5px;margin-top:3px;line-height:1.3}
+.carte-j .lien{display:inline-block;margin-top:8px;color:var(--blue);font-weight:700;font-size:14px}
+.carte-j .cond{margin-top:10px;font-size:14px;color:#7a4b00;background:#fff6e0;border:1px solid #f6dca0;border-radius:12px;padding:9px 12px}
+.jalon.lancement .pt{background:var(--green);border-color:var(--green);color:#fff;animation:pouls 2s infinite}
+.jalon.lancement .carte-j{background:var(--navy);color:#fff;border-color:var(--navy);padding:26px;position:relative;overflow:hidden}
+.jalon.lancement .carte-j::after{content:'';position:absolute;inset:auto -50px -70px auto;width:220px;height:220px;border-radius:50%;background:repeating-linear-gradient(105deg,rgba(78,182,72,.5) 0 8px,transparent 8px 16px,rgba(69,169,227,.45) 16px 24px,transparent 24px 32px);opacity:.25;pointer-events:none}
+html[dir="rtl"] .jalon.lancement .carte-j::after{inset:auto auto -70px -50px}
+.jalon.lancement h3{font-size:clamp(20px,2.2vw,24px)}
+.jalon.lancement .date{display:inline-flex;align-items:center;gap:8px;background:var(--green);color:#fff;border-radius:999px;padding:7px 14px;font-weight:700;font-size:14px;margin:12px 0 14px}
+.jalon.lancement .date svg{width:17px;height:17px}
+.jalon.lancement p{color:#c1cfe7;font-size:15px}
+.infos-j{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px;position:relative;z-index:1}
+.infos-j div{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:12px 14px}
+.infos-j b{display:block;color:var(--green);font-size:12.5px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+html[lang="ar"] .infos-j b{letter-spacing:0;font-size:14px}
+.infos-j span{color:#dbe6f8;font-size:14px}
+.cal-c{grid-area:cal;position:sticky;top:96px;background:var(--navy);color:#fff;border-radius:24px;padding:26px;overflow:hidden}
+.cal-c::after{content:'';position:absolute;inset:-70px -70px auto auto;width:220px;height:220px;border-radius:50%;background:repeating-linear-gradient(105deg,rgba(78,182,72,.5) 0 8px,transparent 8px 16px,rgba(69,169,227,.45) 16px 24px,transparent 24px 32px);opacity:.2;pointer-events:none}
+html[dir="rtl"] .cal-c::after{inset:-70px auto auto -70px}
+.cal-c>*{position:relative;z-index:1}
+.cal-c .k{color:#9fb2d3;font-weight:700;font-size:12.5px;letter-spacing:.1em;text-transform:uppercase}
+html[lang="ar"] .cal-c .k{letter-spacing:0}
+.mini-cal{display:grid;grid-template-columns:1fr 1.25fr 1fr;gap:8px;margin:16px 0 20px;align-items:end}
+.mini-cal div{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:14px;text-align:center;padding:10px 4px}
+.mini-cal small{display:block;font-size:11.5px;color:#9fb2d3;font-weight:700}
+.mini-cal b{display:block;font-family:'Sora',sans-serif;font-size:26px;line-height:1.25}
+.mini-cal .j6{background:var(--green);border-color:var(--green);padding:16px 4px;box-shadow:0 16px 30px -12px rgba(78,182,72,.7)}
+.mini-cal .j6 small{color:#effbec}
+.mini-cal .j6 b{font-size:34px}
+.cal-c h3{font-size:20px;line-height:1.3;margin-bottom:8px}
+.cal-c p{color:#b8c8e4;font-size:14.5px;margin-bottom:16px}
+.cal-c .cases{display:flex;gap:6px}
+.cal-c .case{min-width:0;flex:1}
+.cal-c .case b{font-size:22px}
+.cal-c .case small{font-size:10px;letter-spacing:.02em}
+.cal-c .compte-msg{font-weight:700;color:#dff5dd}
+.lieu-l{display:flex;gap:10px;align-items:flex-start;margin-top:18px;padding-top:16px;border-top:1px solid rgba(255,255,255,.1);font-size:14px;color:#c9d6ee}
+.lieu-l svg{width:22px;height:22px;color:var(--green);flex:none}
+.lieu-l a{display:block;margin-top:4px;color:var(--green);font-weight:700}
 .toast{visibility:hidden;position:fixed;bottom:24px;left:50%;transform:translate(-50%,140%);background:var(--navy);color:#fff;padding:12px 18px;border-radius:14px;font-weight:600;font-size:14.5px;box-shadow:0 20px 40px -16px rgba(0,0,0,.5);z-index:90;transition:transform .35s cubic-bezier(.2,.7,.2,1);display:flex;gap:9px;align-items:center;max-width:calc(100% - 32px)}
 .toast.vu{visibility:visible;transform:translate(-50%,0)}
 .toast i{width:9px;height:9px;border-radius:50%;background:var(--green);flex:none}
@@ -412,8 +437,8 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
   .burger{display:grid;place-items:center;margin-inline-start:auto}
   .hd .btn{display:none}
   .atouts{grid-template-columns:repeat(2,1fr)}
-  .agenda{grid-template-columns:repeat(4,1fr)}
-  .lieu-c{grid-column:1/-1}
+  .chrono-g{grid-template-columns:1fr;grid-template-areas:"cal" "liste";gap:30px}
+  .cal-c{position:relative;top:0}
   .form-g{grid-template-columns:1fr}
   .cote{padding:26px 24px;gap:18px}
   .pas{grid-template-columns:repeat(3,1fr)}
@@ -429,12 +454,7 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
   .grille-c{grid-template-columns:1fr 1fr}
   .chiffre.grand{grid-column:1/-1}
   .pipeline{grid-template-columns:1fr 1fr}
-  .frise{grid-template-columns:1fr;gap:16px}
-  .frise .rail{top:0;bottom:0;width:4px;height:auto;inset-inline-start:31px;inset-inline-end:auto}
-  .frise .rail i{width:100%!important;height:var(--h,0)}
-  .phase{display:grid;grid-template-columns:66px 1fr;gap:16px;text-align:start}
-  .phase .rond{margin:0}
-  .phase .carte-p{height:auto}
+  .infos-j{grid-template-columns:1fr}
   .final-c{grid-template-columns:1fr;padding:44px 26px}
   .final-c .cases{justify-content:flex-start}
   section{padding:80px 0}
@@ -457,7 +477,10 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
   .onglets{width:100%}
   .onglets button{flex:1;padding:11px 8px;font-size:14px}
   .bloc{padding:24px}
-  .agenda{grid-template-columns:1fr 1fr}
+  .jalon{grid-template-columns:42px 1fr;gap:12px}
+  .jalon .pt{width:42px;height:42px;font-size:13px}
+  .chrono-l::before,.chrono-l .fil{inset-inline-start:19px}
+  .jalon.lancement .carte-j{padding:20px}
   .formulaire{padding:26px 20px}
   .champs,.choix.c2,.choix.c3,.choix.c4,.stades{grid-template-columns:1fr}
   .pas li span{display:none}
@@ -494,7 +517,7 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
     <nav id="menu" aria-label="Menu">
       <a href="#pourquoi" data-i18n="nav_why">Pourquoi l'ASC</a>
       <a href="#profils" data-i18n="nav_profils">Profils</a>
-      <a href="#parcours" data-i18n="nav_parcours">Parcours</a>
+      <a href="#parcours" data-i18n="nav_parcours">Calendrier</a>
       <a href="#candidature" data-i18n="nav_form">Candidater</a>
       <a href="#faq" data-i18n="nav_faq">FAQ</a>
     </nav>
@@ -515,14 +538,14 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
   <div class="wrap hero-g">
     <div>
       <span class="pill rv"><img src="assets/asc-2026.jpg" alt="" width="28" height="28"><span data-i18n="hero_pill">African Startup Conference 2026 · 5e édition</span></span>
-      <h1 class="rv d1" data-i18n="hero_title">Levez des fonds <em>pendant l'ASC 2026</em> avec Yinvesti.</h1>
-      <p class="sub rv d2" data-i18n="hero_sub">Porteurs de projet et entreprises : candidatez au <b>financement participatif Yinvesti</b> et rencontrez notre équipe du 5 au 7 décembre 2026 au Centre international de conférences d'Alger.</p>
+      <h1 class="rv d1" data-i18n="hero_title">Une nouvelle opportunité de financer votre projet <em>pendant l'ASC 2026</em></h1>
+      <p class="sub rv d2" data-i18n="hero_sub">Vous avez une startup que vous souhaitez développer ? Déposez votre candidature et participez à la <b>première campagne de financement participatif</b> organisée pendant l'African Startup Conference 2026.</p>
       <div class="cta-ligne rv d2">
         <a href="#candidature" class="btn btn-v"><span data-i18n="hero_cta">Je dépose ma candidature</span><svg class="fl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
-        <a href="#parcours" class="btn btn-g" data-i18n="hero_cta2">Voir le parcours</a>
+        <a href="#parcours" class="btn btn-g" data-i18n="hero_cta2">Voir le calendrier</a>
       </div>
       <div class="compte rv d3" data-compte>
-        <span class="compte-t" data-i18n="cd_title">Ouverture de l'ASC dans</span>
+        <span class="compte-t" data-i18n="cd_title">Lancement officiel des campagnes dans</span>
         <div class="cases" aria-live="off">
           <div class="case"><b data-u="j">--</b><small data-t="cd_j">jours</small></div>
           <div class="case"><b data-u="h">--</b><small data-t="cd_h">heures</small></div>
@@ -554,9 +577,9 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
         </g>
       </svg>
       <span class="lieu" data-i18n="pin">Alger · CIC · 5 – 7 déc.</span>
-      <div class="puce p1"><span class="ic" style="background:var(--green)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg></span><span><b class="num">30,52 M DA</b><small data-i18n="chip1">investis via Yinvesti</small></span></div>
-      <div class="puce p2"><span class="ic" style="background:var(--blue)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0"/><path d="M16 4a4 4 0 0 1 0 8M22 21a7 7 0 0 0-4-6.3"/></svg></span><span><b class="num">410</b><small data-i18n="chip2">investisseurs</small></span></div>
-      <div class="puce p3"><span class="ic" style="background:var(--teal)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3 6.5 7 .8-5.2 4.8 1.5 7L12 17.6 5.7 21l1.5-7L2 9.3l7-.8z"/></svg></span><span><b class="num">25</b><small data-i18n="chip3">projets qualifiés</small></span></div>
+      <div class="puce p1"><span class="ic" style="background:var(--green)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg></span><span><b class="num"><span data-nombre="55.05" data-dec="2">55,05</span> M DA</b><small data-i18n="chip1">investis via Yinvesti</small></span></div>
+      <div class="puce p2"><span class="ic" style="background:var(--blue)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0"/><path d="M16 4a4 4 0 0 1 0 8M22 21a7 7 0 0 0-4-6.3"/></svg></span><span><b class="num">600</b><small data-i18n="chip2">investisseurs</small></span></div>
+      <div class="puce p3"><span class="ic" style="background:var(--teal)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3 6.5 7 .8-5.2 4.8 1.5 7L12 17.6 5.7 21l1.5-7L2 9.3l7-.8z"/></svg></span><span><b class="num">+40</b><small data-i18n="chip3">projets qualifiés</small></span></div>
     </div>
   </div>
 </section>
@@ -580,11 +603,11 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
     <div class="tete rv">
       <span class="kick"><i></i><span data-i18n="why_kick">Pourquoi maintenant</span></span>
       <h2 data-i18n="why_title">L'ASC 2026, le meilleur moment pour lever des fonds</h2>
-      <p data-i18n="why_sub">Trois jours où startups, investisseurs et institutions africaines se retrouvent à Alger. Nous y préparons avec vous votre campagne de financement participatif.</p>
+      <p data-i18n="why_sub">Trois jours où startups, investisseurs et institutions africaines se retrouvent à Alger, avec le lancement officiel des campagnes de financement le 6 décembre.</p>
     </div>
     <div class="atouts">
-      <article class="atout rv"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 13l3 3 7-7"/><path d="M2 12l5-5 3 2 3-2 2 2"/><path d="M22 12l-4 4"/><path d="M2 12l7 7"/></svg></span><h3 data-i18n="why1_t">Rendez-vous one-to-one</h3><p data-i18n="why1_d">Un échange direct avec l'équipe Yinvesti pendant l'événement pour présenter votre projet et votre besoin de financement.</p></article>
-      <article class="atout rv d1"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0"/><path d="M16 4a4 4 0 0 1 0 8M22 21a7 7 0 0 0-4-6.3"/></svg></span><h3 data-i18n="why2_t">Une communauté d'investisseurs</h3><p data-i18n="why2_d">Votre campagne présentée aux 410 investisseurs de la communauté Yinvesti, et au-delà grâce à nos webinars et lives.</p></article>
+      <article class="atout rv"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 13l3 3 7-7"/><path d="M2 12l5-5 3 2 3-2 2 2"/><path d="M22 12l-4 4"/><path d="M2 12l7 7"/></svg></span><h3 data-i18n="why1_t">Lancement officiel le 6 décembre</h3><p data-i18n="why1_d">Les campagnes des projets qualifiés sont lancées le dimanche 6 décembre, 2e jour de l'ASC, et présentées au public et aux investisseurs.</p></article>
+      <article class="atout rv d1"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0"/><path d="M16 4a4 4 0 0 1 0 8M22 21a7 7 0 0 0-4-6.3"/></svg></span><h3 data-i18n="why2_t">Une communauté d'investisseurs</h3><p data-i18n="why2_d">Votre campagne présentée aux 600 investisseurs et aux 21 200 inscrits de la plateforme Yinvesti, et au-delà grâce à nos webinars et lives.</p></article>
       <article class="atout rv d2"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/><path d="M9 12l2 2 4-4"/></svg></span><h3 data-i18n="why3_t">Un cadre réglementé</h3><p data-i18n="why3_d">Yinvesti est la première plateforme de crowdfunding agréée par la COSOB en Algérie : une levée de fonds encadrée et sécurisée.</p></article>
       <article class="atout rv d3"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg></span><h3 data-i18n="why4_t">Un accompagnement complet</h3><p data-i18n="why4_d">Diagnostic, étude financière, valorisation et préparation de la campagne : nous structurons votre levée avec vous.</p></article>
     </div>
@@ -617,10 +640,10 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
       <div class="bloc obtenir">
         <h4 data-i18n="get_t">Ce que vous obtenez</h4>
         <ol class="etapes-mini">
-          <li><b>01</b><span><strong data-i18n="get1_t">Un diagnostic</strong><span data-i18n="get1_d">sous 5 jours ouvrés</span></span></li>
-          <li><b>02</b><span><strong data-i18n="get2_t">Un rendez-vous à l'ASC</strong><span data-i18n="get2_d">du 5 au 7 décembre, ou après l'événement</span></span></li>
-          <li><b>03</b><span><strong data-i18n="get3_t">Une étude financière</strong><span data-i18n="get3_d">et la valorisation de votre projet</span></span></li>
-          <li><b>04</b><span><strong data-i18n="get4_t">Votre campagne</strong><span data-i18n="get4_d">de crowdfunding, suivie de bout en bout</span></span></li>
+          <li><b>01</b><span><strong data-i18n="get1_t">Une présélection</strong><span data-i18n="get1_d">de votre projet par notre comité</span></span></li>
+          <li><b>02</b><span><strong data-i18n="get2_t">Une étude financière</strong><span data-i18n="get2_d">et l'évaluation de votre projet</span></span></li>
+          <li><b>03</b><span><strong data-i18n="get3_t">Une campagne de vote</strong><span data-i18n="get3_d">auprès de la communauté Yinvesti</span></span></li>
+          <li><b>04</b><span><strong data-i18n="get4_t">Un lancement officiel</strong><span data-i18n="get4_d">le dimanche 6 décembre à l'ASC</span></span></li>
         </ol>
       </div>
     </div>
@@ -639,10 +662,10 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
       <div class="bloc obtenir">
         <h4 data-i18n="get_t">Ce que vous obtenez</h4>
         <ol class="etapes-mini">
-          <li><b>01</b><span><strong data-i18n="get1_t">Un diagnostic</strong><span data-i18n="get1_d">sous 5 jours ouvrés</span></span></li>
-          <li><b>02</b><span><strong data-i18n="get2_t">Un rendez-vous à l'ASC</strong><span data-i18n="get2_d">du 5 au 7 décembre, ou après l'événement</span></span></li>
-          <li><b>03</b><span><strong data-i18n="get3_t">Une étude financière</strong><span data-i18n="get3_d">et la valorisation de votre projet</span></span></li>
-          <li><b>04</b><span><strong data-i18n="get4_t">Votre campagne</strong><span data-i18n="get4_d">de crowdfunding, suivie de bout en bout</span></span></li>
+          <li><b>01</b><span><strong data-i18n="get1_t">Une présélection</strong><span data-i18n="get1_d">de votre projet par notre comité</span></span></li>
+          <li><b>02</b><span><strong data-i18n="get2_t">Une étude financière</strong><span data-i18n="get2_d">et l'évaluation de votre projet</span></span></li>
+          <li><b>03</b><span><strong data-i18n="get3_t">Une campagne de vote</strong><span data-i18n="get3_d">auprès de la communauté Yinvesti</span></span></li>
+          <li><b>04</b><span><strong data-i18n="get4_t">Un lancement officiel</strong><span data-i18n="get4_d">le dimanche 6 décembre à l'ASC</span></span></li>
         </ol>
       </div>
     </div>
@@ -657,58 +680,77 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
       <h2 data-i18n="stats_title">Une communauté qui investit déjà</h2>
     </div>
     <div class="grille-c">
-      <div class="chiffre grand rv"><b class="num"><span data-compteur="30.52" data-dec="2">0</span> <small>M DA</small></b><span data-i18n="st_invest">investis via la plateforme</span></div>
-      <div class="chiffre rv d1"><b class="num" data-compteur="410">0</b><span data-i18n="st_investors">investisseurs</span></div>
-      <div class="chiffre rv d2"><b class="num" data-compteur="25">0</b><span data-i18n="st_qualified">projets qualifiés sur la plateforme</span></div>
+      <div class="chiffre grand rv">
+        <b class="num"><span data-compteur="55.05" data-dec="2">0</span> <small>M DA</small></b><span data-i18n="st_amount">montant total investi</span>
+        <div class="ops"><strong class="num" data-compteur="3454">0</strong> <span data-i18n="st_ops">opérations d'investissement réussies</span></div>
+        <div class="paie"><span><strong class="num">99 %</strong> <span data-i18n="st_epay">paiement électronique</span></span><span><strong class="num">1 %</strong> <span data-i18n="st_bank">virement bancaire</span></span></div>
+      </div>
+      <div class="chiffre rv d1"><b class="num" data-compteur="600">0</b><span data-i18n="st_investors">investisseurs</span></div>
+      <div class="chiffre rv d2"><b class="num"><span data-compteur="21.2" data-dec="1">0</span><small>k</small></b><span data-i18n="st_users">inscrits sur la plateforme</span><em class="badge-m" data-i18n="st_monthly">+1 700 utilisateurs par mois</em></div>
     </div>
-    <p class="pipe-t rv" data-i18n="st_pipe">Où en sont les projets aujourd'hui</p>
+    <p class="pipe-t rv" data-i18n="st_pipe">Projets et campagnes de financement</p>
     <div class="pipeline">
-      <div class="chiffre rv"><b class="num" data-compteur="8" data-pad="2">0</b><span data-i18n="st_study">projets en cours d'étude</span><div class="barre"><i data-largeur="53%"></i></div></div>
-      <div class="chiffre rv d1"><b class="num" data-compteur="5">0</b><span data-i18n="st_raising">projets en levée de fonds</span><div class="barre"><i data-largeur="33%"></i></div></div>
-      <div class="chiffre rv d2"><b class="num" data-compteur="1">0</b><span data-i18n="st_vote">projet en phase de vote</span><div class="barre"><i data-largeur="7%"></i></div></div>
-      <div class="chiffre rv d3"><b class="num">+1</b><span data-i18n="st_you">le vôtre, après l'ASC ?</span><div class="barre"><i data-largeur="100%"></i></div></div>
+      <div class="chiffre rv"><b class="num" data-compteur="161">0</b><span data-i18n="st_projects">projets enregistrés sur la plateforme</span></div>
+      <div class="chiffre rv d1"><b class="num" data-compteur="40" data-prefixe="+">0</b><span data-i18n="st_qualified">projets qualifiés</span></div>
+      <div class="chiffre rv d2"><b class="num" data-compteur="3" data-pad="2" style="color:var(--cyan)">0</b><span data-i18n="st_current">campagnes de financement en cours</span></div>
+      <div class="chiffre rv"><b class="num" data-compteur="2" data-pad="2">0</b><span data-i18n="st_success">campagnes de financement réussies</span></div>
+      <div class="chiffre rv d1"><b class="num" data-compteur="3" data-pad="2" style="color:#9fb2d3">0</b><span data-i18n="st_failed">campagnes de financement non abouties</span></div>
+      <div class="chiffre vous rv d2"><b class="num">+1</b><span data-i18n="st_you">la vôtre, lancée le 6 décembre ?</span></div>
     </div>
     <p class="note" data-i18n="st_note">Statistiques actuelles de la plateforme Yinvesti.</p>
   </div>
 </section>
 
-<!-- ============ Parcours ============ -->
+<!-- ============ Calendrier prévisionnel ============ -->
 <section id="parcours">
   <div class="wrap">
     <div class="tete rv">
-      <span class="kick"><i></i><span data-i18n="proc_kick">Après votre candidature</span></span>
-      <h2 data-i18n="proc_title">4 étapes jusqu'à votre levée de fonds</h2>
-      <p data-i18n="proc_sub">Un processus structuré pour maximiser vos chances de réussite.</p>
+      <span class="kick"><i></i><span data-i18n="proc_kick">Du dépôt au lancement</span></span>
+      <h2 data-i18n="proc_title">Calendrier prévisionnel</h2>
+      <p data-i18n="proc_sub">7 étapes jusqu'au lancement officiel des campagnes, le dimanche 6 décembre 2026 pendant l'ASC.</p>
     </div>
-    <div class="frise">
-      <span class="rail" aria-hidden="true"><i></i></span>
-      <div class="phase rv"><span class="rond">01</span><div class="carte-p"><span class="tag" data-i18n="ph1_tag">Dès réception</span><h3 data-i18n="ph1_t">Revue & diagnostic</h3><p data-i18n="ph1_d">Notre comité analyse la faisabilité, le modèle économique, le cadre juridique et la maturité de votre marché sous 5 jours ouvrés.</p></div></div>
-      <div class="phase asc rv d1"><span class="rond">02</span><div class="carte-p"><span class="tag" data-i18n="ph2_tag">5 – 7 déc. · ASC</span><h3 data-i18n="ph2_t">Rencontre one-to-one</h3><p data-i18n="ph2_d">Les projets retenus rencontrent l'équipe Yinvesti pendant l'ASC, au CIC d'Alger, ou après l'événement à notre siège ou par téléphone.</p></div></div>
-      <div class="phase rv d2"><span class="rond">03</span><div class="carte-p"><span class="tag" data-i18n="ph3_tag">Préparation</span><h3 data-i18n="ph3_t">Étude financière & lancement</h3><p data-i18n="ph3_d">Nous structurons avec vous l'étude financière et la valorisation, calibrons le besoin de financement et préparons la campagne de crowdfunding.</p></div></div>
-      <div class="phase rv d3"><span class="rond">04</span><div class="carte-p"><span class="tag" data-i18n="ph4_tag">Pendant la campagne</span><h3 data-i18n="ph4_t">Suivi & conseil</h3><p data-i18n="ph4_d">Accompagnement continu, suivi des souscriptions et conseil stratégique tout au long de votre levée.</p></div></div>
-    </div>
-  </div>
-</section>
+    <div class="chrono-g">
+      <aside class="cal-c rv">
+        <small class="k">African Startup Conference 2026</small>
+        <div class="mini-cal">
+          <div><small data-i18n="d5_w">Sam.</small><b class="num">05</b><small data-i18n="d5_e">Jour 1</small></div>
+          <div class="j6"><small data-i18n="d6_w">Dim.</small><b class="num">06</b><small data-i18n="d6_e">Lancement</small></div>
+          <div><small data-i18n="d7_w">Lun.</small><b class="num">07</b><small data-i18n="d7_e">Jour 3</small></div>
+        </div>
+        <h3 data-i18n="ag_title">Dimanche 6 décembre : lancement officiel des campagnes</h3>
+        <p data-i18n="ag_sub">Au 2e jour de la conférence, les campagnes des projets qualifiés sont présentées au public et aux investisseurs.</p>
+        <div class="compte" data-compte>
+          <div class="cases">
+            <div class="case"><b data-u="j">--</b><small data-t="cd_j">jours</small></div>
+            <div class="case"><b data-u="h">--</b><small data-t="cd_h">heures</small></div>
+            <div class="case"><b data-u="m">--</b><small data-t="cd_m">min</small></div>
+            <div class="case"><b data-u="s">--</b><small data-t="cd_s">sec</small></div>
+          </div>
+        </div>
+        <div class="lieu-l">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s7-6.3 7-12a7 7 0 0 0-14 0c0 5.7 7 12 7 12z"/><circle cx="12" cy="10" r="2.6"/></svg>
+          <span><span data-i18n="venue">Centre international de conférences Abdelatif Rahal</span>, <span data-i18n="ft_city2">Alger</span><a href="https://www.google.com/maps/search/?api=1&query=Centre+International+de+Conf%C3%A9rences+Abdelatif+Rahal+Alger" target="_blank" rel="noopener" data-i18n="venue_map">Voir sur la carte →</a></span>
+        </div>
+      </aside>
 
-<!-- ============ Jours de rendez-vous ============ -->
-<section id="agenda" class="jours-s">
-  <div class="wrap">
-    <div class="tete rv">
-      <span class="kick"><i></i><span data-i18n="ag_kick">Rendez-vous à l'ASC</span></span>
-      <h2 data-i18n="ag_title">Choisissez votre jour de rencontre</h2>
-      <p data-i18n="ag_sub">Indiquez votre préférence : nous confirmons le créneau par téléphone ou WhatsApp après l'étude de votre dossier.</p>
-    </div>
-    <div class="agenda">
-      <button type="button" class="jour rv" data-jour="5dec" aria-pressed="false"><small data-i18n="d5_w">Samedi</small><b class="num">05</b><span data-i18n="dec">décembre</span><em data-i18n="d5_e">Ouverture de l'ASC</em></button>
-      <button type="button" class="jour rv d1" data-jour="6dec" aria-pressed="false"><small data-i18n="d6_w">Dimanche</small><b class="num">06</b><span data-i18n="dec">décembre</span><em data-i18n="d6_e">2e jour</em></button>
-      <button type="button" class="jour rv d2" data-jour="7dec" aria-pressed="false"><small data-i18n="d7_w">Lundi</small><b class="num">07</b><span data-i18n="dec">décembre</span><em data-i18n="d7_e">Clôture</em></button>
-      <button type="button" class="jour apres rv d3" data-jour="apres" aria-pressed="false"><small data-i18n="da_w">Plus tard</small><b data-i18n="da_b">Après</b><span data-i18n="da_s">l'ASC</span><em data-i18n="da_e">Siège ou téléphone</em></button>
-      <div class="lieu-c rv">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s7-6.3 7-12a7 7 0 0 0-14 0c0 5.7 7 12 7 12z"/><circle cx="12" cy="10" r="2.6"/></svg>
-        <b data-i18n="venue">Centre international de conférences Abdelatif Rahal</b>
-        <span data-i18n="venue_city">Alger · African Startup Conference 2026</span>
-        <a href="https://www.google.com/maps/search/?api=1&query=Centre+International+de+Conf%C3%A9rences+Abdelatif+Rahal+Alger" target="_blank" rel="noopener" data-i18n="venue_map">Voir sur la carte →</a>
-      </div>
+      <div class="chrono-l"><span class="fil" aria-hidden="true"></span><ol class="chrono">
+        <li class="jalon rv"><span class="pt">01</span><div class="carte-j"><small><span data-i18n="ph_lbl">Étape</span> 01</small><h3 data-i18n="ph1_t">Inscription sur la plateforme Yinvesti</h3><a class="lien" href="#candidature" data-i18n="ph1_d">Commencer par la préinscription ci-dessous ↓</a></div></li>
+        <li class="jalon rv"><span class="pt">02</span><div class="carte-j"><small><span data-i18n="ph_lbl">Étape</span> 02</small><h3 data-i18n="ph2_t">Présélection des projets éligibles</h3></div></li>
+        <li class="jalon rv"><span class="pt">03</span><div class="carte-j"><small><span data-i18n="ph_lbl">Étape</span> 03</small><h3 data-i18n="ph3_t">Étude financière et évaluation du projet</h3></div></li>
+        <li class="jalon rv"><span class="pt">04</span><div class="carte-j"><small><span data-i18n="ph_lbl">Étape</span> 04</small><h3 data-i18n="ph4_t">Lancement de la campagne de vote</h3></div></li>
+        <li class="jalon rv"><span class="pt">05</span><div class="carte-j"><small><span data-i18n="ph_lbl">Étape</span> 05</small><h3 data-i18n="ph5_t">Finalisation des démarches juridiques et des recommandations</h3></div></li>
+        <li class="jalon rv"><span class="pt">06</span><div class="carte-j"><small><span data-i18n="ph_lbl">Étape</span> 06</small><h3 data-i18n="ph6_t">Qualification finale et préparation du lancement</h3><p class="cond" data-i18n="ph6_d">Un projet n'est intégré au lancement final qu'après avoir rempli toutes les conditions requises.</p></div></li>
+        <li class="jalon lancement rv"><span class="pt">07</span><div class="carte-j">
+          <small><span data-i18n="ph_lbl">Étape</span> 07</small>
+          <h3 data-i18n="ph7_t">Lancement officiel des campagnes de financement</h3>
+          <span class="date"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span data-i18n="ph7_date">Dimanche 6 décembre 2026 — 2e jour de la conférence</span></span>
+          <p data-i18n="ph7_d">Les campagnes de financement des projets qualifiés sont lancées et présentées au public et aux investisseurs, avec la publication des liens des campagnes et des activités de communication pour permettre aux personnes intéressées de découvrir les projets et les conditions de participation.</p>
+          <div class="infos-j">
+            <div><b data-i18n="ph7_resp_t">Responsable</b><span data-i18n="ph7_resp">Yinvesti, en coordination avec les organisateurs de la conférence, les porteurs de projet et les partenaires.</span></div>
+            <div><b data-i18n="ph7_out_t">Résultat</b><span data-i18n="ph7_out">Des campagnes de financement officiellement publiées, avec le début du suivi de l'intérêt et des contributions effectives selon les procédures en vigueur.</span></div>
+          </div>
+        </div></li>
+      </ol></div>
     </div>
   </div>
 </section>
@@ -747,7 +789,7 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
         <div class="etape" data-etape="1">
           <p class="etape-t" data-i18n="e1_tag">Étape 1 sur 3</p>
           <h3 data-i18n="e1_t">Vous et l'ASC 2026</h3>
-          <p data-i18n="e1_d">Ces informations permettent à l'équipe Yinvesti de vous contacter et de planifier votre rendez-vous.</p>
+          <p data-i18n="e1_d">Ces informations permettent à l'équipe Yinvesti de vous contacter pour la suite de votre candidature.</p>
           <div class="champs">
             <div class="champ"><label for="nom_complet" data-i18n="f_nom">Nom complet</label><input type="text" id="nom_complet" name="nom_complet" autocomplete="name" required minlength="3" data-i18n-ph="ph_nom" placeholder="Ex : Mohamed Amine Mansouri"><span class="err" data-i18n="er_nom">Indiquez votre nom complet.</span></div>
             <div class="champ"><label for="telephone" data-i18n="f_tel">Téléphone (appel & WhatsApp)</label><input type="tel" id="telephone" name="telephone" autocomplete="tel" required inputmode="tel" placeholder="05 / 06 / 07 XX XX XX XX" dir="ltr"><span class="err" data-i18n="er_tel">Numéro invalide (ex : 0550 00 00 00).</span></div>
@@ -758,13 +800,6 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
                 <label class="opt-c"><input type="radio" name="asc_statut" value="exposant"><span data-i18n="o_exposant">Exposant</span></label>
                 <label class="opt-c"><input type="radio" name="asc_statut" value="visiteur"><span data-i18n="o_visiteur">Inscrit (visiteur / participant)</span></label>
                 <label class="opt-c"><input type="radio" name="asc_statut" value="non_inscrit"><span data-i18n="o_noninscrit">Pas encore inscrit</span></label>
-              </div><span class="err" data-i18n="er_choix">Choisissez une réponse.</span></fieldset>
-            <fieldset class="champ plein" data-requis="asc_rdv"><legend data-i18n="f_rdv">Jour de rendez-vous souhaité</legend>
-              <div class="choix c4">
-                <label class="opt-c"><input type="radio" name="asc_rdv" value="5dec"><span data-i18n="o_5dec">Sam. 5 déc.</span></label>
-                <label class="opt-c"><input type="radio" name="asc_rdv" value="6dec"><span data-i18n="o_6dec">Dim. 6 déc.</span></label>
-                <label class="opt-c"><input type="radio" name="asc_rdv" value="7dec"><span data-i18n="o_7dec">Lun. 7 déc.</span></label>
-                <label class="opt-c"><input type="radio" name="asc_rdv" value="apres"><span data-i18n="o_apres">Après l'ASC</span></label>
               </div><span class="err" data-i18n="er_choix">Choisissez une réponse.</span></fieldset>
           </div>
         </div>
@@ -875,11 +910,12 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
     </div>
     <div class="faq">
       <details class="q rv"><summary><span data-i18n="fq1">La préinscription est-elle gratuite ?</span><i></i></summary><p data-i18n="fa1">Oui. La préinscription et le premier échange avec notre équipe sont gratuits et sans engagement.</p></details>
-      <details class="q rv"><summary><span data-i18n="fq2">Faut-il être inscrit à l'ASC 2026 pour candidater ?</span><i></i></summary><p data-i18n="fa2">Non, la préinscription est ouverte à tous les porteurs de projet et entreprises. Si vous participez à l'ASC (exposant ou visiteur), indiquez-le : nous planifierons votre rendez-vous pendant l'événement.</p></details>
+      <details class="q rv"><summary><span data-i18n="fq2">Faut-il être inscrit à l'ASC 2026 pour candidater ?</span><i></i></summary><p data-i18n="fa2">Non, la préinscription est ouverte à tous les porteurs de projet et entreprises. Si vous participez à l'ASC (exposant ou visiteur), indiquez-le dans le formulaire.</p></details>
       <details class="q rv"><summary><span data-i18n="fq3">Mon projet n'est qu'une idée, puis-je postuler ?</span><i></i></summary><p data-i18n="fa3">Oui. Nous accueillons les idées à fort potentiel. Si votre concept répond à un vrai besoin du marché algérien, notre équipe vous orientera vers les étapes pour prototyper et obtenir le label Projet innovant.</p></details>
       <details class="q rv"><summary><span data-i18n="fq4">Pourquoi parle-t-on de SPA / SPAS ?</span><i></i></summary><p data-i18n="fa4">Le financement participatif en capital se fait par souscription d'actions : la société doit donc être une société par actions (SPA, ou SPAS pour les startups). Si ce n'est pas encore le cas, répondez « Besoin d'infos » : nous vous expliquerons les démarches.</p></details>
       <details class="q rv"><summary><span data-i18n="fq5">Comment mes données sont-elles protégées ?</span><i></i></summary><p data-i18n="fa5">Vos informations sont strictement confidentielles. Elles ne sont partagées avec des investisseurs qu'avec votre accord explicite et après la signature d'un accord de confidentialité (NDA).</p></details>
       <details class="q rv"><summary><span data-i18n="fq6">Quand aurai-je une réponse ?</span><i></i></summary><p data-i18n="fa6">Notre comité étudie chaque dossier sous 5 jours ouvrés. Vous recevez un accusé de réception par e-mail dès l'envoi, puis un appel ou un message WhatsApp de notre équipe.</p></details>
+      <details class="q rv"><summary><span data-i18n="fq7">Mon projet sera-t-il lancé le 6 décembre ?</span><i></i></summary><p data-i18n="fa7">Oui, s'il est qualifié : les campagnes des projets qualifiés sont lancées officiellement le dimanche 6 décembre 2026, 2e jour de la conférence. Un projet n'est intégré au lancement final qu'après avoir rempli toutes les conditions requises.</p></details>
     </div>
   </div>
 </section>
@@ -889,8 +925,8 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
   <div class="wrap">
     <div class="final-c rv">
       <div>
-        <h2 data-i18n="final_t">Rendez-vous au CIC d'Alger, du 5 au 7 décembre</h2>
-        <p data-i18n="final_d">Déposez votre candidature maintenant pour réserver votre rencontre avec l'équipe Yinvesti.</p>
+        <h2 data-i18n="final_t">Lancement officiel des campagnes le 6 décembre à l'ASC</h2>
+        <p data-i18n="final_d">Déposez votre candidature dès maintenant : seuls les projets qui remplissent toutes les conditions requises font partie du lancement final.</p>
         <a href="#candidature" class="btn btn-v"><span data-i18n="hero_cta">Je dépose ma candidature</span><svg class="fl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
       </div>
       <div class="compte" data-compte>
@@ -918,7 +954,7 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
         <h4 data-i18n="ft_page">Cette page</h4>
         <ul>
           <li><a href="#pourquoi" data-i18n="nav_why">Pourquoi l'ASC</a></li>
-          <li><a href="#parcours" data-i18n="nav_parcours">Parcours</a></li>
+          <li><a href="#parcours" data-i18n="nav_parcours">Calendrier</a></li>
           <li><a href="#candidature" data-i18n="nav_form">Candidater</a></li>
           <li><a href="#faq" data-i18n="nav_faq">FAQ</a></li>
         </ul>
@@ -950,7 +986,7 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
 
 <!-- Barre d'action mobile -->
 <div class="barre-m" id="barreM">
-  <small><b class="num" id="barreJ">J-</b><span data-i18n="bm_t">avant l'ASC</span></small>
+  <small><b class="num" id="barreJ">J-</b><span data-i18n="bm_t">avant le lancement</span></small>
   <a href="#candidature" class="btn btn-v" data-i18n="header_cta">Candidater</a>
 </div>
 
@@ -961,11 +997,11 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
   <div class="modal-c">
     <div class="ok-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
     <h3 id="modalT" data-i18n="m_t">Candidature reçue !</h3>
-    <p data-i18n="m_d">Votre dossier est enregistré. Notre comité l'étudie sous 5 jours ouvrés, puis nous vous contactons pour fixer votre rendez-vous.</p>
+    <p data-i18n="m_d">Votre dossier est enregistré. Notre équipe l'étudie et vous contacte pour les prochaines étapes, jusqu'au lancement officiel des campagnes le 6 décembre.</p>
     <div class="dossier"><small data-i18n="m_num">Numéro de dossier</small><b id="mNum" class="num">—</b></div>
     <ul class="recap" id="recap"></ul>
     <div class="modal-b">
-      <button type="button" class="btn btn-o" id="agendaIcs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span data-i18n="m_ics">Ajouter l'ASC à mon agenda</span></button>
+      <button type="button" class="btn btn-o" id="agendaIcs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span data-i18n="m_ics">Ajouter le 6 décembre à mon agenda</span></button>
       <button type="button" class="btn btn-b" id="fermerModal" data-i18n="m_close">Fermer</button>
     </div>
   </div>
@@ -978,15 +1014,39 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
   // ───────── Traductions (le français est lu dans la page) ─────────
   var I18N = {
     ar: {
+      hero_title: 'فرصة جديدة لتمويل مشروعك <em>خلال ASC 2026</em>',
+      hero_sub: 'هل لديك شركة ناشئة تسعى إلى تطويرها؟ قدّم ترشحك وشارك في <b>أول حملة تمويل تساهمي</b> خلال المؤتمر الإفريقي للشركات الناشئة 2026.',
+      hero_cta2: 'اطّلع على الجدول الزمني', cd_title: 'الإطلاق الرسمي للحملات بعد', nav_parcours: 'الجدول الزمني',
+      why_sub: 'ثلاثة أيام تجتمع فيها الشركات الناشئة والمستثمرون والمؤسسات الإفريقية في الجزائر، مع الإطلاق الرسمي لحملات التمويل يوم 6 ديسمبر.',
+      why1_t: 'إطلاق رسمي يوم 6 ديسمبر', why1_d: 'تُطلق حملات المشاريع المؤهلة يوم الأحد 6 ديسمبر، اليوم الثاني للمؤتمر، وتُقدَّم للجمهور والمستثمرين.',
+      why2_d: 'تُعرض حملتك على 600 مستثمر و21 200 مسجّل في منصة Yinvesti، وأبعد من ذلك عبر الويبينارات والبث المباشر.',
+      get1_t: 'اختيار مبدئي', get1_d: 'لمشروعك من طرف لجنتنا', get2_t: 'دراسة مالية', get2_d: 'وتقييم مشروعك', get3_t: 'حملة تصويت', get3_d: 'لدى مجتمع Yinvesti', get4_t: 'إطلاق رسمي', get4_d: 'يوم الأحد 6 ديسمبر خلال ASC',
+      st_amount: 'المبلغ الإجمالي المستثمر', st_ops: 'عملية استثمار ناجحة', st_epay: 'دفع إلكتروني', st_bank: 'تحويل بنكي',
+      st_investors: 'عدد المستثمرين', st_users: 'إجمالي المسجلين في المنصة', st_monthly: '+1700 مستخدم شهري',
+      st_pipe: 'المشاريع وحملات التمويل', st_projects: 'عدد المشاريع المسجلة في المنصة', st_qualified: 'مشروع مؤهل',
+      st_current: 'عدد حملات التمويل الحالية', st_success: 'عدد حملات التمويل الناجحة', st_failed: 'عدد حملات التمويل غير الناجحة', st_you: 'حملتك، تُطلق يوم 6 ديسمبر؟',
+      proc_kick: 'من التسجيل إلى الإطلاق', proc_title: 'الجدول الزمني المقترح', proc_sub: '7 مراحل حتى الإطلاق الرسمي لحملات التمويل، يوم الأحد 6 ديسمبر 2026 خلال المؤتمر.',
+      ph_lbl: 'المرحلة', ph1_t: 'التسجيل في منصة يانفستي', ph1_d: 'ابدأ بالتسجيل المسبق أدناه ↓', ph2_t: 'اختيار المشاريع المؤهلة مبدئيًا', ph3_t: 'الدراسة المالية وتقييم المشروع',
+      ph4_t: 'إطلاق حملة التصويت', ph5_t: 'استكمال الإجراءات القانونية والتوصيات', ph6_t: 'التأهيل النهائي والتحضير للإطلاق',
+      ph6_d: 'لا يُدرج المشروع في الإطلاق النهائي إلا بعد استيفاء جميع الشروط المطلوبة.',
+      ph7_t: 'الإطلاق الرسمي لحملات التمويل', ph7_date: 'الأحد 6 ديسمبر 2026 — اليوم الثاني للمؤتمر',
+      ph7_d: 'تُطلق حملات التمويل للمشاريع المؤهلة، مع تقديمها للجمهور والمستثمرين، ونشر روابط الحملات، وتنظيم أنشطة تواصل تتيح للمهتمين الاطلاع على المشاريع وشروط المشاركة.',
+      ph7_resp_t: 'المسؤول', ph7_resp: 'يانفستي بالتنسيق مع منظمي المؤتمر وأصحاب المشاريع والشركاء.',
+      ph7_out_t: 'المخرج', ph7_out: 'حملات تمويل منشورة رسميًا، مع بدء متابعة الاهتمام والمساهمات الفعلية وفق الإجراءات المعتمدة.',
+      d5_w: 'السبت', d6_w: 'الأحد', d7_w: 'الاثنين', d5_e: 'اليوم 1', d6_e: 'الإطلاق', d7_e: 'اليوم 3',
+      ag_title: 'الأحد 6 ديسمبر: الإطلاق الرسمي لحملات التمويل', ag_sub: 'في اليوم الثاني للمؤتمر، تُقدَّم حملات المشاريع المؤهلة للجمهور والمستثمرين.', ft_city2: 'الجزائر',
+      e1_d: 'تسمح هذه المعلومات لفريق Yinvesti بالتواصل معك لمتابعة ترشّحك.',
+      fa2: 'لا، التسجيل المسبق مفتوح لجميع حاملي المشاريع والمؤسسات. إذا كنت مشاركاً في ASC (عارضاً أو زائراً)، أشر إلى ذلك في الاستمارة.',
+      fq7: 'هل سيُطلق مشروعي يوم 6 ديسمبر؟', fa7: 'نعم إذا كان مؤهلاً: تُطلق حملات المشاريع المؤهلة رسميًا يوم الأحد 6 ديسمبر 2026، اليوم الثاني للمؤتمر. ولا يُدرج المشروع في الإطلاق النهائي إلا بعد استيفاء جميع الشروط المطلوبة.',
+      final_t: 'الإطلاق الرسمي لحملات التمويل يوم 6 ديسمبر خلال ASC', final_d: 'قدّم ترشحك الآن: لا تُدرج في الإطلاق النهائي إلا المشاريع التي تستوفي جميع الشروط المطلوبة.',
+      bm_t: 'قبل الإطلاق', m_d: 'تم تسجيل ملفك. يدرسه فريقنا ويتواصل معك للمراحل القادمة، حتى الإطلاق الرسمي للحملات يوم 6 ديسمبر.',
       coord: 'بالتنسيق مع <b>Algeria Venture</b>',
-      coord_date: 'المؤتمر الإفريقي للمؤسسات الناشئة · 5 – 7 ديسمبر 2026 · المركز الدولي للمؤتمرات، الجزائر',
-      nav_why: 'لماذا ASC', nav_profils: 'الملفات', nav_parcours: 'المراحل', nav_form: 'الترشح', nav_faq: 'الأسئلة',
+      coord_date: 'المؤتمر الإفريقي للشركات الناشئة · 5 – 7 ديسمبر 2026 · المركز الدولي للمؤتمرات، الجزائر',
+      nav_why: 'لماذا ASC', nav_profils: 'الملفات', nav_form: 'الترشح', nav_faq: 'الأسئلة',
       header_cta: 'ترشّح الآن',
-      hero_pill: 'المؤتمر الإفريقي للمؤسسات الناشئة 2026 · الطبعة الخامسة',
-      hero_title: 'اجمع التمويل <em>خلال ASC 2026</em> مع Yinvesti.',
-      hero_sub: 'حاملو المشاريع والمؤسسات: ترشّحوا <b>للتمويل التشاركي مع Yinvesti</b> والتقوا بفريقنا من 5 إلى 7 ديسمبر 2026 في المركز الدولي للمؤتمرات بالجزائر.',
-      hero_cta: 'أودِع ترشّحي', hero_cta2: 'اكتشف المراحل',
-      cd_title: 'افتتاح ASC بعد',
+      hero_pill: 'المؤتمر الإفريقي للشركات الناشئة 2026 · الطبعة الخامسة',
+      
+      hero_cta: 'أودِع ترشّحي', 
       proof1: 'تسجيل مسبق مجاني', proof2: 'رد خلال 5 أيام عمل', proof3: 'ملف سري (اتفاقية عدم إفشاء)',
       pin: 'الجزائر · CIC · 5 – 7 ديسمبر', chip1: 'استُثمرت عبر Yinvesti', chip2: 'مستثمر', chip3: 'مشروعاً مؤهلاً',
       partners_title: 'مبادرة يحملها',
@@ -994,9 +1054,8 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
       p_asc: 'الطبعة الخامسة · 5 – 7 ديسمبر 2026 · الجزائر',
       p_av: 'بالتنسيق مع Algeria Venture',
       why_kick: 'لماذا الآن', why_title: 'ASC 2026، أفضل وقت لجمع التمويل',
-      why_sub: 'ثلاثة أيام تجتمع فيها المؤسسات الناشئة والمستثمرون والمؤسسات الإفريقية في الجزائر. نُحضّر معك هناك حملة التمويل التشاركي الخاصة بك.',
-      why1_t: 'لقاء فردي مباشر', why1_d: 'لقاء مباشر مع فريق Yinvesti خلال الحدث لتقديم مشروعك واحتياجك من التمويل.',
-      why2_t: 'مجتمع من المستثمرين', why2_d: 'تُعرض حملتك على 410 مستثمرين في مجتمع Yinvesti، وأبعد من ذلك عبر الويبينارات والبث المباشر.',
+      
+      why2_t: 'مجتمع من المستثمرين', 
       why3_t: 'إطار منظَّم', why3_d: 'Yinvesti أول منصة تمويل تشاركي معتمدة من COSOB في الجزائر: جمع تمويل مؤطَّر وآمن.',
       why4_t: 'مرافقة كاملة', why4_d: 'تشخيص، دراسة مالية، تقييم وتحضير الحملة: نبني معك عملية جمع التمويل.',
       prof_kick: 'ملفان', prof_title: 'حامل مشروع أو مؤسسة: اختر مسارك',
@@ -1004,33 +1063,26 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
       pc_t: 'أنت تبني مشروعك', pc_d: 'فكرة متقدمة، نموذج أولي أو منتج أدنى قابل للتطبيق، أول الزبائن: التمويل التشاركي يمكنه تمويل انطلاقتك.',
       pc_1: 'نموذج أولي أو منتج أدنى قابل للتطبيق (MVP)', pc_2: 'التقدم العملي وأول زبائنك', pc_3: 'استراتيجية تسويق وجمهور', pc_4: 'الموافقة على شكل شركة مساهمة (SPA / SPAS) عند الإنشاء',
       pc_cta: 'ترشّح بمشروعي',
-      get_t: 'ما الذي تحصل عليه', get1_t: 'تشخيص', get1_d: 'خلال 5 أيام عمل', get2_t: 'موعد في ASC', get2_d: 'من 5 إلى 7 ديسمبر، أو بعد الحدث',
-      get3_t: 'دراسة مالية', get3_d: 'وتقييم مشروعك', get4_t: 'حملتك', get4_d: 'للتمويل التشاركي، بمتابعة كاملة',
+      get_t: 'ما الذي تحصل عليه', 
       pe_t: 'أنت تدير مؤسسة', pe_d: 'شركة مسجّلة أو نشاط في السجل التجاري: موّل معدات، منتجاً جديداً أو نموك التجاري.',
       pe_1: 'احتياج واضح: معدات، منتج جديد أو تطوير تجاري', pe_2: 'مبلغ مطلوب من أقل من 5 إلى أكثر من 20 مليون دج', pe_3: 'الانفتاح على التحول إلى شركة مساهمة قبل الحملة', pe_4: 'خطة للتعريف بالمشروع والوصول إلى الزبائن',
       pe_cta: 'ترشّح بمؤسستي',
       stats_kick: 'Yinvesti بالأرقام', stats_title: 'مجتمع يستثمر بالفعل',
-      st_invest: 'مستثمرة عبر المنصة', st_investors: 'مستثمراً', st_qualified: 'مشروعاً مؤهلاً على المنصة', st_pipe: 'أين وصلت المشاريع اليوم',
-      st_study: 'مشاريع قيد الدراسة', st_raising: 'مشاريع في مرحلة جمع التمويل', st_vote: 'مشروع في مرحلة التصويت', st_you: 'مشروعك، بعد ASC؟',
+      
       st_note: 'الإحصاءات الحالية لمنصة Yinvesti.',
-      proc_kick: 'بعد ترشّحك', proc_title: '4 مراحل حتى جمع التمويل', proc_sub: 'مسار منظَّم لتعظيم فرص نجاحك.',
-      ph1_tag: 'فور الاستلام', ph1_t: 'المراجعة والتشخيص', ph1_d: 'تحلّل لجنتنا الجدوى، النموذج الاقتصادي، الإطار القانوني ونضج سوقك خلال 5 أيام عمل.',
-      ph2_tag: '5 – 7 ديسمبر · ASC', ph2_t: 'لقاء فردي', ph2_d: 'تلتقي المشاريع المختارة بفريق Yinvesti خلال ASC في المركز الدولي للمؤتمرات، أو بعد الحدث في مقرّنا أو عبر الهاتف.',
-      ph3_tag: 'التحضير', ph3_t: 'الدراسة المالية والإطلاق', ph3_d: 'نبني معك الدراسة المالية والتقييم، نضبط احتياج التمويل ونحضّر حملة التمويل التشاركي.',
-      ph4_tag: 'خلال الحملة', ph4_t: 'المتابعة والاستشارة', ph4_d: 'مرافقة مستمرة، متابعة الاكتتابات واستشارة استراتيجية طوال عملية جمع التمويل.',
-      ag_kick: 'موعد في ASC', ag_title: 'اختر يوم لقائك', ag_sub: 'حدّد تفضيلك: نؤكد الموعد عبر الهاتف أو واتساب بعد دراسة ملفك.',
-      d5_w: 'السبت', d6_w: 'الأحد', d7_w: 'الاثنين', dec: 'ديسمبر', d5_e: 'افتتاح ASC', d6_e: 'اليوم الثاني', d7_e: 'الاختتام',
-      da_w: 'لاحقاً', da_b: 'بعد', da_s: 'ASC', da_e: 'في المقر أو عبر الهاتف',
-      venue: 'المركز الدولي للمؤتمرات عبد اللطيف رحال', venue_city: 'الجزائر · المؤتمر الإفريقي للمؤسسات الناشئة 2026', venue_map: 'عرض على الخريطة ←',
+      
+      
+      
+      
+      venue: 'المركز الدولي للمؤتمرات عبد اللطيف رحال', venue_city: 'الجزائر · المؤتمر الإفريقي للشركات الناشئة 2026', venue_map: 'عرض على الخريطة ←',
       form_kick: 'التسجيل المسبق', form_title: 'أودِع ترشّحك في 3 دقائق', form_sub: 'مجاني ودون التزام. معلوماتك تبقى سرية.',
       side_t: 'ملفك', s1_n: 'أنت و ASC', s2_n: 'النضج', s3_n: 'مشروعك', force_t: 'قوة الملف', help: 'سؤال؟',
-      e1_tag: 'المرحلة 1 من 3', e1_t: 'أنت و ASC 2026', e1_d: 'تسمح هذه المعلومات لفريق Yinvesti بالتواصل معك وتحديد موعدك.',
+      e1_tag: 'المرحلة 1 من 3', e1_t: 'أنت و ASC 2026', 
       f_nom: 'الاسم الكامل', ph_nom: 'مثال: محمد أمين منصوري', er_nom: 'أدخل اسمك الكامل.',
       f_tel: 'الهاتف (مكالمة وواتساب)', er_tel: 'رقم غير صالح (مثال: 0550 00 00 00).',
       f_email: 'البريد الإلكتروني', h_email: 'لاستلام إشعار الاستلام.', er_email: 'بريد إلكتروني غير صالح.',
       f_wilaya: 'الولاية', ph_wilaya: 'اختر ولايتك…', er_wilaya: 'اختر ولاية.',
       f_asc: 'مشاركتك في ASC 2026', o_exposant: 'عارض', o_visiteur: 'مسجّل (زائر / مشارك)', o_noninscrit: 'لم أسجّل بعد', er_choix: 'اختر إجابة.',
-      f_rdv: 'يوم اللقاء المفضّل', o_5dec: 'السبت 5 ديسمبر', o_6dec: 'الأحد 6 ديسمبر', o_7dec: 'الاثنين 7 ديسمبر', o_apres: 'بعد ASC',
       e2_tag: 'المرحلة 2 من 3', e2_t: 'نضج مشروعك', e2_d: 'اختر مرحلة تقدّمك: تتكيّف الأسئلة مع ملفك.', f_stade: 'مرحلة التقدم',
       o_creation: 'مشروع قيد الإنشاء', o_creation_d: 'نموذج أولي، منتج أدنى قابل للتطبيق أو خطوات انطلاق بدأت.',
       o_entreprise: 'مؤسسة / شركة / سجل تجاري', o_entreprise_d: 'كيان قائم يحقق أو يستعد لتحقيق نشاط تجاري.', er_stade: 'اختر مرحلة تقدّمك.',
@@ -1057,37 +1109,58 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
       b_prev: 'رجوع', b_next: 'متابعة', b_submit: 'إرسال ترشّحي', draft: 'تم حفظ المسودة', sending: 'جارٍ الإرسال…',
       faq_title: 'الأسئلة الشائعة',
       fq1: 'هل التسجيل المسبق مجاني؟', fa1: 'نعم. التسجيل المسبق واللقاء الأول مع فريقنا مجانيان ودون أي التزام.',
-      fq2: 'هل يجب أن أكون مسجّلاً في ASC 2026 للترشح؟', fa2: 'لا، التسجيل المسبق مفتوح لجميع حاملي المشاريع والمؤسسات. إذا كنت مشاركاً في ASC (عارضاً أو زائراً)، أشر إلى ذلك: سنحدد موعدك خلال الحدث.',
+      fq2: 'هل يجب أن أكون مسجّلاً في ASC 2026 للترشح؟', 
       fq3: 'مشروعي مجرد فكرة، هل يمكنني الترشح؟', fa3: 'نعم. نرحّب بالأفكار ذات الإمكانات العالية. إذا كانت فكرتك تلبي حاجة حقيقية في السوق الجزائرية، سيوجّهك فريقنا نحو خطوات إنجاز النموذج الأولي والحصول على علامة "مشروع مبتكر".',
-      fq4: 'لماذا الحديث عن شركة المساهمة (SPA / SPAS)؟', fa4: 'يتم التمويل التشاركي في رأس المال عبر الاكتتاب في الأسهم: لذا يجب أن تكون الشركة شركة مساهمة (SPA، أو SPAS للمؤسسات الناشئة). إن لم يكن الأمر كذلك بعد، أجب بـ"أحتاج معلومات": سنشرح لك الإجراءات.',
+      fq4: 'لماذا الحديث عن شركة المساهمة (SPA / SPAS)؟', fa4: 'يتم التمويل التشاركي في رأس المال عبر الاكتتاب في الأسهم: لذا يجب أن تكون الشركة شركة مساهمة (SPA، أو SPAS للشركات الناشئة). إن لم يكن الأمر كذلك بعد، أجب بـ"أحتاج معلومات": سنشرح لك الإجراءات.',
       fq5: 'كيف تُحمى بياناتي؟', fa5: 'معلوماتك سرية تماماً. لا تُشارك مع المستثمرين إلا بموافقتك الصريحة وبعد توقيع اتفاقية عدم إفشاء (NDA).',
       fq6: 'متى سأتلقى رداً؟', fa6: 'تدرس لجنتنا كل ملف خلال 5 أيام عمل. تتلقى إشعار استلام عبر البريد الإلكتروني فور الإرسال، ثم مكالمة أو رسالة واتساب من فريقنا.',
-      final_t: 'موعدنا في المركز الدولي للمؤتمرات بالجزائر، من 5 إلى 7 ديسمبر', final_d: 'أودِع ترشّحك الآن لحجز لقائك مع فريق Yinvesti.',
       ft_about: 'المنصة الجزائرية للتمويل التشاركي التي تربط رواد الأعمال الطموحين بمستثمرين ذوي أثر.', ft_city: 'الجزائر العاصمة، الجزائر',
       ft_page: 'هذه الصفحة', ft_event: 'الحدث', ft_dates: '5 – 7 ديسمبر 2026', ft_legal: 'قانوني وأمان',
       ft_l1: 'ملف سري (اتفاقية عدم إفشاء)', ft_l2: 'ميثاق أخلاقيات العمل المالي', ft_l3: 'الإشعارات القانونية – الجزائر',
-      ft_copy: '© 2026 Yinvesti. جميع الحقوق محفوظة.', ft_made: 'صفحة مخصّصة للمؤتمر الإفريقي للمؤسسات الناشئة 2026.',
-      bm_t: 'قبل ASC',
-      m_t: 'تم استلام ترشّحك!', m_d: 'تم تسجيل ملفك. تدرسه لجنتنا خلال 5 أيام عمل، ثم نتواصل معك لتحديد موعدك.', m_num: 'رقم الملف', m_ics: 'أضف ASC إلى مفكرتي', m_close: 'إغلاق'
+      ft_copy: '© 2026 Yinvesti. جميع الحقوق محفوظة.', ft_made: 'صفحة مخصّصة للمؤتمر الإفريقي للشركات الناشئة 2026.',
+      m_t: 'تم استلام ترشّحك!', m_num: 'رقم الملف', m_ics: 'أضف 6 ديسمبر إلى مفكرتي', m_close: 'إغلاق'
     },
     en: {
+      hero_title: 'A new opportunity to fund your project <em>during ASC 2026</em>',
+      hero_sub: 'Do you have a startup you want to grow? Apply and take part in the <b>first crowdfunding campaign</b> held during the African Startup Conference 2026.',
+      hero_cta2: 'See the timeline', cd_title: 'Official campaign launch in', nav_parcours: 'Timeline',
+      why_sub: 'Three days when African startups, investors and institutions meet in Algiers, with the official launch of the funding campaigns on 6 December.',
+      why1_t: 'Official launch on 6 December', why1_d: 'Campaigns of qualified projects launch on Sunday 6 December, day 2 of ASC, and are presented to the public and investors.',
+      why2_d: 'Your campaign presented to the 600 investors and 21,200 registered users of Yinvesti, and beyond through our webinars and lives.',
+      get1_t: 'A preliminary selection', get1_d: 'of your project by our committee', get2_t: 'A financial study', get2_d: 'and the valuation of your project', get3_t: 'A voting campaign', get3_d: 'with the Yinvesti community', get4_t: 'An official launch', get4_d: 'on Sunday 6 December at ASC',
+      st_amount: 'total amount invested', st_ops: 'successful investment transactions', st_epay: 'electronic payment', st_bank: 'bank transfer',
+      st_investors: 'investors', st_users: 'registered users on the platform', st_monthly: '1,700+ monthly users',
+      st_pipe: 'Projects and funding campaigns', st_projects: 'projects registered on the platform', st_qualified: 'qualified projects',
+      st_current: 'current funding campaigns', st_success: 'successful funding campaigns', st_failed: 'unsuccessful funding campaigns', st_you: 'yours, launched on 6 December?',
+      proc_kick: 'From application to launch', proc_title: 'Proposed timeline', proc_sub: '7 steps to the official launch of the campaigns on Sunday 6 December 2026 during ASC.',
+      ph_lbl: 'Step', ph1_t: 'Registration on the Yinvesti platform', ph1_d: 'Start with the pre-registration below ↓', ph2_t: 'Preliminary selection of eligible projects', ph3_t: 'Financial study and project valuation',
+      ph4_t: 'Launch of the voting campaign', ph5_t: 'Completion of legal procedures and recommendations', ph6_t: 'Final qualification and launch preparation',
+      ph6_d: 'A project is only included in the final launch once it meets all the required conditions.',
+      ph7_t: 'Official launch of the funding campaigns', ph7_date: 'Sunday 6 December 2026 — day 2 of the conference',
+      ph7_d: 'Funding campaigns for qualified projects are launched and presented to the public and investors, with campaign links published and outreach activities that let interested people discover the projects and the conditions for taking part.',
+      ph7_resp_t: 'Responsible', ph7_resp: 'Yinvesti, in coordination with the conference organisers, project holders and partners.',
+      ph7_out_t: 'Outcome', ph7_out: 'Officially published funding campaigns, with tracking of interest and actual contributions starting under the approved procedures.',
+      d5_w: 'Sat.', d6_w: 'Sun.', d7_w: 'Mon.', d5_e: 'Day 1', d6_e: 'Launch', d7_e: 'Day 3',
+      ag_title: 'Sunday 6 December: official campaign launch', ag_sub: 'On day 2 of the conference, campaigns of qualified projects are presented to the public and investors.', ft_city2: 'Algiers',
+      e1_d: 'This information lets the Yinvesti team contact you about your application.',
+      fa2: 'No, pre-registration is open to all project holders and companies. If you take part in ASC (exhibitor or visitor), say so in the form.',
+      fq7: 'Will my project launch on 6 December?', fa7: 'Yes, if it qualifies: campaigns of qualified projects officially launch on Sunday 6 December 2026, day 2 of the conference. A project is only included in the final launch once it meets all the required conditions.',
+      final_t: 'Official campaign launch on 6 December at ASC', final_d: 'Apply now: only projects that meet all the required conditions are part of the final launch.',
+      bm_t: 'before launch', m_d: 'Your application is recorded. Our team reviews it and contacts you about the next steps, up to the official campaign launch on 6 December.',
       coord: 'In coordination with <b>Algeria Venture</b>',
       coord_date: 'African Startup Conference · 5 – 7 December 2026 · CIC Algiers',
-      nav_why: 'Why ASC', nav_profils: 'Profiles', nav_parcours: 'Process', nav_form: 'Apply', nav_faq: 'FAQ',
+      nav_why: 'Why ASC', nav_profils: 'Profiles', nav_form: 'Apply', nav_faq: 'FAQ',
       header_cta: 'Apply',
       hero_pill: 'African Startup Conference 2026 · 5th edition',
-      hero_title: 'Raise funds <em>during ASC 2026</em> with Yinvesti.',
-      hero_sub: 'Project holders and companies: apply for <b>Yinvesti crowdfunding</b> and meet our team from 5 to 7 December 2026 at the International Conference Centre in Algiers.',
-      hero_cta: 'Submit my application', hero_cta2: 'See the process',
-      cd_title: 'ASC opens in',
+      
+      hero_cta: 'Submit my application', 
       proof1: 'Free pre-registration', proof2: 'Answer within 5 business days', proof3: 'Confidential file (NDA)',
       pin: 'Algiers · CIC · 5 – 7 Dec.', chip1: 'invested through Yinvesti', chip2: 'investors', chip3: 'qualified projects',
       partners_title: 'An initiative led by',
       p_yinv: 'First crowdfunding platform licensed by COSOB', p_asc: '5th edition · 5 – 7 December 2026 · Algiers', p_av: 'In coordination with Algeria Venture',
       why_kick: 'Why now', why_title: 'ASC 2026, the best time to raise funds',
-      why_sub: 'Three days when African startups, investors and institutions meet in Algiers. We use them to prepare your crowdfunding campaign with you.',
-      why1_t: 'One-to-one meeting', why1_d: 'A direct conversation with the Yinvesti team during the event to present your project and your funding needs.',
-      why2_t: 'A community of investors', why2_d: 'Your campaign presented to the 410 investors of the Yinvesti community, and beyond through our webinars and lives.',
+      
+      why2_t: 'A community of investors', 
       why3_t: 'A regulated framework', why3_d: 'Yinvesti is the first crowdfunding platform licensed by COSOB in Algeria: a supervised and secure fundraising.',
       why4_t: 'End-to-end support', why4_d: 'Diagnosis, financial study, valuation and campaign preparation: we structure your raise with you.',
       prof_kick: 'Two profiles', prof_title: 'Project holder or company: choose your path',
@@ -1095,33 +1168,26 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
       pc_t: 'You are building your project', pc_d: 'Advanced idea, prototype or MVP, first customers: crowdfunding can finance your launch.',
       pc_1: 'A prototype or MVP available', pc_2: 'Operational progress and your first customers', pc_3: 'A marketing strategy and an audience', pc_4: 'Agreement to a joint-stock form (SPA / SPAS) at creation',
       pc_cta: 'Apply with my project',
-      get_t: 'What you get', get1_t: 'A diagnosis', get1_d: 'within 5 business days', get2_t: 'A meeting at ASC', get2_d: 'from 5 to 7 December, or after the event',
-      get3_t: 'A financial study', get3_d: 'and the valuation of your project', get4_t: 'Your campaign', get4_d: 'crowdfunding, followed end to end',
+      get_t: 'What you get', 
       pe_t: 'You run a company', pe_d: 'Registered company or trade-register activity: finance equipment, a new product or your commercial growth.',
       pe_1: 'A clear need: equipment, new product or sales development', pe_2: 'An amount sought, from under 5 to over 20 million DZD', pe_3: 'Openness to converting into an SPA before the campaign', pe_4: 'A plan to promote the project and reach your customers',
       pe_cta: 'Apply with my company',
       stats_kick: 'Yinvesti in numbers', stats_title: 'A community that already invests',
-      st_invest: 'invested through the platform', st_investors: 'investors', st_qualified: 'qualified projects on the platform', st_pipe: 'Where projects stand today',
-      st_study: 'projects under review', st_raising: 'projects raising funds', st_vote: 'project in voting stage', st_you: 'yours, after ASC?',
+      
       st_note: 'Current Yinvesti platform statistics.',
-      proc_kick: 'After you apply', proc_title: '4 steps to your fundraising', proc_sub: 'A structured process to maximise your chances of success.',
-      ph1_tag: 'On receipt', ph1_t: 'Review & diagnosis', ph1_d: 'Our committee analyses feasibility, business model, legal framework and market maturity within 5 business days.',
-      ph2_tag: '5 – 7 Dec. · ASC', ph2_t: 'One-to-one meeting', ph2_d: 'Selected projects meet the Yinvesti team during ASC at the CIC in Algiers, or after the event at our office or by phone.',
-      ph3_tag: 'Preparation', ph3_t: 'Financial study & launch', ph3_d: 'We build the financial study and valuation with you, size your funding need and prepare the crowdfunding campaign.',
-      ph4_tag: 'During the campaign', ph4_t: 'Follow-up & advice', ph4_d: 'Continuous support, subscription tracking and strategic advice throughout your raise.',
-      ag_kick: 'Meet us at ASC', ag_title: 'Choose your meeting day', ag_sub: 'Tell us your preference: we confirm the slot by phone or WhatsApp after reviewing your application.',
-      d5_w: 'Saturday', d6_w: 'Sunday', d7_w: 'Monday', dec: 'December', d5_e: 'ASC opening', d6_e: 'Day 2', d7_e: 'Closing',
-      da_w: 'Later', da_b: 'After', da_s: 'ASC', da_e: 'Office or phone',
+      
+      
+      
+      
       venue: 'Abdelatif Rahal International Conference Centre', venue_city: 'Algiers · African Startup Conference 2026', venue_map: 'View on the map →',
       form_kick: 'Pre-registration', form_title: 'Submit your application in 3 minutes', form_sub: 'Free and without commitment. Your information stays confidential.',
       side_t: 'Your application', s1_n: 'You & ASC', s2_n: 'Maturity', s3_n: 'Your project', force_t: 'Application strength', help: 'A question?',
-      e1_tag: 'Step 1 of 3', e1_t: 'You and ASC 2026', e1_d: 'This information lets the Yinvesti team contact you and schedule your meeting.',
+      e1_tag: 'Step 1 of 3', e1_t: 'You and ASC 2026', 
       f_nom: 'Full name', ph_nom: 'E.g. Mohamed Amine Mansouri', er_nom: 'Enter your full name.',
       f_tel: 'Phone (call & WhatsApp)', er_tel: 'Invalid number (e.g. 0550 00 00 00).',
       f_email: 'Email', h_email: 'To receive your acknowledgement.', er_email: 'Invalid email address.',
       f_wilaya: 'Wilaya', ph_wilaya: 'Choose your wilaya…', er_wilaya: 'Choose a wilaya.',
       f_asc: 'Your participation in ASC 2026', o_exposant: 'Exhibitor', o_visiteur: 'Registered (visitor / attendee)', o_noninscrit: 'Not registered yet', er_choix: 'Choose an answer.',
-      f_rdv: 'Preferred meeting day', o_5dec: 'Sat. 5 Dec.', o_6dec: 'Sun. 6 Dec.', o_7dec: 'Mon. 7 Dec.', o_apres: 'After ASC',
       e2_tag: 'Step 2 of 3', e2_t: 'Your project maturity', e2_d: 'Choose your stage: the questions adapt to your profile.', f_stade: 'Stage',
       o_creation: 'Project in creation', o_creation_d: 'Prototype, MVP or launch steps under way.',
       o_entreprise: 'Company / registered business', o_entreprise_d: 'Existing entity generating, or about to generate, revenue.', er_stade: 'Choose your stage.',
@@ -1148,35 +1214,32 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
       b_prev: 'Back', b_next: 'Continue', b_submit: 'Send my application', draft: 'Draft saved', sending: 'Sending…',
       faq_title: 'Frequently asked questions',
       fq1: 'Is pre-registration free?', fa1: 'Yes. Pre-registration and the first conversation with our team are free and without commitment.',
-      fq2: 'Do I need to be registered for ASC 2026 to apply?', fa2: 'No, pre-registration is open to all project holders and companies. If you take part in ASC (exhibitor or visitor), tell us: we will schedule your meeting during the event.',
+      fq2: 'Do I need to be registered for ASC 2026 to apply?', 
       fq3: 'My project is only an idea, can I apply?', fa3: 'Yes. We welcome high-potential ideas. If your concept meets a real need in the Algerian market, our team will guide you through prototyping and obtaining the Innovative Project label.',
       fq4: 'Why talk about SPA / SPAS?', fa4: 'Equity crowdfunding works through share subscription: the company must therefore be a joint-stock company (SPA, or SPAS for startups). If that is not yet the case, answer "Need info": we will explain the steps.',
       fq5: 'How is my data protected?', fa5: 'Your information is strictly confidential. It is only shared with investors with your explicit consent and after signing a non-disclosure agreement (NDA).',
       fq6: 'When will I get an answer?', fa6: 'Our committee reviews every application within 5 business days. You receive an email acknowledgement as soon as you send it, then a call or WhatsApp message from our team.',
-      final_t: 'See you at the CIC in Algiers, 5 – 7 December', final_d: 'Submit your application now to book your meeting with the Yinvesti team.',
       ft_about: 'The Algerian crowdfunding platform connecting ambitious entrepreneurs with impact investors.', ft_city: 'Algiers, Algeria',
       ft_page: 'This page', ft_event: 'The event', ft_dates: '5 – 7 December 2026', ft_legal: 'Legal & security',
       ft_l1: 'Confidential file (NDA)', ft_l2: 'Financial code of ethics', ft_l3: 'Legal notice – Algeria',
       ft_copy: '© 2026 Yinvesti. All rights reserved.', ft_made: 'Page dedicated to the African Startup Conference 2026.',
-      bm_t: 'before ASC',
-      m_t: 'Application received!', m_d: 'Your application is recorded. Our committee reviews it within 5 business days, then we contact you to schedule your meeting.', m_num: 'Application number', m_ics: 'Add ASC to my calendar', m_close: 'Close'
+      m_t: 'Application received!', m_num: 'Application number', m_ics: 'Add 6 December to my calendar', m_close: 'Close'
     }
   };
-
   // Textes du script (compte à rebours, messages), dans les trois langues.
   var TXT = {
-    fr: { cd_j: 'jours', cd_h: 'heures', cd_m: 'min', cd_s: 'sec', live: "L'ASC 2026 se déroule en ce moment au CIC d'Alger !", fini: "L'ASC 2026 est terminée — les candidatures restent ouvertes.",
-      day: 'Jour enregistré dans le formulaire', f0: 'Remplissez vos coordonnées pour commencer.', f1: 'Bon début : précisez votre stade d\'avancement.', f2: 'Rédigez un pitch percutant (150 caractères ou plus).', f3: 'Ajoutez votre pitch deck pour renforcer le dossier.', f4: 'Ajoutez vos liens (site, réseaux) pour compléter.', f5: 'Excellent dossier, prêt à être envoyé !',
+    fr: { cd_j: 'jours', cd_h: 'heures', cd_m: 'min', cd_s: 'sec', live: "Les campagnes de financement sont lancées à l'ASC 2026 !", fini: "L'ASC 2026 est terminée — écrivez-nous pour les prochaines campagnes.",
+      f0: 'Remplissez vos coordonnées pour commencer.', f1: 'Bon début : précisez votre stade d\'avancement.', f2: 'Rédigez un pitch percutant (150 caractères ou plus).', f3: 'Ajoutez votre pitch deck pour renforcer le dossier.', f4: 'Ajoutez vos liens (site, réseaux) pour compléter.', f5: 'Excellent dossier, prêt à être envoyé !',
       choisir: 'Merci de compléter les champs en rouge.', trop_gros: 'Le fichier est trop lourd pour le serveur. Envoyez une version plus légère (PDF compressé) ou sans fichier.', limite: 'Trop d\'envois depuis cette connexion. Réessayez dans une heure ou écrivez-nous.', trop_rapide: 'Envoi trop rapide : vérifiez vos réponses puis réessayez.', reseau: 'Connexion impossible. Vérifiez Internet puis réessayez — votre brouillon est conservé.', erreur: 'Une erreur est survenue. Réessayez ou écrivez à projets@yinvesti.dz.',
-      fichier_ko: 'Format non accepté ou fichier de plus de 25 Mo.', r_projet: 'Projet', r_porteur: 'Porteur', r_rdv: 'Rendez-vous', r_wilaya: 'Wilaya', jours_avant: 'jours' },
-    ar: { cd_j: 'يوم', cd_h: 'ساعة', cd_m: 'دقيقة', cd_s: 'ثانية', live: 'ASC 2026 يجري الآن في المركز الدولي للمؤتمرات بالجزائر!', fini: 'انتهى ASC 2026 — الترشحات تبقى مفتوحة.',
-      day: 'تم تسجيل اليوم في الاستمارة', f0: 'املأ معلوماتك للبدء.', f1: 'بداية جيدة: حدّد مرحلة تقدّمك.', f2: 'اكتب عرضاً مقنعاً (150 حرفاً أو أكثر).', f3: 'أضف عرضك التقديمي لتقوية الملف.', f4: 'أضف روابطك (الموقع، الشبكات) لاستكمال الملف.', f5: 'ملف ممتاز، جاهز للإرسال!',
+      fichier_ko: 'Format non accepté ou fichier de plus de 25 Mo.', r_projet: 'Projet', r_porteur: 'Porteur', r_stade: 'Stade', r_wilaya: 'Wilaya', jours_avant: 'jours' },
+    ar: { cd_j: 'يوم', cd_h: 'ساعة', cd_m: 'دقيقة', cd_s: 'ثانية', live: 'انطلقت حملات التمويل خلال ASC 2026!', fini: 'انتهى ASC 2026 — راسلنا بخصوص الحملات القادمة.',
+      f0: 'املأ معلوماتك للبدء.', f1: 'بداية جيدة: حدّد مرحلة تقدّمك.', f2: 'اكتب عرضاً مقنعاً (150 حرفاً أو أكثر).', f3: 'أضف عرضك التقديمي لتقوية الملف.', f4: 'أضف روابطك (الموقع، الشبكات) لاستكمال الملف.', f5: 'ملف ممتاز، جاهز للإرسال!',
       choisir: 'يرجى استكمال الحقول باللون الأحمر.', trop_gros: 'الملف أثقل مما يسمح به الخادم. أرسل نسخة أخف (PDF مضغوط) أو دون ملف.', limite: 'عدد كبير من الإرسالات من هذا الاتصال. أعد المحاولة بعد ساعة أو راسلنا.', trop_rapide: 'إرسال سريع جداً: تحقّق من إجاباتك ثم أعد المحاولة.', reseau: 'تعذّر الاتصال. تحقّق من الإنترنت ثم أعد المحاولة — مسودتك محفوظة.', erreur: 'حدث خطأ. أعد المحاولة أو راسل projets@yinvesti.dz.',
-      fichier_ko: 'صيغة غير مقبولة أو ملف يتجاوز 25 ميغابايت.', r_projet: 'المشروع', r_porteur: 'حامل المشروع', r_rdv: 'الموعد', r_wilaya: 'الولاية', jours_avant: 'يوماً' },
-    en: { cd_j: 'days', cd_h: 'hours', cd_m: 'min', cd_s: 'sec', live: 'ASC 2026 is happening now at the CIC in Algiers!', fini: 'ASC 2026 is over — applications remain open.',
-      day: 'Day saved in the form', f0: 'Fill in your details to get started.', f1: 'Good start: tell us your stage.', f2: 'Write a strong pitch (150 characters or more).', f3: 'Add your pitch deck to strengthen the application.', f4: 'Add your links (website, social) to complete it.', f5: 'Excellent application, ready to send!',
+      fichier_ko: 'صيغة غير مقبولة أو ملف يتجاوز 25 ميغابايت.', r_projet: 'المشروع', r_porteur: 'حامل المشروع', r_stade: 'المرحلة', r_wilaya: 'الولاية', jours_avant: 'يوماً' },
+    en: { cd_j: 'days', cd_h: 'hours', cd_m: 'min', cd_s: 'sec', live: 'Funding campaigns are live at ASC 2026!', fini: 'ASC 2026 is over — email us about upcoming campaigns.',
+      f0: 'Fill in your details to get started.', f1: 'Good start: tell us your stage.', f2: 'Write a strong pitch (150 characters or more).', f3: 'Add your pitch deck to strengthen the application.', f4: 'Add your links (website, social) to complete it.', f5: 'Excellent application, ready to send!',
       choisir: 'Please complete the fields in red.', trop_gros: 'The file is too large for the server. Send a lighter version (compressed PDF) or no file.', limite: 'Too many submissions from this connection. Try again in an hour or email us.', trop_rapide: 'Sent too fast: check your answers and try again.', reseau: 'Connection failed. Check your internet and try again — your draft is kept.', erreur: 'Something went wrong. Try again or email projets@yinvesti.dz.',
-      fichier_ko: 'Format not accepted or file over 25 MB.', r_projet: 'Project', r_porteur: 'Applicant', r_rdv: 'Meeting', r_wilaya: 'Wilaya', jours_avant: 'days' }
+      fichier_ko: 'Format not accepted or file over 25 MB.', r_projet: 'Project', r_porteur: 'Applicant', r_stade: 'Stage', r_wilaya: 'Wilaya', jours_avant: 'days' }
   };
 
   var doc = document.documentElement;
@@ -1203,6 +1266,8 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
     document.querySelectorAll('.langues button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.lang === lang)); });
     document.getElementById('langueChamp').value = lang;
     try { localStorage.setItem('yinv_lang', lang); } catch (e) {}
+    document.querySelectorAll('[data-nombre]').forEach(function (el) { afficherNombre(el, parseFloat(el.dataset.nombre)); });
+    document.querySelectorAll('[data-compteur][data-fini]').forEach(function (el) { afficherNombre(el, parseFloat(el.dataset.compteur)); });
     majForce();
     tic();
   }
@@ -1244,8 +1309,9 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
     });
   }
 
-  // ───────── Compte à rebours jusqu'au 5 décembre 2026, 9 h (Alger) ─────────
-  var DEBUT = Date.UTC(2026, 11, 5, 8, 0, 0), FIN = Date.UTC(2026, 11, 7, 18, 0, 0);
+  // ───────── Compte à rebours jusqu'au lancement officiel des campagnes ─────────
+  // Lancement officiel des campagnes : dimanche 6 décembre 2026, 2e jour de l'ASC (heure d'Alger).
+  var DEBUT = Date.UTC(2026, 11, 5, 23, 0, 0), FIN = Date.UTC(2026, 11, 7, 17, 0, 0);
   var pad = function (n) { return (n < 10 ? '0' : '') + n; };
   function tic() {
     var reste = DEBUT - Date.now();
@@ -1266,15 +1332,22 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
   setInterval(tic, 1000);
 
   // ───────── Apparitions, compteurs, barres ─────────
+  // Nombres au format de la langue : 55,05 / 3 454 en français, 55.05 / 3,454 sinon.
+  function fmt(v, dec, padN) {
+    var txt = v.toLocaleString(lang === 'fr' ? 'fr-FR' : 'en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+    while (padN && txt.length < padN) txt = '0' + txt;
+    return txt;
+  }
+  function afficherNombre(el, v) {
+    el.textContent = (el.dataset.prefixe || '') + fmt(v, parseInt(el.dataset.dec || '0', 10), parseInt(el.dataset.pad || '0', 10));
+  }
   function compter(el) {
-    var cible = parseFloat(el.dataset.compteur), dec = parseInt(el.dataset.dec || '0', 10), padN = parseInt(el.dataset.pad || '0', 10), t0 = null;
+    var cible = parseFloat(el.dataset.compteur), t0 = null;
     function pas(ts) {
       if (!t0) t0 = ts;
-      var p = Math.min(1, (ts - t0) / 1600), v = cible * (1 - Math.pow(1 - p, 3));
-      var txt = v.toFixed(dec).replace('.', ',');
-      if (padN && txt.length < padN) txt = '0' + txt;
-      el.textContent = txt;
-      if (p < 1) requestAnimationFrame(pas);
+      var p = Math.min(1, (ts - t0) / 1600);
+      afficherNombre(el, cible * (1 - Math.pow(1 - p, 3)));
+      if (p < 1) requestAnimationFrame(pas); else el.dataset.fini = '1';
     }
     requestAnimationFrame(pas);
   }
@@ -1290,15 +1363,13 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
   }, { threshold: .15 });
   document.querySelectorAll('.rv').forEach(function (el) { io.observe(el); });
 
-  // Rail du parcours : se remplit au fil du défilement.
-  var frise = document.querySelector('.frise'), rail = document.querySelector('.frise .rail i'), phases = document.querySelectorAll('.phase');
+  // Calendrier : le fil se remplit et les étapes s'allument au fil du défilement.
+  var chrono = document.querySelector('.chrono-l'), fil = document.querySelector('.chrono-l .fil'), jalons = document.querySelectorAll('.jalon');
   function majRail() {
-    var r = frise.getBoundingClientRect(), vh = window.innerHeight;
-    var p = Math.max(0, Math.min(1, (vh * .75 - r.top) / (r.height + vh * .2)));
-    rail.style.width = (p * 100) + '%';
-    rail.parentElement.style.setProperty('--h', (p * 100) + '%');
-    if (window.innerWidth <= 860) { rail.style.height = (p * 100) + '%'; } else { rail.style.height = ''; }
-    phases.forEach(function (ph, i) { ph.classList.toggle('atteint', p >= (i + .3) / phases.length); });
+    var r = chrono.getBoundingClientRect(), repere = window.innerHeight * .6;
+    var max = r.height - 86;
+    fil.style.height = Math.max(0, Math.min(max, repere - r.top - 26)) + 'px';
+    jalons.forEach(function (j) { j.classList.toggle('atteint', j.getBoundingClientRect().top + 25 < repere); });
   }
   // Barre d'action mobile : visible après le hero, cachée sur le formulaire.
   var barreM = document.getElementById('barreM'), formSec = document.getElementById('candidature');
@@ -1356,7 +1427,6 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
   }
   form.addEventListener('change', function (e) {
     if (e.target.name === 'stade_projet') majStade();
-    if (e.target.name === 'asc_rdv') majJours(e.target.value);
     var c = e.target.closest('.champ'); if (c && c.classList.contains('ko')) valider(c);
     if (e.target.id === 'consentement') document.getElementById('consentBloc').classList.toggle('ko', false);
     sauver(); majForce();
@@ -1431,14 +1501,6 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
       document.getElementById('candidature').scrollIntoView({ behavior: 'smooth' });
     });
   });
-  function majJours(v) { document.querySelectorAll('.jour').forEach(function (j) { j.setAttribute('aria-pressed', String(j.dataset.jour === v)); }); }
-  document.querySelectorAll('.jour').forEach(function (j) {
-    j.addEventListener('click', function () {
-      var r = form.querySelector('input[name="asc_rdv"][value="' + j.dataset.jour + '"]');
-      r.checked = true; majJours(j.dataset.jour); sauver(); majForce();
-      toast(t('day'));
-    });
-  });
   var toastT;
   function toast(msg) {
     var el = document.getElementById('toast');
@@ -1471,7 +1533,7 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
     var coche = function (n) { return !!form.querySelector('input[name="' + n + '"]:checked'); };
     var pts = 0;
     ['nom_complet', 'telephone', 'email', 'wilaya'].forEach(function (n) { if (v(n)) pts += 6; });
-    if (coche('asc_statut')) pts += 5; if (coche('asc_rdv')) pts += 5;
+    if (coche('asc_statut')) pts += 10;
     var s = stade();
     if (s) pts += 8;
     var qs = s === 'entreprise' ? ['cat1_exercice', 'cat1_besoin', 'cat1_montant', 'cat1_transformation_spa', 'cat1_plan_clients'] : s === 'creation' ? ['cat2_prototype', 'cat2_avancement_clients', 'cat2_marketing_audience', 'cat2_statut_spa'] : [];
@@ -1512,11 +1574,11 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
       els.forEach(function (el) { if (el.type === 'radio') el.checked = el.value === d[n]; else el.value = d[n]; });
     });
     document.getElementById('nbPitch').textContent = (d.description_projet || '').length;
-    majStade(); majJours(d.asc_rdv || '');
+    majStade();
   }
 
   // Envoi
-  var ETAPE_DE = { nom_complet: 1, telephone: 1, email: 1, wilaya: 1, asc_statut: 1, asc_rdv: 1, stade_projet: 2 };
+  var ETAPE_DE = { nom_complet: 1, telephone: 1, email: 1, wilaya: 1, asc_statut: 1, stade_projet: 2 };
   function alerte(msg) { var a = document.getElementById('alerte'); a.textContent = msg; a.classList.add('vu'); }
   form.addEventListener('submit', function (e) {
     e.preventDefault();
@@ -1559,8 +1621,8 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
   function reussite(num, fd) {
     dossierCourant = num;
     document.getElementById('mNum').textContent = num;
-    var lib = function (n) { var r = form.querySelector('input[name="' + n + '"]:checked'); return r ? r.nextElementSibling.textContent : ''; };
-    var lignes = [[t('r_projet'), fd.get('nom_projet')], [t('r_porteur'), fd.get('nom_complet')], [t('r_wilaya'), fd.get('wilaya')], [t('r_rdv'), lib('asc_rdv')]];
+    var lib = function (n) { var r = form.querySelector('input[name="' + n + '"]:checked'); if (!r) return ''; var e = r.nextElementSibling; return (e.querySelector('strong') || e).textContent; };
+    var lignes = [[t('r_projet'), fd.get('nom_projet')], [t('r_porteur'), fd.get('nom_complet')], [t('r_wilaya'), fd.get('wilaya')], [t('r_stade'), lib('stade_projet')]];
     var ul = document.getElementById('recap'); ul.innerHTML = '';
     lignes.forEach(function (l) {
       var li = document.createElement('li'), s = document.createElement('span'), b = document.createElement('b');
@@ -1570,7 +1632,7 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
     document.getElementById('fermerModal').focus();
     confettis();
     try { localStorage.removeItem(CLE); } catch (e) {}
-    form.reset(); inputDoc.value = ''; majFichier(); majStade(); majJours(''); allerA(1);
+    form.reset(); inputDoc.value = ''; majFichier(); majStade(); allerA(1);
     form.querySelectorAll('.champ').forEach(function (c) { c.classList.remove('ok', 'ko'); });
     document.getElementById('t0').value = Date.now();
     document.getElementById('nbPitch').textContent = '0';
@@ -1601,9 +1663,9 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
   document.getElementById('agendaIcs').addEventListener('click', function () {
     var ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Yinvesti//ASC 2026//FR', 'BEGIN:VEVENT',
       'UID:asc2026-' + (dossierCourant || Date.now()) + '@yinvesti', 'DTSTAMP:' + new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z',
-      'DTSTART;VALUE=DATE:20261205', 'DTEND;VALUE=DATE:20261208',
-      'SUMMARY:African Startup Conference 2026 — Yinvesti', 'LOCATION:Centre International de Conférences Abdelatif Rahal\\, Alger',
-      'DESCRIPTION:Rendez-vous Yinvesti (crowdfunding). Dossier ' + dossierCourant, 'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
+      'DTSTART;VALUE=DATE:20261206', 'DTEND;VALUE=DATE:20261207',
+      'SUMMARY:Lancement officiel des campagnes Yinvesti — ASC 2026', 'LOCATION:Centre International de Conférences Abdelatif Rahal\\, Alger',
+      'DESCRIPTION:African Startup Conference 2026 (5 – 7 décembre). Dossier ' + dossierCourant, 'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
     var a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([ics], { type: 'text/calendar' }));
     a.download = 'ASC-2026-Yinvesti.ics';

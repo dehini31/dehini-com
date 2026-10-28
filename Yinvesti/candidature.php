@@ -64,7 +64,7 @@ if (!in_array($d['wilaya'], yinv_wilayas(), true)) {
 }
 
 // ── Choix fermés ─────────────────────────────────────────────────────────
-$fermes = ['asc_statut', 'asc_rdv', 'stade_projet', 'secteur'];
+$fermes = ['asc_statut', 'stade_projet', 'secteur'];
 $stade  = $p('stade_projet', 20);
 if ($stade === 'entreprise') {
     array_push($fermes, 'cat1_exercice', 'cat1_besoin', 'cat1_montant', 'cat1_transformation_spa', 'cat1_plan_clients');
@@ -189,9 +189,9 @@ if (defined('YINV_NOTIF_EMAIL') && filter_var(YINV_NOTIF_EMAIL, FILTER_VALIDATE_
 
 if (!defined('YINV_ACCUSE') || YINV_ACCUSE) {
     $corps = [
-        'fr' => "Bonjour {$d['nom_complet']},\n\nNous avons bien reçu votre préinscription au crowdfunding Yinvesti pendant l'African Startup Conference 2026 (5 – 7 décembre, CIC Alger).\n\nNuméro de dossier : {$dossier}\nProjet : {$d['nom_projet']}\n\nNotre comité étudie votre dossier sous 5 jours ouvrés, puis nous vous contactons pour fixer votre rendez-vous.\n\nL'équipe Yinvesti",
-        'ar' => "مرحباً {$d['nom_complet']}،\n\nتلقّينا طلب تسجيلك المسبق في التمويل التشاركي مع Yinvesti خلال المؤتمر الإفريقي للمؤسسات الناشئة 2026 (5 – 7 ديسمبر، المركز الدولي للمؤتمرات، الجزائر).\n\nرقم الملف: {$dossier}\nالمشروع: {$d['nom_projet']}\n\nتدرس لجنتنا ملفك خلال 5 أيام عمل، ثم نتواصل معك لتحديد موعدك.\n\nفريق Yinvesti",
-        'en' => "Hello {$d['nom_complet']},\n\nWe have received your Yinvesti crowdfunding pre-registration for the African Startup Conference 2026 (5 – 7 December, CIC Algiers).\n\nApplication number: {$dossier}\nProject: {$d['nom_projet']}\n\nOur committee reviews your application within 5 business days, then we contact you to schedule your meeting.\n\nThe Yinvesti team",
+        'fr' => "Bonjour {$d['nom_complet']},\n\nNous avons bien reçu votre préinscription à la campagne de financement participatif Yinvesti organisée pendant l'African Startup Conference 2026 (5 – 7 décembre, CIC Alger).\n\nNuméro de dossier : {$dossier}\nProjet : {$d['nom_projet']}\n\nNotre équipe étudie votre dossier et vous contacte pour les prochaines étapes : présélection, étude financière, campagne de vote, puis lancement officiel des campagnes le dimanche 6 décembre 2026.\n\nL'équipe Yinvesti",
+        'ar' => "مرحباً {$d['nom_complet']}،\n\nتلقّينا طلب تسجيلك المسبق في حملة التمويل التساهمي مع Yinvesti خلال المؤتمر الإفريقي للشركات الناشئة 2026 (5 – 7 ديسمبر، المركز الدولي للمؤتمرات، الجزائر).\n\nرقم الملف: {$dossier}\nالمشروع: {$d['nom_projet']}\n\nيدرس فريقنا ملفك ويتواصل معك للمراحل القادمة: الاختيار المبدئي، الدراسة المالية، حملة التصويت، ثم الإطلاق الرسمي للحملات يوم الأحد 6 ديسمبر 2026.\n\nفريق Yinvesti",
+        'en' => "Hello {$d['nom_complet']},\n\nWe have received your pre-registration for the Yinvesti crowdfunding campaign held during the African Startup Conference 2026 (5 – 7 December, CIC Algiers).\n\nApplication number: {$dossier}\nProject: {$d['nom_projet']}\n\nOur team reviews your application and contacts you about the next steps: preliminary selection, financial study, voting campaign, then the official campaign launch on Sunday 6 December 2026.\n\nThe Yinvesti team",
     ][$d['langue']];
     if (function_exists('mail')) {
         @mail($d['email'], $sujet("Yinvesti × ASC 2026 — {$dossier}"), $corps, $entetes);
