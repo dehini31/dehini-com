@@ -64,10 +64,10 @@ if (!in_array($d['wilaya'], yinv_wilayas(), true)) {
 }
 
 // ── Choix fermés ─────────────────────────────────────────────────────────
-$fermes = ['asc_statut', 'stade_projet', 'secteur'];
+$fermes = ['stade_projet', 'secteur'];
 $stade  = $p('stade_projet', 20);
 if ($stade === 'entreprise') {
-    array_push($fermes, 'cat1_exercice', 'cat1_besoin', 'cat1_montant', 'cat1_transformation_spa', 'cat1_plan_clients');
+    array_push($fermes, 'cat1_exercice', 'cat1_besoin', 'cat1_montant', 'cat1_transformation_spa');
 } elseif ($stade === 'creation') {
     array_push($fermes, 'cat2_prototype', 'cat2_avancement_clients', 'cat2_marketing_audience', 'cat2_statut_spa');
 }

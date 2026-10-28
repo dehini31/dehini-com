@@ -101,12 +101,12 @@ function yinv_wilayas(): array
 function yinv_choix(): array
 {
     return [
+        // Champs retirés de la page : gardés pour afficher les candidatures déjà reçues.
         'asc_statut' => [
             'exposant'    => "Exposant à l'ASC 2026",
             'visiteur'    => "Inscrit à l'ASC 2026 (visiteur / participant)",
             'non_inscrit' => "Pas encore inscrit à l'ASC 2026",
         ],
-        // Ancien champ (candidatures reçues avant le calendrier officiel) : gardé pour l'affichage.
         'asc_rdv' => [
             '5dec'  => 'Samedi 5 décembre',
             '6dec'  => 'Dimanche 6 décembre',
