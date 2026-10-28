@@ -2,7 +2,7 @@
 // Copier en config.php (sur le serveur seulement, jamais dans Git) puis adapter.
 
 // Adresse qui reçoit chaque nouvelle candidature (laisser commenté pour ne rien recevoir).
-define('YINV_NOTIF_EMAIL', 'projets@yinvesti.dz');
+define('YINV_NOTIF_EMAIL', 'contact@yinvesti.dz');
 
 // Accusé de réception envoyé au porteur de projet (true / false).
 define('YINV_ACCUSE', true);
