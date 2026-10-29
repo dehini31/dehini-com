@@ -176,14 +176,14 @@ input[type=password]{width:100%;padding:12px;border:1px solid var(--line);border
       <p class="vide">Aucune candidature pour l'instant.</p>
     <?php else: ?>
     <table>
-      <thead><tr><th>Dossier</th><th>Projet</th><th>Porteur</th><th class="cache-mobile">Stade</th><th class="cache-mobile">ASC</th><th class="cache-mobile">Reçu le</th></tr></thead>
+      <thead><tr><th>Dossier</th><th>Projet</th><th>Porteur</th><th class="cache-mobile">Forme juridique</th><th class="cache-mobile">ASC</th><th class="cache-mobile">Reçu le</th></tr></thead>
       <tbody>
       <?php foreach ($dossiers as $c): ?>
         <tr>
           <td><a href="candidatures.php?dossier=<?= rawurlencode($c['dossier']) ?>"><?= yinv_e($c['dossier']) ?></a></td>
           <td><b><?= yinv_e($c['nom_projet'] ?? '') ?></b><br><span style="color:var(--mut);font-size:13px"><?= yinv_e($c['secteur'] ?? '') ?></span></td>
           <td><?= yinv_e($c['nom_complet'] ?? '') ?><br><span style="color:var(--mut);font-size:13px"><?= yinv_e($c['telephone'] ?? '') ?> · <?= yinv_e($c['wilaya'] ?? '') ?></span></td>
-          <td class="cache-mobile"><span class="tag <?= ($c['stade_projet'] ?? '') === 'Projet en cours de création' ? '' : 'vert' ?>"><?= yinv_e($c['stade_projet'] ?? '') ?></span></td>
+          <td class="cache-mobile"><span class="tag <?= isset($c['forme_juridique']) ? 'vert' : '' ?>"><?= yinv_e($c['forme_juridique'] ?? $c['stade_projet'] ?? '') ?></span></td>
           <td class="cache-mobile"><?= yinv_e($c['asc_statut'] ?? '') ?><br><span style="color:var(--mut);font-size:13px"><?= yinv_e($c['asc_rdv'] ?? '') ?></span></td>
           <td class="cache-mobile"><?= yinv_e($c['recu_le'] ?? '') ?></td>
         </tr>

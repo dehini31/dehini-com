@@ -64,12 +64,11 @@ if (!in_array($d['wilaya'], yinv_wilayas(), true)) {
 }
 
 // ── Choix fermés ─────────────────────────────────────────────────────────
-$fermes = ['stade_projet', 'secteur'];
-$stade  = $p('stade_projet', 20);
-if ($stade === 'entreprise') {
-    array_push($fermes, 'cat1_exercice', 'cat1_besoin', 'cat1_montant', 'cat1_transformation_spa');
-} elseif ($stade === 'creation') {
-    array_push($fermes, 'cat2_prototype', 'cat2_avancement_clients', 'cat2_marketing_audience', 'cat2_statut_spa');
+// Préinscription réservée aux startups labellisées (sociétés). La transformation
+// en SPA n'est demandée qu'aux sociétés qui ne sont ni SPA ni SPAS.
+$fermes = ['secteur', 'forme_juridique', 'cat1_besoin', 'cat1_montant'];
+if (!in_array($p('forme_juridique', 20), ['spa', 'spas'], true)) {
+    $fermes[] = 'cat1_transformation_spa';
 }
 foreach ($fermes as $k) {
     $v = $p($k, 30);
@@ -86,16 +85,9 @@ if (mb_strlen($d['nom_projet']) < 2) {
     $champs[] = 'nom_projet';
 }
 
-if ($stade === 'entreprise') {
-    $d['chiffre_affaires_societe'] = $p('chiffre_affaires_societe', 120);
-    if ($d['chiffre_affaires_societe'] === '') {
-        $champs[] = 'chiffre_affaires_societe';
-    }
-} elseif ($stade === 'creation') {
-    $d['traction_prospects_ca'] = $p('traction_prospects_ca', 160);
-    if ($d['traction_prospects_ca'] === '') {
-        $champs[] = 'traction_prospects_ca';
-    }
+$d['chiffre_affaires_societe'] = $p('chiffre_affaires_societe', 120);
+if ($d['chiffre_affaires_societe'] === '') {
+    $champs[] = 'chiffre_affaires_societe';
 }
 
 $d['description_projet'] = $p('description_projet', 600);
@@ -110,6 +102,10 @@ foreach (['site_web', 'facebook', 'instagram', 'linkedin', 'tiktok'] as $k) {
 if (($_POST['consentement'] ?? '') !== '1') {
     $champs[] = 'consentement';
 }
+if (($_POST['consentement_1807'] ?? '') !== '1') {
+    $champs[] = 'consentement_1807';
+}
+$d['consentement_1807'] = 'Oui (loi n° 18-07 du 10 juin 2018)';
 
 // ── Document joint (facultatif) ──────────────────────────────────────────
 $fichier = $_FILES['document'] ?? null;

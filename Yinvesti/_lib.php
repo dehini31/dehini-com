@@ -101,7 +101,8 @@ function yinv_wilayas(): array
 function yinv_choix(): array
 {
     return [
-        // Champs retirés de la page : gardés pour afficher les candidatures déjà reçues.
+        // Champs retirés de la page (asc_*, stade_projet, cat1_exercice, cat1_plan_clients, cat2_*) :
+        // gardés pour afficher les candidatures déjà reçues.
         'asc_statut' => [
             'exposant'    => "Exposant à l'ASC 2026",
             'visiteur'    => "Inscrit à l'ASC 2026 (visiteur / participant)",
@@ -129,7 +130,9 @@ function yinv_choix(): array
             'tourisme'  => 'Tourisme / Services',
             'autre'     => 'Autre',
         ],
-        // Entreprises existantes
+        'forme_juridique' => [
+            'sarl' => 'SARL', 'eurl' => 'EURL', 'spa' => 'SPA', 'spas' => 'SPAS', 'autre' => 'Autre',
+        ],
         'cat1_exercice' => [
             'personnel' => 'À titre personnel (individu)',
             'societe'   => 'À travers une société enregistrée (SARL, EURL, SPA)',
@@ -143,13 +146,12 @@ function yinv_choix(): array
         'cat1_montant' => [
             'moins5' => 'Moins de 5 millions DZD',
             '5a20'   => 'Entre 5 et 20 millions DZD',
-            'plus20' => 'Plus de 20 millions DZD',
+            'plus20' => '20 millions DZD',
         ],
         'cat1_transformation_spa' => [
             'oui' => 'Oui', 'non' => 'Non', 'peutetre' => 'Peut-être', 'infos' => "Besoin d'informations",
         ],
         'cat1_plan_clients' => ['oui' => 'Oui', 'non' => 'Non'],
-        // Projets en création
         'cat2_prototype' => ['oui' => "Oui (j'ai un prototype / MVP)", 'non' => 'Non'],
         'cat2_avancement_clients' => [
             'clients'  => "J'ai commencé les opérations et j'ai déjà des clients",
@@ -182,6 +184,7 @@ function yinv_colonnes(): array
         'cat2_statut_spa' => 'Accord forme SPA/SPAS', 'traction_prospects_ca' => 'Traction',
         'description_projet' => 'Pitch', 'site_web' => 'Site web', 'facebook' => 'Facebook', 'instagram' => 'Instagram',
         'linkedin' => 'LinkedIn', 'tiktok' => 'TikTok', 'fichier' => 'Document joint', 'ip' => 'IP',
+        'forme_juridique' => 'Forme juridique', 'consentement_1807' => 'Consentement loi 18-07',
     ];
 }
 
