@@ -66,7 +66,7 @@ if (!in_array($d['wilaya'], yinv_wilayas(), true)) {
 // ── Choix fermés ─────────────────────────────────────────────────────────
 // Préinscription réservée aux startups labellisées (sociétés). La transformation
 // en SPA n'est demandée qu'aux sociétés qui ne sont ni SPA ni SPAS.
-$fermes = ['secteur', 'forme_juridique', 'cat1_besoin', 'cat1_montant'];
+$fermes = ['secteur', 'forme_juridique', 'cat1_montant'];
 if (!in_array($p('forme_juridique', 20), ['spa', 'spas'], true)) {
     $fermes[] = 'cat1_transformation_spa';
 }
@@ -77,6 +77,24 @@ foreach ($fermes as $k) {
         continue;
     }
     $d[$k] = $choix[$k][$v];
+}
+
+// Besoins : plusieurs choix possibles.
+$besoins = array_unique(array_filter((array) ($_POST['cat1_besoin'] ?? []), 'is_string'));
+if (!$besoins || array_diff($besoins, array_keys($choix['cat1_besoin']))) {
+    $champs[] = 'cat1_besoin';
+} else {
+    $d['cat1_besoin'] = implode(' ; ', array_map(fn ($b) => $choix['cat1_besoin'][$b], $besoins));
+}
+
+// Label startup : numéro et année d'obtention.
+$d['label_numero'] = $p('label_numero', 60);
+if (mb_strlen($d['label_numero']) < 2) {
+    $champs[] = 'label_numero';
+}
+$d['label_annee'] = $p('label_annee', 4);
+if (!preg_match('/^\d{4}$/', $d['label_annee']) || (int) $d['label_annee'] < 2020 || (int) $d['label_annee'] > (int) date('Y')) {
+    $champs[] = 'label_annee';
 }
 
 // ── Projet ───────────────────────────────────────────────────────────────

@@ -144,9 +144,9 @@ function yinv_choix(): array
             'autre'      => 'Autre',
         ],
         'cat1_montant' => [
-            'moins5' => 'Moins de 5 millions DZD',
-            '5a20'   => 'Entre 5 et 20 millions DZD',
-            'plus20' => '20 millions DZD',
+            '5m'   => '5 millions DZD',
+            '5a10' => 'De 5 à 10 millions DZD',
+            '20m'  => '20 millions DZD',
         ],
         'cat1_transformation_spa' => [
             'oui' => 'Oui', 'non' => 'Non', 'peutetre' => 'Peut-être', 'infos' => "Besoin d'informations",
@@ -179,12 +179,13 @@ function yinv_colonnes(): array
         'stade_projet' => 'Stade', 'nom_projet' => 'Projet / entreprise', 'secteur' => 'Secteur',
         'cat1_exercice' => 'Exercice', 'cat1_besoin' => 'Besoin', 'cat1_montant' => 'Montant recherché',
         'cat1_transformation_spa' => 'Transformation en SPA', 'cat1_plan_clients' => 'Plan clients',
-        'chiffre_affaires_societe' => "Chiffre d'affaires",
+        'chiffre_affaires_societe' => "Chiffre d'affaires (2025)",
         'cat2_prototype' => 'Prototype / MVP', 'cat2_avancement_clients' => 'Avancement', 'cat2_marketing_audience' => 'Marketing',
         'cat2_statut_spa' => 'Accord forme SPA/SPAS', 'traction_prospects_ca' => 'Traction',
         'description_projet' => 'Pitch', 'site_web' => 'Site web', 'facebook' => 'Facebook', 'instagram' => 'Instagram',
         'linkedin' => 'LinkedIn', 'tiktok' => 'TikTok', 'fichier' => 'Document joint', 'ip' => 'IP',
         'forme_juridique' => 'Forme juridique', 'consentement_1807' => 'Consentement loi 18-07',
+        'label_numero' => 'N° label startup', 'label_annee' => 'Année du label',
     ];
 }
 

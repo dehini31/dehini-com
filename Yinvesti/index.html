@@ -185,14 +185,7 @@ section{padding:110px 0}
 .note{color:#7f93b7;font-size:13px;margin-top:22px;text-align:center}
 
 /* Calendrier prévisionnel : étapes + encart du lancement du 6 décembre */
-.chrono-g{display:grid;grid-template-columns:1fr 370px;grid-template-areas:"liste cal";gap:48px;align-items:start}
-.chrono-l{grid-area:liste;position:relative}
-.chrono-l::before{content:'';position:absolute;top:26px;bottom:60px;inset-inline-start:23px;width:4px;border-radius:9px;background:var(--line)}
-.chrono-l .fil{position:absolute;top:26px;inset-inline-start:23px;width:4px;height:0;border-radius:9px;background:var(--grad);z-index:1;transition:height .15s linear}
-.chrono{list-style:none;display:grid;gap:14px}
-.jalon{position:relative;display:grid;grid-template-columns:50px 1fr;gap:18px;align-items:start}
-.jalon .pt{position:relative;z-index:2;width:50px;height:50px;border-radius:50%;display:grid;place-items:center;background:#fff;border:3px solid var(--line);font-family:'Sora',sans-serif;font-weight:800;font-size:15px;color:var(--mut);transition:all .4s}
-.jalon.atteint .pt{background:var(--grad);border-color:transparent;color:#fff;box-shadow:0 12px 26px -12px rgba(22,71,157,.6)}
+.chrono-g{display:grid;grid-template-columns:minmax(0,440px);justify-content:center}
 .carte-j{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px 20px;transition:transform .3s,box-shadow .3s}
 .carte-j:hover{transform:translateY(-2px);box-shadow:0 22px 44px -32px rgba(9,28,63,.45)}
 .carte-j small{font-size:12px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.08em}
@@ -200,20 +193,12 @@ html[lang="ar"] .carte-j small{letter-spacing:0;font-size:13px}
 .carte-j h3{font-size:17.5px;margin-top:3px;line-height:1.3}
 .carte-j .lien{display:inline-block;margin-top:8px;color:var(--blue);font-weight:700;font-size:14px}
 .carte-j .cond{margin-top:10px;font-size:14px;color:#7a4b00;background:#fff6e0;border:1px solid #f6dca0;border-radius:12px;padding:9px 12px}
-.jalon.lancement .pt{background:var(--green);border-color:var(--green);color:#fff;animation:pouls 2s infinite}
-.jalon.lancement .carte-j{background:var(--navy);color:#fff;border-color:var(--navy);padding:26px;position:relative;overflow:hidden}
-.jalon.lancement .carte-j::after{content:'';position:absolute;inset:auto -50px -70px auto;width:220px;height:220px;border-radius:50%;background:repeating-linear-gradient(105deg,rgba(78,182,72,.5) 0 8px,transparent 8px 16px,rgba(69,169,227,.45) 16px 24px,transparent 24px 32px);opacity:.25;pointer-events:none}
-html[dir="rtl"] .jalon.lancement .carte-j::after{inset:auto auto -70px -50px}
-.jalon.lancement h3{font-size:clamp(20px,2.2vw,24px)}
-.jalon.lancement .date{display:inline-flex;align-items:center;gap:8px;background:var(--green);color:#fff;border-radius:999px;padding:7px 14px;font-weight:700;font-size:14px;margin:12px 0 14px}
-.jalon.lancement .date svg{width:17px;height:17px}
-.jalon.lancement p{color:#c1cfe7;font-size:15px}
 .infos-j{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px;position:relative;z-index:1}
 .infos-j div{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:12px 14px}
 .infos-j b{display:block;color:var(--green);font-size:12.5px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
 html[lang="ar"] .infos-j b{letter-spacing:0;font-size:14px}
 .infos-j span{color:#dbe6f8;font-size:14px}
-.cal-c{grid-area:cal;position:sticky;top:96px;background:var(--navy);color:#fff;border-radius:24px;padding:26px;overflow:hidden}
+.cal-c{position:sticky;top:96px;background:var(--navy);color:#fff;border-radius:24px;padding:26px;overflow:hidden}
 .cal-c::after{content:'';position:absolute;inset:-70px -70px auto auto;width:220px;height:220px;border-radius:50%;background:repeating-linear-gradient(105deg,rgba(78,182,72,.5) 0 8px,transparent 8px 16px,rgba(69,169,227,.45) 16px 24px,transparent 24px 32px);opacity:.2;pointer-events:none}
 html[dir="rtl"] .cal-c::after{inset:-70px auto auto -70px}
 .cal-c>*{position:relative;z-index:1}
@@ -293,6 +278,8 @@ fieldset{border:0;min-width:0}
 .opt-c span::before{content:'';width:18px;height:18px;border-radius:50%;border:2px solid #b8c6e0;flex:none;transition:all .2s}
 .opt-c input:checked+span{border-color:var(--blue);background:var(--sky);box-shadow:0 0 0 3px rgba(22,71,157,.1)}
 .opt-c input:checked+span::before{border:5px solid var(--blue)}
+.opt-c input[type=checkbox]+span::before{border-radius:6px}
+.opt-c input[type=checkbox]:checked+span::before{border:2px solid var(--blue);background:var(--blue) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center/12px no-repeat}
 .opt-c input:focus-visible+span{outline:3px solid var(--cyan);outline-offset:2px}
 .champ.ko .opt-c span{border-color:#f0b4b6}
 .questions{margin-top:24px;padding:24px;border-radius:20px;background:var(--sky);display:grid;gap:22px}
@@ -375,7 +362,6 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
   .hd nav.ouvert{display:flex;position:absolute;top:70px;inset-inline:0;flex-direction:column;background:var(--navy);padding:12px 18px 18px;border-bottom:1px solid rgba(255,255,255,.08)}
   .burger{display:grid;place-items:center;margin-inline-start:auto}
   .hd .btn{display:none}
-  .chrono-g{grid-template-columns:1fr;grid-template-areas:"cal" "liste";gap:30px}
   .cal-c{position:relative;top:0}
   .form-g{grid-template-columns:1fr}
   .cote{padding:26px 24px;gap:18px}
@@ -409,13 +395,9 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
   .puce{padding:8px 12px 8px 9px}
   .puce b{font-size:15px}
   .puce .ic{width:32px;height:32px}
-  .jalon{grid-template-columns:42px 1fr;gap:12px}
-  .jalon .pt{width:42px;height:42px;font-size:13px}
-  .chrono-l::before,.chrono-l .fil{inset-inline-start:19px}
-  .jalon.lancement .carte-j{padding:20px}
   .formulaire{padding:26px 20px}
   .champs,.choix.c2,.choix.c3,.choix.c4{grid-template-columns:1fr}
-  .choix.c5{grid-template-columns:repeat(3,1fr)}
+  .choix.c5{grid-template-columns:1fr 1fr}
   .pas li span{display:none}
   .nav-f .btn{padding:13px 16px}
   .pied{grid-template-columns:1fr}
@@ -547,14 +529,9 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
   </div>
 </section>
 
-<!-- ============ Calendrier prévisionnel ============ -->
+<!-- ============ ASC 2026 : lancement des campagnes ============ -->
 <section id="parcours">
   <div class="wrap">
-    <div class="tete rv">
-      <span class="kick"><i></i><span data-i18n="proc_kick">Du dépôt au lancement</span></span>
-      <h2 data-i18n="proc_title">Calendrier prévisionnel</h2>
-      <p data-i18n="proc_sub">3 étapes jusqu'au lancement officiel des campagnes, le dimanche 6 décembre 2026 pendant l'ASC.</p>
-    </div>
     <div class="chrono-g">
       <aside class="cal-c rv">
         <small class="k">African Startup Conference 2026</small>
@@ -579,20 +556,6 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
         </div>
       </aside>
 
-      <div class="chrono-l"><span class="fil" aria-hidden="true"></span><ol class="chrono">
-        <li class="jalon rv"><span class="pt">01</span><div class="carte-j"><small><span data-i18n="ph_lbl">Étape</span> 01</small><h3 data-i18n="ph5_t">Finalisation des démarches juridiques et des recommandations</h3></div></li>
-        <li class="jalon rv"><span class="pt">02</span><div class="carte-j"><small><span data-i18n="ph_lbl">Étape</span> 02</small><h3 data-i18n="ph6_t">Qualification finale et préparation du lancement</h3><p class="cond" data-i18n="ph6_d">Un projet n'est intégré au lancement final qu'après avoir rempli toutes les conditions requises.</p></div></li>
-        <li class="jalon lancement rv"><span class="pt">03</span><div class="carte-j">
-          <small><span data-i18n="ph_lbl">Étape</span> 03</small>
-          <h3 data-i18n="ph7_t">Lancement officiel des campagnes de financement</h3>
-          <span class="date"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span data-i18n="ph7_date">Dimanche 6 décembre 2026 — 2e jour de la conférence</span></span>
-          <p data-i18n="ph7_d">Les campagnes de financement des projets qualifiés sont lancées et présentées au public et aux investisseurs, avec la publication des liens des campagnes et des activités de communication pour permettre aux personnes intéressées de découvrir les projets et les conditions de participation.</p>
-          <div class="infos-j">
-            <div><b data-i18n="ph7_resp_t">Responsable</b><span data-i18n="ph7_resp">Yinvesti, en coordination avec les organisateurs de la conférence, les porteurs de projet et les partenaires.</span></div>
-            <div><b data-i18n="ph7_out_t">Résultat</b><span data-i18n="ph7_out">Des campagnes de financement officiellement publiées, avec le début du suivi de l'intérêt et des contributions effectives selon les procédures en vigueur.</span></div>
-          </div>
-        </div></li>
-      </ol></div>
     </div>
   </div>
 </section>
@@ -646,12 +609,16 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
           <h3 data-i18n="e2_t">Votre startup</h3>
           <p data-i18n="e2_d">Quelques questions sur votre société et votre besoin de financement.</p>
           <div class="questions">
+            <div class="champs">
+              <div class="champ"><label for="label_numero" data-i18n="f_label">Numéro du label startup</label><input type="text" id="label_numero" name="label_numero" required dir="ltr" data-i18n-ph="ph_label" placeholder="Ex : 1234567"><span class="err" data-i18n="er_label">Indiquez le numéro de votre label.</span></div>
+              <div class="champ"><label for="label_annee" data-i18n="f_label_an">Année d'obtention du label</label><select id="label_annee" name="label_annee" required><option value="" data-i18n="ph_label_an">Choisissez l'année…</option><option value="2026">2026</option><option value="2025">2025</option><option value="2024">2024</option><option value="2023">2023</option><option value="2022">2022</option><option value="2021">2021</option><option value="2020">2020</option></select><span class="err" data-i18n="er_label_an">Choisissez l'année d'obtention.</span></div>
+            </div>
             <fieldset class="champ" data-requis="forme_juridique"><legend data-i18n="q_forme">Quelle est la forme juridique de votre société ?</legend>
               <div class="choix c5"><label class="opt-c"><input type="radio" name="forme_juridique" value="sarl"><span>SARL</span></label><label class="opt-c"><input type="radio" name="forme_juridique" value="eurl"><span>EURL</span></label><label class="opt-c"><input type="radio" name="forme_juridique" value="spa"><span>SPA</span></label><label class="opt-c"><input type="radio" name="forme_juridique" value="spas"><span>SPAS</span></label><label class="opt-c"><input type="radio" name="forme_juridique" value="autre"><span data-i18n="o_autre">Autre</span></label></div><span class="err" data-i18n="er_choix">Choisissez une réponse.</span></fieldset>
-            <fieldset class="champ" data-requis="cat1_besoin"><legend data-i18n="q1_2">Quel est votre besoin principal ?</legend>
-              <div class="choix c2"><label class="opt-c"><input type="radio" name="cat1_besoin" value="materiel"><span data-i18n="o_materiel">Acheter ou rénover du matériel / équipements</span></label><label class="opt-c"><input type="radio" name="cat1_besoin" value="produit"><span data-i18n="o_produit">Lancer un produit, une marque ou une filiale</span></label><label class="opt-c"><input type="radio" name="cat1_besoin" value="commercial"><span data-i18n="o_commercial">Développer la fonction commerciale ou marketing</span></label><label class="opt-c"><input type="radio" name="cat1_besoin" value="autre"><span data-i18n="o_autre">Autre</span></label></div><span class="err" data-i18n="er_choix">Choisissez une réponse.</span></fieldset>
+            <fieldset class="champ" data-requis="cat1_besoin[]"><legend><span data-i18n="q1_2">Quels sont vos besoins ?</span> <small class="opt" data-i18n="q1_2b">(plusieurs choix possibles)</small></legend>
+              <div class="choix c2"><label class="opt-c"><input type="checkbox" name="cat1_besoin[]" value="materiel"><span data-i18n="o_materiel">Acheter ou rénover du matériel / équipements</span></label><label class="opt-c"><input type="checkbox" name="cat1_besoin[]" value="produit"><span data-i18n="o_produit">Lancer un produit, une marque ou une filiale</span></label><label class="opt-c"><input type="checkbox" name="cat1_besoin[]" value="commercial"><span data-i18n="o_commercial">Développer la fonction commerciale ou marketing</span></label><label class="opt-c"><input type="checkbox" name="cat1_besoin[]" value="autre"><span data-i18n="o_autre">Autre</span></label></div><span class="err" data-i18n="er_choix">Choisissez une réponse.</span></fieldset>
             <fieldset class="champ" data-requis="cat1_montant"><legend data-i18n="q1_3">De quel montant avez-vous besoin ?</legend>
-              <div class="choix c3"><label class="opt-c"><input type="radio" name="cat1_montant" value="moins5"><span data-i18n="o_moins5">Moins de 5 M DA</span></label><label class="opt-c"><input type="radio" name="cat1_montant" value="5a20"><span data-i18n="o_5a20">De 5 à 20 M DA</span></label><label class="opt-c"><input type="radio" name="cat1_montant" value="plus20"><span data-i18n="o_plus20">20 M DA</span></label></div><span class="err" data-i18n="er_choix">Choisissez une réponse.</span></fieldset>
+              <div class="choix c3"><label class="opt-c"><input type="radio" name="cat1_montant" value="5m"><span data-i18n="o_5m">5 M DA</span></label><label class="opt-c"><input type="radio" name="cat1_montant" value="5a10"><span data-i18n="o_5a10">De 5 à 10 M DA</span></label><label class="opt-c"><input type="radio" name="cat1_montant" value="20m"><span data-i18n="o_20m">20 M DA</span></label></div><span class="err" data-i18n="er_choix">Choisissez une réponse.</span></fieldset>
             <fieldset class="champ" data-requis="cat1_transformation_spa" id="qSpa" hidden><legend data-i18n="q1_4">Acceptez-vous de transformer votre société en société par actions (SPA) avant la campagne ?</legend>
               <div class="choix c4"><label class="opt-c"><input type="radio" name="cat1_transformation_spa" value="oui"><span data-i18n="o_oui">Oui</span></label><label class="opt-c"><input type="radio" name="cat1_transformation_spa" value="non"><span data-i18n="o_non">Non</span></label><label class="opt-c"><input type="radio" name="cat1_transformation_spa" value="peutetre"><span data-i18n="o_peutetre">Peut-être</span></label><label class="opt-c"><input type="radio" name="cat1_transformation_spa" value="infos"><span data-i18n="o_infos">Besoin d'infos</span></label></div><span class="err" data-i18n="er_choix">Choisissez une réponse.</span></fieldset>
           </div>
@@ -678,7 +645,7 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
                 <option value="tourisme" data-i18n="s_tourisme">Tourisme / Services</option>
                 <option value="autre" data-i18n="s_autre">Autre</option>
               </select><span class="err" data-i18n="er_secteur">Choisissez un secteur.</span></div>
-            <div class="champ plein"><label for="chiffre_affaires_societe" data-i18n="f_ca">Chiffre d'affaires réalisé (DA)</label><input type="text" id="chiffre_affaires_societe" name="chiffre_affaires_societe" required data-i18n-ph="ph_ca" placeholder="Ex : 15 000 000 DA (dernier exercice)"><span class="err" data-i18n="er_ca">Indiquez le chiffre d'affaires réalisé.</span></div>
+            <div class="champ plein"><label for="chiffre_affaires_societe" data-i18n="f_ca">Chiffre d'affaires réalisé en 2025 (DA)</label><input type="text" id="chiffre_affaires_societe" name="chiffre_affaires_societe" required data-i18n-ph="ph_ca" placeholder="Ex : 15 000 000 DA"><span class="err" data-i18n="er_ca">Indiquez le chiffre d'affaires réalisé en 2025.</span></div>
             <div class="champ plein"><label for="description_projet" data-i18n="f_pitch">Votre pitch en quelques phrases</label><textarea id="description_projet" name="description_projet" required minlength="20" maxlength="600" data-i18n-ph="ph_pitch" placeholder="Quel problème résolvez-vous ? Quelle est votre solution ? Quel est votre modèle économique ?"></textarea><span class="compteur"><span id="nbPitch" class="num">0</span> / 600</span><span class="err" data-i18n="er_pitch">Décrivez votre projet (20 caractères minimum).</span></div>
             <div class="liens">
               <p class="liens-t" data-i18n="f_liens">Ajouter vos liens (facultatif)</p>
@@ -817,14 +784,14 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
       st_amount: 'المبلغ الإجمالي المستثمر', st_ops: 'عملية استثمار ناجحة', st_epay: 'دفع إلكتروني', st_bank: 'تحويل بنكي',
       st_investors: 'عدد المستثمرين', st_users: 'إجمالي المسجلين في المنصة', st_monthly: '+1700 مستخدم شهري',
       
-      proc_kick: 'من التسجيل إلى الإطلاق', proc_title: 'الجدول الزمني المقترح', proc_sub: '3 مراحل حتى الإطلاق الرسمي لحملات التمويل، يوم الأحد 6 ديسمبر 2026 خلال المؤتمر.',
-      ph_lbl: 'المرحلة', 
-      ph5_t: 'استكمال الإجراءات القانونية والتوصيات', ph6_t: 'التأهيل النهائي والتحضير للإطلاق',
-      ph6_d: 'لا يُدرج المشروع في الإطلاق النهائي إلا بعد استيفاء جميع الشروط المطلوبة.',
-      ph7_t: 'الإطلاق الرسمي لحملات التمويل', ph7_date: 'الأحد 6 ديسمبر 2026 — اليوم الثاني للمؤتمر',
-      ph7_d: 'تُطلق حملات التمويل للمشاريع المؤهلة، مع تقديمها للجمهور والمستثمرين، ونشر روابط الحملات، وتنظيم أنشطة تواصل تتيح للمهتمين الاطلاع على المشاريع وشروط المشاركة.',
-      ph7_resp_t: 'المسؤول', ph7_resp: 'يانفستي بالتنسيق مع منظمي المؤتمر وأصحاب المشاريع والشركاء.',
-      ph7_out_t: 'المخرج', ph7_out: 'حملات تمويل منشورة رسميًا، مع بدء متابعة الاهتمام والمساهمات الفعلية وفق الإجراءات المعتمدة.',
+      
+      
+      
+      
+      
+      
+      
+      
       d5_w: 'السبت', d6_w: 'الأحد', d7_w: 'الاثنين', d5_e: 'اليوم 1', d6_e: 'الإطلاق', d7_e: 'اليوم 3',
       ag_title: 'الأحد 6 ديسمبر: الإطلاق الرسمي لحملات التمويل', ag_sub: 'في اليوم الثاني للمؤتمر، تُقدَّم حملات المشاريع المؤهلة للجمهور والمستثمرين.', ft_city2: 'الجزائر',
       e1_d: 'تسمح هذه المعلومات لفريق Yinvesti بالتواصل معك لمتابعة ترشّحك.',
@@ -865,12 +832,12 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
       f_email: 'البريد الإلكتروني', h_email: 'لاستلام إشعار الاستلام.', er_email: 'بريد إلكتروني غير صالح.',
       f_wilaya: 'الولاية', ph_wilaya: 'اختر ولايتك…', er_wilaya: 'اختر ولاية.',
       er_choix: 'اختر إجابة.',
-      e2_tag: 'المرحلة 2 من 3', e2_t: 'شركتك الناشئة', e2_d: 'بعض الأسئلة حول شركتك واحتياجك للتمويل.', q_forme: 'ما هو الشكل القانوني لشركتك؟', 
+      e2_tag: 'المرحلة 2 من 3', e2_t: 'شركتك الناشئة', e2_d: 'بعض الأسئلة حول شركتك واحتياجك للتمويل.', q_forme: 'ما هو الشكل القانوني لشركتك؟', f_label: 'رقم وسم المؤسسة الناشئة', ph_label: 'مثال: 1234567', er_label: 'أدخل رقم الوسم.', f_label_an: 'سنة الحصول على الوسم', ph_label_an: 'اختر السنة…', er_label_an: 'اختر سنة الحصول على الوسم.', 
       
       
       
-      q1_2: 'ما هو احتياجك الرئيسي؟', o_materiel: 'شراء أو تجديد معدات / تجهيزات', o_produit: 'إطلاق منتج أو علامة أو فرع جديد', o_commercial: 'تطوير الوظيفة التجارية أو التسويقية', o_autre: 'أخرى',
-      q1_3: 'ما هو المبلغ الذي تحتاجه؟', o_moins5: 'أقل من 5 ملايين دج', o_5a20: 'من 5 إلى 20 مليون دج', o_plus20: '20 مليون دج',
+      q1_2: 'ما هي احتياجاتك؟', q1_2b: '(يمكن اختيار أكثر من إجابة)', o_materiel: 'شراء أو تجديد معدات / تجهيزات', o_produit: 'إطلاق منتج أو علامة أو فرع جديد', o_commercial: 'تطوير الوظيفة التجارية أو التسويقية', o_autre: 'أخرى',
+      q1_3: 'ما هو المبلغ الذي تحتاجه؟', o_5m: '5 ملايين دج', o_5a10: 'من 5 إلى 10 ملايين دج', o_20m: '20 مليون دج',
       q1_4: 'هل تقبل تحويل شركتك إلى شركة مساهمة (SPA) قبل الحملة؟', o_oui: 'نعم', o_non: 'لا', o_peutetre: 'ربما', o_infos: 'أحتاج معلومات',
       
       
@@ -881,7 +848,7 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
       f_secteur: 'القطاع', ph_secteur: 'اختر قطاعاً…', er_secteur: 'اختر قطاعاً.',
       s_deeptech: 'التكنولوجيا العميقة / الذكاء الاصطناعي / البيانات', s_fintech: 'التكنولوجيا المالية / التأمين', s_agritech: 'التكنولوجيا الزراعية / الصناعات الغذائية', s_sante: 'الصحة / التكنولوجيا الحيوية',
       s_energie: 'الطاقة / البيئة', s_industrie: 'الصناعة / البناء', s_commerce: 'التجارة الإلكترونية / التجزئة', s_education: 'التعليم / تكنولوجيا التعليم', s_tourisme: 'السياحة / الخدمات', s_autre: 'أخرى',
-      f_ca: 'رقم الأعمال المحقق (دج)', ph_ca: 'مثال: 15 000 000 دج (آخر سنة مالية)', er_ca: 'أدخل رقم الأعمال المحقق.',
+      f_ca: 'رقم الأعمال المحقق في 2025 (دج)', ph_ca: 'مثال: 15 000 000 دج', er_ca: 'أدخل رقم الأعمال المحقق في 2025.',
       
       f_pitch: 'عرض مشروعك في بضع جمل', ph_pitch: 'ما المشكلة التي تحلّها؟ ما هو حلّك؟ ما هو نموذجك الاقتصادي؟', er_pitch: 'صف مشروعك (20 حرفاً على الأقل).',
       f_liens: 'أضف روابطك (اختياري)', f_site: 'الموقع الإلكتروني',
@@ -910,14 +877,14 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
       st_amount: 'total amount invested', st_ops: 'successful investment transactions', st_epay: 'electronic payment', st_bank: 'bank transfer',
       st_investors: 'investors', st_users: 'registered users on the platform', st_monthly: '1,700+ monthly users',
       
-      proc_kick: 'From application to launch', proc_title: 'Proposed timeline', proc_sub: '3 steps to the official launch of the campaigns on Sunday 6 December 2026 during ASC.',
-      ph_lbl: 'Step', 
-      ph5_t: 'Completion of legal procedures and recommendations', ph6_t: 'Final qualification and launch preparation',
-      ph6_d: 'A project is only included in the final launch once it meets all the required conditions.',
-      ph7_t: 'Official launch of the funding campaigns', ph7_date: 'Sunday 6 December 2026 — day 2 of the conference',
-      ph7_d: 'Funding campaigns for qualified projects are launched and presented to the public and investors, with campaign links published and outreach activities that let interested people discover the projects and the conditions for taking part.',
-      ph7_resp_t: 'Responsible', ph7_resp: 'Yinvesti, in coordination with the conference organisers, project holders and partners.',
-      ph7_out_t: 'Outcome', ph7_out: 'Officially published funding campaigns, with tracking of interest and actual contributions starting under the approved procedures.',
+      
+      
+      
+      
+      
+      
+      
+      
       d5_w: 'Sat.', d6_w: 'Sun.', d7_w: 'Mon.', d5_e: 'Day 1', d6_e: 'Launch', d7_e: 'Day 3',
       ag_title: 'Sunday 6 December: official campaign launch', ag_sub: 'On day 2 of the conference, campaigns of qualified projects are presented to the public and investors.', ft_city2: 'Algiers',
       e1_d: 'This information lets the Yinvesti team contact you about your application.',
@@ -956,12 +923,12 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
       f_email: 'Email', h_email: 'To receive your acknowledgement.', er_email: 'Invalid email address.',
       f_wilaya: 'Wilaya', ph_wilaya: 'Choose your wilaya…', er_wilaya: 'Choose a wilaya.',
       er_choix: 'Choose an answer.',
-      e2_tag: 'Step 2 of 3', e2_t: 'Your startup', e2_d: 'A few questions about your company and your funding need.', q_forme: 'What is your company\'s legal form?', 
+      e2_tag: 'Step 2 of 3', e2_t: 'Your startup', e2_d: 'A few questions about your company and your funding need.', q_forme: 'What is your company\'s legal form?', f_label: 'Startup label number', ph_label: 'E.g. 1234567', er_label: 'Enter your label number.', f_label_an: 'Year the label was obtained', ph_label_an: 'Choose the year…', er_label_an: 'Choose the year the label was obtained.', 
       
       
       
-      q1_2: 'What is your main need?', o_materiel: 'Buy or renew equipment', o_produit: 'Launch a product, brand or subsidiary', o_commercial: 'Develop sales or marketing', o_autre: 'Other',
-      q1_3: 'How much funding do you need?', o_moins5: 'Under 5 M DZD', o_5a20: '5 to 20 M DZD', o_plus20: '20 M DZD',
+      q1_2: 'What are your needs?', q1_2b: '(several choices possible)', o_materiel: 'Buy or renew equipment', o_produit: 'Launch a product, brand or subsidiary', o_commercial: 'Develop sales or marketing', o_autre: 'Other',
+      q1_3: 'How much funding do you need?', o_5m: '5 M DZD', o_5a10: '5 to 10 M DZD', o_20m: '20 M DZD',
       q1_4: 'Would you convert your company into a joint-stock company (SPA) before the campaign?', o_oui: 'Yes', o_non: 'No', o_peutetre: 'Maybe', o_infos: 'Need info',
       
       
@@ -972,7 +939,7 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
       f_secteur: 'Sector', ph_secteur: 'Choose a sector…', er_secteur: 'Choose a sector.',
       s_deeptech: 'Deeptech / AI / Data', s_fintech: 'Fintech / Insurtech', s_agritech: 'Agritech / Food', s_sante: 'Health / Biotech',
       s_energie: 'Energy / Environment', s_industrie: 'Industry / Construction', s_commerce: 'E-commerce / Retail', s_education: 'Education / Edtech', s_tourisme: 'Tourism / Services', s_autre: 'Other',
-      f_ca: 'Revenue achieved (DZD)', ph_ca: 'E.g. 15,000,000 DZD (last financial year)', er_ca: 'Enter the revenue achieved.',
+      f_ca: 'Revenue achieved in 2025 (DZD)', ph_ca: 'E.g. 15,000,000 DZD', er_ca: 'Enter the revenue achieved in 2025.',
       
       f_pitch: 'Your pitch in a few sentences', ph_pitch: 'What problem do you solve? What is your solution? What is your business model?', er_pitch: 'Describe your project (20 characters minimum).',
       f_liens: 'Add your links (optional)', f_site: 'Website',
@@ -1136,18 +1103,9 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
   }, { threshold: .15 });
   document.querySelectorAll('.rv').forEach(function (el) { io.observe(el); });
 
-  // Calendrier : le fil se remplit et les étapes s'allument au fil du défilement.
-  var chrono = document.querySelector('.chrono-l'), fil = document.querySelector('.chrono-l .fil'), jalons = document.querySelectorAll('.jalon');
-  function majRail() {
-    var r = chrono.getBoundingClientRect(), repere = window.innerHeight * .6;
-    var max = r.height - 86;
-    fil.style.height = Math.max(0, Math.min(max, repere - r.top - 26)) + 'px';
-    jalons.forEach(function (j) { j.classList.toggle('atteint', j.getBoundingClientRect().top + 25 < repere); });
-  }
   // Barre d'action mobile : visible après le hero, cachée sur le formulaire.
   var barreM = document.getElementById('barreM'), formSec = document.getElementById('candidature');
   function majDefilement() {
-    majRail();
     var rf = formSec.getBoundingClientRect();
     barreM.classList.toggle('vu', window.scrollY > 600 && (rf.top > window.innerHeight || rf.bottom < 0));
     // Lien actif du menu
@@ -1200,6 +1158,8 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
     nom_projet: function (v) { return v.trim().length >= 2; },
     secteur: function (v) { return v !== ''; },
     chiffre_affaires_societe: function (v) { return v.trim() !== ''; },
+    label_numero: function (v) { return v.trim().length >= 2; },
+    label_annee: function (v) { return v !== ''; },
     description_projet: function (v) { return v.trim().length >= 20; }
   };
   // Valide un bloc champ (texte ou groupe de choix) ; renvoie true si correct.
@@ -1280,9 +1240,10 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
     var coche = function (n) { return !!form.querySelector('input[name="' + n + '"]:checked'); };
     var pts = 0;
     ['nom_complet', 'telephone', 'email', 'wilaya'].forEach(function (n) { if (v(n)) pts += 8; });
-    var qs = ['forme_juridique', 'cat1_besoin', 'cat1_montant'];
+    var qs = ['forme_juridique', 'cat1_besoin[]', 'cat1_montant'];
     if (!document.getElementById('qSpa').hidden) qs.push('cat1_transformation_spa');
-    pts += Math.round(26 * qs.filter(coche).length / qs.length);
+    pts += Math.round(20 * qs.filter(coche).length / qs.length);
+    if (v('label_numero')) pts += 3; if (v('label_annee')) pts += 3;
     if (v('nom_projet')) pts += 6; if (v('secteur')) pts += 5;
     if (v('chiffre_affaires_societe')) pts += 6;
     var pl = v('description_projet').length;
@@ -1306,7 +1267,8 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
       var d = {};
       Array.prototype.forEach.call(form.elements, function (el) {
         if (!el.name || el.type === 'file' || el.type === 'hidden' || el.name === 'consentement' || el.name === 'consentement_1807' || el.name === 'site_entreprise') return;
-        if (el.type === 'radio') { if (el.checked) d[el.name] = el.value; } else if (el.value) d[el.name] = el.value;
+        if (el.type === 'checkbox') { if (el.checked) (d[el.name] = d[el.name] || []).push(el.value); }
+        else if (el.type === 'radio') { if (el.checked) d[el.name] = el.value; } else if (el.value) d[el.name] = el.value;
       });
       try { localStorage.setItem(CLE, JSON.stringify(d)); brouillon.classList.add('vu'); setTimeout(function () { brouillon.classList.remove('vu'); }, 1800); } catch (e) {}
     }, 500);
@@ -1316,14 +1278,17 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
     if (!d) return;
     Object.keys(d).forEach(function (n) {
       var els = form.querySelectorAll('[name="' + n + '"]');
-      els.forEach(function (el) { if (el.type === 'radio') el.checked = el.value === d[n]; else el.value = d[n]; });
+      els.forEach(function (el) {
+        if (el.type === 'checkbox') el.checked = [].concat(d[n]).indexOf(el.value) > -1;
+        else if (el.type === 'radio') el.checked = el.value === d[n]; else el.value = d[n];
+      });
     });
     document.getElementById('nbPitch').textContent = (d.description_projet || '').length;
     majForme();
   }
 
   // Envoi
-  var ETAPE_DE = { nom_complet: 1, telephone: 1, email: 1, wilaya: 1, forme_juridique: 2 };
+  var ETAPE_DE = { nom_complet: 1, telephone: 1, email: 1, wilaya: 1, forme_juridique: 2, label_numero: 2, label_annee: 2 };
   function alerte(msg) { var a = document.getElementById('alerte'); a.textContent = msg; a.classList.add('vu'); }
   form.addEventListener('submit', function (e) {
     e.preventDefault();
@@ -1347,7 +1312,7 @@ footer{background:#06132c;color:#9fb2d3;padding:64px 0 32px;font-size:14.5px}
         var etape = 3;
         r.champs.forEach(function (n) {
           etape = Math.min(etape, ETAPE_DE[n] || (n.indexOf('cat') === 0 ? 2 : 3));
-          var el = form.querySelector('[name="' + n + '"]'); var c = el && el.closest('.champ');
+          var el = form.querySelector('[name="' + n + '"], [name="' + n + '[]"]'); var c = el && el.closest('.champ');
           if (c) c.classList.add('ko');
           if (n === 'consentement') document.getElementById('consentBloc').classList.add('ko');
           if (n === 'consentement_1807') document.getElementById('consentBloc1807').classList.add('ko');
