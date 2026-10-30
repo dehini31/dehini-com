@@ -27,6 +27,9 @@ $defaults = [
     'IMPACT_DAILY_HOUR'     => 9,           // heure locale à partir de laquelle part la question du jour
     'IMPACT_DIGEST_DAYS'    => 7,           // au plus un email « impacts positifs » tous les N jours
     'IMPACT_MAIL_BATCH'     => 80,          // emails max par passage du cron (limites de l'hébergeur)
+    'IMPACT_GOOGLE_CLIENT_ID' => '',        // « Se connecter avec Google » (le réglage de l'admin a priorité)
+    'IMPACT_GOOGLE_CERTS'   => 'https://www.googleapis.com/oauth2/v1/certs', // clés publiques de Google
+    'IMPACT_SOFIZPAY_URL'   => '',          // vide = sofizpay.com (ou son bac à sable, selon l'admin)
 ];
 foreach ($defaults as $k => $v) {
     if (!defined($k)) define($k, $v);
@@ -79,6 +82,7 @@ function migrate(PDO $pdo): void
     $v = (int) $pdo->query('PRAGMA user_version')->fetchColumn();
     if ($v < 1) migrate_v1($pdo);
     if ($v < 2) migrate_v2($pdo);
+    if ($v < 3) migrate_v3($pdo);
 }
 
 function migrate_v1(PDO $pdo): void
@@ -192,6 +196,89 @@ function migrate_v2(PDO $pdo): void
     $pdo->exec('PRAGMA user_version = 2');
 }
 
+/** Ajoute une colonne si elle manque (deux requêtes simultanées peuvent migrer en même temps). */
+function add_column(PDO $pdo, string $table, string $col, string $def): void
+{
+    foreach ($pdo->query("PRAGMA table_info($table)") as $c) {
+        if ($c['name'] === $col) return;
+    }
+    try {
+        $pdo->exec("ALTER TABLE $table ADD COLUMN $col $def");
+    } catch (PDOException $e) {
+        if (stripos($e->getMessage(), 'duplicate column') === false) throw $e;
+    }
+}
+
+/**
+ * v3 : connexion Google, « j'aime / je n'aime pas » par personne, conversations
+ * privées entre l'auteur d'un récit et un lecteur, et dons en ligne (SofizPay).
+ */
+function migrate_v3(PDO $pdo): void
+{
+    add_column($pdo, 'users', 'google_sub', 'TEXT');
+    add_column($pdo, 'users', 'opt_msg', 'INTEGER NOT NULL DEFAULT 1');
+    add_column($pdo, 'stories', 'dislikes', 'INTEGER NOT NULL DEFAULT 0');
+    $pdo->exec(<<<SQL
+    CREATE UNIQUE INDEX IF NOT EXISTS users_google ON users(google_sub);
+    -- pid = « u<id> » ou « d<appareil> », comme pour les réponses ; v = 1 (j'aime) ou -1.
+    CREATE TABLE IF NOT EXISTS reactions (
+        sid INTEGER NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+        pid TEXT NOT NULL,
+        v INTEGER NOT NULL,
+        PRIMARY KEY (sid, pid)
+    );
+    CREATE INDEX IF NOT EXISTS reactions_pid ON reactions(pid);
+    -- Une conversation par récit et par lecteur : seuls l'auteur (owner) et ce lecteur (guest) la voient.
+    CREATE TABLE IF NOT EXISTS threads (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        sid INTEGER NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+        owner INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        guest INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        created INTEGER NOT NULL,
+        updated INTEGER NOT NULL,
+        owner_read INTEGER NOT NULL DEFAULT 0,
+        guest_read INTEGER NOT NULL DEFAULT 0,
+        owner_mailed INTEGER NOT NULL DEFAULT 0,
+        guest_mailed INTEGER NOT NULL DEFAULT 0,
+        blocked INTEGER NOT NULL DEFAULT 0,
+        UNIQUE (sid, guest)
+    );
+    CREATE INDEX IF NOT EXISTS threads_owner ON threads(owner, updated);
+    CREATE INDEX IF NOT EXISTS threads_guest ON threads(guest, updated);
+    CREATE TABLE IF NOT EXISTS messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tid INTEGER NOT NULL REFERENCES threads(id) ON DELETE CASCADE,
+        uid INTEGER NOT NULL,
+        body TEXT NOT NULL,
+        created INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS messages_t ON messages(tid, id);
+    CREATE INDEX IF NOT EXISTS messages_u ON messages(uid, created);
+    -- Dons par carte CIB / EDAHABIA. ref = identifiant aléatoire porté par l'URL de retour.
+    CREATE TABLE IF NOT EXISTS donations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ref TEXT NOT NULL UNIQUE,
+        amount INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        email TEXT NOT NULL,
+        phone TEXT NOT NULL,
+        message TEXT NOT NULL DEFAULT '',
+        public INTEGER NOT NULL DEFAULT 0,
+        lang TEXT NOT NULL DEFAULT 'fr',
+        uid INTEGER,
+        status TEXT NOT NULL DEFAULT 'pending',
+        tx TEXT NOT NULL DEFAULT '',
+        cib TEXT NOT NULL DEFAULT '',
+        note TEXT NOT NULL DEFAULT '',
+        created INTEGER NOT NULL,
+        paid INTEGER NOT NULL DEFAULT 0
+    );
+    CREATE INDEX IF NOT EXISTS donations_s ON donations(status, created);
+    CREATE INDEX IF NOT EXISTS donations_cib ON donations(cib);
+    PRAGMA user_version = 3;
+    SQL);
+}
+
 function meta_get(string $k): ?string
 {
     $s = db()->prepare('SELECT v FROM meta WHERE k = ?');
@@ -202,6 +289,54 @@ function meta_get(string $k): ?string
 function meta_set(string $k, string $v): void
 {
     db()->prepare('INSERT OR REPLACE INTO meta (k, v) VALUES (?, ?)')->execute([$k, $v]);
+}
+
+/** Réglages modifiables depuis l'admin (table meta, préfixe « cfg. »). */
+function setting(string $k): string
+{
+    return meta_get('cfg.' . $k) ?? '';
+}
+function setting_set(string $k, string $v): void
+{
+    meta_set('cfg.' . $k, $v);
+}
+
+/**
+ * Requête GET sortante (API Google, SofizPay) : [code HTTP, corps, en-têtes en minuscules].
+ * curl si disponible, sinon les flux de PHP.
+ */
+function http_get(string $url, array $query = [], int $timeout = 20): array
+{
+    if ($query) $url .= (strpos($url, '?') === false ? '?' : '&') . http_build_query($query);
+    $headers = [];
+    if (function_exists('curl_init')) {
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true, CURLOPT_FOLLOWLOCATION => true, CURLOPT_MAXREDIRS => 3,
+            CURLOPT_TIMEOUT => $timeout, CURLOPT_CONNECTTIMEOUT => 10,
+            CURLOPT_HTTPHEADER => ['Accept: application/json'],
+            CURLOPT_HEADERFUNCTION => function ($ch, string $line) use (&$headers): int {
+                $p = explode(':', $line, 2);
+                if (count($p) === 2) $headers[strtolower(trim($p[0]))] = trim($p[1]);
+                return strlen($line);
+            },
+        ]);
+        $body = curl_exec($ch);
+        if ($body === false) throw new RuntimeException('HTTP ' . $url . ' : ' . curl_error($ch));
+        return [(int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE), (string) $body, $headers];
+    }
+    $ctx = stream_context_create(['http' => ['timeout' => $timeout, 'ignore_errors' => true, 'header' => "Accept: application/json\r\n"]]);
+    $body = @file_get_contents($url, false, $ctx);
+    if ($body === false) throw new RuntimeException('HTTP ' . $url . ' : échec');
+    $code = 0;
+    foreach ($http_response_header ?? [] as $line) {
+        if (preg_match('~^HTTP/\S+\s+(\d+)~', $line, $m)) $code = (int) $m[1];
+        elseif (strpos($line, ':') !== false) {
+            [$k, $v] = explode(':', $line, 2);
+            $headers[strtolower(trim($k))] = trim($v);
+        }
+    }
+    return [$code, $body, $headers];
 }
 
 /** Sel propre à l'installation (hachage des IP, jamais stockées en clair). */

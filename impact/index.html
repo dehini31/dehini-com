@@ -63,6 +63,7 @@
   h1,h2,h3{font-family:var(--f-display);line-height:1.08;letter-spacing:-.025em;font-weight:800}
   html[lang=ar] h1,html[lang=ar] h2,html[lang=ar] h3{letter-spacing:0;line-height:1.3;font-weight:700}
   :focus-visible{outline:3px solid var(--cobalt);outline-offset:3px;border-radius:8px}
+  [tabindex="-1"]:focus{outline:none}
   .wrap{max-width:var(--max);margin-inline:auto;padding-inline:var(--gutter)}
   .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
   i[data-lucide],svg.lucide{width:20px;height:20px;stroke-width:2;flex-shrink:0}
@@ -139,10 +140,16 @@
   .head-btn svg{width:18px;height:18px}
   .avatar{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,var(--pos),var(--cobalt));color:#fff;font-size:.8rem;font-weight:800;flex-shrink:0;text-transform:uppercase}
   .head-btn.me{padding-inline-start:6px;background:rgba(255,255,255,.08);color:#fff}
-  @media(max-width:980px){.nav{display:none}}
-  @media(max-width:900px){#worldBtn .lbl,#resultsBtn .lbl{display:none}#worldBtn,#resultsBtn{padding:0 11px}}
-  @media(max-width:600px){.head-btn .lbl{display:none}.head-btn{padding:0 11px}.head-btn.me{padding:0 6px}.brand-txt small{display:none}}
+  .head-btn,.nav a{white-space:nowrap}
+  @media(max-width:1280px){.nav{display:none}}
+  #msgBtn{position:relative;padding:0 11px}
+  .nbadge{min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--neg);color:#fff;font-size:.68rem;font-weight:800;display:inline-grid;place-items:center;line-height:1}
+  #msgBtn .nbadge{position:absolute;top:-4px;inset-inline-end:-4px;box-shadow:0 0 0 2px var(--ink)}
+  @media(max-width:1060px){#worldBtn .lbl,#resultsBtn .lbl{display:none}#worldBtn,#resultsBtn{padding:0 11px}}
+  @media(max-width:600px){.head-btn .lbl{display:none}.head-btn{padding:0 11px}.head-btn.me{padding:0 6px}.brand-txt small{display:none}.site-head .wrap{gap:8px}}
   @media(max-width:480px){.brand-txt{display:none}}
+  @media(max-width:420px){.site-head .wrap{gap:5px}.head-btn,#msgBtn{padding:0 8px}.langs button{min-width:28px;padding:0 6px}.brand-mark{width:32px;height:32px}}
+  @media(max-width:350px){.brand{display:none}.langs{margin-inline-end:auto}}
 
   /* ============ Hero ============ */
   .hero{position:relative;background:var(--ink);color:#fff;overflow:hidden;isolation:isolate}
@@ -273,14 +280,19 @@
   .who{display:flex;align-items:center;gap:8px;flex:1;min-width:0;font-weight:500}
   .who span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .who .av{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--paper-100);color:var(--ink-soft);font-size:.74rem;font-weight:800;flex-shrink:0;text-transform:uppercase}
-  .like{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:999px;background:var(--paper-50);border:1px solid var(--paper-200);font-size:.8rem;font-weight:700;color:var(--ink-soft);transition:background .2s,color .2s,border-color .2s,transform .2s}
-  .like svg{width:15px;height:15px}
-  .like:hover{border-color:#ff9db1;color:#e11d48}
-  .like.on{background:#ffe4ea;border-color:#ffc2cf;color:#e11d48}
-  .like.on svg{fill:currentColor}
-  .like.bump{animation:bump .45s var(--ease)}
+  .react{display:inline-flex;align-items:center;gap:5px;height:32px;padding:0 10px;border-radius:999px;background:var(--paper-50);border:1px solid var(--paper-200);font-size:.8rem;font-weight:700;color:var(--ink-soft);transition:background .2s,color .2s,border-color .2s,transform .2s;flex-shrink:0}
+  .react svg{width:15px;height:15px}
+  button.react.up:hover{border-color:var(--pos);color:var(--pos-600)}
+  button.react.down:hover{border-color:var(--neg);color:var(--neg-600)}
+  .react.up.on{background:var(--pos-50);border-color:var(--pos-100);color:var(--pos-600)}
+  .react.down.on{background:var(--neg-50);border-color:var(--neg-100);color:var(--neg-600)}
+  .react.on svg{fill:currentColor;fill-opacity:.22}
+  .react.static{background:none;border-color:transparent;padding:0 4px}
+  .react.bump{animation:bump .45s var(--ease)}
   @keyframes bump{40%{transform:scale(1.18)}}
-  .like .txt{font-weight:500}
+  .dm{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;color:var(--cobalt);background:var(--social-50);transition:background .2s,color .2s;flex-shrink:0}
+  .dm:hover{background:var(--cobalt);color:#fff}
+  .dm svg{width:15px;height:15px}
   .report{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;color:var(--muted-2);transition:background .2s,color .2s}
   .report:hover{background:var(--paper-100);color:var(--neg-600)}
   .report svg{width:15px;height:15px}
@@ -484,11 +496,12 @@
   .mine .story-imp{background:#fff}
   .mine-foot{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:14px}
   .mine-foot .grow{flex:1}
-  .likes-n{display:inline-flex;align-items:center;gap:6px;font-size:.82rem;color:#e11d48;font-weight:700}
-  .likes-n svg{width:15px;height:15px;fill:currentColor}
+  .likes-n{display:inline-flex;align-items:center;gap:6px;font-size:.82rem;color:var(--pos-600);font-weight:700}
+  .likes-n.down{color:var(--neg-600)}
+  .likes-n svg{width:15px;height:15px}
   .story-form label.lb{display:block;font-weight:700;font-size:.88rem;margin:0 0 6px;color:#0a5c37}
-  .story-form textarea,.field input{width:100%;border:1.5px solid var(--paper-200);border-radius:14px;padding:12px 14px;background:#fff;font-size:.98rem;line-height:1.55;resize:vertical;transition:border-color .2s,box-shadow .2s}
-  .story-form textarea:focus,.field input:focus{outline:0;border-color:var(--pos);box-shadow:0 0 0 4px rgba(23,178,106,.15)}
+  .story-form textarea,.field input,.field textarea{width:100%;border:1.5px solid var(--paper-200);border-radius:14px;padding:12px 14px;background:#fff;font-size:.98rem;line-height:1.55;resize:vertical;transition:border-color .2s,box-shadow .2s}
+  .story-form textarea:focus,.field input:focus,.field textarea:focus{outline:0;border-color:var(--pos);box-shadow:0 0 0 4px rgba(23,178,106,.15)}
   .sf-more{display:none;margin-top:14px}
   .story-form.open .sf-more{display:block;animation:pop .35s var(--ease)}
   .sf-count{font-size:.74rem;color:var(--muted-2);text-align:end;margin-top:4px}
@@ -642,6 +655,97 @@
   .danger-zone summary{cursor:pointer;color:var(--neg-600);font-weight:700}
   .danger-zone p{color:var(--muted);margin:10px 0 12px}
 
+  /* ============ Connexion Google ============ */
+  .g-wrap{margin:18px 0 0}
+  .g-btn{display:flex;justify-content:center;min-height:44px}
+  .or{display:flex;align-items:center;gap:12px;color:var(--muted-2);font-size:.76rem;font-weight:700;text-transform:uppercase;letter-spacing:.14em;margin:14px 0 0}
+  html[lang=ar] .or{letter-spacing:0}
+  .or::before,.or::after{content:"";flex:1;height:1px;background:var(--paper-200)}
+  .auth-form .dlg-intro{margin-top:12px}
+
+  /* ============ Messages ============ */
+  .m-title{font-size:clamp(2.1rem,5vw,3.4rem)}
+  .m-title em{font-style:normal;background:linear-gradient(transparent 60%,rgba(23,178,106,.25) 60%);padding-inline:.06em}
+  .inbox{display:grid;gap:10px;max-width:780px}
+  .ib-item{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:14px;align-items:center;padding:16px 18px;border-radius:var(--r-lg);background:#fff;box-shadow:var(--shadow);text-align:start;width:100%;transition:transform .25s var(--ease),box-shadow .25s}
+  .ib-item:hover{transform:translateY(-2px);box-shadow:0 18px 36px -22px rgba(11,16,32,.45)}
+  .ib-item .avatar{width:46px;height:46px;font-size:1.05rem}
+  .ib-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .ib-top b{font-weight:800}
+  .ib-role{font-size:.72rem;font-weight:700;padding:2px 9px;border-radius:999px;background:var(--social-50);color:var(--cobalt)}
+  .ib-role.owner{background:var(--pos-50);color:var(--pos-600)}
+  .ib-q,.ib-last{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ib-q{font-size:.82rem;color:var(--muted);margin-top:2px}
+  .ib-last{font-size:.92rem;color:var(--ink-soft);margin-top:2px}
+  .ib-item.unread .ib-last{color:var(--ink);font-weight:700}
+  .ib-meta{display:grid;justify-items:end;gap:6px;font-size:.76rem;color:var(--muted);white-space:nowrap}
+  .th-dlg .dlg-body{display:flex;flex-direction:column;gap:12px;padding-bottom:20px}
+  .th-head{padding-inline-end:44px}
+  .th-with{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.05rem}
+  .th-with .avatar{width:38px;height:38px;font-size:.95rem}
+  .th-q{font-size:.86rem;color:var(--muted);margin-top:10px;font-weight:700}
+  .th-story{font-size:.88rem;color:var(--ink-soft);border-inline-start:3px solid var(--pos);padding-inline-start:10px;margin-top:6px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .th-private{display:flex;gap:8px;align-items:center;font-size:.8rem;font-weight:500;color:var(--pos-600);background:var(--pos-50);padding:8px 12px;border-radius:12px}
+  .th-private svg{width:15px;height:15px}
+  .th-list{display:flex;flex-direction:column;gap:8px;min-height:150px;max-height:min(44vh,420px);overflow:auto;padding:4px 2px;overscroll-behavior:contain}
+  .bub{max-width:84%;padding:10px 14px;border-radius:18px;border-end-start-radius:6px;font-size:.95rem;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;background:var(--paper-100);align-self:flex-start;animation:pop .3s var(--ease)}
+  .bub.mine{align-self:flex-end;background:var(--ink);color:#fff;border-end-start-radius:18px;border-end-end-radius:6px}
+  .bub time{display:block;font-size:.7rem;opacity:.6;margin-top:3px}
+  .th-empty{margin:auto;text-align:center;color:var(--muted);font-size:.9rem;max-width:340px;padding:12px}
+  .th-form{display:flex;gap:8px;align-items:flex-end}
+  .th-form textarea{flex:1;min-width:0;border:1.5px solid var(--paper-200);border-radius:20px;padding:11px 16px;resize:none;height:46px;max-height:140px;font-size:.95rem;line-height:1.45;background:#fff}
+  .th-form textarea:focus{outline:0;border-color:var(--pos);box-shadow:0 0 0 4px rgba(23,178,106,.15)}
+  .th-send{width:46px;height:46px;border-radius:50%;background:var(--pos);color:#fff;display:grid;place-items:center;flex-shrink:0;transition:background .2s,transform .2s}
+  .th-send:hover{background:var(--pos-600)}
+  .th-send:disabled{opacity:.5}
+  .th-foot{display:flex;justify-content:space-between;align-items:center;gap:6px 14px;font-size:.8rem;color:var(--muted);flex-wrap:wrap}
+  .th-foot .link{font-size:.8rem;color:var(--neg-600)}
+  .th-blocked{padding:10px 14px;border-radius:12px;background:var(--neg-50);color:var(--neg-600);font-size:.86rem;font-weight:500}
+
+  /* ============ Soutenir ============ */
+  .s-why{list-style:none;display:flex;flex-wrap:wrap;gap:10px 22px;margin-top:30px}
+  .s-why li{display:flex;align-items:center;gap:10px;color:#dfe3ee;font-size:.94rem}
+  .s-why li span:first-child{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:rgba(23,178,106,.18);color:#5ef0a6;flex-shrink:0}
+  .s-why svg{width:17px;height:17px}
+  .s-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:24px;align-items:start}
+  .s-grid.solo{grid-template-columns:minmax(0,1fr);max-width:720px;margin-inline:auto}
+  .s-side{display:grid;gap:24px}
+  .s-card h2,.s-side h2{font-size:1.4rem}
+  .s-test{background:var(--pro-50);color:#8a4d00;padding:10px 14px;border-radius:12px;font-size:.86rem;font-weight:500;margin-top:14px}
+  #supportForm{margin-top:20px}
+  .amounts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+  .amounts button{padding:13px 4px;border-radius:14px;border:1.5px solid var(--paper-200);font-weight:800;background:#fff;font-size:.95rem;transition:border-color .2s,background .2s,color .2s,transform .2s}
+  .amounts button:hover{border-color:var(--ink-soft)}
+  .amounts button[aria-pressed=true]{border-color:var(--pos);background:var(--pos-50);color:var(--pos-600);transform:translateY(-1px)}
+  .s-row{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+  #supportForm .switch{margin:4px 0 18px}
+  #supportForm .btn{width:100%}
+  .pay-note{display:flex;gap:8px;align-items:flex-start;font-size:.8rem;color:var(--muted);margin-top:14px;line-height:1.45}
+  .pay-note svg{width:16px;height:16px;color:var(--pos);flex-shrink:0;margin-top:1px}
+  .methods{display:grid;gap:12px;margin-top:18px}
+  .method{display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;padding:16px;border-radius:var(--r-lg);border:1.5px solid var(--paper-200);background:#fff}
+  .m-ico{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:var(--ink);color:#fff}
+  .m-ico.paypal{background:#1d4ed8} .m-ico.redotpay{background:#dc2626} .m-ico.ccp{background:#f5b301;color:var(--ink)} .m-ico.baridimob{background:var(--pos)}
+  .m-name{font-weight:800}
+  .m-holder{font-size:.86rem;color:var(--muted)}
+  .m-val{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .m-val code{font:600 .92rem/1.3 ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--paper-50);padding:7px 10px;border-radius:10px;border:1px solid var(--paper-200);overflow-wrap:anywhere;direction:ltr;unicode-bidi:isolate;max-width:100%}
+  .m-note{font-size:.84rem;color:var(--ink-soft);margin-top:8px}
+  .s-wall{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+  .s-wall span{padding:6px 12px;border-radius:999px;background:var(--pos-50);color:var(--pos-600);font-weight:700;font-size:.86rem}
+  .s-result{display:flex;gap:12px;align-items:flex-start;padding:16px 18px;border-radius:var(--r-lg);margin-bottom:24px;font-weight:500;line-height:1.5}
+  .s-result svg{width:22px;height:22px;flex-shrink:0}
+  .s-result.ok{background:var(--pos-50);color:var(--pos-600)}
+  .s-result.wait{background:var(--social-50);color:var(--cobalt-600)}
+  .s-result.ko{background:var(--neg-50);color:var(--neg-600)}
+  .s-band{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:22px;padding:clamp(22px,4vw,36px);border-radius:var(--r-xl);background:linear-gradient(120deg,var(--pos-50),#fff 70%);border:1.5px solid var(--pos-100)}
+  .s-band-ico{width:58px;height:58px;border-radius:18px;display:grid;place-items:center;background:var(--pos);color:#fff;box-shadow:0 16px 30px -14px rgba(23,178,106,.8)}
+  .s-band-ico svg{width:28px;height:28px}
+  .s-band h2{font-size:clamp(1.35rem,2.6vw,1.9rem)}
+  .s-band p{color:var(--muted);margin-top:6px;max-width:580px}
+  @media(max-width:860px){.s-grid{grid-template-columns:minmax(0,1fr)}.s-band{grid-template-columns:1fr;text-align:center;justify-items:center}}
+  @media(max-width:520px){.amounts{grid-template-columns:repeat(2,1fr)}.s-row{grid-template-columns:1fr}.ib-item{padding:14px;gap:12px}.ib-item .avatar{width:40px;height:40px}}
+
   /* ============ Notifications & effets ============ */
   .toasts{position:fixed;bottom:max(18px,env(safe-area-inset-bottom));left:50%;translate:-50% 0;z-index:120;display:grid;gap:8px;width:min(440px,calc(100vw - 24px));pointer-events:none}
   .toast{display:flex;align-items:center;gap:10px;padding:13px 16px;border-radius:16px;background:var(--ink-2);color:#fff;font-size:.9rem;box-shadow:var(--shadow-lg);animation:toast .45s var(--ease);pointer-events:auto}
@@ -675,6 +779,7 @@
     <nav class="nav" data-i18n-attr="aria-label:a.nav" aria-label="Navigation">
       <a href="#how" data-i18n="nav.how">Comment ça marche</a>
       <a href="#mur" data-i18n="nav.wall">Le mur</a>
+      <a href="#soutenir" data-i18n="nav.support" data-support-link hidden>Soutenir</a>
     </nav>
     <div class="langs" role="group" data-i18n-attr="aria-label:a.lang" aria-label="Langue">
       <button type="button" data-lang="fr" lang="fr" title="Français">FR</button>
@@ -683,6 +788,7 @@
     </div>
     <button class="head-btn ghost" type="button" id="worldBtn"><i data-lucide="globe"></i><span class="lbl" data-i18n="nav.world">Impact mondial</span></button>
     <button class="head-btn ghost" type="button" id="resultsBtn"><i data-lucide="chart-pie"></i><span class="lbl" data-i18n="nav.results">Mon résultat</span></button>
+    <button class="head-btn ghost" type="button" id="msgBtn" hidden><i data-lucide="message-circle"></i><span class="sr-only" data-i18n="nav.msg">Messages</span><span class="nbadge" id="msgBadge" hidden></span></button>
     <button class="head-btn solid" type="button" id="accountBtn"><i data-lucide="user-plus"></i><span class="lbl" data-i18n="acc.create">Créer un compte</span></button>
   </div>
 </header>
@@ -835,6 +941,16 @@
         </div>
       </div>
     </section>
+
+    <section class="sec" id="soutien-band" style="padding-top:clamp(40px,6vw,72px)" hidden>
+      <div class="wrap">
+        <div class="s-band" data-reveal>
+          <span class="s-band-ico"><i data-lucide="heart-handshake"></i></span>
+          <div><h2 data-i18n-html="sp.band.t">Le défi vous fait du bien ? <em>Soutenez-le</em>.</h2><p data-i18n="sp.band.p"></p></div>
+          <button class="btn btn-pos btn-lg" type="button" data-go="#soutenir"><i data-lucide="heart"></i><span data-i18n="nav.support">Soutenir</span></button>
+        </div>
+      </div>
+    </section>
   </div>
 
   <!-- ===================== Résultat ===================== -->
@@ -950,6 +1066,76 @@
       </div>
     </section>
   </div>
+
+  <!-- ===================== Messages ===================== -->
+  <div id="messagesView" hidden>
+    <section class="sec">
+      <div class="wrap">
+        <div class="head">
+          <p class="kicker"><span class="dots3"><i></i><i></i><i></i></span><span data-i18n="nav.msg">Messages</span></p>
+          <h1 class="m-title" data-i18n-html="msg.title" tabindex="-1" id="mTitle">Vos <em>conversations</em>.</h1>
+          <p class="sub" data-i18n="msg.sub"></p>
+        </div>
+        <div class="inbox" id="inbox"></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ===================== Soutenir ===================== -->
+  <div id="supportView" hidden>
+    <section class="w-hero">
+      <div class="w-rings" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+      <div class="wrap">
+        <p class="kicker"><span class="dots3"><i></i><i></i><i></i></span><span data-i18n="nav.support">Soutenir</span></p>
+        <h1 data-i18n-html="sp.title" tabindex="-1" id="sTitle">Gardez le défi <em>gratuit</em> et vivant.</h1>
+        <p class="lead" data-i18n="sp.sub"></p>
+        <ul class="s-why">
+          <li><span><i data-lucide="server"></i></span><span data-i18n="sp.why.1"></span></li>
+          <li><span><i data-lucide="shield-check"></i></span><span data-i18n="sp.why.2"></span></li>
+          <li><span><i data-lucide="sparkles"></i></span><span data-i18n="sp.why.3"></span></li>
+        </ul>
+      </div>
+    </section>
+    <section class="sec">
+      <div class="wrap">
+        <div class="s-result" id="sResult" role="status" hidden></div>
+        <div class="s-grid" id="sGrid">
+          <article class="w-card s-card" id="sCard" hidden>
+            <h2 data-i18n="sp.card.t">Par carte CIB ou Edahabia</h2>
+            <p class="w-note" data-i18n="sp.card.p"></p>
+            <p class="s-test" id="sTest" hidden data-i18n="sp.test"></p>
+            <form id="supportForm" novalidate>
+              <div class="amounts" id="sAmounts" role="group"></div>
+              <label class="field"><span data-i18n="sp.other">Autre montant (DA)</span><input name="amount" type="number" inputmode="numeric" min="100" max="200000" step="50" dir="ltr"></label>
+              <label class="field"><span data-i18n="sp.name">Nom complet</span><input name="name" autocomplete="name" maxlength="60" required></label>
+              <div class="s-row">
+                <label class="field"><span data-i18n="au.email">Adresse email</span><input name="email" type="email" autocomplete="email" maxlength="190" required dir="ltr"></label>
+                <label class="field"><span data-i18n="sp.phone">Téléphone</span><input name="phone" type="tel" autocomplete="tel" maxlength="20" required dir="ltr" placeholder="0550 12 34 56"><small data-i18n="sp.phone.hint"></small></label>
+              </div>
+              <label class="field"><span data-i18n="sp.msg">Un mot pour nous (facultatif)</span><textarea name="message" maxlength="300" rows="2" dir="auto"></textarea></label>
+              <label class="switch"><input type="checkbox" name="public"><span data-i18n="sp.public"></span></label>
+              <button class="btn btn-pos btn-lg" type="submit"><i data-lucide="lock"></i><span id="sPayLbl"></span></button>
+              <p class="form-err" role="alert"></p>
+              <p class="pay-note"><i data-lucide="shield-check"></i><span data-i18n="sp.secure"></span></p>
+            </form>
+          </article>
+          <div class="s-side">
+            <article class="w-card" id="sManual" hidden>
+              <h2 data-i18n="sp.manual.t">Autres moyens</h2>
+              <p class="w-note" data-i18n="sp.manual.p"></p>
+              <div class="methods" id="sMethods"></div>
+            </article>
+            <article class="w-card" id="sWallCard" hidden>
+              <h2 data-i18n="sp.wall.t">Merci à eux</h2>
+              <p class="w-note" id="sCount"></p>
+              <div class="s-wall" id="sWall"></div>
+            </article>
+          </div>
+        </div>
+        <div class="empty" id="sNone" hidden><i data-lucide="heart-handshake"></i><p data-i18n="sp.none"></p></div>
+      </div>
+    </section>
+  </div>
 </main>
 
 <footer class="site-foot">
@@ -967,6 +1153,7 @@
       <a href="#mur" data-i18n="nav.wall">Le mur</a>
       <a href="#monde" data-i18n="nav.world">Impact mondial</a>
       <a href="#resultat" data-i18n="nav.results">Mon résultat</a>
+      <a href="#soutenir" data-i18n="nav.support" data-support-link hidden>Soutenir</a>
     </div>
     <div class="f-bottom">
       <span><span data-i18n="ft.by">Un projet de</span> <a href="https://dehini.com/" style="color:#fff;font-weight:700">Mohammed Dehini</a> · dehini.com</span>
@@ -1024,10 +1211,14 @@
 <dialog class="dlg" id="authDlg">
   <form method="dialog" class="dlg-x"><button data-i18n-attr="aria-label:a.close" aria-label="Fermer"><i data-lucide="x"></i></button></form>
   <div class="dlg-body">
-    <p class="auth-why" id="authWhy" hidden><i data-lucide="feather"></i><span data-i18n="au.toPublish"></span></p>
+    <p class="auth-why" id="authWhy" hidden><i data-lucide="feather"></i><span id="authWhyTxt"></span></p>
     <div class="tabs" role="group" id="authTabs">
       <button type="button" data-pane="signup" data-i18n="au.signup">Créer un compte</button>
       <button type="button" data-pane="login" data-i18n="au.login">Se connecter</button>
+    </div>
+    <div class="g-wrap" id="gWrap" hidden>
+      <div class="g-btn" id="gBtn"></div>
+      <p class="or"><span data-i18n="au.or">ou</span></p>
     </div>
     <form class="auth-form" id="signupForm" data-pane="signup" novalidate>
       <p class="dlg-intro" data-i18n="au.intro"></p>
@@ -1075,6 +1266,7 @@
         <div class="switches">
           <label class="switch"><input type="checkbox" name="opt_daily"><span data-i18n="au.optDaily"></span></label>
           <label class="switch"><input type="checkbox" name="opt_digest"><span data-i18n="au.optDigest"></span></label>
+          <label class="switch"><input type="checkbox" name="opt_msg"><span data-i18n="au.optMsg"></span></label>
         </div>
       </fieldset>
       <p class="me-lang" id="meLang"></p>
@@ -1083,13 +1275,14 @@
     </form>
     <div class="me-actions">
       <button class="btn btn-line" type="button" data-go="#resultat"><i data-lucide="chart-pie"></i><span data-i18n="nav.results">Mon résultat</span></button>
+      <button class="btn btn-line" type="button" data-go="#messages"><i data-lucide="message-circle"></i><span data-i18n="nav.msg">Messages</span></button>
       <button class="btn btn-line" type="button" id="logoutBtn"><i data-lucide="log-out" class="flip"></i><span data-i18n="me.logout">Se déconnecter</span></button>
     </div>
     <details class="danger-zone">
       <summary data-i18n="me.delete">Supprimer mon compte</summary>
       <form id="deleteForm" novalidate>
-        <p data-i18n="me.delete.p"></p>
-        <label class="field"><span data-i18n="au.pass">Mot de passe</span><input name="password" type="password" autocomplete="current-password" required dir="ltr"></label>
+        <p id="meDeleteP"></p>
+        <label class="field" id="meDeletePass"><span data-i18n="au.pass">Mot de passe</span><input name="password" type="password" autocomplete="current-password" dir="ltr"></label>
         <button class="btn btn-danger" type="submit" data-i18n="me.delete.btn">Supprimer définitivement</button>
         <p class="form-err" role="alert"></p>
       </form>
@@ -1100,6 +1293,22 @@
 <dialog class="dlg dlg-wide" id="qDlg">
   <form method="dialog" class="dlg-x"><button data-i18n-attr="aria-label:a.close" aria-label="Fermer"><i data-lucide="x"></i></button></form>
   <div class="dlg-body" id="qDlgBody"></div>
+</dialog>
+
+<dialog class="dlg dlg-wide th-dlg" id="threadDlg">
+  <form method="dialog" class="dlg-x"><button data-i18n-attr="aria-label:a.close" aria-label="Fermer"><i data-lucide="x"></i></button></form>
+  <div class="dlg-body">
+    <div class="th-head" id="thHead"></div>
+    <p class="th-private"><i data-lucide="lock"></i><span data-i18n="th.private"></span></p>
+    <div class="th-list" id="thList" aria-live="polite"></div>
+    <p class="th-blocked" id="thBlocked" hidden></p>
+    <form class="th-form" id="thForm" novalidate>
+      <textarea name="body" rows="1" maxlength="1000" dir="auto" data-i18n-attr="placeholder:th.ph,aria-label:th.ph" placeholder="Votre message…"></textarea>
+      <button class="th-send" type="submit" data-i18n-attr="aria-label:th.send,title:th.send" aria-label="Envoyer"><i data-lucide="send-horizontal" class="flip"></i></button>
+    </form>
+    <p class="form-err" id="thErr" role="alert"></p>
+    <div class="th-foot"><span id="thNote"></span><button class="link" type="button" id="thBlock"></button></div>
+  </div>
 </dialog>
 
 <dialog class="dlg" id="resetDlg">
@@ -1210,7 +1419,6 @@ const T = {
 
   "story.impact": ["Son impact positif", "أثرها الإيجابي", "Its positive impact"],
   "story.anon": ["Anonyme", "مجهول", "Anonymous"],
-  "story.inspire": ["Inspirant", "مُلهِم", "Inspiring"],
   "story.report": ["Signaler", "إبلاغ", "Report"],
   "story.report.confirm": ["Signaler ce récit comme inapproprié ?", "الإبلاغ عن هذه القصة كمحتوى غير لائق؟", "Report this story as inappropriate?"],
   "story.reported": ["Merci, le récit a été signalé.", "شكراً، تم الإبلاغ عن القصة.", "Thanks, the story has been reported."],
@@ -1297,7 +1505,6 @@ const T = {
   "st.sentPrivate": ["Récit enregistré, visible par vous seul.", "تم حفظ القصة، ولا يراها غيرك.", "Story saved, visible only to you."],
   "st.deleted": ["Récit supprimé.", "تم حذف القصة.", "Story deleted."],
   "st.yours": ["Votre récit", "قصتك", "Your story"],
-  "st.likes": ["{n} personne(s) inspirée(s)", "ألهمت {n} من المشاركين", "{n} people inspired"],
 
   "ot.title": ["Ce que d'autres en ont tiré de positif", "ما استخلصه الآخرون من إيجابيات", "What others took from it positively"],
   "ot.more": ["Voir plus ({n})", "عرض المزيد ({n})", "See more ({n})"],
@@ -1347,7 +1554,10 @@ const T = {
   "me.logout": ["Se déconnecter", "تسجيل الخروج", "Sign out"],
   "me.loggedout": ["Vous êtes déconnecté.", "تم تسجيل خروجك.", "You're signed out."],
   "me.delete": ["Supprimer mon compte", "حذف حسابي", "Delete my account"],
-  "me.delete.p": ["Vos réponses, vos récits et vos préférences seront définitivement effacés. Confirmez avec votre mot de passe.", "ستُحذف إجاباتك وقصصك وتفضيلاتك نهائياً. أكّد بكلمة المرور.", "Your answers, stories and preferences will be permanently erased. Confirm with your password."],
+  "me.delete.p": ["Vos réponses, vos récits, vos conversations et vos préférences seront définitivement effacés. Confirmez avec votre mot de passe.", "ستُحذف إجاباتك وقصصك ومحادثاتك وتفضيلاتك نهائياً. أكّد بكلمة المرور.", "Your answers, stories, conversations and preferences will be permanently erased. Confirm with your password."],
+  "me.delete.g": ["Vos réponses, vos récits, vos conversations et vos préférences seront définitivement effacés.", "ستُحذف إجاباتك وقصصك ومحادثاتك وتفضيلاتك نهائياً.", "Your answers, stories, conversations and preferences will be permanently erased."],
+  "me.delete.confirm": ["Supprimer définitivement votre compte ? Cette action est irréversible.", "حذف حسابك نهائياً؟ لا يمكن التراجع عن ذلك.", "Permanently delete your account? This can't be undone."],
+  "me.google": ["Connexion avec Google activée", "تسجيل الدخول عبر Google مفعّل", "Google sign-in enabled"],
   "me.delete.btn": ["Supprimer définitivement", "حذف نهائي", "Delete permanently"],
   "me.deleted": ["Votre compte a été supprimé.", "تم حذف حسابك.", "Your account has been deleted."],
 
@@ -1365,6 +1575,83 @@ const T = {
   "err.mail": ["L'email n'a pas pu partir. Réessayez plus tard.", "تعذّر إرسال الرسالة. أعد المحاولة لاحقاً.", "The email couldn't be sent. Try again later."],
   "err.generic": ["Une erreur est survenue. Réessayez.", "حدث خطأ. أعد المحاولة.", "Something went wrong. Please try again."],
   "err.login_required": ["Créez un compte ou connectez-vous pour partager votre expérience.", "أنشئ حساباً أو سجّل الدخول لمشاركة تجربتك.", "Create an account or sign in to share your experience."],
+  "err.own": ["C'est votre propre récit.", "هذه قصتك أنت.", "This is your own story."],
+  "err.no_dm": ["L'auteur de ce récit ne peut pas recevoir de messages.", "لا يمكن مراسلة كاتب هذه القصة.", "The author of this story can't receive messages."],
+  "err.blocked": ["Cette conversation est bloquée.", "هذه المحادثة محظورة.", "This conversation is blocked."],
+  "err.not_found": ["Introuvable : ce contenu a peut-être été supprimé.", "غير موجود: ربما حُذف هذا المحتوى.", "Not found: this content may have been deleted."],
+  "err.use_google": ["Ce compte a été créé avec Google : utilisez le bouton Google ci-dessus.", "أُنشئ هذا الحساب عبر Google: استخدم زر Google في الأعلى.", "This account was created with Google: use the Google button above."],
+  "err.google_bad": ["La connexion avec Google a échoué. Réessayez.", "فشل تسجيل الدخول عبر Google. أعد المحاولة.", "Google sign-in failed. Please try again."],
+  "err.google_off": ["La connexion avec Google n'est pas encore activée.", "تسجيل الدخول عبر Google غير مفعّل بعد.", "Google sign-in isn't enabled yet."],
+  "err.bad_amount": ["Choisissez un montant entre 100 et 200 000 DA.", "اختر مبلغاً بين 100 و200000 دج.", "Choose an amount between 100 and 200,000 DZD."],
+  "err.bad_phone": ["Numéro de téléphone invalide.", "رقم الهاتف غير صالح.", "Invalid phone number."],
+  "err.pay_off": ["Le paiement par carte n'est pas disponible pour le moment.", "الدفع بالبطاقة غير متاح حالياً.", "Card payment isn't available right now."],
+  "err.pay_unavailable": ["La plateforme de paiement ne répond pas. Réessayez dans un instant.", "منصة الدفع لا تستجيب. أعد المحاولة بعد قليل.", "The payment platform isn't responding. Try again in a moment."],
+
+  "nav.msg": ["Messages", "الرسائل", "Messages"],
+  "nav.support": ["Soutenir", "ادعم التحدي", "Support"],
+  "story.like": ["J'aime", "أعجبني", "Like"],
+  "story.dislike": ["Je n'aime pas", "لم يعجبني", "Dislike"],
+  "story.write": ["Écrire à l'auteur", "راسل الكاتب", "Write to the author"],
+  "au.or": ["ou", "أو", "or"],
+  "au.toWrite": ["Créez votre compte, ou connectez-vous, pour écrire à l'auteur : seuls vous deux verrez la conversation.", "أنشئ حسابك أو سجّل الدخول لمراسلة الكاتب: لن يرى المحادثة أحد سواكما.", "Create your account, or sign in, to write to the author: only the two of you will see the conversation."],
+  "au.optMsg": ["Être prévenu par email quand quelqu'un m'écrit", "إعلامي عبر البريد عندما يراسلني أحد", "Email me when someone writes to me"],
+
+  "msg.title": ["Vos <em>conversations</em>.", "<em>محادثاتك</em>.", "Your <em>conversations</em>."],
+  "msg.sub": ["Les échanges privés autour des récits : seuls vous et l'autre personne pouvez les lire.", "المراسلات الخاصة حول القصص: لا يقرؤها أحد سواك والطرف الآخر.", "Private exchanges around stories: only you and the other person can read them."],
+  "msg.empty": ["Aucune conversation pour l'instant. Un récit vous touche ? Écrivez à son auteur depuis le mur.", "لا توجد محادثات بعد. أثّرت فيك قصة؟ راسل كاتبها من الجدار.", "No conversations yet. Moved by a story? Write to its author from the wall."],
+  "msg.toWall": ["Voir le mur", "عرض الجدار", "See the wall"],
+  "msg.login": ["Connectez-vous pour voir vos messages.", "سجّل الدخول لرؤية رسائلك.", "Sign in to see your messages."],
+  "msg.yourStory": ["Votre récit", "قصتك", "Your story"],
+  "msg.theirStory": ["Récit lu", "قصة قرأتها", "Story you read"],
+  "msg.you": ["Vous :", "أنت:", "You:"],
+  "msg.anonAuthor": ["Auteur anonyme", "كاتب مجهول", "Anonymous author"],
+  "th.with": ["Avec {name}", "مع {name}", "With {name}"],
+  "th.private": ["Conversation privée : seuls vous deux pouvez la lire.", "محادثة خاصة: لا يقرؤها أحد سواكما.", "Private conversation: only the two of you can read it."],
+  "th.ph": ["Votre message…", "رسالتك…", "Your message…"],
+  "th.send": ["Envoyer", "إرسال", "Send"],
+  "th.first": ["Dites à l'auteur ce que son récit vous a apporté. Il verra votre prénom, {name}, jamais votre email.", "قل للكاتب ما الذي أضافته لك قصته. سيرى اسمك ({name}) ولن يرى بريدك أبداً.", "Tell the author what their story gave you. They'll see your first name, {name}, never your email."],
+  "th.noteGuest": ["L'auteur voit votre prénom, jamais votre email.", "يرى الكاتب اسمك، ولا يرى بريدك أبداً.", "The author sees your first name, never your email."],
+  "th.noteOwner": ["Le lecteur voit le nom choisi pour votre récit, jamais votre email.", "يرى القارئ الاسم الذي اخترته لقصتك، ولا يرى بريدك أبداً.", "The reader sees the name chosen for your story, never your email."],
+  "th.block": ["Bloquer la conversation", "حظر المحادثة", "Block conversation"],
+  "th.unblock": ["Débloquer la conversation", "إلغاء حظر المحادثة", "Unblock conversation"],
+  "th.block.confirm": ["Bloquer cette conversation ? Plus aucun message ne pourra y être envoyé, jusqu'à ce que vous la débloquiez.", "حظر هذه المحادثة؟ لن يمكن إرسال أي رسالة فيها حتى تلغي الحظر.", "Block this conversation? No more messages can be sent in it until you unblock it."],
+  "th.blockedMe": ["Vous avez bloqué cette conversation.", "لقد حظرت هذه المحادثة.", "You blocked this conversation."],
+  "th.blockedOther": ["Cette conversation a été fermée par l'autre personne.", "أغلق الطرف الآخر هذه المحادثة.", "This conversation was closed by the other person."],
+
+  "sp.title": ["Gardez le défi <em>gratuit</em> et vivant.", "حافظ على التحدي <em>مجانياً</em> وحيّاً.", "Keep the challenge <em>free</em> and alive."],
+  "sp.sub": ["Le défi Impact est gratuit, sans publicité, et ne vend aucune donnée. Votre soutien paie l'hébergement, les emails et le temps passé à le faire grandir.", "تحدي الأثر مجاني، بلا إعلانات، ولا يبيع أي بيانات. دعمك يغطي الاستضافة والرسائل والوقت المبذول في تطويره.", "The Impact Challenge is free, ad-free, and sells no data. Your support pays for hosting, emails and the time spent making it grow."],
+  "sp.why.1": ["Hébergement et emails de rappel", "الاستضافة ورسائل التذكير", "Hosting and reminder emails"],
+  "sp.why.2": ["Zéro publicité, zéro revente de données", "صفر إعلانات، صفر بيع للبيانات", "Zero ads, zero data selling"],
+  "sp.why.3": ["De nouvelles questions et de nouvelles langues", "أسئلة جديدة ولغات جديدة", "New questions and new languages"],
+  "sp.card.t": ["Par carte CIB ou Edahabia", "بالبطاقة الذهبية أو CIB", "By CIB or Edahabia card"],
+  "sp.card.p": ["Paiement en ligne sécurisé, en dinars, avec n'importe quelle carte bancaire algérienne.", "دفع إلكتروني آمن بالدينار، بأي بطاقة بنكية جزائرية.", "Secure online payment in dinars, with any Algerian bank card."],
+  "sp.test": ["Mode test : aucune carte ne sera réellement débitée.", "وضع تجريبي: لن يُخصم أي مبلغ فعلياً.", "Test mode: no card will actually be charged."],
+  "sp.other": ["Autre montant (DA)", "مبلغ آخر (دج)", "Other amount (DZD)"],
+  "sp.name": ["Nom complet", "الاسم الكامل", "Full name"],
+  "sp.phone": ["Téléphone", "الهاتف", "Phone"],
+  "sp.phone.hint": ["Demandé par la banque pour le paiement.", "تطلبه البنوك لإتمام الدفع.", "Required by the bank for the payment."],
+  "sp.msg": ["Un mot pour nous (facultatif)", "كلمة لنا (اختياري)", "A word for us (optional)"],
+  "sp.public": ["Afficher mon prénom sur le mur des soutiens", "عرض اسمي على جدار الداعمين", "Show my first name on the supporters wall"],
+  "sp.pay": ["Soutenir avec {n}", "ادعم بـ {n}", "Support with {n}"],
+  "sp.secure": ["Paiement sécurisé sur la plateforme SATIM, via SofizPay : vos données de carte ne passent jamais par ce site.", "دفع آمن عبر منصة SATIM بواسطة SofizPay: لا تمرّ بيانات بطاقتك أبداً عبر هذا الموقع.", "Secure payment on the SATIM platform, via SofizPay: your card details never go through this site."],
+  "sp.manual.t": ["Autres moyens", "وسائل أخرى", "Other ways"],
+  "sp.manual.p": ["Depuis l'étranger, ou sans carte algérienne : envoyez votre soutien directement sur l'un de ces comptes.", "من الخارج أو دون بطاقة جزائرية: أرسل دعمك مباشرة إلى أحد هذه الحسابات.", "From abroad, or without an Algerian card: send your support directly to one of these accounts."],
+  "sp.m.paypal": ["PayPal", "PayPal", "PayPal"],
+  "sp.m.redotpay": ["RedotPay", "RedotPay", "RedotPay"],
+  "sp.m.ccp": ["CCP (Algérie Poste)", "الحساب البريدي الجاري CCP", "CCP (Algérie Poste)"],
+  "sp.m.baridimob": ["BaridiMob", "بريدي موب", "BaridiMob"],
+  "sp.m.other": ["Autre moyen", "وسيلة أخرى", "Other"],
+  "sp.copy": ["Copier", "نسخ", "Copy"],
+  "sp.copied": ["Copié !", "تم النسخ!", "Copied!"],
+  "sp.open": ["Ouvrir", "فتح", "Open"],
+  "sp.wall.t": ["Merci à eux", "شكراً لهم", "Thank you"],
+  "sp.count": ["Soutiens reçus jusqu'ici : {n}", "عدد الداعمين حتى الآن: {n}", "Supporters so far: {n}"],
+  "sp.none": ["Les moyens de soutien arrivent très bientôt. Merci de votre patience !", "وسائل الدعم قادمة قريباً جداً. شكراً على صبرك!", "Ways to support are coming very soon. Thank you for your patience!"],
+  "sp.ok": ["Merci infiniment ! Votre soutien a bien été reçu : un email de remerciement vient de partir.", "شكراً جزيلاً! وصلنا دعمك، وأُرسلت إليك رسالة شكر.", "Thank you so much! Your support has been received: a thank-you email is on its way."],
+  "sp.wait": ["Votre paiement est en cours de confirmation par la banque. Vous recevrez un email dès qu'il sera validé.", "دفعتك قيد التأكيد من البنك. ستصلك رسالة فور اعتمادها.", "Your payment is being confirmed by the bank. You'll get an email as soon as it's validated."],
+  "sp.ko": ["Le paiement n'a pas abouti. Si votre carte a quand même été débitée, écrivez-nous : nous régularisons.", "لم يكتمل الدفع. إن خُصم المبلغ من بطاقتك رغم ذلك، راسلنا وسنسوّي الأمر.", "The payment didn't go through. If your card was charged anyway, write to us and we'll sort it out."],
+  "sp.band.t": ["Le défi vous fait du bien ? <em>Soutenez-le</em>.", "هل يفيدك التحدي؟ <em>ادعمه</em>.", "Does the challenge do you good? <em>Support it</em>."],
+  "sp.band.p": ["Gratuit, sans publicité, sans revente de données : un petit soutien l'aide à rester ainsi.", "مجاني، بلا إعلانات، ولا يبيع البيانات: دعم صغير يساعده على البقاء كذلك.", "Free, ad-free, no data selling: a small contribution helps keep it that way."],
 
   "w.title": ["Ce que le <em>monde</em> a vécu.", "ما عاشه <em>العالم</em>.", "What the <em>world</em> has lived through."],
   "w.sub": ["Les réponses de tous les participants, réunies en temps réel : anonymes, agrégées, vivantes.", "إجابات كل المشاركين، مجمّعة في الوقت الحقيقي: مجهولة الهوية، إجمالية، وحيّة.", "Every participant's answers, gathered in real time: anonymous, aggregated, alive."],
@@ -1485,7 +1772,9 @@ const newDevice = () => [...crypto.getRandomValues(new Uint8Array(16))].map(b =>
 let S;
 function load() {
   try { S = JSON.parse(localStorage.getItem(STORE)) || {}; } catch (e) { S = {}; }
-  S = Object.assign({ answers: {}, stories: {}, pending: {}, liked: {}, reported: {}, drafts: {}, author: "", nudged: 0 }, S);
+  S = Object.assign({ answers: {}, stories: {}, pending: {}, react: {}, reported: {}, drafts: {}, author: "", nudged: 0 }, S);
+  // Anciens « Inspirant » (cœur) : deviennent des « J'aime ».
+  if (S.liked) { for (const id of Object.keys(S.liked)) if (!(id in S.react)) S.react[id] = 1; delete S.liked; }
   if (!/^[a-f0-9]{32}$/.test(S.device || "")) S.device = newDevice();
 }
 function save() { try { localStorage.setItem(STORE, JSON.stringify(S)); } catch (e) {} }
@@ -1574,6 +1863,8 @@ function applyServer(d) {
     for (const st of d.stories) next[st.qid] = st;
     S.stories = next;
   }
+  if (d.reactions) S.react = Object.assign({}, d.reactions);
+  if (typeof d.unread === "number") setUnread(d.unread);
   save();
 }
 
@@ -1798,7 +2089,6 @@ function renderFeed() {
 /* ------------------------------------------------------------- Récits */
 const initial = s => (s || "").trim().charAt(0) || "·";
 function storyCard(st, showQ) {
-  const liked = !!S.liked[st.id];
   return el("article", { class: "story", dataset: { sid: st.id } },
     showQ ? el("p", { class: "story-q" }, el("span", { class: "dotp" }), el("span", { text: qText(st.qid) })) : null,
     el("blockquote", { class: "story-exp", dir: "auto", text: st.exp }),
@@ -1806,9 +2096,17 @@ function storyCard(st, showQ) {
     el("button", { class: "read-more", type: "button", hidden: true, onclick: e => { e.currentTarget.closest(".story").classList.add("open"); e.currentTarget.remove(); } }, t("story.more")),
     el("footer", { class: "story-foot" },
       el("span", { class: "who" }, el("span", { class: "av", text: initial(st.author) || "·" }), el("span", { dir: "auto", text: st.author || t("story.anon") })),
-      el("button", { class: "like" + (liked ? " on" : ""), type: "button", "aria-pressed": String(liked), title: t("story.inspire"), onclick: e => toggleLike(st, e.currentTarget) },
-        ic("heart"), el("span", { class: "n", text: fmt(st.likes || 0) }), el("span", { class: "txt", text: t("story.inspire") })),
-      el("button", { class: "report", type: "button", title: t("story.report"), "aria-label": t("story.report"), onclick: () => reportStory(st) }, ic("flag"))));
+      reactBtn(st, 1), reactBtn(st, -1),
+      st.dm ? el("button", { class: "dm", type: "button", title: t("story.write"), "aria-label": t("story.write"), onclick: () => openThread({ sid: st.id }) }, ic("message-circle")) : null,
+      st.self ? null : el("button", { class: "report", type: "button", title: t("story.report"), "aria-label": t("story.report"), onclick: () => reportStory(st) }, ic("flag"))));
+}
+/** « J'aime » (v = 1) ou « Je n'aime pas » (v = -1) ; simple compteur sur ses propres récits. */
+function reactBtn(st, v) {
+  const cls = "react " + (v === 1 ? "up" : "down"), label = t(v === 1 ? "story.like" : "story.dislike");
+  const kids = [ic(v === 1 ? "thumbs-up" : "thumbs-down"), el("span", { class: "n", text: fmt((v === 1 ? st.likes : st.dislikes) || 0) }), el("span", { class: "sr-only", text: label })];
+  if (st.self) return el("span", { class: cls + " static", title: label }, kids);
+  const on = (S.react[st.id] || 0) === v;
+  return el("button", { class: cls + (on ? " on" : ""), type: "button", "aria-pressed": String(on), title: label, onclick: e => toggleReact(st, v, e.currentTarget) }, kids);
 }
 function clampCheck(root) {
   requestAnimationFrame(() => $$(".story", root).forEach(card => {
@@ -1818,17 +2116,36 @@ function clampCheck(root) {
     more.hidden = !over;
   }));
 }
-async function toggleLike(st, btn) {
-  const undo = !!S.liked[st.id];
-  if (undo) delete S.liked[st.id]; else S.liked[st.id] = 1;
+/** Le même récit peut être affiché à plusieurs endroits (mur, résultat) : on met tout à jour. */
+function setReaction(st, v, likes, dislikes) {
+  if (v) S.react[st.id] = v; else delete S.react[st.id];
   save();
-  st.likes = Math.max(0, (st.likes || 0) + (undo ? -1 : 1));
-  $$(`.story[data-sid="${st.id}"] .like`).forEach(b => {
-    b.classList.toggle("on", !undo); b.setAttribute("aria-pressed", String(!undo));
-    $(".n", b).textContent = fmt(st.likes);
-  });
-  if (!undo) { btn.classList.remove("bump"); void btn.offsetWidth; btn.classList.add("bump"); burstFrom(btn, 1); }
-  try { await api("like", { id: st.id, undo }); } catch (e) { /* déjà compté depuis cette connexion */ }
+  const copies = [st, ...FEED.items, ...Object.values(OTH).flatMap(o => o.items)].filter(x => x.id === st.id);
+  copies.forEach(x => { x.likes = likes; x.dislikes = dislikes; });
+  $$(`.story[data-sid="${st.id}"]`).forEach(card => [[1, ".react.up"], [-1, ".react.down"]].forEach(([val, sel]) => {
+    const b = $(sel, card);
+    if (!b) return;
+    const on = v === val;
+    b.classList.toggle("on", on);
+    b.setAttribute("aria-pressed", String(on));
+    $(".n", b).textContent = fmt(val === 1 ? likes : dislikes);
+  }));
+}
+async function toggleReact(st, v, btn) {
+  const cur = S.react[st.id] || 0, next = cur === v ? 0 : v;
+  const L = st.likes || 0, D = st.dislikes || 0;
+  setReaction(st, next, Math.max(0, L + (next === 1) - (cur === 1)), Math.max(0, D + (next === -1) - (cur === -1)));
+  if (next) { btn.classList.remove("bump"); void btn.offsetWidth; btn.classList.add("bump"); }
+  if (next === 1) burstFrom(btn, 1);
+  await apiReady;
+  if (!online) return;
+  try {
+    const d = await api("react", { id: st.id, v: next, device: S.device });
+    setReaction(st, d.v, d.likes, d.dislikes);
+  } catch (e) {
+    setReaction(st, cur, L, D);
+    toast(errText(e), "err");
+  }
 }
 async function reportStory(st) {
   if (!confirm(t("story.report.confirm"))) return;
@@ -2367,7 +2684,8 @@ function storyBox(q) {
         el("p", { class: "story-imp" }, el("b", { text: t("story.impact") }), el("span", { dir: "auto", text: st.imp })),
         el("button", { class: "read-more", type: "button", hidden: true, onclick: e => { e.currentTarget.closest(".story").classList.add("open"); e.currentTarget.remove(); } }, t("story.more"))),
       el("div", { class: "mine-foot" },
-        st.status === "published" ? el("span", { class: "likes-n" }, ic("heart"), el("span", { text: t("st.likes", { n: fmt(st.likes || 0) }) })) : null,
+        st.status === "published" ? el("span", { class: "likes-n", title: t("story.like") }, ic("thumbs-up"), el("span", { text: fmt(st.likes || 0) })) : null,
+        st.status === "published" ? el("span", { class: "likes-n down", title: t("story.dislike") }, ic("thumbs-down"), el("span", { text: fmt(st.dislikes || 0) })) : null,
         el("span", { class: "grow" }),
         el("button", { class: "btn btn-xs btn-line", type: "button", onclick: () => { EDITING.add(q.id); rerenderItem(q.id); } }, ic("pencil"), el("span", { text: t("st.edit") })),
         el("button", { class: "btn btn-xs btn-line danger", type: "button", onclick: () => deleteStory(q.id) }, ic("trash-2"), el("span", { text: t("st.delete") }))));
@@ -2579,6 +2897,7 @@ function renderAccount() {
   }
   $("#joinOut").hidden = !!user;
   $("#joinIn").hidden = !user;
+  $("#msgBtn").hidden = !user;
   if (user) $("#joinInTitle").textContent = t("join.in.title", { name: user.name });
   icons();
 }
@@ -2591,12 +2910,14 @@ function showAuth(pane) {
     n.hidden = n.dataset.pane !== p;
   });
   $("#authTabs").hidden = p === "forgot" || p === "offline";
-  $("#authWhy").hidden = !S.pendingPublish || p === "offline";
+  $("#authWhy").hidden = !(S.pendingPublish || PENDING_DM) || p === "offline";
+  $("#authWhyTxt").textContent = t(S.pendingPublish ? "au.toPublish" : "au.toWrite");
   $$(".form-err", dlg).forEach(n => (n.textContent = ""));
   $("#forgotForm .ok-msg").hidden = true;
   if (!dlg.open) dlg.showModal();
+  renderGoogle(p);
   const first = $(`form[data-pane="${p}"] input`, dlg);
-  if (first) setTimeout(() => first.focus(), 30);
+  if (first && !matchMedia("(hover:none)").matches) setTimeout(() => first.focus(), 30);
 }
 function showMe() {
   if (!user) return showAuth("signup");
@@ -2612,7 +2933,12 @@ function showMe() {
   f.elements.namedItem("name").value = user.name;
   f.elements.namedItem("opt_daily").checked = !!user.opt_daily;
   f.elements.namedItem("opt_digest").checked = !!user.opt_digest;
-  $("#meLang").textContent = t("me.lang", { l: LANG_NAMES[lang] });
+  f.elements.namedItem("opt_msg").checked = user.opt_msg !== false;
+  $("#meLang").textContent = t("me.lang", { l: LANG_NAMES[lang] }) + (user.google ? " · " + t("me.google") : "");
+  // Compte créé avec Google : pas de mot de passe à saisir pour le supprimer, une simple confirmation.
+  const noPass = user.has_pass === false;
+  $("#meDeletePass").hidden = noPass;
+  $("#meDeleteP").textContent = t(noPass ? "me.delete.g" : "me.delete.p");
   $$(".form-err", dlg).forEach(n => (n.textContent = ""));
   $(".danger-zone", dlg).open = false;
   if (!dlg.open) dlg.showModal();
@@ -2629,15 +2955,24 @@ function ownStoryTokens() {
 function afterSignIn(d, msg) {
   applyServer(d);
   for (const k of Object.keys(OTH)) delete OTH[k];
+  loadFeed(); // « dm » / « self » dépendent de la personne connectée
   renderAll();
   renderAccount();
   toast(msg);
   publishPending();
+  if (PENDING_DM) { const o = PENDING_DM; PENDING_DM = null; setTimeout(() => openThread(o), 350); }
+  if (!$("#messagesView").hidden) loadInbox();
 }
 function signedOut(expired) {
   user = null; csrf = null;
-  S.answers = {}; S.stories = {}; S.pending = {}; S.drafts = {}; S.nudged = 0;
+  S.answers = {}; S.stories = {}; S.pending = {}; S.drafts = {}; S.react = {}; S.nudged = 0;
   S.device = newDevice();
+  INBOX = null;
+  setUnread(0);
+  for (const k of Object.keys(OTH)) delete OTH[k];
+  loadFeed();
+  if ($("#threadDlg").open) $("#threadDlg").close();
+  if (!$("#messagesView").hidden) renderInbox();
   save();
   EDITING.clear();
   renderAll();
@@ -2694,14 +3029,20 @@ bindForm($("#resetForm"), async (v, form) => {
   afterSignIn(d, t("au.reset.ok"));
 });
 bindForm($("#prefsForm"), async v => {
-  const d = await api("prefs", { name: v.name.trim(), opt_daily: !!v.opt_daily, opt_digest: !!v.opt_digest, lang });
+  const d = await api("prefs", { name: v.name.trim(), opt_daily: !!v.opt_daily, opt_digest: !!v.opt_digest, opt_msg: !!v.opt_msg, lang });
   applyServer(d);
   renderAccount();
   $("#meDlg").close();
   toast(t("me.saved"));
 });
 bindForm($("#deleteForm"), async v => {
-  await api("delete_account", { password: v.password });
+  if (user.has_pass === false) {
+    if (!confirm(t("me.delete.confirm"))) return;
+    await api("delete_account", { confirm: true });
+  } else {
+    if (!v.password) throw new ApiError("bad_login");
+    await api("delete_account", { password: v.password });
+  }
   $("#meDlg").close();
   signedOut();
   toast(t("me.deleted"));
@@ -2717,9 +3058,306 @@ $("#authTabs").addEventListener("click", e => { const b = e.target.closest("[dat
 $$("[data-pane-go]").forEach(b => b.addEventListener("click", () => showAuth(b.dataset.paneGo)));
 $$("dialog").forEach(d => d.addEventListener("click", e => { if (e.target === d) d.close(); }));
 // Fenêtre d'inscription fermée sans se connecter : on oublie la publication en attente (le brouillon reste).
-$("#authDlg").addEventListener("close", () => { if (!user && S.pendingPublish) { delete S.pendingPublish; save(); } });
+$("#authDlg").addEventListener("close", () => {
+  if (!user && S.pendingPublish) { delete S.pendingPublish; save(); }
+  if (!user) PENDING_DM = null;
+});
 $("#accountBtn").addEventListener("click", () => (user ? showMe() : showAuth("signup")));
 $("#joinPrefs").addEventListener("click", showMe);
+
+/* ===================================================== Connexion Google */
+let CFG = { google: null, support: null };
+let gisLoading = null, gisReady = false;
+function loadGis() {
+  if (window.google && google.accounts && google.accounts.id) return Promise.resolve();
+  if (!gisLoading) gisLoading = new Promise((ok, ko) => {
+    const sc = el("script", { src: "https://accounts.google.com/gsi/client", async: true });
+    sc.onload = ok;
+    sc.onerror = () => { gisLoading = null; ko(new Error("gsi")); };
+    document.head.append(sc);
+  });
+  return gisLoading;
+}
+/** Bouton officiel « Continuer avec Google », dans la langue du site. */
+async function renderGoogle(pane) {
+  const wrap = $("#gWrap");
+  wrap.hidden = !CFG.google || !["signup", "login"].includes(pane);
+  if (wrap.hidden) return;
+  try { await loadGis(); } catch (e) { wrap.hidden = true; return; }
+  if (!gisReady) {
+    google.accounts.id.initialize({ client_id: CFG.google, callback: onGoogle, ux_mode: "popup", auto_select: false, cancel_on_tap_outside: true });
+    gisReady = true;
+  }
+  const box = $("#gBtn");
+  const w = Math.round(box.getBoundingClientRect().width) || 320;
+  box.replaceChildren();
+  google.accounts.id.renderButton(box, {
+    type: "standard", theme: "outline", size: "large", shape: "pill", logo_alignment: "center", locale: lang,
+    text: pane === "signup" ? "signup_with" : "signin_with", width: Math.max(220, Math.min(380, w)),
+  });
+}
+async function onGoogle(resp) {
+  const dlg = $("#authDlg");
+  const form = $$("form.auth-form", dlg).find(f => !f.hidden);
+  const err = form && $(".form-err", form);
+  if (err) err.textContent = "";
+  try {
+    await flush();
+    const sf = $("#signupForm");
+    const d = await api("google", {
+      credential: resp.credential, device: S.device, stories: ownStoryTokens(), lang,
+      opt_daily: sf.elements.namedItem("opt_daily").checked, opt_digest: sf.elements.namedItem("opt_digest").checked,
+    });
+    afterSignIn(d, t(d.created ? "au.welcome" : "au.hello", { name: d.user.name }));
+    if (dlg.open) dlg.close();
+    burstFrom($("#accountBtn"), 1);
+  } catch (e) {
+    if (err && dlg.open) err.textContent = errText(e); else toast(errText(e), "err");
+  }
+}
+
+/* ============================================================== Messages */
+let UNREAD = 0, INBOX = null, TH = null, PENDING_DM = null;
+function setUnread(n) {
+  UNREAD = n || 0;
+  const b = $("#msgBadge");
+  b.hidden = !UNREAD;
+  b.textContent = UNREAD > 99 ? "99+" : fmt(UNREAD);
+  $("#msgBtn").title = t("nav.msg") + (UNREAD ? " (" + fmt(UNREAD) + ")" : "");
+}
+/** Temps relatif (« il y a 5 min »), puis la date. */
+function ago(sec) {
+  const d = Math.round(sec - Date.now() / 1000), a = Math.abs(d);
+  const rtf = new Intl.RelativeTimeFormat(lang, { numeric: "auto", style: "short" });
+  if (a < 45) return rtf.format(0, "second");
+  if (a < 3600) return rtf.format(Math.round(d / 60), "minute");
+  if (a < 86400) return rtf.format(Math.round(d / 3600), "hour");
+  if (a < 6 * 86400) return rtf.format(Math.round(d / 86400), "day");
+  return new Date(sec * 1000).toLocaleDateString(lang === "ar" ? "ar-DZ" : lang, { day: "numeric", month: "short" });
+}
+/** L'auteur voit le prénom du lecteur ; le lecteur voit le nom choisi pour le récit (ou « auteur anonyme »). */
+const otherName = th => th.other || t("msg.anonAuthor");
+
+async function loadInbox() {
+  if (!user) { renderInbox(); return; }
+  try {
+    const d = await api("inbox");
+    INBOX = d.items;
+    setUnread(d.unread);
+  } catch (e) { if (!INBOX) INBOX = []; }
+  renderInbox();
+}
+function renderInbox() {
+  const box = $("#inbox");
+  if (online === false || (online && !user)) {
+    box.replaceChildren(el("div", { class: "empty" }, ic("lock"), el("p", { text: t("msg.login") }),
+      online ? el("div", { class: "center-row", style: "margin-top:16px" }, el("button", { class: "btn btn-pos", type: "button", "data-auth": "login" }, t("au.login"))) : null));
+  } else if (!INBOX) {
+    box.replaceChildren(el("div", { class: "skel" }), el("div", { class: "skel" }));
+  } else if (!INBOX.length) {
+    box.replaceChildren(el("div", { class: "empty" }, ic("message-circle"), el("p", { text: t("msg.empty") }),
+      el("div", { class: "center-row", style: "margin-top:16px" }, el("button", { class: "btn btn-line", type: "button", "data-go": "#mur" }, ic("layout-grid"), el("span", { text: t("msg.toWall") })))));
+  } else {
+    box.replaceChildren(...INBOX.map(th => el("button", { class: "ib-item" + (th.unread ? " unread" : ""), type: "button", onclick: () => openThread({ tid: th.id }) },
+      el("span", { class: "avatar", text: initial(otherName(th)) }),
+      el("div", {},
+        el("div", { class: "ib-top" }, el("b", { dir: "auto", text: otherName(th) }), el("span", { class: "ib-role " + th.role, text: t(th.role === "owner" ? "msg.yourStory" : "msg.theirStory") })),
+        el("p", { class: "ib-q", text: qText(th.qid) }),
+        th.last ? el("p", { class: "ib-last" }, th.last.mine ? t("msg.you") + " " : "", el("span", { dir: "auto", text: th.last.body })) : null),
+      el("span", { class: "ib-meta" }, th.last ? el("time", { text: ago(th.last.at) }) : null, th.unread ? el("span", { class: "nbadge", text: fmt(th.unread) }) : null))));
+  }
+  icons();
+}
+function upsertInbox(th) {
+  if (!INBOX || !th) return;
+  INBOX = [th, ...INBOX.filter(x => x.id !== th.id)].sort((a, b) => b.updated - a.updated);
+  if (!$("#messagesView").hidden) renderInbox();
+}
+
+/** Ouvre une conversation : {tid} existante, ou {sid} pour écrire à l'auteur d'un récit. */
+async function openThread(o) {
+  await apiReady;
+  if (!user) { PENDING_DM = o; showAuth(o.tid ? "login" : "signup"); return; }
+  TH = { tid: o.tid || null, sid: o.sid || null, thread: null, story: null, messages: [], loading: true };
+  $("#thErr").textContent = "";
+  $("#thForm textarea").value = "";
+  autosize($("#thForm textarea"));
+  renderThread();
+  const dlg = $("#threadDlg");
+  if (!dlg.open) dlg.showModal();
+  await refreshThread(true);
+  if (TH && !matchMedia("(hover:none)").matches) $("#thForm textarea").focus();
+}
+async function refreshThread(scroll) {
+  if (!TH) return;
+  const list = $("#thList");
+  const atBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 40;
+  try {
+    const d = await api("thread", undefined, TH.tid ? { id: TH.tid } : { sid: TH.sid });
+    if (!TH) return;
+    TH.loading = false;
+    if (d.thread) {
+      const grew = d.messages.length !== TH.messages.length;
+      Object.assign(TH, { thread: d.thread, tid: d.thread.id, messages: d.messages });
+      upsertInbox(d.thread);
+      if (!scroll) scroll = grew && atBottom;
+    } else TH.story = d.story;
+    if (typeof d.unread === "number") setUnread(d.unread);
+  } catch (e) {
+    if (!TH) return;
+    TH.loading = false;
+    $("#thErr").textContent = errText(e);
+  }
+  renderThread(scroll);
+}
+function renderThread(scroll) {
+  if (!TH) return;
+  const th = TH.thread, st = TH.story, list = $("#thList");
+  const qid = th ? th.qid : st ? st.qid : 0;
+  const exp = th ? th.exp : st ? st.exp : "";
+  const other = th ? otherName(th) : st ? st.author || t("msg.anonAuthor") : "";
+  $("#thHead").replaceChildren(
+    el("div", { class: "th-with" }, el("span", { class: "avatar", text: initial(other) }), el("span", { dir: "auto", text: other ? t("th.with", { name: other }) : "" })),
+    qid ? el("p", { class: "th-q", text: qText(qid) }) : null,
+    exp ? el("p", { class: "th-story", dir: "auto", text: exp }) : null);
+  if (TH.loading) list.replaceChildren(el("div", { class: "skel" }));
+  else if (!TH.messages.length) list.replaceChildren(el("p", { class: "th-empty", text: t("th.first", { name: user ? user.name : "" }) }));
+  else list.replaceChildren(...TH.messages.map(m => el("div", { class: "bub" + (m.mine ? " mine" : "") },
+    el("span", { dir: "auto", text: m.body }), el("time", { text: ago(m.at) }))));
+  const blocked = th && th.blocked;
+  $("#thBlocked").hidden = !blocked;
+  $("#thBlocked").textContent = blocked ? t(blocked === "me" ? "th.blockedMe" : "th.blockedOther") : "";
+  $("#thForm").hidden = !!blocked || (!th && !st);
+  const bb = $("#thBlock");
+  bb.hidden = !th || blocked === "other";
+  bb.textContent = t(blocked === "me" ? "th.unblock" : "th.block");
+  $("#thNote").textContent = TH.loading ? "" : t(th && th.role === "owner" ? "th.noteOwner" : "th.noteGuest");
+  icons();
+  if (scroll) requestAnimationFrame(() => (list.scrollTop = list.scrollHeight));
+}
+function autosize(ta) {
+  ta.style.height = "auto";
+  ta.style.height = Math.min(140, Math.max(46, ta.scrollHeight + 3)) + "px";
+}
+$("#thForm textarea").addEventListener("input", e => autosize(e.target));
+$("#thForm textarea").addEventListener("keydown", e => {
+  // Ordinateur : Entrée envoie, Maj+Entrée va à la ligne. Mobile : Entrée va à la ligne.
+  if (e.key === "Enter" && !e.shiftKey && !e.isComposing && matchMedia("(hover:hover)").matches) { e.preventDefault(); $("#thForm").requestSubmit(); }
+});
+$("#thForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  if (!TH) return;
+  const ta = $("#thForm textarea"), btn = $(".th-send"), body = ta.value.trim();
+  if (body.length < 2) { $("#thErr").textContent = t("err.too_short"); return; }
+  btn.disabled = true;
+  $("#thErr").textContent = "";
+  try {
+    const d = await api("msg_send", TH.tid ? { tid: TH.tid, body } : { sid: TH.sid, body });
+    Object.assign(TH, { thread: d.thread, tid: d.thread.id });
+    TH.messages.push(d.message);
+    ta.value = "";
+    autosize(ta);
+    renderThread(true);
+    upsertInbox(d.thread);
+  } catch (ex) { $("#thErr").textContent = errText(ex); }
+  btn.disabled = false;
+  ta.focus();
+});
+$("#thBlock").addEventListener("click", async () => {
+  if (!TH || !TH.thread) return;
+  const on = TH.thread.blocked !== "me";
+  if (on && !confirm(t("th.block.confirm"))) return;
+  try {
+    const d = await api("thread_block", { tid: TH.tid, on });
+    TH.thread = d.thread;
+    upsertInbox(d.thread);
+    renderThread();
+  } catch (e) { toast(errText(e), "err"); }
+});
+$("#threadDlg").addEventListener("close", () => {
+  TH = null;
+  if (/^#messages\/\d+/.test(location.hash)) history.replaceState(null, "", "#messages");
+  if (!$("#messagesView").hidden) loadInbox();
+});
+// Nouveaux messages : conversation ouverte toutes les 15 s, compteur toutes les 60 s.
+setInterval(() => { if (TH && TH.tid && document.visibilityState === "visible") refreshThread(false); }, 15000);
+setInterval(async () => {
+  if (!user || document.visibilityState !== "visible") return;
+  try {
+    const d = await api("me");
+    if (!d.user) { signedOut(true); return; }
+    if (d.unread !== UNREAD) { setUnread(d.unread); if (!$("#messagesView").hidden) loadInbox(); }
+  } catch (e) {}
+}, 60000);
+
+/* ============================================================== Soutenir */
+const M_ICON = { paypal: "wallet", redotpay: "credit-card", ccp: "landmark", baridimob: "smartphone", other: "hand-coins" };
+let DON_AMOUNT = 1000, DON_RESULT = null;
+const money = n => fmt(n) + (lang === "ar" ? " دج" : lang === "en" ? " DZD" : " DA");
+const supportOn = () => !!(CFG.support && (CFG.support.card || CFG.support.methods.length));
+function donAmount() {
+  const v = +$("#supportForm").elements.namedItem("amount").value;
+  return v > 0 ? v : DON_AMOUNT;
+}
+function renderSupport() {
+  const sp = CFG.support, on = supportOn();
+  $$("[data-support-link]").forEach(n => (n.hidden = !on));
+  $("#soutien-band").hidden = !on;
+  if (!sp) { $("#sGrid").hidden = true; $("#sNone").hidden = online !== false; return; }
+  const card = sp.card, manual = sp.methods.length > 0, wall = sp.count > 0;
+  $("#sCard").hidden = !card;
+  $("#sTest").hidden = !sp.test;
+  $("#sManual").hidden = !manual;
+  $("#sWallCard").hidden = !wall;
+  $("#sGrid").hidden = !on;
+  $("#sGrid").classList.toggle("solo", !card || (!manual && !wall));
+  $("#sNone").hidden = on;
+  $("#sAmounts").replaceChildren(...sp.amounts.map(a => el("button", {
+    type: "button", "aria-pressed": String(a === DON_AMOUNT && !$("#supportForm").elements.namedItem("amount").value),
+    onclick: () => { DON_AMOUNT = a; $("#supportForm").elements.namedItem("amount").value = ""; renderSupport(); },
+  }, money(a))));
+  $("#sPayLbl").textContent = t("sp.pay", { n: money(donAmount()) });
+  $("#sMethods").replaceChildren(...sp.methods.map(m => el("div", { class: "method" },
+    el("span", { class: "m-ico " + m.type }, ic(M_ICON[m.type] || "hand-coins")),
+    el("div", {},
+      el("p", { class: "m-name", text: t("sp.m." + m.type) }),
+      m.holder ? el("p", { class: "m-holder", dir: "auto", text: m.holder }) : null,
+      el("div", { class: "m-val" },
+        m.value ? el("code", { text: m.value }) : null,
+        m.value ? el("button", { class: "btn btn-xs btn-line", type: "button", onclick: () => copyText(m.value) }, ic("copy"), el("span", { text: t("sp.copy") })) : null,
+        m.link ? el("a", { class: "btn btn-xs btn-ink", href: m.link, target: "_blank", rel: "noopener noreferrer" }, ic("external-link"), el("span", { text: t("sp.open") })) : null),
+      m.note ? el("p", { class: "m-note", dir: "auto", text: m.note }) : null))));
+  $("#sCount").textContent = t("sp.count", { n: fmt(sp.count) });
+  $("#sWall").replaceChildren(...sp.wall.map(n => el("span", { dir: "auto", text: n })));
+  const f = $("#supportForm");
+  if (user) {
+    if (!f.elements.namedItem("name").value) f.elements.namedItem("name").value = user.name;
+    if (!f.elements.namedItem("email").value) f.elements.namedItem("email").value = user.email;
+  }
+  const r = $("#sResult");
+  r.hidden = !DON_RESULT;
+  if (DON_RESULT) {
+    r.className = "s-result " + DON_RESULT;
+    r.replaceChildren(ic(DON_RESULT === "ok" ? "party-popper" : DON_RESULT === "wait" ? "hourglass" : "circle-alert"), el("span", { text: t("sp." + DON_RESULT) }));
+  }
+  icons();
+}
+async function copyText(txt) {
+  try { await navigator.clipboard.writeText(txt); toast(t("sp.copied")); }
+  catch (e) { prompt(t("sp.copy"), txt); }
+}
+$("#supportForm").elements.namedItem("amount").addEventListener("input", () => renderSupport());
+bindForm($("#supportForm"), async v => {
+  const sp = CFG.support, amount = Math.round(donAmount());
+  if (!(amount >= sp.min && amount <= sp.max)) throw new ApiError("bad_amount");
+  if (!v.name.trim()) throw new ApiError("bad_name");
+  if (!/^\S+@\S+\.\S+$/.test(v.email)) throw new ApiError("bad_email");
+  if ((v.phone || "").replace(/\D/g, "").length < 9) throw new ApiError("bad_phone");
+  const d = await api("support_start", {
+    amount, name: v.name.trim(), email: v.email.trim(), phone: v.phone, message: v.message || "", public: !!v.public, lang,
+  });
+  location.href = d.url; // page de paiement SATIM
+});
 
 /* ============================================================= Routage */
 function go(hash) {
@@ -2730,7 +3368,7 @@ function go(hash) {
   }
   route();
 }
-const VIEWS = { home: "#homeView", results: "#resultsView", world: "#worldView" };
+const VIEWS = { home: "#homeView", results: "#resultsView", world: "#worldView", messages: "#messagesView", support: "#supportView" };
 function showView(name) {
   const was = Object.keys(VIEWS).find(k => !$(VIEWS[k]).hidden) || "home";
   for (const [k, sel] of Object.entries(VIEWS)) $(sel).hidden = k !== name;
@@ -2764,6 +3402,20 @@ function route() {
     if (Date.now() - STATS_AT > 60000) loadStats();
     return;
   }
+  if (name === "messages") {
+    showView("messages");
+    renderInbox();
+    $("#mTitle").focus({ preventScroll: true });
+    // Lien des emails : #messages/<conversation>
+    apiReady.then(() => { loadInbox(); if (+arg) openThread({ tid: +arg }); else if (online && !user) showAuth("login"); });
+    return;
+  }
+  if (name === "soutenir") {
+    showView("support");
+    renderSupport();
+    $("#sTitle").focus({ preventScroll: true });
+    return;
+  }
   showView("home");
   if (name && document.getElementById(name)) requestAnimationFrame(() => document.getElementById(name).scrollIntoView({ behavior: REDUCED ? "auto" : "smooth" }));
 }
@@ -2781,6 +3433,7 @@ document.addEventListener("click", e => {
   if (l && l.closest(".langs")) setLang(l.dataset.lang, true);
 });
 $("#resultsBtn").addEventListener("click", () => go("#resultat"));
+$("#msgBtn").addEventListener("click", () => go("#messages"));
 $("#worldBtn").addEventListener("click", () => go("#monde"));
 $("#wMosaic").addEventListener("click", e => { const tile = e.target.closest("[data-q]"); if (tile) openQDlg(+tile.dataset.q); });
 $("#brandLink").addEventListener("click", e => { e.preventDefault(); go(""); scrollTo({ top: 0, behavior: REDUCED ? "auto" : "smooth" }); });
@@ -2821,6 +3474,9 @@ function renderAll() {
   if (!$("#resultsView").hidden) renderResults();
   if (!$("#worldView").hidden) renderWorld();
   renderTeaser();
+  renderSupport();
+  if (!$("#messagesView").hidden) renderInbox();
+  if (TH) renderThread();
   if (QZ.open) renderQuiz(false);
   renderAccount();
 }
@@ -2857,16 +3513,21 @@ async function boot() {
   if (QBY[pq] && ["-1", "0", "1"].includes(pa)) { setAnswer(pq, +pa); if (pa === "1") RS.expand = pq; }
   const verified = p.get("verified");
   resetToken = p.get("reset");
+  // Retour de la page de paiement (support.php) : ?don=ok|wait|ko#soutenir
+  if (["ok", "wait", "ko"].includes(p.get("don"))) DON_RESULT = p.get("don");
   if (p.toString()) history.replaceState(null, "", location.pathname + location.hash);
 
   setLang(lang);
   route();
   reveal(document);
 
-  try { const me = await api("me"); online = true; user = me.user; csrf = me.csrf; }
+  try { const me = await api("me"); online = true; user = me.user; csrf = me.csrf; setUnread(me.unread); }
   catch (e) { online = false; }
   markReady();
   renderAccount();
+  if (online) { try { CFG = await api("config"); } catch (e) {} }
+  renderSupport();
+  if (DON_RESULT === "ok") setTimeout(() => { toast(t("sp.ok")); burstFrom($("#sTitle"), 1); }, 500);
   if (user) {
     await flush();
     try { applyServer(await api("pull")); } catch (e) {}

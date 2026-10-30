@@ -39,6 +39,17 @@ const MAIL_STR = [
         'unsub_confirm' => 'Confirmer',
         'unsub_done' => 'C\'est fait : vous ne recevrez plus ces emails. Vous pouvez les réactiver à tout moment depuis « Mon compte ».',
         'unsub_bad' => 'Ce lien n\'est plus valide.', 'back' => 'Retour au défi',
+        'msg_subject_owner' => 'Nouveau message à propos de votre récit',
+        'msg_subject_guest' => 'L\'auteur du récit vous a répondu',
+        'msg_intro_owner' => '{name} vous a écrit à propos de votre récit :',
+        'msg_intro_guest' => '{name} vous a répondu :',
+        'msg_author' => 'L\'auteur du récit', 'msg_cta' => 'Lire et répondre',
+        'msg_private' => 'Conversation privée : seuls votre interlocuteur et vous pouvez la lire.',
+        'unsub_msg' => 'Ne plus être prévenu des messages',
+        'unsub_q_msg' => 'Ne plus être prévenu par email des nouveaux messages ?',
+        'thanks_subject' => 'Merci pour votre soutien au défi Impact',
+        'thanks_intro' => 'Votre soutien de {amount} a bien été reçu. Il aide le défi Impact à rester gratuit, sans publicité, et à grandir.',
+        'thanks_sign' => 'Merci du fond du cœur. — Mohammed Dehini',
     ],
     'ar' => [
         'brand' => 'تحدي الأثر', 'tagline' => 'تحدّي التجارب الإيجابية',
@@ -72,6 +83,17 @@ const MAIL_STR = [
         'unsub_confirm' => 'تأكيد',
         'unsub_done' => 'تمّ: لن تصلك هذه الرسائل بعد الآن. يمكنك إعادة تفعيلها في أي وقت من «حسابي».',
         'unsub_bad' => 'هذا الرابط لم يعد صالحاً.', 'back' => 'العودة إلى التحدي',
+        'msg_subject_owner' => 'رسالة جديدة حول قصتك',
+        'msg_subject_guest' => 'ردّ عليك صاحب القصة',
+        'msg_intro_owner' => 'كتب إليك {name} حول قصتك:',
+        'msg_intro_guest' => 'ردّ عليك {name}:',
+        'msg_author' => 'صاحب القصة', 'msg_cta' => 'اقرأ وردّ',
+        'msg_private' => 'محادثة خاصة: لا يطّلع عليها أحد سواكما.',
+        'unsub_msg' => 'إيقاف إشعارات الرسائل',
+        'unsub_q_msg' => 'إيقاف إشعارات البريد عند وصول رسائل جديدة؟',
+        'thanks_subject' => 'شكراً على دعمك لتحدي الأثر',
+        'thanks_intro' => 'وصلنا دعمك بقيمة {amount}. إنه يساعد تحدي الأثر على البقاء مجانياً وبلا إعلانات، وعلى النمو.',
+        'thanks_sign' => 'شكراً من القلب. — محمد دهيني',
     ],
     'en' => [
         'brand' => 'Impact Challenge', 'tagline' => 'The positive experiences challenge',
@@ -105,6 +127,17 @@ const MAIL_STR = [
         'unsub_confirm' => 'Confirm',
         'unsub_done' => 'Done: you won\'t receive these emails anymore. You can turn them back on anytime from “My account”.',
         'unsub_bad' => 'This link is no longer valid.', 'back' => 'Back to the challenge',
+        'msg_subject_owner' => 'New message about your story',
+        'msg_subject_guest' => 'The story\'s author replied to you',
+        'msg_intro_owner' => '{name} wrote to you about your story:',
+        'msg_intro_guest' => '{name} replied to you:',
+        'msg_author' => 'The story\'s author', 'msg_cta' => 'Read and reply',
+        'msg_private' => 'Private conversation: only the two of you can read it.',
+        'unsub_msg' => 'Stop message notifications',
+        'unsub_q_msg' => 'Stop email notifications for new messages?',
+        'thanks_subject' => 'Thank you for supporting the Impact Challenge',
+        'thanks_intro' => 'Your support of {amount} has been received. It helps the Impact Challenge stay free, ad-free, and keep growing.',
+        'thanks_sign' => 'Thank you from the bottom of our hearts. — Mohammed Dehini',
     ],
 ];
 
@@ -308,6 +341,51 @@ function compose_reset(array $user, string $tokenPlain): array
     $text = ms($l, 'hello', ['name' => $user['name']]) . "\n\n" . ms($l, 'reset_intro') . "\n\n" . $href . "\n\n" . ms($l, 'reset_ignore');
     $subject = ms($l, 'reset_subject');
     return [$subject, mail_layout($l, $subject, ms($l, 'reset_intro'), $inner), $text];
+}
+
+/** Avis de nouveau message dans une conversation privée (l'extrait part au seul destinataire). */
+function compose_message(array $to, string $from, string $question, string $body, int $tid, bool $toOwner): array
+{
+    $l = $to['lang'];
+    $f = mail_font($l);
+    $href = site_url() . '?lang=' . $l . '#messages/' . $tid;
+    $intro = ms($l, $toOwner ? 'msg_intro_owner' : 'msg_intro_guest', ['name' => $from]);
+    $excerpt = mb_strimwidth($body, 0, 600, '…');
+    $inner = '<p style="margin:0 0 14px">' . h(ms($l, 'hello', ['name' => $to['name']])) . '</p>'
+        . '<p style="margin:0 0 8px;font:700 13px/1.4 ' . $f . ';color:#6b7185">' . h(typo($l, $question)) . '</p>'
+        . '<p style="margin:0 0 10px">' . h($intro) . '</p>'
+        . '<p style="margin:0;padding:14px 16px;border-radius:14px;background:#f2f4f8;color:#0b1020">' . ugc($excerpt) . '</p>'
+        . mail_button($href, ms($l, 'msg_cta'), MAIL_COLORS['pos'], $l)
+        . '<p style="margin:0;font-size:13px;color:#6b7185">' . h(ms($l, 'msg_private')) . '</p>';
+    $subject = ms($l, $toOwner ? 'msg_subject_owner' : 'msg_subject_guest');
+    $unsub = [ms($l, 'unsub_msg') => unsub_url($to, 'msg'), ms($l, 'unsub_all') => unsub_url($to, 'all')];
+    $text = ms($l, 'hello', ['name' => $to['name']]) . "\n\n" . $question . "\n\n" . $intro . "\n\n« " . $excerpt . " »\n\n"
+        . ms($l, 'msg_cta') . ' : ' . $href . "\n\n" . ms($l, 'msg_private') . "\n\n--\n" . ms($l, 'footer_why') . "\n";
+    foreach ($unsub as $label => $url) $text .= $label . ' : ' . $url . "\n";
+    return [$subject, mail_layout($l, $subject, $intro, $inner, $unsub), $text];
+}
+
+/** Montant en dinars, écrit à la façon de chaque langue. */
+function money_da(string $l, int $n): string
+{
+    if ($l === 'ar') return $n . ' دج';
+    if ($l === 'en') return number_format($n) . ' DZD';
+    return number_format($n, 0, ',', "\u{00A0}") . "\u{00A0}DA";
+}
+
+/** Remerciement après un soutien payé en ligne. */
+function compose_thanks(array $don): array
+{
+    $l = impact_lang($don['lang']);
+    $intro = ms($l, 'thanks_intro', ['amount' => money_da($l, (int) $don['amount'])]);
+    $href = site_url() . '?lang=' . $l;
+    $inner = '<p style="margin:0 0 14px">' . h(ms($l, 'hello', ['name' => $don['name']])) . '</p>'
+        . '<p style="margin:0 0 14px">' . h($intro) . '</p>'
+        . '<p style="margin:0;font-weight:700;color:#079455">' . h(ms($l, 'thanks_sign')) . '</p>'
+        . mail_button($href, ms($l, 'back'), MAIL_COLORS['ink'], $l);
+    $text = ms($l, 'hello', ['name' => $don['name']]) . "\n\n" . $intro . "\n\n" . ms($l, 'thanks_sign') . "\n\n" . $href;
+    $subject = ms($l, 'thanks_subject');
+    return [$subject, mail_layout($l, $subject, $intro, $inner), $text];
 }
 
 function mail_text_footer(array $user): string
