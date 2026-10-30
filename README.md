@@ -15,7 +15,9 @@ Site personnel de Mohammed Dehini.
   vidéo du logo sont dans `elbahiferti/assets/`. Elle ne dépend ni de `data.json` ni de l'admin.
 - `impact/` — le **Défi Impact** (`https://dehini.com/impact/`), arabe / français / anglais :
   1000 questions sur la vie personnelle, sociale et professionnelle (modifiables depuis l'admin),
-  impact mondial, comptes, récits partagés et emails de rappel. Voir la section « Défi Impact »
+  impact mondial, comptes (dont « Continuer avec Google »), récits partagés avec « j'aime / je
+  n'aime pas » et conversations privées avec leur auteur, page « Soutenir » (carte CIB / Edahabia
+  via SofizPay, PayPal, RedotPay, CCP…) et emails de rappel. Voir la section « Défi Impact »
   plus bas.
 
 ## Installation (serveur dzSecurity, compte cPanel `dehini91`)
@@ -76,7 +78,22 @@ résultat à tout moment, raconte ses impacts positifs et découvre, sur ses ré
 « aucun impact », les impacts positifs partagés par les autres. Sans compte, les réponses sont
 gardées sur l'appareil ; avec un compte, elles sont sauvegardées automatiquement. **Raconter un
 impact positif demande un compte** : le texte écrit sans compte est gardé, la fenêtre
-d'inscription s'ouvre, et le récit est publié dès que le compte est créé.
+d'inscription s'ouvre, et le récit est publié dès que le compte est créé. On peut créer son
+compte ou se connecter avec un email et un mot de passe, ou avec **Google** (voir « 6. Connexion
+avec Google »).
+
+Sur chaque récit publié, les visiteurs peuvent mettre **« j'aime » ou « je n'aime pas »** (une
+réaction par personne, modifiable) et **écrire à l'auteur** : la conversation est privée, seuls
+l'auteur et ce lecteur la voient (elle n'apparaît pas dans l'administration). L'auteur voit le prénom du lecteur ;
+le lecteur voit le nom choisi pour le récit (ou « auteur anonyme »), jamais le nom du compte de
+l'auteur ni les adresses email. Écrire demande un compte. Chacun peut bloquer une conversation, et
+reçoit un email quand on lui écrit (au plus un par conversation et par demi-heure, désactivable).
+Les conversations sont dans « Messages » (`https://dehini.com/impact/#messages`, bulle en haut).
+
+La page **Soutenir** (`https://dehini.com/impact/#soutenir`) permet de soutenir la plateforme par
+carte CIB / Edahabia (paiement en ligne SofizPay, sur le même compte que ecom.dehini.com) et
+affiche les autres moyens saisis à la main dans l'admin (PayPal, RedotPay, CCP, BaridiMob…). Voir
+« 7. Soutiens ».
 
 L'**impact mondial** (`https://dehini.com/impact/#monde`, bouton globe en haut) montre les
 résultats de tous les participants : part d'impacts positifs, « vous et le monde », les trois
@@ -88,13 +105,17 @@ déduit du fuseau horaire du navigateur (jamais de l'adresse IP).
   français et anglais.
 - `impact/admin.html` — l'administration du défi, avec **le même mot de passe que `/admin`**
   (lien « Défi Impact » en bas du menu de `/admin`) : ajouter, modifier, masquer ou supprimer les
-  questions (avec leurs chiffres), et modérer les récits.
+  questions (avec leurs chiffres), modérer les récits, régler les soutiens et la connexion Google.
 - `impact/questions.json` — les 1000 questions de départ (340 personnelles, 330 sociales, 330
   professionnelles) dans les trois langues. Elles sont copiées dans la base au premier passage ;
   ensuite **c'est l'admin qui fait foi** et modifier ce fichier n'a plus d'effet (il sert
   seulement de secours si l'API ne répond pas).
-- `impact/api.php` — questions, comptes, synchronisation des réponses, statistiques mondiales,
-  récits, « j'aime », signalements, désabonnement.
+- `impact/api.php` — questions, comptes (dont Google), synchronisation des réponses, statistiques
+  mondiales, récits, « j'aime / je n'aime pas », conversations privées, signalements, soutiens,
+  désabonnement.
+- `impact/support.php` — retour de la page de paiement et notification de SofizPay (chaque
+  paiement est revérifié auprès de SofizPay, montant et compte destinataire compris, avant d'être
+  compté).
 - `impact/cron.php` — emails de rappel (question du jour, impacts positifs des autres).
 - La base de données (SQLite) est créée toute seule au premier passage, **hors de
   `public_html`** : `~/impact-data/impact.sqlite`. Elle n'est jamais dans Git ni écrasée par le
@@ -123,7 +144,7 @@ php ~/public_html/impact/cron.php --test=ton-adresse@gmail.com
 ```
 
 Envoie un exemple de chaque email (question du jour, rappel de récit, impacts positifs,
-bienvenue, mot de passe oublié). Ajouter `--lang=ar` ou `--lang=en` pour les autres langues. Si
+bienvenue, mot de passe oublié, nouveau message, remerciement après un soutien). Ajouter `--lang=ar` ou `--lang=en` pour les autres langues. Si
 la connexion SMTP échoue à cause du certificat, essayer `IMPACT_SMTP_HOST` = le nom du serveur
 cPanel (visible dans « Configurer le client de messagerie »).
 
@@ -172,6 +193,43 @@ langues affichent alors ce texte en attendant la traduction.
   Son numéro n'est jamais réutilisé.
 
 Les changements apparaissent sur le site dès le chargement suivant de la page.
+
+### 6. Connexion avec Google
+
+Onglet « Réglages » de `https://dehini.com/impact/admin.html`, qui rappelle les étapes :
+
+1. Dans [Google Cloud Console → Identifiants](https://console.cloud.google.com/apis/credentials),
+   créer un « ID client OAuth » de type « Application Web » (avec un écran de consentement OAuth
+   « Externe » si Google le demande).
+2. Dans « Origines JavaScript autorisées », ajouter `https://dehini.com`.
+3. Coller l'« ID client » (`…apps.googleusercontent.com`) dans l'admin et enregistrer. Aucun code
+   secret n'est nécessaire.
+
+Le bouton « Continuer avec Google » apparaît alors dans la fenêtre de connexion. Un compte Google
+dont l'adresse existe déjà sur le défi est relié à ce compte (l'adresse est confirmée par Google).
+Un compte créé avec Google n'a pas de mot de passe : « Mot de passe oublié ? » permet d'en choisir
+un si besoin. Vider le champ dans l'admin retire le bouton.
+
+### 7. Soutiens
+
+Onglet « Soutiens » de `https://dehini.com/impact/admin.html` :
+
+- **Paiement par carte (SofizPay)** — coller l'identifiant du compte SofizPay (celui de
+  ecom.dehini.com : il commence par « G » et compte 56 caractères ; on le trouve dans
+  l'application SofizPay, ou dans Paramètres → SofizPay sur ecom.dehini.com), puis cocher
+  « Activer ». Le mode test permet d'essayer sans débit réel. Si SofizPay demande une adresse de
+  notification, l'admin l'affiche (`https://dehini.com/impact/support.php?hook=1`).
+- **Autres moyens** — PayPal, RedotPay, CCP, BaridiMob ou autre : titulaire, identifiant ou
+  numéro, lien `https://` facultatif (ex. `https://paypal.me/…`) et note. Ils s'affichent tels quels
+  sur la page « Soutenir » avec un bouton « Copier » ; ces versements ne sont pas suivis par le
+  site.
+- **Liste des soutiens par carte** — montant, nom, email, téléphone, message, statut (payé, en
+  attente, échoué). « Revérifier auprès de SofizPay » relance la vérification d'un paiement en
+  attente. Chaque soutien payé déclenche un email de remerciement au donateur et un avis à
+  `IMPACT_NOTIFY_EMAIL`.
+
+Montants acceptés : de 100 à 200 000 DA. Seul le prénom (et l'initiale du nom) des donateurs qui
+l'ont accepté apparaît sur le mur des soutiens ; jamais les montants.
 
 ## Utiliser l'admin
 
@@ -223,5 +281,13 @@ pas mis à jour automatiquement après coup.
 - Défi Impact : mots de passe des comptes hachés (`password_hash`), sessions et liens (confirmation,
   mot de passe oublié valable 1 h, désabonnement) à jetons aléatoires, jeton anti-CSRF sur les
   écritures d'un compte connecté, limites d'essais par IP (connexion, inscription, récits, « j'aime »,
-  signalements), IP jamais stockées en clair. `impact/config.php`, `impact/cron.php` et
-  `impact/lib/` sont bloqués en accès direct ; la base est hors de `public_html`.
+  messages, signalements, soutiens), IP jamais stockées en clair. `impact/config.php`,
+  `impact/cron.php` et `impact/lib/` sont bloqués en accès direct ; la base est hors de
+  `public_html`.
+- Connexion Google : le jeton d'identité est vérifié sur le serveur (signature avec les clés
+  publiques de Google, émetteur, destinataire, expiration, adresse confirmée).
+- Conversations privées : seuls leurs deux participants peuvent les lire ou y écrire ; une
+  personne bloquée ne peut plus écrire.
+- Soutiens par carte : les données de carte ne passent jamais par le site (page de paiement SATIM) ;
+  un paiement n'est compté qu'après vérification serveur auprès de SofizPay (statut, montant et
+  compte destinataire), jamais sur la seule foi du retour navigateur ou de la notification.

@@ -100,6 +100,10 @@ if (isset($opts['test'])) {
     deliver($u, compose_digest($u, $stories), 'digest', $dry);
     deliver($u, compose_welcome($u), 'all', $dry);
     deliver($u, compose_reset($u, str_repeat('0', 48)), 'all', $dry);
+    $sample = ['fr' => '(exemple) Votre récit m\'a beaucoup touché, merci de l\'avoir partagé.',
+        'ar' => '(مثال) أثّرت فيّ قصتك كثيراً، شكراً لأنك شاركتها.', 'en' => '(example) Your story really moved me, thank you for sharing it.'][$lang];
+    deliver($u, compose_message($u, 'Nadia', qtext($q, $lang), $sample, 0, true), 'msg', $dry);
+    deliver($u, compose_thanks(['lang' => $lang, 'name' => 'Test', 'amount' => 1000]), 'all', $dry);
     Smtp::close();
     exit(0);
 }

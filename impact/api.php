@@ -6,28 +6,36 @@
  * d'erreur sont traduits côté page. Les écritures (POST) exigent l'en-tête
  * X-Requested-With: impact, et pour un compte connecté le jeton X-CSRF.
  *
- *   GET  me                       session courante -> {user|null, csrf}
+ *   GET  me                       session courante -> {user|null, csrf, unread}
+ *   GET  config                   connexion Google, moyens de soutien, mur des soutiens
  *   GET  questions                questions actives (cache navigateur par ETag)
  *   GET  stats                    compteurs publics, répartition par question, pays, profils
  *   POST answers   {device,set,reset?,tz}  enregistre des réponses (compte ou appareil)
  *   GET  pull                     réponses + récits du compte connecté
  *   POST signup    {name,email,password,lang,opt_daily,opt_digest,device,stories}
  *   POST login     {email,password,device,stories}
- *   POST logout | prefs {name,lang,opt_daily,opt_digest} | resend_verify | delete_account {password}
+ *   POST google    {credential,device,stories,lang}   connexion / inscription avec Google
+ *   POST logout | prefs {name,lang,opt_daily,opt_digest,opt_msg} | resend_verify | delete_account {password|confirm}
  *   POST forgot    {email,lang}   |  reset {token,password}
  *   GET  verify    ?token=        lien de confirmation (redirige vers la page)
  *   GET  feed      ?offset&limit&lang          derniers récits publiés
  *   GET  picks     ?q=1,2,3&lang               un récit au hasard par question
  *   GET  stories   ?q=&exclude=&limit&lang     « voir plus » sur une question
  *   POST story_save {qid,exp,imp,author,anon,public,lang,id?} (compte requis) | story_delete {id}
- *   POST like {id,undo?} | report {id}
- *   GET|POST unsub ?type=daily|digest|all&token=   page de désabonnement
- *   mod_* : administration (récits et questions), réservée à la session de /admin
+ *   POST react {id,v:1|-1|0,device} | report {id}
+ *   GET  inbox | thread ?id=|?sid=   conversations privées (auteur du récit <-> un lecteur)
+ *   POST msg_send {tid|sid,body} | thread_block {tid,on}
+ *   POST support_start {amount,name,email,phone,message,public,lang}  -> URL de paiement SofizPay
+ *        (retour et notification de paiement : support.php)
+ *   GET|POST unsub ?type=daily|digest|msg|all&token=   page de désabonnement
+ *   mod_* : administration (récits, questions, soutiens, réglages), réservée à la session de /admin
  */
 declare(strict_types=1);
 
 require __DIR__ . '/lib/bootstrap.php';
 require __DIR__ . '/lib/mailer.php';
+require __DIR__ . '/lib/google.php';
+require __DIR__ . '/lib/sofizpay.php';
 
 header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: same-origin');
@@ -187,7 +195,23 @@ function public_user(array $u): array
     return [
         'name' => $u['name'], 'email' => $u['email'], 'lang' => $u['lang'],
         'verified' => (bool) $u['verified'], 'opt_daily' => (bool) $u['opt_daily'], 'opt_digest' => (bool) $u['opt_digest'],
+        'opt_msg' => (bool) $u['opt_msg'], 'google' => !empty($u['google_sub']), 'has_pass' => (string) $u['pass'] !== '',
     ];
+}
+
+/** Réponse commune après une connexion (mot de passe, Google, lien de réinitialisation). */
+function signed_in(array $u, string $csrf, array $extra = []): void
+{
+    $uid = (int) $u['id'];
+    ok(['user' => public_user($u), 'csrf' => $csrf, 'answers' => user_answers($uid), 'stories' => own_stories($uid),
+        'reactions' => user_reactions('u' . $uid), 'unread' => unread_count($uid)] + $extra);
+}
+
+function user_row(int $uid): array
+{
+    $s = db()->prepare('SELECT * FROM users WHERE id = ?');
+    $s->execute([$uid]);
+    return $s->fetch() ?: [];
 }
 
 /* ------------------------------------------------------------ réponses */
@@ -225,6 +249,16 @@ function merge_device(int $uid, $device): void
         $pdo->prepare('INSERT OR REPLACE INTO people (pid, cc, seen) VALUES (?, ?, ?)')->execute(['u' . $uid, $p['cc'], $p['seen']]);
         $pdo->prepare('DELETE FROM people WHERE pid = ?')->execute(['d' . $device]);
     }
+    // « J'aime / je n'aime pas » donnés sans compte : ils passent au compte (sans compter deux fois).
+    $s = $pdo->prepare('SELECT sid, v FROM reactions WHERE pid = ?');
+    $s->execute(['d' . $device]);
+    $has = $pdo->prepare('SELECT 1 FROM reactions WHERE sid = ? AND pid = ?');
+    foreach ($s->fetchAll() as $r) {
+        $has->execute([$r['sid'], 'u' . $uid]);
+        if ($has->fetchColumn()) react_adjust((int) $r['sid'], (int) $r['v'], 0);
+        else $pdo->prepare('UPDATE reactions SET pid = ? WHERE sid = ? AND pid = ?')->execute(['u' . $uid, $r['sid'], 'd' . $device]);
+    }
+    $pdo->prepare('DELETE FROM reactions WHERE pid = ?')->execute(['d' . $device]);
 }
 
 /** Rattache au compte les récits publiés sans compte (prouvés par leur jeton d'édition). */
@@ -240,17 +274,135 @@ function claim_stories(int $uid, $list): void
 
 /* ------------------------------------------------------------- récits */
 
-const STORY_PUBLIC_COLS = 'id, qid, author, exp, imp, lang, likes, created';
+const STORY_PUBLIC_COLS = 'id, qid, uid, author, exp, imp, lang, likes, dislikes, created';
 
 function story_row(array $r, bool $own = false): array
 {
     $o = [
         'id' => (int) $r['id'], 'qid' => (int) $r['qid'], 'author' => (string) $r['author'],
         'exp' => (string) $r['exp'], 'imp' => (string) $r['imp'], 'lang' => (string) $r['lang'],
-        'likes' => (int) $r['likes'], 'created' => (int) $r['created'],
+        'likes' => (int) $r['likes'], 'dislikes' => (int) ($r['dislikes'] ?? 0), 'created' => (int) $r['created'],
     ];
-    if ($own) $o['status'] = (string) $r['status'];
+    if ($own) {
+        $o['status'] = (string) $r['status'];
+    } else {
+        // dm : on peut écrire à l'auteur (récit lié à un compte, qui n'est pas celui du lecteur).
+        $me = current_user();
+        $uid = (int) ($r['uid'] ?? 0);
+        $o['dm'] = $uid > 0 && (!$me || (int) $me['id'] !== $uid);
+        if ($me && (int) $me['id'] === $uid) $o['self'] = true;
+    }
     return $o;
+}
+
+/* --------------------------------------------------- j'aime / je n'aime pas */
+
+/** Met à jour les compteurs d'un récit quand une réaction passe de $old à $new (1, -1 ou 0). */
+function react_adjust(int $sid, int $old, int $new): void
+{
+    $dl = ($new === 1 ? 1 : 0) - ($old === 1 ? 1 : 0);
+    $dd = ($new === -1 ? 1 : 0) - ($old === -1 ? 1 : 0);
+    if ($dl || $dd) db()->prepare('UPDATE stories SET likes = MAX(0, likes + ?), dislikes = MAX(0, dislikes + ?) WHERE id = ?')->execute([$dl, $dd, $sid]);
+}
+
+/** Réactions d'un participant : objet {id du récit: 1|-1}. */
+function user_reactions(string $pid): object
+{
+    $s = db()->prepare('SELECT sid, v FROM reactions WHERE pid = ?');
+    $s->execute([$pid]);
+    $out = [];
+    foreach ($s as $r) $out[(string) $r['sid']] = (int) $r['v'];
+    return (object) $out;
+}
+
+/** Retire toutes les réactions d'un participant (suppression du compte). */
+function drop_reactions(string $pid): void
+{
+    $s = db()->prepare('SELECT sid, v FROM reactions WHERE pid = ?');
+    $s->execute([$pid]);
+    foreach ($s->fetchAll() as $r) react_adjust((int) $r['sid'], (int) $r['v'], 0);
+    db()->prepare('DELETE FROM reactions WHERE pid = ?')->execute([$pid]);
+}
+
+/* ------------------------------------------------- conversations privées */
+
+/** Messages non lus, toutes conversations confondues. */
+function unread_count(int $uid): int
+{
+    $s = db()->prepare('SELECT COUNT(*) FROM messages m JOIN threads t ON t.id = m.tid
+        WHERE m.uid != ? AND ((t.owner = ? AND m.id > t.owner_read) OR (t.guest = ? AND m.id > t.guest_read))');
+    $s->execute([$uid, $uid, $uid]);
+    return (int) $s->fetchColumn();
+}
+
+/** Récit auquel ce lecteur peut écrire (publié, lié à un compte, pas le sien). */
+function dm_story(int $sid, int $uid): array
+{
+    $s = db()->prepare("SELECT id, qid, uid, author, exp FROM stories WHERE id = ? AND status = 'published'");
+    $s->execute([$sid]);
+    $st = $s->fetch();
+    if (!$st) fail('not_found', 404);
+    if (!$st['uid']) fail('no_dm');
+    if ((int) $st['uid'] === $uid) fail('own');
+    return $st;
+}
+
+/** Conversation dont l'utilisateur est l'un des deux participants (sinon : introuvable). */
+function thread_row(int $tid, int $uid): array
+{
+    $s = db()->prepare('SELECT t.*, s.qid, s.exp, s.author, ug.name AS guest_name
+        FROM threads t JOIN stories s ON s.id = t.sid JOIN users ug ON ug.id = t.guest
+        WHERE t.id = ? AND (t.owner = ? OR t.guest = ?)');
+    $s->execute([$tid, $uid, $uid]);
+    $t = $s->fetch();
+    if (!$t) fail('not_found', 404);
+    return $t;
+}
+
+/**
+ * Vue d'une conversation pour l'un de ses participants. L'auteur voit le prénom du
+ * lecteur ; le lecteur voit le nom choisi pour le récit (vide = auteur anonyme),
+ * jamais le nom du compte de l'auteur.
+ */
+function thread_view(array $t, int $uid): array
+{
+    $role = (int) $t['owner'] === $uid ? 'owner' : 'guest';
+    $read = (int) $t[$role . '_read'];
+    $s = db()->prepare('SELECT COUNT(*) FROM messages WHERE tid = ? AND uid != ? AND id > ?');
+    $s->execute([$t['id'], $uid, $read]);
+    $unread = (int) $s->fetchColumn();
+    $s = db()->prepare('SELECT uid, body, created FROM messages WHERE tid = ? ORDER BY id DESC LIMIT 1');
+    $s->execute([$t['id']]);
+    $last = $s->fetch();
+    $blocked = (int) $t['blocked'];
+    return [
+        'id' => (int) $t['id'], 'sid' => (int) $t['sid'], 'qid' => (int) $t['qid'], 'role' => $role,
+        'other' => $role === 'owner' ? (string) $t['guest_name'] : (string) $t['author'],
+        'exp' => mb_strimwidth((string) $t['exp'], 0, 180, '…'),
+        'last' => $last ? ['body' => mb_strimwidth((string) $last['body'], 0, 140, '…'), 'mine' => (int) $last['uid'] === $uid, 'at' => (int) $last['created']] : null,
+        'unread' => $unread, 'updated' => (int) $t['updated'],
+        'blocked' => $blocked ? ($blocked === $uid ? 'me' : 'other') : null,
+    ];
+}
+
+/** Prévient le destinataire par email (adresse confirmée, au plus un email par conversation et par demi-heure). */
+function notify_message(array $t, int $from, string $body): void
+{
+    $toOwner = (int) $t['owner'] !== $from;
+    $to = user_row($toOwner ? (int) $t['owner'] : (int) $t['guest']);
+    $col = $toOwner ? 'owner_mailed' : 'guest_mailed';
+    if (!$to || !$to['verified'] || !$to['opt_msg'] || (int) $t[$col] > time() - 1800) return;
+    $l = impact_lang($to['lang']);
+    $to['lang'] = $l;
+    $name = $toOwner ? (string) $t['guest_name'] : ((string) $t['author'] !== '' ? (string) $t['author'] : ms($l, 'msg_author'));
+    $question = qtext(questions(true)[(int) $t['qid']] ?? [], $l);
+    try {
+        [$subj, $html, $text] = compose_message($to, $name, $question, $body, (int) $t['id'], $toOwner);
+        send_mail((string) $to['email'], $subj, $html, $text, unsub_url($to, 'msg'));
+        db()->prepare("UPDATE threads SET $col = ? WHERE id = ?")->execute([time(), $t['id']]);
+    } catch (Throwable $e) {
+        error_log('impact message mail: ' . $e->getMessage());
+    }
 }
 
 function own_stories(int $uid): array
@@ -313,7 +465,7 @@ function page_unsub(bool $isPost): void
 {
     header('Content-Type: text/html; charset=utf-8');
     $tok = (string) ($_GET['token'] ?? '');
-    $type = in_array($_GET['type'] ?? '', ['daily', 'digest', 'all'], true) ? $_GET['type'] : 'all';
+    $type = in_array($_GET['type'] ?? '', ['daily', 'digest', 'msg', 'all'], true) ? $_GET['type'] : 'all';
     $u = null;
     if (preg_match('/^[a-f0-9]{48}$/', $tok)) {
         $s = db()->prepare('SELECT * FROM users WHERE utoken = ?');
@@ -323,7 +475,8 @@ function page_unsub(bool $isPost): void
     $l = $u ? impact_lang($u['lang']) : impact_lang($_GET['lang'] ?? 'fr');
     $done = false;
     if ($u && $isPost) {
-        $sql = ['daily' => 'opt_daily = 0', 'digest' => 'opt_digest = 0', 'all' => 'opt_daily = 0, opt_digest = 0'][$type];
+        $sql = ['daily' => 'opt_daily = 0', 'digest' => 'opt_digest = 0', 'msg' => 'opt_msg = 0',
+            'all' => 'opt_daily = 0, opt_digest = 0, opt_msg = 0'][$type];
         db()->prepare("UPDATE users SET $sql WHERE id = ?")->execute([$u['id']]);
         $done = true;
     }
@@ -347,6 +500,30 @@ function page_unsub(bool $isPost): void
 
 /* --------------------------------------------------------- modération */
 
+/** Réglages affichés dans l'admin (connexion Google, SofizPay, moyens de soutien manuels). */
+function settings_view(): array
+{
+    $u = parse_url(site_url());
+    $origin = ($u['scheme'] ?? 'https') . '://' . ($u['host'] ?? 'dehini.com') . (isset($u['port']) ? ':' . $u['port'] : '');
+    return [
+        'google_client_id' => setting('google_client_id'), 'google_in_config' => IMPACT_GOOGLE_CLIENT_ID !== '',
+        'origin' => $origin,
+        'sofiz_account' => sofiz_account(), 'sofiz_on' => setting('sofiz_on') === '1', 'sofiz_sandbox' => sofiz_sandbox(),
+        'sofiz_ready' => sofiz_active(), 'webhook' => site_url() . 'support.php?hook=1',
+        'methods' => support_methods(),
+    ];
+}
+
+function donation_view(array $d): array
+{
+    return [
+        'id' => (int) $d['id'], 'amount' => (int) $d['amount'], 'name' => (string) $d['name'], 'email' => (string) $d['email'],
+        'phone' => (string) $d['phone'], 'message' => (string) $d['message'], 'public' => (bool) $d['public'],
+        'lang' => (string) $d['lang'], 'status' => (string) $d['status'], 'note' => (string) $d['note'],
+        'created' => (int) $d['created'], 'paid' => (int) $d['paid'], 'cib' => (string) $d['cib'],
+    ];
+}
+
 function require_admin(): void
 {
     global $isPost;
@@ -369,7 +546,26 @@ switch ($action) {
 
     case 'me': {
         $u = current_user();
-        ok(['user' => $u ? public_user($u) : null, 'csrf' => $u ? $u['s_csrf'] : null]);
+        ok(['user' => $u ? public_user($u) : null, 'csrf' => $u ? $u['s_csrf'] : null, 'unread' => $u ? unread_count((int) $u['id']) : 0]);
+        break;
+    }
+
+    case 'config': {
+        // Mur des soutiens : prénom et initiale seulement, et uniquement pour qui l'a accepté.
+        $wall = [];
+        foreach ($pdo->query("SELECT name FROM donations WHERE status = 'paid' AND public = 1 ORDER BY paid DESC LIMIT 24") as $r) {
+            $w = preg_split('/\s+/u', trim((string) $r['name'])) ?: [];
+            $wall[] = $w[0] . (count($w) > 1 ? ' ' . mb_substr((string) end($w), 0, 1) . '.' : '');
+        }
+        ok([
+            'google'  => google_client_id() ?: null,
+            'support' => [
+                'card' => sofiz_active(), 'test' => sofiz_active() && sofiz_sandbox(),
+                'min' => DON_MIN, 'max' => DON_MAX, 'amounts' => DON_AMOUNTS, 'methods' => support_methods(),
+                'count' => (int) $pdo->query("SELECT COUNT(*) FROM donations WHERE status = 'paid'")->fetchColumn(),
+                'wall' => $wall,
+            ],
+        ]);
         break;
     }
 
@@ -462,7 +658,9 @@ switch ($action) {
 
     case 'pull': {
         $u = require_user();
-        ok(['user' => public_user($u), 'answers' => user_answers((int) $u['id']), 'stories' => own_stories((int) $u['id'])]);
+        $uid = (int) $u['id'];
+        ok(['user' => public_user($u), 'answers' => user_answers($uid), 'stories' => own_stories($uid),
+            'reactions' => user_reactions('u' . $uid), 'unread' => unread_count($uid)]);
         break;
     }
 
@@ -486,9 +684,7 @@ switch ($action) {
         merge_device($uid, $b['device'] ?? '');
         claim_stories($uid, $b['stories'] ?? []);
         $csrf = start_session($uid);
-        $s = $pdo->prepare('SELECT * FROM users WHERE id = ?');
-        $s->execute([$uid]);
-        $u = $s->fetch();
+        $u = user_row($uid);
         $mailed = true;
         try {
             [$subj, $html, $text] = compose_welcome($u);
@@ -497,8 +693,7 @@ switch ($action) {
             $mailed = false;
             error_log('impact welcome: ' . $e->getMessage());
         }
-        ok(['user' => public_user($u), 'csrf' => $csrf, 'mailed' => $mailed,
-            'answers' => user_answers($uid), 'stories' => own_stories($uid)]);
+        signed_in($u, $csrf, ['mailed' => $mailed]);
         break;
     }
 
@@ -510,6 +705,7 @@ switch ($action) {
         $s = $pdo->prepare('SELECT * FROM users WHERE email = ?');
         $s->execute([$email]);
         $u = $s->fetch();
+        if ($u && (string) $u['pass'] === '' && $u['google_sub']) fail('use_google', 401); // compte créé avec Google
         if (!$u || !password_verify($pass, $u['pass'])) {
             usleep(350000);
             fail('bad_login', 401);
@@ -521,7 +717,48 @@ switch ($action) {
         merge_device($uid, $b['device'] ?? '');
         claim_stories($uid, $b['stories'] ?? []);
         $csrf = start_session($uid);
-        ok(['user' => public_user($u), 'csrf' => $csrf, 'answers' => user_answers($uid), 'stories' => own_stories($uid)]);
+        signed_in($u, $csrf);
+        break;
+    }
+
+    case 'google': {
+        if (!$isPost) fail('generic', 405);
+        rate('google', 20, 900);
+        $cid = google_client_id();
+        if ($cid === '') fail('google_off');
+        $c = google_verify((string) ($b['credential'] ?? ''), $cid);
+        if (!$c) fail('google_bad', 401);
+        $sub = (string) $c['sub'];
+        $email = strtolower(trim((string) $c['email']));
+        $created = false;
+        $s = $pdo->prepare('SELECT * FROM users WHERE google_sub = ?');
+        $s->execute([$sub]);
+        $u = $s->fetch();
+        if (!$u) {
+            $s = $pdo->prepare('SELECT * FROM users WHERE email = ?');
+            $s->execute([$email]);
+            $u = $s->fetch();
+            if ($u) {
+                // Même adresse, confirmée par Google : les deux façons de se connecter mènent au même compte.
+                $pdo->prepare('UPDATE users SET google_sub = ?, verified = 1, vtoken = NULL WHERE id = ?')->execute([$sub, $u['id']]);
+            } else {
+                if (strlen($email) > 190 || !filter_var($email, FILTER_VALIDATE_EMAIL)) fail('bad_email');
+                $name = str_clean((string) ($c['given_name'] ?? ($c['name'] ?? '')), 40);
+                if ($name === '') $name = str_clean((string) strstr($email, '@', true), 40);
+                $pdo->prepare("INSERT INTO users (email, name, pass, lang, created, verified, utoken, opt_daily, opt_digest, google_sub) VALUES (?, ?, '', ?, ?, 1, ?, ?, ?, ?)")
+                    ->execute([$email, $name, impact_lang($b['lang'] ?? 'fr'), time(), token(),
+                        array_key_exists('opt_daily', $b) && empty($b['opt_daily']) ? 0 : 1,
+                        array_key_exists('opt_digest', $b) && empty($b['opt_digest']) ? 0 : 1, $sub]);
+                $u = ['id' => (int) $pdo->lastInsertId()];
+                $created = true;
+            }
+            $u = user_row((int) $u['id']);
+        }
+        $uid = (int) $u['id'];
+        merge_device($uid, $b['device'] ?? '');
+        claim_stories($uid, $b['stories'] ?? []);
+        $csrf = start_session($uid);
+        signed_in($u, $csrf, ['created' => $created]);
         break;
     }
 
@@ -543,7 +780,7 @@ switch ($action) {
             $vals[] = $n;
         }
         if (isset($b['lang'])) { $sets[] = 'lang = ?'; $vals[] = impact_lang($b['lang']); }
-        foreach (['opt_daily', 'opt_digest'] as $k) {
+        foreach (['opt_daily', 'opt_digest', 'opt_msg'] as $k) {
             if (array_key_exists($k, $b)) { $sets[] = "$k = ?"; $vals[] = empty($b[$k]) ? 0 : 1; }
         }
         if ($sets) {
@@ -612,21 +849,25 @@ switch ($action) {
         $pdo->prepare('UPDATE users SET pass = ?, rhash = NULL, rexp = 0, verified = 1, vtoken = NULL WHERE id = ?')
             ->execute([password_hash($pass, PASSWORD_DEFAULT), $uid]);
         $pdo->prepare('DELETE FROM sessions WHERE uid = ?')->execute([$uid]);
-        $u['verified'] = 1;
         $csrf = start_session($uid);
-        ok(['user' => public_user($u), 'csrf' => $csrf, 'answers' => user_answers($uid), 'stories' => own_stories($uid)]);
+        signed_in(user_row($uid), $csrf);
         break;
     }
 
     case 'delete_account': {
         $u = require_user();
-        if (!password_verify((string) ($b['password'] ?? ''), $u['pass'])) {
+        // Compte créé avec Google (sans mot de passe) : la session et le jeton CSRF suffisent, avec une confirmation.
+        $okDel = (string) $u['pass'] === '' ? !empty($b['confirm']) : password_verify((string) ($b['password'] ?? ''), $u['pass']);
+        if (!$okDel) {
             usleep(350000);
             fail('bad_login', 401);
         }
+        drop_reactions('u' . $u['id']);
         $pdo->prepare('DELETE FROM answers WHERE pid = ?')->execute(['u' . $u['id']]);
         $pdo->prepare('DELETE FROM people WHERE pid = ?')->execute(['u' . $u['id']]);
-        $pdo->prepare('DELETE FROM users WHERE id = ?')->execute([$u['id']]); // sessions, récits : ON DELETE CASCADE
+        $pdo->prepare('UPDATE donations SET uid = NULL WHERE uid = ?')->execute([$u['id']]);
+        // sessions, récits, conversations et messages : ON DELETE CASCADE
+        $pdo->prepare('DELETE FROM users WHERE id = ?')->execute([$u['id']]);
         setcookie(SID_COOKIE, '', cookie_opts(time() - 3600));
         ok();
         break;
@@ -733,17 +974,163 @@ switch ($action) {
         break;
     }
 
-    case 'like': {
+    case 'react': {
         if (!$isPost) fail('generic', 405);
+        $u = user_for_write();
+        $device = $b['device'] ?? '';
+        if (!$u && !valid_device($device)) fail('generic');
+        $pid = $u ? 'u' . $u['id'] : 'd' . $device;
         $id = (int) ($b['id'] ?? 0);
-        $undo = !empty($b['undo']);
-        rate(($undo ? 'unlike:' : 'like:') . $id, 1, 30 * 86400);
-        $pdo->prepare($undo
-            ? "UPDATE stories SET likes = likes - 1 WHERE id = ? AND likes > 0 AND status = 'published'"
-            : "UPDATE stories SET likes = likes + 1 WHERE id = ? AND status = 'published'")->execute([$id]);
-        $s = $pdo->prepare('SELECT likes FROM stories WHERE id = ?');
+        $v = (int) ($b['v'] ?? 0);
+        if (!in_array($v, [-1, 0, 1], true)) fail('generic');
+        rate('react', 300, 3600);
+        // Sans compte, rien n'empêche d'inventer des appareils : on limite par connexion et par récit.
+        // (Pas pour les comptes : une seule réaction par personne, et beaucoup partagent la même IP mobile.)
+        if (!$u) rate('react:' . $id, 20, 86400);
+        $s = $pdo->prepare("SELECT uid FROM stories WHERE id = ? AND status = 'published'");
         $s->execute([$id]);
-        ok(['likes' => (int) $s->fetchColumn()]);
+        $st = $s->fetch();
+        if (!$st) fail('not_found', 404);
+        if ($u && (int) $st['uid'] === (int) $u['id']) fail('own');
+        $pdo->beginTransaction();
+        $s = $pdo->prepare('SELECT v FROM reactions WHERE sid = ? AND pid = ?');
+        $s->execute([$id, $pid]);
+        $old = (int) ($s->fetchColumn() ?: 0);
+        if ($v === 0) $pdo->prepare('DELETE FROM reactions WHERE sid = ? AND pid = ?')->execute([$id, $pid]);
+        else $pdo->prepare('INSERT OR REPLACE INTO reactions (sid, pid, v) VALUES (?, ?, ?)')->execute([$id, $pid, $v]);
+        react_adjust($id, $old, $v);
+        $pdo->commit();
+        $s = $pdo->prepare('SELECT likes, dislikes FROM stories WHERE id = ?');
+        $s->execute([$id]);
+        $c = $s->fetch();
+        ok(['likes' => (int) $c['likes'], 'dislikes' => (int) $c['dislikes'], 'v' => $v]);
+        break;
+    }
+
+    /* ------------------------------------------ conversations privées */
+
+    case 'inbox': {
+        $u = require_user();
+        $uid = (int) $u['id'];
+        $s = $pdo->prepare('SELECT t.*, s.qid, s.exp, s.author, ug.name AS guest_name
+            FROM threads t JOIN stories s ON s.id = t.sid JOIN users ug ON ug.id = t.guest
+            WHERE t.owner = ? OR t.guest = ? ORDER BY t.updated DESC LIMIT 100');
+        $s->execute([$uid, $uid]);
+        $items = array_map(function ($t) use ($uid) { return thread_view($t, $uid); }, $s->fetchAll());
+        ok(['items' => $items, 'unread' => unread_count($uid)]);
+        break;
+    }
+
+    case 'thread': {
+        $u = require_user();
+        $uid = (int) $u['id'];
+        $tid = (int) ($_GET['id'] ?? 0);
+        if (!$tid) {
+            // Le lecteur ouvre la conversation depuis un récit : elle n'existe peut-être pas encore.
+            $sid = (int) ($_GET['sid'] ?? 0);
+            $s = $pdo->prepare('SELECT id FROM threads WHERE sid = ? AND guest = ?');
+            $s->execute([$sid, $uid]);
+            $tid = (int) ($s->fetchColumn() ?: 0);
+            if (!$tid) {
+                $st = dm_story($sid, $uid);
+                ok(['thread' => null, 'messages' => [], 'story' => ['id' => (int) $st['id'], 'qid' => (int) $st['qid'],
+                    'author' => (string) $st['author'], 'exp' => mb_strimwidth((string) $st['exp'], 0, 180, '…')]]);
+            }
+        }
+        $t = thread_row($tid, $uid);
+        $s = $pdo->prepare('SELECT id, uid, body, created FROM messages WHERE tid = ? ORDER BY id DESC LIMIT 300');
+        $s->execute([$tid]);
+        $msgs = array_reverse(array_map(function ($m) use ($uid) {
+            return ['id' => (int) $m['id'], 'mine' => (int) $m['uid'] === $uid, 'body' => (string) $m['body'], 'at' => (int) $m['created']];
+        }, $s->fetchAll()));
+        $role = (int) $t['owner'] === $uid ? 'owner' : 'guest';
+        if ($msgs) {
+            $pdo->prepare("UPDATE threads SET {$role}_read = ? WHERE id = ?")->execute([end($msgs)['id'], $tid]);
+            $t[$role . '_read'] = end($msgs)['id'];
+        }
+        ok(['thread' => thread_view($t, $uid), 'messages' => $msgs, 'unread' => unread_count($uid)]);
+        break;
+    }
+
+    case 'msg_send': {
+        if (!$isPost) fail('generic', 405);
+        $u = user_for_write();
+        if (!$u) fail('login_required', 401); // une conversation privée demande un compte
+        $uid = (int) $u['id'];
+        $body = str_clean((string) ($b['body'] ?? ''), 1000);
+        if (mb_strlen($body) < 2) fail('too_short');
+        rate('msg', 60, 3600);
+        $s = $pdo->prepare('SELECT COUNT(*) FROM messages WHERE uid = ? AND created > ?');
+        $s->execute([$uid, time() - 3600]);
+        if ((int) $s->fetchColumn() >= 40) fail('rate', 429);
+        $now = time();
+        $tid = (int) ($b['tid'] ?? 0);
+        if (!$tid) {
+            // Seul le lecteur ouvre une conversation ; l'auteur du récit y répond.
+            $st = dm_story((int) ($b['sid'] ?? 0), $uid);
+            $pdo->prepare('INSERT OR IGNORE INTO threads (sid, owner, guest, created, updated) VALUES (?, ?, ?, ?, ?)')
+                ->execute([$st['id'], $st['uid'], $uid, $now, $now]);
+            $s = $pdo->prepare('SELECT id FROM threads WHERE sid = ? AND guest = ?');
+            $s->execute([$st['id'], $uid]);
+            $tid = (int) $s->fetchColumn();
+        }
+        $t = thread_row($tid, $uid);
+        if ((int) $t['blocked']) fail('blocked', 403);
+        $pdo->prepare('INSERT INTO messages (tid, uid, body, created) VALUES (?, ?, ?, ?)')->execute([$tid, $uid, $body, $now]);
+        $mid = (int) $pdo->lastInsertId();
+        $role = (int) $t['owner'] === $uid ? 'owner' : 'guest';
+        $pdo->prepare("UPDATE threads SET updated = ?, {$role}_read = ? WHERE id = ?")->execute([$now, $mid, $tid]);
+        notify_message($t, $uid, $body);
+        ok(['thread' => thread_view(thread_row($tid, $uid), $uid), 'message' => ['id' => $mid, 'mine' => true, 'body' => $body, 'at' => $now]]);
+        break;
+    }
+
+    case 'thread_block': {
+        if (!$isPost) fail('generic', 405);
+        $u = require_user();
+        $uid = (int) $u['id'];
+        $t = thread_row((int) ($b['tid'] ?? 0), $uid);
+        // Chacun peut bloquer la conversation ; seul celui qui l'a bloquée peut la rouvrir.
+        if (!empty($b['on'])) $pdo->prepare('UPDATE threads SET blocked = ? WHERE id = ? AND blocked = 0')->execute([$uid, $t['id']]);
+        else $pdo->prepare('UPDATE threads SET blocked = 0 WHERE id = ? AND blocked = ?')->execute([$t['id'], $uid]);
+        ok(['thread' => thread_view(thread_row((int) $t['id'], $uid), $uid)]);
+        break;
+    }
+
+    /* ------------------------------------------------------- soutien */
+
+    case 'support_start': {
+        if (!$isPost) fail('generic', 405);
+        if (!sofiz_active()) fail('pay_off');
+        $u = user_for_write();
+        rate('support', 10, 3600);
+        $amount = (int) ($b['amount'] ?? 0);
+        if ($amount < DON_MIN || $amount > DON_MAX) fail('bad_amount');
+        $name = str_clean((string) ($b['name'] ?? ''), 60);
+        if ($name === '') fail('bad_name');
+        $email = strtolower(trim((string) ($b['email'] ?? '')));
+        if (strlen($email) > 190 || !filter_var($email, FILTER_VALIDATE_EMAIL)) fail('bad_email');
+        $phone = sofiz_phone((string) ($b['phone'] ?? ''));
+        if (strlen($phone) < 10 || strlen($phone) > 16) fail('bad_phone');
+        $lang = impact_lang($b['lang'] ?? 'fr');
+        $ref = token(12);
+        $pdo->prepare('INSERT INTO donations (ref, amount, name, email, phone, message, public, lang, uid, created) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+            ->execute([$ref, $amount, $name, $email, $phone, str_clean((string) ($b['message'] ?? ''), 300),
+                empty($b['public']) ? 0 : 1, $lang, $u ? $u['id'] : null, time()]);
+        $id = (int) $pdo->lastInsertId();
+        $res = sofiz_create([
+            'amount' => $amount, 'name' => $name, 'phone' => $phone, 'email' => $email, 'lang' => $lang,
+            'return_url'  => site_url() . 'support.php?r=' . $ref,
+            'webhook_url' => site_url() . 'support.php?hook=1',
+            'reference'   => 'DON-' . $id,
+            'memo'        => 'Soutien Défi Impact',
+        ]);
+        if (!$res['ok']) {
+            $pdo->prepare("UPDATE donations SET status = 'failed', note = ? WHERE id = ?")->execute([mb_substr('Création refusée : ' . ($res['message'] ?? ''), 0, 200), $id]);
+            fail('pay_unavailable', 502);
+        }
+        $pdo->prepare('UPDATE donations SET tx = ?, cib = ? WHERE id = ?')->execute([$res['transaction_id'], $res['cib_transaction_id'], $id]);
+        ok(['url' => $res['payment_url']]);
         break;
     }
 
@@ -866,6 +1253,86 @@ switch ($action) {
         $pdo->commit();
         questions_changed();
         ok();
+        break;
+    }
+
+    /* ------------------------------------------- soutiens et réglages (admin) */
+
+    case 'mod_settings': {
+        require_admin();
+        ok(['settings' => settings_view()]);
+        break;
+    }
+
+    case 'mod_settings_save': {
+        if (!$isPost) fail('generic', 405);
+        require_admin();
+        if (array_key_exists('google_client_id', $b)) {
+            $g = trim((string) $b['google_client_id']);
+            if ($g !== '' && !preg_match('/^[0-9]+-[a-z0-9]+\.apps\.googleusercontent\.com$/', $g)) {
+                fail('Identifiant client Google invalide : il ressemble à 1234567890-abcdef.apps.googleusercontent.com');
+            }
+            setting_set('google_client_id', $g);
+        }
+        if (array_key_exists('sofiz_account', $b)) {
+            $a = strtoupper((string) preg_replace('/\s+/', '', (string) $b['sofiz_account']));
+            if ($a !== '' && !preg_match(SOFIZ_ACCOUNT_RE, $a)) {
+                fail('Identifiant SofizPay invalide : il commence par « G » et compte 56 caractères (vous en avez saisi ' . strlen($a) . ').');
+            }
+            setting_set('sofiz_account', $a);
+        }
+        if (array_key_exists('sofiz_sandbox', $b)) setting_set('sofiz_sandbox', empty($b['sofiz_sandbox']) ? '0' : '1');
+        if (array_key_exists('sofiz_on', $b)) {
+            if (!empty($b['sofiz_on']) && !preg_match(SOFIZ_ACCOUNT_RE, sofiz_account())) {
+                fail("Renseignez d'abord l'identifiant du compte SofizPay.");
+            }
+            setting_set('sofiz_on', empty($b['sofiz_on']) ? '0' : '1');
+        }
+        if (array_key_exists('methods', $b)) {
+            if (!is_array($b['methods']) || count($b['methods']) > 10) fail('10 moyens de soutien au maximum.');
+            $clean = [];
+            foreach ($b['methods'] as $m) {
+                if (!is_array($m)) continue;
+                $type = in_array($m['type'] ?? '', SUPPORT_TYPES, true) ? $m['type'] : 'other';
+                $value = str_clean((string) ($m['value'] ?? ''), 120);
+                $link = trim((string) ($m['link'] ?? ''));
+                if ($value === '' && $link === '') fail('Chaque moyen de soutien a besoin d\'un identifiant ou d\'un lien.');
+                if ($link !== '' && (!preg_match('~^https://~i', $link) || !filter_var($link, FILTER_VALIDATE_URL) || strlen($link) > 200)) {
+                    fail('Lien invalide : il doit commencer par https:// (ex. https://paypal.me/votre-nom).');
+                }
+                $clean[] = ['type' => $type, 'holder' => str_clean((string) ($m['holder'] ?? ''), 80), 'value' => $value,
+                    'link' => $link, 'note' => str_clean((string) ($m['note'] ?? ''), 200)];
+            }
+            setting_set('support_methods', (string) json_encode($clean, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        }
+        ok(['settings' => settings_view()]);
+        break;
+    }
+
+    case 'mod_donations': {
+        require_admin();
+        $status = (string) ($_GET['status'] ?? '');
+        $where = in_array($status, ['paid', 'pending', 'failed'], true) ? 'WHERE status = ' . $pdo->quote($status) : '';
+        $items = array_map('donation_view', $pdo->query("SELECT * FROM donations $where ORDER BY id DESC LIMIT 200")->fetchAll());
+        $totals = ['paid' => 0, 'pending' => 0, 'failed' => 0, 'sum' => 0];
+        foreach ($pdo->query('SELECT status, COUNT(*) AS n, SUM(amount) AS s FROM donations GROUP BY status') as $r) {
+            if (isset($totals[$r['status']])) $totals[$r['status']] = (int) $r['n'];
+            if ($r['status'] === 'paid') $totals['sum'] = (int) $r['s'];
+        }
+        ok(['items' => $items, 'totals' => $totals]);
+        break;
+    }
+
+    case 'mod_donation_check': {
+        if (!$isPost) fail('generic', 405);
+        require_admin();
+        $s = $pdo->prepare('SELECT * FROM donations WHERE id = ?');
+        $s->execute([(int) ($b['id'] ?? 0)]);
+        $d = $s->fetch();
+        if (!$d) fail('Soutien introuvable.', 404);
+        donation_confirm($d);
+        $s->execute([(int) $d['id']]);
+        ok(['item' => donation_view($s->fetch())]);
         break;
     }
 

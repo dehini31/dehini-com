@@ -39,7 +39,7 @@
   .kpi{background:#fff;border-radius:16px;padding:16px;box-shadow:var(--shadow)}
   .kpi b{display:block;font-size:1.6rem;line-height:1.1}
   .kpi span{font-size:.8rem;color:var(--muted)}
-  .main-tabs{display:flex;gap:4px;padding:4px;border-radius:999px;background:#fff;box-shadow:var(--shadow);width:max-content;max-width:100%;margin-bottom:20px}
+  .main-tabs{display:flex;gap:4px;padding:4px;border-radius:999px;background:#fff;box-shadow:var(--shadow);width:max-content;max-width:100%;margin-bottom:20px;overflow-x:auto}
   .main-tabs a{padding:9px 18px;border-radius:999px;font-weight:700;font-size:.9rem;color:var(--muted);text-decoration:none}
   .main-tabs a.on{background:var(--ink);color:#fff}
   .tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px}
@@ -81,11 +81,33 @@
   .imp{white-space:pre-line;background:var(--pos-50);color:#0a5c37;border-radius:12px;padding:10px 12px;font-size:.92rem}
   .meta{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:12px;font-size:.8rem;color:var(--muted)}
   .empty{text-align:center;color:var(--muted);padding:40px;background:#fff;border-radius:18px}
+  .panel{background:#fff;border-radius:18px;padding:20px 22px;box-shadow:var(--shadow);margin-bottom:16px}
+  .panel h2{font-size:1.1rem;margin-bottom:4px}
+  .panel > p{color:var(--muted);font-size:.88rem;margin-bottom:14px}
+  .panel ol{color:var(--ink-soft);font-size:.88rem;margin:0 0 14px 20px;display:grid;gap:4px}
+  .fld{display:grid;gap:4px;font-size:.82rem;font-weight:700;color:var(--ink-soft);margin-bottom:10px}
+  .fld input,.fld select{width:100%;padding:10px 12px;border:1px solid var(--paper-200);border-radius:10px;font-weight:400;color:var(--ink);background:#fff}
+  .fld input.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.88rem}
+  .checks{display:flex;flex-wrap:wrap;gap:8px 20px;margin:4px 0 14px}
+  .checks label{display:flex;align-items:center;gap:8px;font-size:.88rem}
+  .state{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:.78rem;font-weight:700}
+  .state.on{background:var(--pos-50);color:var(--pos-600)} .state.off{background:var(--paper-100);color:var(--ink-soft)} .state.warn{background:var(--warn-50);color:var(--warn)}
+  .copyline{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:.84rem;color:var(--muted);margin-bottom:12px}
+  .copyline code{font-family:ui-monospace,monospace;font-size:.82rem;background:var(--paper-50);border:1px solid var(--paper-200);padding:5px 9px;border-radius:8px;color:var(--ink);overflow-wrap:anywhere}
+  .m-row{display:grid;grid-template-columns:190px 1fr 1fr;gap:8px 10px;padding:14px;border:1px solid var(--paper-200);border-radius:14px;margin-bottom:10px}
+  .m-row .fld{margin:0}
+  .m-row .wide{grid-column:span 2}
+  .m-row .rm{align-self:end;justify-self:start}
+  @media(max-width:700px){.m-row{grid-template-columns:1fr}.m-row .wide{grid-column:auto}}
+  .don-top{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 14px}
+  .don-top b{font-size:1.25rem}
+  .b-paid{background:var(--pos-50);color:var(--pos-600)} .b-failed{background:var(--neg-50);color:var(--neg-600)}
   .toast{position:fixed;bottom:20px;left:50%;translate:-50% 0;background:var(--ink);color:#fff;padding:12px 18px;border-radius:14px;font-size:.9rem;box-shadow:var(--shadow);z-index:9}
 </style>
 </head>
 <body>
-<!-- Administration du défi Impact : questions (ajout, modification, masquage, suppression) et modération des récits.
+<!-- Administration du défi Impact : questions (ajout, modification, masquage, suppression), modération des récits,
+     soutiens (SofizPay et moyens manuels) et réglages (connexion Google).
      Connexion avec le mot de passe de /admin (même session). -->
 <div id="loginView" hidden>
   <form id="loginForm">
@@ -106,6 +128,8 @@
   <nav class="main-tabs">
     <a href="#questions" data-tab="questions">Questions</a>
     <a href="#recits" data-tab="recits">Récits</a>
+    <a href="#soutiens" data-tab="soutiens">Soutiens</a>
+    <a href="#reglages" data-tab="reglages">Réglages</a>
   </nav>
 
   <section id="tab-questions" hidden>
@@ -125,6 +149,52 @@
   <section id="tab-recits" hidden>
     <div class="tabs" id="sTabs"></div>
     <div id="sList"></div>
+  </section>
+
+  <section id="tab-soutiens" hidden>
+    <div class="kpis" id="dKpis"></div>
+    <form class="panel" id="sofizForm">
+      <h2>Paiement par carte CIB / Edahabia (SofizPay) <span class="state off" id="sofizState"></span></h2>
+      <p>Le même compte SofizPay que sur ecom.dehini.com : copiez son identifiant depuis l'application SofizPay (Recevoir / Compte), ou depuis Paramètres → SofizPay sur ecom.dehini.com.</p>
+      <label class="fld">Identifiant du compte SofizPay (commence par « G », 56 caractères)
+        <input class="mono" name="sofiz_account" autocomplete="off" spellcheck="false" placeholder="GDNS27ISCGOIJFXC6CM4O5SVHVJPSWR42QEBWUFF24N5VVHGW73ZSJNQ"></label>
+      <div class="checks">
+        <label><input type="checkbox" name="sofiz_on"> Activer le paiement par carte sur le site</label>
+        <label><input type="checkbox" name="sofiz_sandbox"> Mode test (bac à sable, aucune carte débitée)</label>
+      </div>
+      <p class="copyline">Adresse de notification (webhook), si SofizPay la demande : <code id="sofizHook"></code> <button class="btn btn-line btn-sm" type="button" data-copy="#sofizHook">Copier</button></p>
+      <button class="btn btn-ink" type="submit">Enregistrer</button>
+      <p class="err"></p>
+    </form>
+    <form class="panel" id="methodsForm">
+      <h2>Autres moyens (saisis à la main)</h2>
+      <p>PayPal, RedotPay, CCP… : ces informations s'affichent telles quelles sur la page « Soutenir », avec un bouton « Copier ». Aucun paiement n'est suivi automatiquement par ces moyens.</p>
+      <div id="mRows"></div>
+      <div class="actions">
+        <button class="btn btn-line" type="button" id="mAdd">+ Ajouter un moyen</button>
+        <button class="btn btn-ink" type="submit">Enregistrer les moyens</button>
+      </div>
+      <p class="err"></p>
+    </form>
+    <div class="tabs" id="dTabs"></div>
+    <div id="dList"></div>
+  </section>
+
+  <section id="tab-reglages" hidden>
+    <form class="panel" id="googleForm">
+      <h2>Connexion avec Google <span class="state off" id="googleState"></span></h2>
+      <p>Affiche le bouton « Continuer avec Google » dans la fenêtre de connexion du défi.</p>
+      <ol>
+        <li>Ouvrez <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener">Google Cloud Console → Identifiants</a> (créez un projet si besoin, et l'écran de consentement OAuth en mode « Externe »).</li>
+        <li>« Créer des identifiants » → « ID client OAuth » → type « Application Web ».</li>
+        <li>Dans « Origines JavaScript autorisées », ajoutez : <code id="gOrigin"></code> <button class="btn btn-line btn-sm" type="button" data-copy="#gOrigin">Copier</button></li>
+        <li>Copiez l'« ID client » obtenu ci-dessous (aucun code secret n'est nécessaire).</li>
+      </ol>
+      <label class="fld">ID client OAuth
+        <input class="mono" name="google_client_id" autocomplete="off" spellcheck="false" placeholder="1234567890-abcdef.apps.googleusercontent.com"></label>
+      <button class="btn btn-ink" type="submit">Enregistrer</button>
+      <p class="err"></p>
+    </form>
   </section>
 </div>
 
@@ -318,7 +388,7 @@ function storyItem(s) {
       el("span", { text: s.author || "Anonyme" }),
       el("span", { text: s.email || "sans compte" }),
       el("span", { text: LANG[s.lang] || s.lang }),
-      el("span", { text: "♥ " + s.likes }),
+      el("span", { text: "👍 " + s.likes + " · 👎 " + (s.dislikes || 0) }),
       s.reports ? el("span", { text: "⚑ " + s.reports + " signalement(s)" }) : null,
       el("span", { text: new Date(s.created * 1000).toLocaleString("fr-FR") })),
     el("div", { class: "actions" },
@@ -328,12 +398,115 @@ function storyItem(s) {
       act("Supprimer", "btn-neg", async () => { if (confirm("Supprimer définitivement ce récit ?")) { await call("api.php?action=mod_delete", { id: s.id }); loadStories(); } })));
 }
 
+/* ------------------------------------------------------- Soutiens et réglages */
+const TYPES = { paypal: "PayPal", redotpay: "RedotPay", ccp: "CCP (Algérie Poste)", baridimob: "BaridiMob", other: "Autre" };
+const DSTATUS = { paid: "Payé", pending: "En attente", failed: "Échoué" };
+let SET = null, dStatus = "";
+const da = n => n.toLocaleString("fr-FR") + " DA";
+
+async function loadSettings() {
+  SET = (await call("api.php?action=mod_settings")).settings;
+  renderSettings();
+}
+function renderSettings() {
+  const sf = $("#sofizForm"), gf = $("#googleForm");
+  sf.elements.sofiz_account.value = SET.sofiz_account;
+  sf.elements.sofiz_on.checked = SET.sofiz_on;
+  sf.elements.sofiz_sandbox.checked = SET.sofiz_sandbox;
+  $("#sofizHook").textContent = SET.webhook;
+  const st = $("#sofizState");
+  st.className = "state " + (SET.sofiz_ready ? (SET.sofiz_sandbox ? "warn" : "on") : "off");
+  st.textContent = SET.sofiz_ready ? (SET.sofiz_sandbox ? "Activé · mode test" : "Activé") : "Désactivé";
+  gf.elements.google_client_id.value = SET.google_client_id;
+  $("#gOrigin").textContent = SET.origin;
+  const on = SET.google_client_id || SET.google_in_config;
+  $("#googleState").className = "state " + (on ? "on" : "off");
+  $("#googleState").textContent = on ? "Activée" : "Désactivée";
+  $("#mRows").replaceChildren(...SET.methods.map(methodRow));
+  if (!SET.methods.length) $("#mRows").append(el("p", { class: "empty", style: "padding:20px", text: "Aucun moyen manuel pour l'instant." }));
+}
+function methodRow(m) {
+  const row = el("div", { class: "m-row" },
+    el("label", { class: "fld" }, "Type", el("select", { name: "type" }, ...Object.entries(TYPES).map(([k, v]) => el("option", { value: k, selected: m.type === k }, v)))),
+    el("label", { class: "fld" }, "Titulaire", el("input", { name: "holder", maxlength: 80, value: m.holder || "", placeholder: "Mohammed Dehini" })),
+    el("label", { class: "fld" }, "Identifiant / numéro / email", el("input", { name: "value", maxlength: 120, value: m.value || "", placeholder: "ex. 0012345678 clé 90" })),
+    el("label", { class: "fld wide" }, "Lien (facultatif, https://…)", el("input", { name: "link", type: "url", maxlength: 200, value: m.link || "", placeholder: "https://paypal.me/votre-nom" })),
+    el("label", { class: "fld" }, "Note (facultatif)", el("input", { name: "note", maxlength: 200, value: m.note || "", placeholder: "ex. RIP, UID…" })),
+    el("button", { class: "btn btn-neg btn-sm rm", type: "button", onclick: () => { row.remove(); } }, "Retirer"));
+  return row;
+}
+$("#mAdd").addEventListener("click", () => {
+  const box = $("#mRows");
+  if (box.querySelectorAll(".m-row").length >= 10) return toast("10 moyens au maximum.");
+  box.querySelector(".empty")?.remove();
+  box.append(methodRow({ type: "paypal" }));
+  box.lastElementChild.querySelector("[name=holder]").focus();
+});
+async function saveSettings(form, body, msg) {
+  const btn = form.querySelector("button[type=submit]"), err = form.querySelector(".err");
+  err.textContent = "";
+  btn.disabled = true;
+  try {
+    SET = (await call("api.php?action=mod_settings_save", body)).settings;
+    renderSettings();
+    toast(msg);
+  } catch (e) { err.textContent = e.message; }
+  btn.disabled = false;
+}
+$("#sofizForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const f = e.target;
+  saveSettings(f, { sofiz_account: f.elements.sofiz_account.value, sofiz_sandbox: f.elements.sofiz_sandbox.checked, sofiz_on: f.elements.sofiz_on.checked }, "Paiement par carte enregistré.");
+});
+$("#methodsForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const methods = [...$("#mRows").querySelectorAll(".m-row")].map(r => Object.fromEntries(["type", "holder", "value", "link", "note"].map(k => [k, r.querySelector(`[name=${k}]`).value.trim()])));
+  saveSettings(e.target, { methods }, "Moyens de soutien enregistrés.");
+});
+$("#googleForm").addEventListener("submit", e => {
+  e.preventDefault();
+  saveSettings(e.target, { google_client_id: e.target.elements.google_client_id.value }, "Connexion Google enregistrée.");
+});
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-copy]");
+  if (!b) return;
+  try { await navigator.clipboard.writeText($(b.dataset.copy).textContent); toast("Copié."); } catch (err) { prompt("Copier :", $(b.dataset.copy).textContent); }
+});
+
+async function loadDonations() {
+  const d = await call("api.php?action=mod_donations" + (dStatus ? "&status=" + dStatus : ""));
+  const t = d.totals;
+  $("#dKpis").replaceChildren(...[[da(t.sum), "collectés en ligne"], [t.paid, "soutiens payés"], [t.pending, "en attente"], [t.failed, "échoués ou abandonnés"]]
+    .map(([n, l]) => el("div", { class: "kpi" }, el("b", { text: n }), el("span", { text: l }))));
+  $("#dTabs").replaceChildren(...[["", "Tous"], ["paid", "Payés"], ["pending", "En attente"], ["failed", "Échoués"]].map(([k, l]) =>
+    el("button", { type: "button", "aria-pressed": String(k === dStatus), onclick: () => { dStatus = k; loadDonations(); } }, l)));
+  $("#dList").replaceChildren(...(d.items.length ? d.items.map(donItem) : [el("p", { class: "empty", text: "Aucun soutien par carte pour l'instant." })]));
+}
+function donItem(x) {
+  return el("article", { class: "item" },
+    el("div", { class: "don-top" }, el("b", { text: da(x.amount) }), el("span", { class: "badge b-" + x.status, text: DSTATUS[x.status] || x.status }),
+      el("span", { text: x.name }), el("span", { text: x.email }), el("span", { text: x.phone })),
+    x.message ? el("p", { class: "exp", dir: "auto", style: "margin:10px 0 0", text: "« " + x.message + " »" }) : null,
+    el("div", { class: "meta" },
+      el("span", { text: "Créé le " + new Date(x.created * 1000).toLocaleString("fr-FR") }),
+      x.paid ? el("span", { text: "Payé le " + new Date(x.paid * 1000).toLocaleString("fr-FR") }) : null,
+      el("span", { text: x.public ? "Prénom affiché sur le mur" : "Anonyme sur le mur" }),
+      el("span", { text: LANG[x.lang] || x.lang }),
+      x.cib ? el("span", { text: "Transaction " + x.cib }) : null,
+      x.note ? el("span", { text: x.note }) : null),
+    x.status === "pending" && x.cib ? el("div", { class: "actions" }, el("button", { class: "btn btn-line btn-sm", type: "button", onclick: async ev => {
+      ev.currentTarget.disabled = true;
+      try { const r = await call("api.php?action=mod_donation_check", { id: x.id }); toast("Statut : " + (DSTATUS[r.item.status] || r.item.status)); } catch (e2) { toast(e2.message); }
+      loadDonations();
+    } }, "Revérifier auprès de SofizPay")) : null);
+}
+
 /* ------------------------------------------------------------ Navigation */
+const TABS = ["questions", "recits", "soutiens", "reglages"];
 function showTab() {
-  const tab = location.hash === "#recits" ? "recits" : "questions";
+  const tab = TABS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "questions";
   document.querySelectorAll(".main-tabs a").forEach(a => a.classList.toggle("on", a.dataset.tab === tab));
-  $("#tab-questions").hidden = tab !== "questions";
-  $("#tab-recits").hidden = tab !== "recits";
+  for (const k of TABS) $("#tab-" + k).hidden = tab !== k;
 }
 addEventListener("hashchange", showTab);
 
@@ -342,7 +515,7 @@ async function showApp() {
   $("#loginView").hidden = true;
   $("#appView").hidden = false;
   showTab();
-  try { await Promise.all([loadStories(), loadQuestions()]); } catch (e) { if (e.status !== 401) toast(e.message); }
+  try { await Promise.all([loadStories(), loadQuestions(), loadSettings(), loadDonations()]); } catch (e) { if (e.status !== 401) toast(e.message); }
 }
 
 $("#loginForm").addEventListener("submit", async e => {

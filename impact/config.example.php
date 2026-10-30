@@ -21,8 +21,11 @@ define('IMPACT_SMTP_PASS', 'mot-de-passe-du-compte-email');
 // Modération des récits : 'auto' (publiés tout de suite, les liens/numéros
 // passent en attente) ou 'manual' (tout récit est validé dans admin.html).
 define('IMPACT_MODERATION', 'auto');
-// Reçoit un email quand un récit attend une validation (vide = aucun).
+// Reçoit un email quand un récit attend une validation ou qu'un soutien est payé (vide = aucun).
 define('IMPACT_NOTIFY_EMAIL', 'ton-adresse@example.com');
+
+// La connexion Google et le paiement SofizPay se règlent dans admin.html (onglets
+// « Réglages » et « Soutiens ») : rien à mettre ici.
 
 // Rythme des emails.
 define('IMPACT_DAILY_HOUR', 9);     // la question du jour part à partir de 9 h (heure d'Alger)
