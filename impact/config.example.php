@@ -19,7 +19,7 @@ define('IMPACT_SMTP_USER', 'impact@dehini.com');
 define('IMPACT_SMTP_PASS', 'mot-de-passe-du-compte-email');
 
 // Modération des récits : 'auto' (publiés tout de suite, les liens/numéros
-// passent en attente) ou 'manual' (tout récit est validé dans moderation.html).
+// passent en attente) ou 'manual' (tout récit est validé dans admin.html).
 define('IMPACT_MODERATION', 'auto');
 // Reçoit un email quand un récit attend une validation (vide = aucun).
 define('IMPACT_NOTIFY_EMAIL', 'ton-adresse@example.com');
