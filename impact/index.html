@@ -1,0 +1,2389 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#0b1020">
+<title>Défi Impact — partagez vos expériences positives · dehini.com</title>
+<meta name="description" content="120 questions sur votre vie personnelle, sociale et professionnelle. Pour chacune : impact négatif, aucun ou positif ? Découvrez votre empreinte et inspirez les autres avec vos expériences positives.">
+<link rel="canonical" href="https://dehini.com/impact/">
+<link rel="alternate" hreflang="fr" href="https://dehini.com/impact/?lang=fr">
+<link rel="alternate" hreflang="ar" href="https://dehini.com/impact/?lang=ar">
+<link rel="alternate" hreflang="en" href="https://dehini.com/impact/?lang=en">
+<link rel="alternate" hreflang="x-default" href="https://dehini.com/impact/">
+<meta property="og:title" content="Défi Impact — partagez vos expériences positives">
+<meta property="og:description" content="120 questions sur votre vie. Impact négatif, aucun ou positif ? Découvrez votre empreinte et inspirez les autres.">
+<meta property="og:url" content="https://dehini.com/impact/">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="fr_DZ">
+<meta property="og:locale:alternate" content="ar_DZ">
+<meta property="og:locale:alternate" content="en_US">
+<meta property="og:image" content="https://dehini.com/impact/assets/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Readex+Pro:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.460.0/dist/umd/lucide.min.js" defer></script>
+<style>
+  /* ============ Jetons ============ */
+  :root{
+    --ink:#0b1020; --ink-2:#141a2e; --ink-3:#20283f; --ink-4:#2d3756; --ink-soft:#4b5470;
+    --paper:#fff; --paper-50:#f7f7f9; --paper-100:#f0f1f4; --paper-200:#e3e5ea; --muted:#6b7185; --muted-2:#9aa3b5;
+    /* Les trois impacts */
+    --neg:#ff5d5d; --neg-600:#d93b3b; --neg-50:#fff1f1; --neg-100:#ffd9d9;
+    --none:#8b93a7; --none-600:#5f677c; --none-50:#f2f4f8; --none-100:#e1e5ee;
+    --pos:#17b26a; --pos-600:#07854b; --pos-50:#eafaf2; --pos-100:#c6f1db;
+    /* Les trois univers */
+    --perso:#7c5cff; --perso-50:#f2efff; --social:#2f5bff; --social-50:#eef2ff; --pro:#e8860c; --pro-50:#fff5e6;
+    --cobalt:#2f5bff; --cobalt-600:#1f44d6; --sun:#ffc53d;
+    --f-display:"Bricolage Grotesque","DM Sans",system-ui,sans-serif;
+    --f-body:"DM Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+    --f-ar:"Readex Pro",system-ui,-apple-system,"Segoe UI",sans-serif;
+    --r-sm:10px; --r:16px; --r-lg:22px; --r-xl:30px;
+    --shadow:0 1px 2px rgba(11,16,32,.05),0 12px 32px -16px rgba(11,16,32,.2);
+    --shadow-lg:0 40px 80px -32px rgba(11,16,32,.5);
+    --max:1180px; --gutter:clamp(16px,4vw,32px); --head:66px;
+    --ease:cubic-bezier(.22,1,.36,1);
+  }
+  html[lang=ar]{--f-display:var(--f-ar);--f-body:var(--f-ar)}
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth;scroll-padding-top:calc(var(--head) + 16px);-webkit-text-size-adjust:100%}
+  html.lock{overflow:hidden}
+  body{font-family:var(--f-body);background:var(--paper-50);color:var(--ink);line-height:1.6;font-size:1rem;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  a{color:inherit;text-decoration:none}
+  img,svg{display:block;max-width:100%}
+  button,input,textarea,select{font:inherit;color:inherit}
+  button{background:none;border:0;cursor:pointer}
+  [hidden]{display:none!important}
+  h1,h2,h3{font-family:var(--f-display);line-height:1.08;letter-spacing:-.025em;font-weight:800}
+  html[lang=ar] h1,html[lang=ar] h2,html[lang=ar] h3{letter-spacing:0;line-height:1.3;font-weight:700}
+  :focus-visible{outline:3px solid var(--cobalt);outline-offset:3px;border-radius:8px}
+  .wrap{max-width:var(--max);margin-inline:auto;padding-inline:var(--gutter)}
+  .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  i[data-lucide],svg.lucide{width:20px;height:20px;stroke-width:2;flex-shrink:0}
+  [dir=rtl] .flip{transform:scaleX(-1)}
+  .skip{position:absolute;inset-inline-start:12px;top:-60px;z-index:100;background:#fff;color:var(--ink);padding:10px 16px;border-radius:10px;font-weight:700}
+  .skip:focus{top:12px}
+
+  /* ============ Boutons ============ */
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;padding:13px 22px;border-radius:999px;font-weight:700;font-size:.95rem;border:1.5px solid transparent;transition:transform .25s var(--ease),background .2s,box-shadow .25s,border-color .2s,color .2s;white-space:nowrap;line-height:1.2}
+  .btn:hover{transform:translateY(-2px)}
+  .btn:active{transform:translateY(0) scale(.98)}
+  .btn:disabled{opacity:.55;cursor:default;transform:none}
+  .btn-lg{padding:16px 28px;font-size:1.02rem}
+  .btn-sm{padding:9px 15px;font-size:.86rem}
+  .btn-xs{padding:7px 12px;font-size:.8rem;gap:6px}
+  .btn-xs svg{width:15px;height:15px}
+  .btn-pos{background:var(--pos);color:#fff;box-shadow:0 16px 34px -14px rgba(23,178,106,.75)}
+  .btn-pos:hover{background:var(--pos-600)}
+  .btn-ink{background:var(--ink);color:#fff}
+  .btn-ink:hover{background:var(--ink-3);box-shadow:0 14px 26px -14px rgba(11,16,32,.7)}
+  .btn-white{background:#fff;color:var(--ink)}
+  .btn-white:hover{background:var(--pos-50)}
+  .btn-glass{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.2);color:#fff}
+  .btn-glass:hover{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.4)}
+  .btn-line{background:#fff;border-color:var(--paper-200);color:var(--ink)}
+  .btn-line:hover{border-color:var(--ink-soft)}
+  .btn-line.danger{color:var(--neg-600)}
+  .btn-line.danger:hover{border-color:var(--neg)}
+  .btn-danger{background:var(--neg-600);color:#fff}
+  .link{color:var(--cobalt);font-weight:700;text-decoration:underline;text-underline-offset:3px;font-size:.9rem}
+
+  /* Motif signature : trois points négatif · aucun · positif */
+  .dots3{display:inline-flex;gap:4px;flex-shrink:0}
+  .dots3 i{display:block;width:8px;height:8px;border-radius:50%;background:var(--neg)}
+  .dots3 i:nth-child(2){background:var(--none)}
+  .dots3 i:nth-child(3){background:var(--pos)}
+  .kicker{display:inline-flex;align-items:center;gap:10px;font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.2em;color:var(--pos-600);margin-bottom:16px}
+  html[lang=ar] .kicker{letter-spacing:0;font-size:.92rem;text-transform:none}
+  .head{max-width:720px;margin-bottom:clamp(32px,5vw,52px)}
+  .head.center{text-align:center;margin-inline:auto}
+  .head h2{font-size:clamp(1.9rem,4vw,3rem)}
+  .head .sub{margin-top:14px;font-size:1.08rem;color:var(--muted)}
+  h2 em,h3 em{font-style:normal;background:linear-gradient(transparent 60%,rgba(23,178,106,.25) 60%);padding-inline:.06em}
+  .sec{padding-block:clamp(72px,10vw,120px);position:relative}
+
+  /* Pastilles d'univers */
+  .chip{display:inline-flex;align-items:center;gap:6px;padding:5px 11px 5px 9px;border-radius:999px;font-size:.78rem;font-weight:700;background:var(--paper-100);color:var(--ink-soft)}
+  [dir=rtl] .chip{padding:5px 9px 5px 11px}
+  .chip svg{width:14px;height:14px}
+  .chip.perso{background:var(--perso-50);color:var(--perso)}
+  .chip.social{background:var(--social-50);color:var(--social)}
+  .chip.pro{background:var(--pro-50);color:#b86700}
+
+  /* ============ En-tête ============ */
+  .site-head{position:sticky;top:0;z-index:60;height:var(--head);background:rgba(11,16,32,.82);backdrop-filter:saturate(1.4) blur(16px);-webkit-backdrop-filter:saturate(1.4) blur(16px);color:#fff;border-bottom:1px solid rgba(255,255,255,.07)}
+  .site-head .wrap{height:100%;display:flex;align-items:center;gap:14px}
+  .brand{display:flex;align-items:center;gap:10px;flex-shrink:0;margin-inline-end:auto}
+  .brand-mark{width:38px;height:38px;flex-shrink:0}
+  .brand-txt{display:flex;flex-direction:column;line-height:1.05}
+  .brand-txt b{font-family:var(--f-display);font-weight:800;font-size:1.06rem;letter-spacing:-.01em}
+  .brand-txt small{font-size:.7rem;color:var(--muted-2);letter-spacing:.04em}
+  .nav{display:flex;gap:2px}
+  .nav a{font-size:.88rem;font-weight:500;color:#c9cfdf;padding:8px 12px;border-radius:999px;transition:background .2s,color .2s}
+  .nav a:hover{color:#fff;background:rgba(255,255,255,.08)}
+  .langs{display:inline-flex;padding:3px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1)}
+  .langs button{min-width:34px;height:30px;padding:0 9px;border-radius:999px;font-size:.78rem;font-weight:700;color:#c9cfdf;transition:background .2s,color .2s}
+  .langs button[data-lang=ar]{font-family:var(--f-ar);font-size:.92rem}
+  .langs button[aria-pressed=true]{background:#fff;color:var(--ink)}
+  .head-btn{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 14px;border-radius:999px;font-size:.86rem;font-weight:700;transition:background .2s}
+  .head-btn.ghost{color:#fff;background:rgba(255,255,255,.08)}
+  .head-btn.ghost:hover{background:rgba(255,255,255,.15)}
+  .head-btn.solid{background:var(--pos);color:#fff}
+  .head-btn.solid:hover{background:var(--pos-600)}
+  .head-btn svg{width:18px;height:18px}
+  .avatar{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,var(--pos),var(--cobalt));color:#fff;font-size:.8rem;font-weight:800;flex-shrink:0;text-transform:uppercase}
+  .head-btn.me{padding-inline-start:6px;background:rgba(255,255,255,.08);color:#fff}
+  @media(max-width:980px){.nav{display:none}}
+  @media(max-width:600px){.head-btn .lbl{display:none}.head-btn{padding:0 11px}.head-btn.me{padding:0 6px}.brand-txt small{display:none}}
+  @media(max-width:480px){.brand-txt{display:none}}
+
+  /* ============ Hero ============ */
+  .hero{position:relative;background:var(--ink);color:#fff;overflow:hidden;isolation:isolate}
+  .hero::before{content:"";position:absolute;inset:-20% -10% auto auto;width:70vw;height:70vw;max-width:900px;max-height:900px;background:radial-gradient(circle,rgba(47,91,255,.32),transparent 62%);z-index:-2}
+  .hero::after{content:"";position:absolute;inset:auto auto -30% -15%;width:60vw;height:60vw;max-width:780px;max-height:780px;background:radial-gradient(circle,rgba(23,178,106,.26),transparent 62%);z-index:-2}
+  .fx-canvas{position:absolute;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none}
+  .hero-grid{display:grid;grid-template-columns:1.08fr .92fr;gap:clamp(32px,5vw,72px);align-items:center;padding-block:clamp(56px,9vw,112px) clamp(64px,9vw,120px);min-height:calc(100svh - var(--head));max-height:980px}
+  .hero .kicker{color:#7ff0b5}
+  .hero h1{font-size:clamp(2.7rem,7vw,5.6rem);margin-bottom:22px}
+  .hero h1 em{font-style:normal;background:linear-gradient(100deg,#5ef0a6 10%,var(--sun) 90%);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero .lead{font-size:clamp(1.02rem,1.5vw,1.18rem);color:#c4cadb;max-width:560px}
+  .cta-row{display:flex;flex-wrap:wrap;gap:12px;margin-top:32px}
+  .resume{display:flex;align-items:center;gap:14px;margin-top:22px;padding:12px 16px 12px 12px;border-radius:18px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);max-width:520px}
+  [dir=rtl] .resume{padding:12px 12px 12px 16px}
+  .ring{--p:0;width:46px;height:46px;border-radius:50%;flex-shrink:0;background:conic-gradient(var(--pos) calc(var(--p)*1%),rgba(255,255,255,.12) 0);display:grid;place-items:center}
+  .ring::after{content:"";width:34px;height:34px;border-radius:50%;background:var(--ink-2)}
+  .resume p{font-size:.92rem;color:#c4cadb;line-height:1.4;flex:1}
+  .resume b{color:#fff}
+  .live{display:flex;flex-wrap:wrap;gap:clamp(18px,4vw,40px);margin-top:42px}
+  .live div{display:flex;flex-direction:column}
+  .live dt{font-family:var(--f-display);font-size:clamp(1.6rem,3vw,2.2rem);font-weight:800;line-height:1;color:#fff}
+  html[lang=ar] .live dt{font-family:"Bricolage Grotesque",var(--f-ar)}
+  .live dd{font-size:.84rem;color:var(--muted-2);margin-top:6px}
+
+  /* Carte « question du jour » */
+  .qod-zone{position:relative;display:grid;place-items:center;padding:20px 0}
+  .qod-zone .ghost{position:absolute;width:min(440px,92%);height:78%;border-radius:var(--r-xl);opacity:.9}
+  .qod-zone .ghost.g1{background:linear-gradient(140deg,rgba(255,93,93,.85),rgba(255,93,93,.35));transform:rotate(-8deg) translate(-18px,10px)}
+  .qod-zone .ghost.g2{background:linear-gradient(140deg,rgba(23,178,106,.9),rgba(23,178,106,.35));transform:rotate(6deg) translate(20px,4px)}
+  .qod{position:relative;width:min(460px,100%);background:#fff;color:var(--ink);border-radius:var(--r-xl);padding:26px;box-shadow:var(--shadow-lg);transform:rotate(-1.5deg);transition:transform .5s var(--ease);animation:float 7s ease-in-out infinite}
+  .qod:hover,.qod:focus-within{transform:rotate(0) scale(1.01);animation-play-state:paused}
+  @keyframes float{50%{translate:0 -10px}}
+  .qod-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:18px}
+  .live-badge{display:inline-flex;align-items:center;gap:8px;font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--pos-600)}
+  html[lang=ar] .live-badge{letter-spacing:0;font-size:.88rem}
+  .pulse{width:8px;height:8px;border-radius:50%;background:var(--pos);box-shadow:0 0 0 0 rgba(23,178,106,.6);animation:pulse 2s infinite}
+  @keyframes pulse{70%{box-shadow:0 0 0 10px rgba(23,178,106,0)}100%{box-shadow:0 0 0 0 rgba(23,178,106,0)}}
+  .qod-q{font-family:var(--f-display);font-size:clamp(1.3rem,2.2vw,1.65rem);font-weight:800;line-height:1.22;letter-spacing:-.015em;min-height:3.6em}
+  html[lang=ar] .qod-q{letter-spacing:0;line-height:1.5;font-weight:700}
+  .qod .answers{margin-top:22px}
+  .qod-foot{display:flex;align-items:center;gap:8px;margin-top:16px;font-size:.85rem;color:var(--muted)}
+  .qod-foot button{color:var(--cobalt);font-weight:700;display:inline-flex;align-items:center;gap:4px}
+  .qod-foot svg{width:16px;height:16px}
+  .orb{position:absolute;border-radius:50%;filter:blur(.3px);animation:float 9s ease-in-out infinite;opacity:.9}
+
+  /* Boutons de réponse */
+  .answers{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .ans{position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 8px 13px;border-radius:18px;border:2px solid transparent;font-weight:700;font-size:.88rem;line-height:1.2;text-align:center;transition:transform .25s var(--ease),background .2s,border-color .2s,box-shadow .25s,color .2s}
+  .ans .ans-ic{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:#fff;transition:transform .35s var(--ease),background .2s,color .2s}
+  .ans .ans-ic svg{width:26px;height:26px}
+  .ans.neg{background:var(--neg-50);color:var(--neg-600)}
+  .ans.none{background:var(--none-50);color:var(--none-600)}
+  .ans.pos{background:var(--pos-50);color:var(--pos-600)}
+  .ans:hover{transform:translateY(-3px)}
+  .ans.neg:hover{border-color:var(--neg-100);box-shadow:0 14px 26px -16px var(--neg)}
+  .ans.none:hover{border-color:var(--none-100);box-shadow:0 14px 26px -16px var(--none)}
+  .ans.pos:hover{border-color:var(--pos-100);box-shadow:0 14px 26px -16px var(--pos)}
+  .ans:hover .ans-ic{transform:scale(1.1) rotate(-6deg)}
+  .ans[aria-pressed=true].neg{background:var(--neg);color:#fff}
+  .ans[aria-pressed=true].none{background:var(--none);color:#fff}
+  .ans[aria-pressed=true].pos{background:var(--pos);color:#fff}
+  .ans[aria-pressed=true] .ans-ic{background:rgba(255,255,255,.22);color:#fff}
+  .ans kbd{position:absolute;top:8px;inset-inline-end:10px;font:700 .68rem var(--f-body);opacity:.45}
+  @media(hover:none){.ans kbd{display:none}}
+
+  @media(max-width:900px){
+    .hero-grid{grid-template-columns:1fr;min-height:0;max-height:none;padding-top:44px}
+    .qod-zone{padding:8px 0 0}
+  }
+
+  /* ============ Comment ça marche ============ */
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;counter-reset:s}
+  .step{position:relative;background:#fff;border-radius:var(--r-lg);padding:30px 26px 28px;box-shadow:var(--shadow);overflow:hidden}
+  .step-n{position:absolute;top:14px;inset-inline-end:20px;font-family:var(--f-display);font-weight:800;font-size:4.2rem;line-height:1;color:var(--paper-100)}
+  .step-ill{position:relative;height:74px;display:flex;align-items:center;gap:8px;margin-bottom:20px}
+  .step h3{font-size:1.35rem;margin-bottom:8px;position:relative}
+  .step p{color:var(--muted);position:relative}
+  .mini-ans{display:flex;gap:8px}
+  .mini-ans span{width:46px;height:46px;border-radius:14px;display:grid;place-items:center}
+  .mini-ans span:nth-child(1){background:var(--neg-50);color:var(--neg-600)}
+  .mini-ans span:nth-child(2){background:var(--none-50);color:var(--none-600)}
+  .mini-ans span:nth-child(3){background:var(--pos);color:#fff;transform:translateY(-8px) rotate(6deg);box-shadow:0 12px 20px -10px var(--pos)}
+  .mini-mosaic{display:grid;grid-template-columns:repeat(10,12px);gap:4px}
+  .mini-mosaic i{width:12px;height:12px;border-radius:3px;background:var(--paper-200)}
+  .mini-mosaic i.p{background:var(--pos)} .mini-mosaic i.n{background:var(--neg)} .mini-mosaic i.z{background:var(--none)}
+  .mini-share{display:flex;align-items:center}
+  .mini-share span{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;border:3px solid #fff;margin-inline-end:-12px;color:#fff;font-weight:800}
+  .mini-share span:nth-child(1){background:var(--perso)} .mini-share span:nth-child(2){background:var(--social)} .mini-share span:nth-child(3){background:var(--pro)}
+  .mini-share span:nth-child(4){background:var(--pos-50);color:var(--pos-600);margin:0}
+  @media(max-width:860px){.steps{grid-template-columns:1fr}}
+
+  /* ============ Univers ============ */
+  .unis{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  .uni{--c:var(--perso);--c50:var(--perso-50);position:relative;display:flex;flex-direction:column;background:#fff;border-radius:var(--r-xl);padding:30px 26px 26px;box-shadow:var(--shadow);overflow:hidden;transition:transform .35s var(--ease),box-shadow .35s}
+  .uni.social{--c:var(--social);--c50:var(--social-50)}
+  .uni.pro{--c:var(--pro);--c50:var(--pro-50)}
+  .uni:hover{transform:translateY(-6px);box-shadow:var(--shadow-lg)}
+  .uni::before{content:"";position:absolute;width:260px;height:260px;border-radius:50%;inset:-110px -90px auto auto;background:radial-gradient(circle,var(--c50) 0 55%,transparent 56%);transition:transform .6s var(--ease)}
+  [dir=rtl] .uni::before{inset:-110px auto auto -90px}
+  .uni:hover::before{transform:scale(1.25)}
+  .uni-ic{position:relative;width:58px;height:58px;border-radius:18px;display:grid;place-items:center;background:var(--c);color:#fff;margin-bottom:22px;box-shadow:0 14px 24px -12px var(--c)}
+  .uni-ic svg{width:28px;height:28px}
+  .uni h3{position:relative;font-size:1.6rem;margin-bottom:8px}
+  .uni p{position:relative;color:var(--muted);flex:1}
+  .uni-meta{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:22px 0 12px;font-size:.84rem;color:var(--muted);font-weight:500}
+  .bar{height:7px;border-radius:9px;background:var(--paper-100);overflow:hidden}
+  .bar i{display:block;height:100%;width:0;border-radius:9px;background:var(--c,var(--pos));transition:width .8s var(--ease)}
+  .uni .btn{margin-top:20px;align-self:flex-start}
+  @media(max-width:900px){.unis{grid-template-columns:1fr}}
+
+  /* ============ Récits ============ */
+  .wall{columns:3 300px;column-gap:20px}
+  .wall .story{break-inside:avoid;margin-bottom:20px}
+  .story{position:relative;background:#fff;border-radius:var(--r-lg);padding:22px 22px 16px;box-shadow:var(--shadow);animation:pop .5s var(--ease) both}
+  @keyframes pop{from{opacity:0;transform:translateY(14px) scale(.98)}}
+  .story-q{display:flex;gap:9px;align-items:flex-start;font-size:.86rem;font-weight:700;color:var(--ink-soft);margin-bottom:12px;line-height:1.4}
+  .story-q .dotp{width:8px;height:8px;border-radius:50%;background:var(--pos);margin-top:6px;flex-shrink:0}
+  .story-exp{font-size:1rem;line-height:1.65;color:var(--ink);white-space:pre-line;display:-webkit-box;-webkit-line-clamp:7;-webkit-box-orient:vertical;overflow:hidden}
+  .story-exp{position:relative;padding-inline-start:.85em}
+  .story-exp::before{content:"“";position:absolute;inset-inline-start:0;top:-.08em;font-family:"Bricolage Grotesque",Georgia,serif;font-size:1.6em;line-height:1;color:var(--pos)}
+  .story.open .story-exp,.story.open .story-imp > span{-webkit-line-clamp:unset;display:block}
+  .story-imp{margin-top:12px;padding:12px 14px;border-radius:14px;background:var(--pos-50);color:#0a5c37;font-size:.92rem;line-height:1.55}
+  .story-imp > span{white-space:pre-line;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
+  .story-imp b{display:block;font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;color:var(--pos-600);margin-bottom:3px}
+  html[lang=ar] .story-imp b{letter-spacing:0;font-size:.82rem}
+  .read-more{margin-top:8px;font-size:.82rem;font-weight:700;color:var(--cobalt)}
+  .story-foot{display:flex;align-items:center;gap:8px;margin-top:14px;font-size:.84rem;color:var(--muted)}
+  .who{display:flex;align-items:center;gap:8px;flex:1;min-width:0;font-weight:500}
+  .who span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .who .av{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--paper-100);color:var(--ink-soft);font-size:.74rem;font-weight:800;flex-shrink:0;text-transform:uppercase}
+  .like{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:999px;background:var(--paper-50);border:1px solid var(--paper-200);font-size:.8rem;font-weight:700;color:var(--ink-soft);transition:background .2s,color .2s,border-color .2s,transform .2s}
+  .like svg{width:15px;height:15px}
+  .like:hover{border-color:#ff9db1;color:#e11d48}
+  .like.on{background:#ffe4ea;border-color:#ffc2cf;color:#e11d48}
+  .like.on svg{fill:currentColor}
+  .like.bump{animation:bump .45s var(--ease)}
+  @keyframes bump{40%{transform:scale(1.18)}}
+  .like .txt{font-weight:500}
+  .report{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;color:var(--muted-2);transition:background .2s,color .2s}
+  .report:hover{background:var(--paper-100);color:var(--neg-600)}
+  .report svg{width:15px;height:15px}
+  .empty{text-align:center;padding:42px 20px;border:2px dashed var(--paper-200);border-radius:var(--r-lg);color:var(--muted);background:#fff}
+  .empty svg{width:34px;height:34px;margin:0 auto 12px;color:var(--pos)}
+  .center-row{display:flex;justify-content:center;margin-top:28px}
+
+  /* ============ Rejoindre ============ */
+  .join{background:var(--ink);color:#fff;border-radius:var(--r-xl);padding:clamp(32px,5vw,60px);display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(28px,5vw,60px);align-items:center;overflow:hidden;position:relative;isolation:isolate}
+  .join::before{content:"";position:absolute;width:520px;height:520px;inset:-200px -160px auto auto;background:radial-gradient(circle,rgba(23,178,106,.3),transparent 65%);z-index:-1}
+  .join h2{font-size:clamp(1.8rem,3.6vw,2.7rem);margin-bottom:22px}
+  .join h2 em{background:none;color:#5ef0a6}
+  .join .kicker{color:#7ff0b5}
+  .checks{list-style:none;display:grid;gap:14px;margin-bottom:30px}
+  .checks li{display:flex;gap:12px;color:#c4cadb}
+  .checks li span:first-child{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:rgba(23,178,106,.18);color:#5ef0a6;flex-shrink:0}
+  .checks svg{width:16px;height:16px}
+  .join-actions{display:flex;flex-wrap:wrap;gap:12px}
+  .mail-mock{background:#fff;color:var(--ink);border-radius:22px;box-shadow:var(--shadow-lg);overflow:hidden;transform:rotate(2deg);max-width:440px;justify-self:center;width:100%}
+  .mail-mock .mm-head{background:var(--ink-2);color:#fff;padding:14px 18px;display:flex;align-items:center;gap:10px;font-size:.84rem;font-weight:700}
+  .mail-mock .mm-head small{margin-inline-start:auto;color:var(--muted-2);font-weight:500}
+  .mail-mock .mm-body{padding:20px 20px 22px}
+  .mail-mock .mm-sub{font-size:.8rem;color:var(--muted);margin-bottom:8px}
+  .mail-mock .mm-q{font-family:var(--f-display);font-weight:800;font-size:1.2rem;line-height:1.3;margin-bottom:16px}
+  html[lang=ar] .mail-mock .mm-q{font-weight:700;line-height:1.5}
+  .mail-mock .mm-btns{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .mail-mock .mm-btns span{padding:10px 4px;border-radius:12px;color:#fff;font-size:.74rem;font-weight:700;text-align:center}
+  @media(max-width:860px){.join{grid-template-columns:1fr}.mail-mock{transform:none}}
+
+  /* ============ Pied de page ============ */
+  .site-foot{background:var(--ink);color:#c4cadb;padding:56px 0 36px;margin-top:clamp(72px,10vw,120px)}
+  .site-foot .wrap{display:flex;flex-wrap:wrap;gap:28px;justify-content:space-between;align-items:flex-start}
+  .site-foot .f-brand{display:flex;gap:12px;align-items:center}
+  .site-foot .f-brand b{display:block;color:#fff;font-family:var(--f-display);font-size:1.15rem}
+  .site-foot p{font-size:.88rem;max-width:460px}
+  .site-foot .f-links{display:flex;flex-direction:column;gap:8px;font-size:.9rem}
+  .site-foot .f-links a:hover{color:#fff}
+  .site-foot .f-bottom{width:100%;border-top:1px solid rgba(255,255,255,.08);padding-top:20px;font-size:.8rem;color:var(--muted-2);display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px}
+
+  /* ============ Défi (assistant plein écran) ============ */
+  .quiz{position:fixed;inset:0;z-index:80;background:var(--ink);color:#fff;display:flex;flex-direction:column;overflow-y:auto;overscroll-behavior:contain;animation:fade .35s var(--ease)}
+  @keyframes fade{from{opacity:0}}
+  .quiz .fx-canvas{position:fixed}
+  .qz-top{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:14px;padding:14px var(--gutter);background:linear-gradient(var(--ink) 70%,rgba(11,16,32,0))}
+  .icon-btn{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.08);color:#fff;flex-shrink:0;transition:background .2s}
+  .icon-btn:hover{background:rgba(255,255,255,.16)}
+  .qz-prog{flex:1;min-width:0}
+  .qz-count{display:flex;justify-content:space-between;gap:10px;font-size:.82rem;color:var(--muted-2);margin-bottom:7px}
+  .qz-count b{color:#fff}
+  .strip{display:flex;gap:2px;height:8px;cursor:pointer}
+  .strip span{flex:1;border-radius:3px;background:rgba(255,255,255,.12);transition:background .3s,transform .3s}
+  .strip span.neg{background:var(--neg)} .strip span.none{background:var(--none)} .strip span.pos{background:var(--pos)}
+  .strip span.cur{background:#fff;transform:scaleY(1.6)}
+  @media(max-width:700px){.strip{gap:0}.strip span{border-radius:0}.strip span.cur{border-radius:2px}}
+  .qz-stage{flex:1;width:100%;max-width:640px;margin:0 auto;padding:6px var(--gutter) 28px;display:flex;flex-direction:column;justify-content:center}
+  .qz-filters{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-bottom:18px}
+  .qz-filters button{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:999px;font-size:.8rem;font-weight:700;color:#c4cadb;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);transition:background .2s,color .2s}
+  .qz-filters button svg{width:14px;height:14px}
+  .qz-filters button[aria-pressed=true]{background:#fff;color:var(--ink)}
+  .deck{position:relative;margin-bottom:18px}
+  .deck .ghost{position:absolute;inset:0;border-radius:var(--r-xl);background:#fff;opacity:.08;transform:translateY(14px) scale(.95)}
+  .deck .ghost.g2{opacity:.04;transform:translateY(28px) scale(.9)}
+  .qcard{position:relative;background:#fff;color:var(--ink);border-radius:var(--r-xl);padding:clamp(24px,4vw,36px);min-height:260px;display:flex;flex-direction:column;box-shadow:var(--shadow-lg);touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab;transition:transform .45s var(--ease),opacity .45s}
+  .qcard.drag{transition:none;cursor:grabbing}
+  .qcard.drag .qcard-top{opacity:0;transition:opacity .15s}
+  .qcard.enter{animation:cardIn .55s var(--ease)}
+  @keyframes cardIn{from{opacity:0;transform:translateY(40px) scale(.94)}}
+  .qcard.out-neg{transform:translateX(-130%) rotate(-18deg);opacity:0}
+  .qcard.out-pos{transform:translateX(130%) rotate(18deg);opacity:0}
+  [dir=rtl] .qcard.out-neg{transform:translateX(130%) rotate(18deg)}
+  [dir=rtl] .qcard.out-pos{transform:translateX(-130%) rotate(-18deg)}
+  .qcard.out-none{transform:translateY(-120%) scale(.9);opacity:0}
+  .qcard.out-skip{transform:translateY(60px) scale(.9);opacity:0}
+  .qcard-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:auto}
+  .qcard-top .num{font-size:.8rem;font-weight:700;color:var(--muted-2)}
+  .qcard h2{font-size:clamp(1.45rem,3.6vw,2.15rem);line-height:1.18;letter-spacing:-.02em;margin:28px 0 8px}
+  html[lang=ar] .qcard h2{line-height:1.5}
+  .stamp{position:absolute;top:22px;padding:6px 14px;border-radius:12px;border:3px solid;font-weight:800;font-size:1rem;text-transform:uppercase;letter-spacing:.06em;opacity:0;pointer-events:none;transition:opacity .15s}
+  html[lang=ar] .stamp{letter-spacing:0}
+  .stamp.s-pos{color:var(--pos);inset-inline-start:22px;transform:rotate(-10deg)}
+  .stamp.s-neg{color:var(--neg);inset-inline-end:22px;transform:rotate(10deg)}
+  .stamp.s-none{color:var(--none);left:50%;translate:-50% 0;top:auto;bottom:22px}
+  [dir=rtl] .stamp.s-pos{transform:rotate(10deg)} [dir=rtl] .stamp.s-neg{transform:rotate(-10deg)}
+  .qz-answers .ans{padding:16px 8px 15px;font-size:.92rem}
+  .qz-answers .ans.neg{background:rgba(255,93,93,.12);color:#ff9a9a}
+  .qz-answers .ans.none{background:rgba(139,147,167,.16);color:#c3c9d8}
+  .qz-answers .ans.pos{background:rgba(23,178,106,.16);color:#6ff0b0}
+  .qz-answers .ans .ans-ic{background:rgba(255,255,255,.08)}
+  .qz-answers .ans[aria-pressed=true].neg{background:var(--neg);color:#fff}
+  .qz-answers .ans[aria-pressed=true].none{background:var(--none);color:#fff}
+  .qz-answers .ans[aria-pressed=true].pos{background:var(--pos);color:#fff}
+  .qz-nav{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:16px}
+  .qz-nav button{display:inline-flex;align-items:center;gap:6px;padding:9px 12px;border-radius:999px;font-size:.88rem;font-weight:700;color:#c4cadb;transition:background .2s,color .2s}
+  .qz-nav button:hover:not(:disabled){background:rgba(255,255,255,.08);color:#fff}
+  .qz-nav button:disabled{opacity:.3;cursor:default}
+  .qz-nav .hint{font-size:.78rem;color:var(--muted-2);text-align:center}
+  .qz-last{min-height:1.6em;margin-top:14px;text-align:center;font-size:.86rem;color:var(--muted-2)}
+  .qz-last b{color:#fff}
+  .qz-nudge{display:flex;align-items:center;gap:12px;margin-top:16px;padding:12px 14px;border-radius:16px;background:rgba(47,91,255,.16);border:1px solid rgba(47,91,255,.35);font-size:.88rem;color:#dbe3ff;animation:pop .5s var(--ease)}
+  .qz-nudge p{flex:1}
+  .qz-nudge .x{color:#9fb0ff}
+  .qz-done{max-width:560px;margin:auto;padding:30px var(--gutter) 60px;text-align:center;animation:pop .6s var(--ease)}
+  .qz-done .big{width:96px;height:96px;margin:0 auto 22px;border-radius:50%;display:grid;place-items:center;background:var(--pos);box-shadow:0 0 0 14px rgba(23,178,106,.18),0 0 0 30px rgba(23,178,106,.08)}
+  .qz-done .big svg{width:46px;height:46px;color:#fff}
+  .qz-done h2{font-size:clamp(2rem,5vw,3rem);margin-bottom:12px}
+  .qz-done p{color:#c4cadb;margin-bottom:26px}
+  .qz-done .row{display:flex;flex-wrap:wrap;justify-content:center;gap:10px}
+  @media(max-width:520px){
+    .qcard{min-height:230px}
+    .qz-answers{gap:8px}
+    .qz-answers .ans{font-size:.8rem;padding:12px 4px}
+    .qz-nav .hint{display:none}
+  }
+  @media(max-width:520px){.qz-top .lbl{display:none}}
+  @media(max-height:700px){.qz-filters{margin-bottom:10px}.qcard{min-height:200px}.qcard h2{margin-top:16px}}
+
+  /* ============ Résultat ============ */
+  .results{padding-top:clamp(36px,6vw,64px)}
+  .rs-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:18px;margin-bottom:28px}
+  .rs-head h1{font-size:clamp(2.1rem,5vw,3.4rem)}
+  .rs-head h1 em{font-style:normal;background:linear-gradient(transparent 60%,rgba(23,178,106,.25) 60%)}
+  .rs-actions{display:flex;flex-wrap:wrap;gap:10px}
+  .summary{display:grid;grid-template-columns:auto 1fr;gap:clamp(22px,4vw,44px);align-items:center;background:#fff;border-radius:var(--r-xl);padding:clamp(22px,4vw,36px);box-shadow:var(--shadow)}
+  .donut{width:clamp(150px,22vw,200px);height:auto;transform:rotate(-90deg)}
+  .donut circle{fill:none;stroke-width:14}
+  .donut .track{stroke:var(--paper-100)}
+  .donut .arc{transition:stroke-dasharray .9s var(--ease),stroke-dashoffset .9s var(--ease);stroke-linecap:butt}
+  .donut .a-pos{stroke:var(--pos)} .donut .a-none{stroke:var(--none)} .donut .a-neg{stroke:var(--neg)}
+  .donut-wrap{position:relative;display:grid;place-items:center}
+  .donut-c{position:absolute;text-align:center;line-height:1}
+  .donut-c b{display:block;font-family:"Bricolage Grotesque",var(--f-body);font-size:clamp(2rem,4vw,2.8rem);font-weight:800;color:var(--pos-600)}
+  .donut-c span{font-size:.8rem;color:var(--muted);font-weight:500}
+  .sum-txt .answered{font-size:.86rem;color:var(--muted);font-weight:500;margin-bottom:6px}
+  .sum-txt .read{font-size:clamp(1.05rem,1.6vw,1.22rem);font-weight:500;line-height:1.5;max-width:640px}
+  .legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+  .legend span{display:inline-flex;align-items:center;gap:8px;padding:7px 13px;border-radius:999px;font-size:.84rem;font-weight:700}
+  .legend .l-pos{background:var(--pos-50);color:var(--pos-600)} .legend .l-none{background:var(--none-50);color:var(--none-600)} .legend .l-neg{background:var(--neg-50);color:var(--neg-600)}
+  .legend i{width:9px;height:9px;border-radius:50%;background:currentColor}
+  .mosaic-wrap{grid-column:1/-1;border-top:1px solid var(--paper-100);padding-top:24px}
+  .mosaic-wrap > p{font-size:.84rem;color:var(--muted);margin-bottom:14px}
+  .mosaic-wrap > p b{color:var(--ink)}
+  .mosaics{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+  .mosaic h4{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:.86rem;margin-bottom:10px}
+  .mosaic h4 small{color:var(--muted);font-weight:500}
+  .tiles{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}
+  .tiles button{aspect-ratio:1;border-radius:4px;background:var(--paper-100);border:1px dashed var(--paper-200);transition:transform .2s var(--ease),background .3s}
+  .tiles button:hover{transform:scale(1.25);z-index:1;position:relative}
+  .tiles button.neg{background:var(--neg);border:0} .tiles button.none{background:var(--none);border:0} .tiles button.pos{background:var(--pos);border:0}
+  .tiles button.has-story{box-shadow:inset 0 0 0 2px rgba(255,255,255,.75)}
+  @media(max-width:860px){.summary{grid-template-columns:1fr;justify-items:center;text-align:center}.legend{justify-content:center}.mosaics{grid-template-columns:1fr}.sum-txt .read{margin-inline:auto}.mosaic-wrap{text-align:start}}
+
+  .save-banner{display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin-top:18px;padding:18px 20px;border-radius:var(--r-lg);background:var(--cobalt-600);background:linear-gradient(110deg,var(--ink) 0%,#1d2a5c 100%);color:#fff}
+  .save-banner .sb-ic{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:rgba(255,255,255,.1);color:#9fb0ff;flex-shrink:0}
+  .save-banner div{flex:1;min-width:220px}
+  .save-banner b{display:block}
+  .save-banner p{font-size:.9rem;color:#c4cadb}
+  .saved-note{display:inline-flex;align-items:center;gap:8px;margin-top:16px;font-size:.86rem;color:var(--pos-600);font-weight:700}
+  .saved-note svg{width:18px;height:18px}
+
+  .rs-toolbar{position:sticky;top:var(--head);z-index:5;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin:34px 0 18px;padding:10px 0;background:linear-gradient(var(--paper-50) 80%,rgba(247,247,249,0))}
+  .tabs{display:inline-flex;flex-wrap:wrap;gap:4px;padding:4px;border-radius:999px;background:#fff;box-shadow:var(--shadow)}
+  .tabs button{display:inline-flex;align-items:center;gap:7px;padding:8px 14px;border-radius:999px;font-size:.86rem;font-weight:700;color:var(--muted);transition:background .2s,color .2s}
+  .tabs button .n{font-size:.75rem;padding:1px 7px;border-radius:999px;background:var(--paper-100);color:var(--ink-soft)}
+  .tabs button[aria-pressed=true]{background:var(--ink);color:#fff}
+  .tabs button[aria-pressed=true] .n{background:rgba(255,255,255,.16);color:#fff}
+  .tabs .t-pos i,.tabs .t-none i,.tabs .t-neg i{width:8px;height:8px;border-radius:50%}
+  .tabs .t-pos i{background:var(--pos)} .tabs .t-none i{background:var(--none)} .tabs .t-neg i{background:var(--neg)}
+  .cats{display:inline-flex;gap:4px;flex-wrap:wrap}
+  .cats button{padding:7px 12px;border-radius:999px;font-size:.8rem;font-weight:700;color:var(--muted);border:1px solid var(--paper-200);background:#fff}
+  .cats button[aria-pressed=true]{border-color:var(--ink);color:var(--ink)}
+
+  .rs-list{display:grid;gap:16px}
+  .r-item{--c:var(--pos);background:#fff;border-radius:var(--r-lg);padding:22px clamp(18px,3vw,28px);box-shadow:var(--shadow);border-inline-start:5px solid var(--c);scroll-margin-top:calc(var(--head) + 80px);animation:pop .45s var(--ease) both}
+  .r-item.v-neg{--c:var(--neg)} .r-item.v-none{--c:var(--none)}
+  .r-item.flash{animation:flash 1.8s var(--ease)}
+  @keyframes flash{0%,30%{box-shadow:0 0 0 4px rgba(47,91,255,.45),var(--shadow)}}
+  .r-top{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .r-num{font-size:.78rem;color:var(--muted-2);font-weight:700}
+  .r-head{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:12px 20px}
+  .r-q{font-size:clamp(1.1rem,1.8vw,1.3rem);line-height:1.3;letter-spacing:-.01em;flex:1;min-width:240px}
+  html[lang=ar] .r-q{line-height:1.6}
+  .seg{display:inline-flex;gap:3px;padding:3px;border-radius:999px;background:var(--paper-50);border:1px solid var(--paper-200);flex-shrink:0}
+  .seg button{display:inline-flex;align-items:center;gap:5px;padding:6px 11px;border-radius:999px;font-size:.78rem;font-weight:700;color:var(--muted);transition:background .2s,color .2s}
+  .seg button svg{width:15px;height:15px}
+  .seg button.neg:hover{color:var(--neg-600)} .seg button.none:hover{color:var(--none-600)} .seg button.pos:hover{color:var(--pos-600)}
+  .seg button[aria-checked=true].neg{background:var(--neg);color:#fff}
+  .seg button[aria-checked=true].none{background:var(--none);color:#fff}
+  .seg button[aria-checked=true].pos{background:var(--pos);color:#fff}
+  @media(max-width:520px){.seg button span{display:none}.seg button{padding:7px 10px}}
+
+  /* Mon récit */
+  .mine{margin-top:18px;padding:18px;border-radius:18px;background:var(--pos-50)}
+  .mine-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+  .mine-t{display:inline-flex;align-items:center;gap:8px;font-weight:800;color:var(--pos-600);font-size:.95rem}
+  .mine-t svg{width:18px;height:18px}
+  .badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:.74rem;font-weight:700;background:#fff;color:var(--ink-soft)}
+  .badge.published{color:var(--pos-600)} .badge.pending{color:#b86700} .badge.hidden{color:var(--neg-600)}
+  .badge i{width:7px;height:7px;border-radius:50%;background:currentColor}
+  .mine .story-imp{background:#fff}
+  .mine-foot{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:14px}
+  .mine-foot .grow{flex:1}
+  .likes-n{display:inline-flex;align-items:center;gap:6px;font-size:.82rem;color:#e11d48;font-weight:700}
+  .likes-n svg{width:15px;height:15px;fill:currentColor}
+  .story-form label.lb{display:block;font-weight:700;font-size:.88rem;margin:0 0 6px;color:#0a5c37}
+  .story-form textarea,.field input{width:100%;border:1.5px solid var(--paper-200);border-radius:14px;padding:12px 14px;background:#fff;font-size:.98rem;line-height:1.55;resize:vertical;transition:border-color .2s,box-shadow .2s}
+  .story-form textarea:focus,.field input:focus{outline:0;border-color:var(--pos);box-shadow:0 0 0 4px rgba(23,178,106,.15)}
+  .sf-more{display:none;margin-top:14px}
+  .story-form.open .sf-more{display:block;animation:pop .35s var(--ease)}
+  .sf-count{font-size:.74rem;color:var(--muted-2);text-align:end;margin-top:4px}
+  .sf-row{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;margin-top:14px}
+  .sf-row input[type=text]{width:min(220px,100%);border:1.5px solid var(--paper-200);border-radius:12px;padding:9px 12px;background:#fff;font-size:.92rem}
+  .check{display:inline-flex;align-items:center;gap:8px;font-size:.88rem;cursor:pointer;color:var(--ink-soft)}
+  .check input{width:18px;height:18px;accent-color:var(--pos)}
+  .sf-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:16px}
+  .sf-err,.form-err{font-size:.84rem;color:var(--neg-600);font-weight:500;min-height:0}
+  .hp{position:absolute!important;inset-inline-start:-9999px;width:1px;height:1px;opacity:0}
+
+  /* Ce que d'autres en ont tiré */
+  .others{margin-top:18px;padding:18px;border-radius:18px;background:var(--paper-50);border:1px solid var(--paper-100)}
+  .others-t{display:flex;align-items:center;gap:8px;font-weight:800;font-size:.95rem;margin-bottom:12px}
+  .others-t svg{color:var(--pos);width:18px;height:18px}
+  .others-list{display:grid;gap:12px}
+  .others .story{box-shadow:none;border:1px solid var(--paper-200)}
+  .others-foot{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:.86rem;color:var(--muted)}
+  .others .msg{font-size:.92rem;color:var(--muted)}
+  .skel{height:110px;border-radius:16px;background:linear-gradient(90deg,var(--paper-100),#fff,var(--paper-100));background-size:200% 100%;animation:skel 1.3s infinite}
+  @keyframes skel{to{background-position:-200% 0}}
+  .rs-empty{text-align:center;padding:60px 20px;background:#fff;border-radius:var(--r-xl);box-shadow:var(--shadow)}
+  .rs-empty svg{width:40px;height:40px;margin:0 auto 14px;color:var(--pos)}
+  .rs-empty p{color:var(--muted);margin-bottom:20px}
+
+  /* ============ Fenêtres ============ */
+  .dlg{border:0;padding:0;border-radius:var(--r-xl);width:min(460px,calc(100vw - 24px));max-height:calc(100dvh - 24px);margin:auto;box-shadow:var(--shadow-lg);background:#fff;color:var(--ink);overflow:auto}
+  .dlg::backdrop{background:rgba(11,16,32,.6);backdrop-filter:blur(4px)}
+  .dlg[open]{animation:pop .35s var(--ease)}
+  .dlg-x{position:absolute;top:12px;inset-inline-end:12px}
+  .dlg-x button{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;color:var(--muted);background:var(--paper-50)}
+  .dlg-x button:hover{color:var(--ink)}
+  .dlg-body{padding:28px clamp(20px,5vw,32px) 26px}
+  .dlg h2{font-size:1.5rem;margin-bottom:6px}
+  .dlg-intro{font-size:.9rem;color:var(--muted);margin:14px 0 18px}
+  .dlg .tabs{box-shadow:none;background:var(--paper-100);margin-inline-end:44px}
+  .field{display:block;margin-bottom:14px}
+  .field span{display:block;font-size:.84rem;font-weight:700;margin-bottom:6px}
+  .field small{display:block;font-size:.76rem;color:var(--muted);margin-top:4px}
+  .switches{display:grid;gap:10px;margin:6px 0 18px}
+  .switch{display:flex;align-items:flex-start;gap:12px;font-size:.88rem;line-height:1.4;cursor:pointer;color:var(--ink-soft)}
+  .switch input{appearance:none;-webkit-appearance:none;width:40px;height:24px;border-radius:999px;background:var(--paper-200);position:relative;flex-shrink:0;cursor:pointer;transition:background .2s;margin-top:-1px}
+  .switch input::after{content:"";position:absolute;top:3px;inset-inline-start:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:inset-inline-start .25s var(--ease)}
+  .switch input:checked{background:var(--pos)}
+  .switch input:checked::after{inset-inline-start:19px}
+  .auth-form .btn{width:100%;margin-top:4px}
+  .auth-form .form-err{margin-top:10px}
+  .auth-form .fine{font-size:.76rem;color:var(--muted);margin-top:14px;text-align:center}
+  .auth-links{display:flex;justify-content:space-between;margin:-4px 0 14px}
+  .ok-msg{padding:12px 14px;border-radius:12px;background:var(--pos-50);color:var(--pos-600);font-size:.9rem;font-weight:500;margin-top:12px}
+  .me-head{display:flex;align-items:center;gap:14px;margin-bottom:16px;padding-inline-end:40px}
+  .me-head .avatar{width:54px;height:54px;font-size:1.3rem}
+  .me-head p{color:var(--muted);font-size:.9rem;word-break:break-all}
+  .me-verify{display:grid;grid-template-columns:auto 1fr;align-items:start;gap:6px 10px;padding:12px 14px;border-radius:14px;font-size:.86rem;margin-bottom:18px}
+  .me-verify .link{grid-column:2;justify-self:start}
+  .me-verify.ok{background:var(--pos-50);color:var(--pos-600);font-weight:700}
+  .me-verify.no{background:var(--pro-50);color:#8a4d00}
+  .me-verify svg{width:18px;height:18px}
+  .me-verify .link{font-size:.84rem}
+  .dlg fieldset{border:0}
+  .dlg legend{font-weight:800;font-size:.95rem;margin-bottom:10px}
+  .me-lang{font-size:.8rem;color:var(--muted);margin:-6px 0 16px}
+  .me-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px;padding-top:18px;border-top:1px solid var(--paper-100)}
+  .danger-zone{margin-top:16px;font-size:.88rem}
+  .danger-zone summary{cursor:pointer;color:var(--neg-600);font-weight:700}
+  .danger-zone p{color:var(--muted);margin:10px 0 12px}
+
+  /* ============ Notifications & effets ============ */
+  .toasts{position:fixed;bottom:max(18px,env(safe-area-inset-bottom));left:50%;translate:-50% 0;z-index:120;display:grid;gap:8px;width:min(440px,calc(100vw - 24px));pointer-events:none}
+  .toast{display:flex;align-items:center;gap:10px;padding:13px 16px;border-radius:16px;background:var(--ink-2);color:#fff;font-size:.9rem;box-shadow:var(--shadow-lg);animation:toast .45s var(--ease);pointer-events:auto}
+  .toast svg{width:18px;height:18px;flex-shrink:0}
+  .toast.ok svg{color:#5ef0a6} .toast.err svg{color:#ff9a9a}
+  .toast.bye{opacity:0;transform:translateY(10px);transition:opacity .3s,transform .3s}
+  @keyframes toast{from{opacity:0;transform:translateY(16px) scale(.96)}}
+  #fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:110}
+
+  [data-reveal]{opacity:0;transform:translateY(24px);transition:opacity .8s var(--ease),transform .8s var(--ease);transition-delay:var(--d,0s)}
+  [data-reveal].in{opacity:1;transform:none}
+  @media(prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+    [data-reveal]{opacity:1;transform:none}
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#main" data-i18n="skip">Aller au contenu</a>
+
+<header class="site-head">
+  <div class="wrap">
+    <a class="brand" href="./" id="brandLink">
+      <svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true">
+        <circle cx="20" cy="20" r="18.5" fill="none" stroke="#17b26a" stroke-width="1.5" opacity=".35"/>
+        <circle cx="20" cy="20" r="12.5" fill="none" stroke="#17b26a" stroke-width="1.5" opacity=".65"/>
+        <circle cx="12.5" cy="20" r="3.2" fill="#ff5d5d"/><circle cx="20" cy="20" r="3.2" fill="#8b93a7"/><circle cx="27.5" cy="20" r="3.2" fill="#17b26a"/>
+      </svg>
+      <span class="brand-txt"><b data-i18n="brand">Défi Impact</b><small>dehini.com</small></span>
+    </a>
+    <nav class="nav" data-i18n-attr="aria-label:a.nav" aria-label="Navigation">
+      <a href="#how" data-i18n="nav.how">Comment ça marche</a>
+      <a href="#univers" data-i18n="nav.uni">Univers</a>
+      <a href="#mur" data-i18n="nav.wall">Le mur</a>
+    </nav>
+    <div class="langs" role="group" data-i18n-attr="aria-label:a.lang" aria-label="Langue">
+      <button type="button" data-lang="fr" lang="fr" title="Français">FR</button>
+      <button type="button" data-lang="ar" lang="ar" title="العربية">ع</button>
+      <button type="button" data-lang="en" lang="en" title="English">EN</button>
+    </div>
+    <button class="head-btn ghost" type="button" id="resultsBtn"><i data-lucide="chart-pie"></i><span class="lbl" data-i18n="nav.results">Mon résultat</span></button>
+    <button class="head-btn solid" type="button" id="accountBtn"><i data-lucide="user-plus"></i><span class="lbl" data-i18n="acc.create">Créer un compte</span></button>
+  </div>
+</header>
+
+<main id="main">
+  <!-- ===================== Accueil ===================== -->
+  <div id="homeView">
+    <section class="hero" id="top">
+      <canvas class="fx-canvas" id="heroFx" aria-hidden="true"></canvas>
+      <div class="wrap hero-grid">
+        <div>
+          <p class="kicker"><span class="dots3"><i></i><i></i><i></i></span><span data-i18n="hero.kicker">Le défi des expériences positives</span></p>
+          <h1 data-i18n-html="hero.title">Votre vie en <em>120 impacts</em>.</h1>
+          <p class="lead" data-i18n="hero.sub">Question après question, dites si chaque expérience a eu sur vous un impact négatif, aucun impact ou un impact positif.</p>
+          <div class="cta-row">
+            <button class="btn btn-pos btn-lg" type="button" data-start="all"><span data-i18n="hero.cta" id="heroCtaLabel">Relever le défi</span><i data-lucide="arrow-right" class="flip"></i></button>
+            <a class="btn btn-glass btn-lg" href="#how" data-i18n="hero.how">Comment ça marche</a>
+          </div>
+          <div class="resume" id="resumeBox" hidden>
+            <span class="ring" id="resumeRing"></span>
+            <p id="resumeTxt"></p>
+            <button class="btn btn-white btn-sm" type="button" data-go="#resultat" data-i18n="nav.results">Mon résultat</button>
+          </div>
+          <dl class="live" id="liveStats" hidden>
+            <div data-stat="participants"><dt>0</dt><dd>participants</dd></div>
+            <div data-stat="answers"><dt>0</dt><dd>réponses données</dd></div>
+            <div data-stat="stories"><dt>0</dt><dd>impacts positifs partagés</dd></div>
+          </dl>
+        </div>
+        <div class="qod-zone">
+          <span class="ghost g1" aria-hidden="true"></span><span class="ghost g2" aria-hidden="true"></span>
+          <span class="orb" aria-hidden="true" style="width:18px;height:18px;background:var(--sun);top:2%;inset-inline-start:8%;animation-delay:-2s"></span>
+          <span class="orb" aria-hidden="true" style="width:12px;height:12px;background:#5ef0a6;bottom:6%;inset-inline-end:6%;animation-delay:-4s"></span>
+          <article class="qod" id="qod" aria-labelledby="qodText">
+            <div class="qod-top">
+              <span class="live-badge"><span class="pulse"></span><span data-i18n="qod.badge">Question du jour</span></span>
+              <span class="chip" id="qodCat"></span>
+            </div>
+            <p class="qod-q" id="qodText"></p>
+            <div class="answers" id="qodAnswers"></div>
+            <p class="qod-foot" id="qodFoot"></p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="sec" id="how">
+      <div class="wrap">
+        <div class="head center" data-reveal>
+          <p class="kicker"><span class="dots3"><i></i><i></i><i></i></span><span data-i18n="how.kicker">Comment ça marche</span></p>
+          <h2 data-i18n-html="how.title">Trois gestes. Des <em>ondes positives</em> qui se propagent.</h2>
+        </div>
+        <div class="steps">
+          <article class="step" data-reveal>
+            <span class="step-n">1</span>
+            <div class="step-ill"><div class="mini-ans"><span><i data-lucide="frown"></i></span><span><i data-lucide="meh"></i></span><span><i data-lucide="smile"></i></span></div></div>
+            <h3 data-i18n="how.1.t">Répondez</h3>
+            <p data-i18n="how.1.p"></p>
+          </article>
+          <article class="step" data-reveal style="--d:.1s">
+            <span class="step-n">2</span>
+            <div class="step-ill"><div class="mini-mosaic" id="miniMosaic" aria-hidden="true"></div></div>
+            <h3 data-i18n="how.2.t">Voyez votre résultat</h3>
+            <p data-i18n="how.2.p"></p>
+          </article>
+          <article class="step" data-reveal style="--d:.2s">
+            <span class="step-n">3</span>
+            <div class="step-ill"><div class="mini-share"><span>A</span><span>S</span><span>Y</span><span><i data-lucide="heart"></i></span></div></div>
+            <h3 data-i18n="how.3.t">Partagez, inspirez</h3>
+            <p data-i18n="how.3.p"></p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="sec" id="univers" style="padding-top:0">
+      <div class="wrap">
+        <div class="head" data-reveal>
+          <p class="kicker"><span class="dots3"><i></i><i></i><i></i></span><span data-i18n="uni.kicker">Trois univers</span></p>
+          <h2 data-i18n-html="uni.title">Par où voulez-vous <em>commencer</em> ?</h2>
+        </div>
+        <div class="unis" id="unis"></div>
+      </div>
+    </section>
+
+    <section class="sec" id="mur" style="padding-top:0">
+      <div class="wrap">
+        <div class="head" data-reveal>
+          <p class="kicker"><span class="dots3"><i></i><i></i><i></i></span><span data-i18n="wall.kicker">Le mur des impacts</span></p>
+          <h2 data-i18n-html="wall.title">Ils ont transformé une expérience en <em>force</em>.</h2>
+          <p class="sub" data-i18n="wall.sub"></p>
+        </div>
+        <div class="wall" id="wallGrid"></div>
+        <div class="empty" id="wallEmpty" hidden><i data-lucide="sprout"></i><p id="wallEmptyTxt"></p></div>
+        <div class="center-row"><button class="btn btn-line" type="button" id="wallMore" hidden><span data-i18n="wall.more">Voir plus</span><i data-lucide="chevron-down"></i></button></div>
+      </div>
+    </section>
+
+    <section id="rejoindre">
+      <div class="wrap">
+        <div class="join" data-reveal>
+          <div id="joinOut">
+            <p class="kicker"><span class="dots3"><i></i><i></i><i></i></span><span data-i18n="join.kicker">Gardez le fil</span></p>
+            <h2 data-i18n-html="join.title">Créez votre compte : votre résultat se <em>sauvegarde tout seul</em>.</h2>
+            <ul class="checks">
+              <li><span><i data-lucide="check"></i></span><span data-i18n="join.1"></span></li>
+              <li><span><i data-lucide="check"></i></span><span data-i18n="join.2"></span></li>
+              <li><span><i data-lucide="check"></i></span><span data-i18n="join.3"></span></li>
+            </ul>
+            <div class="join-actions">
+              <button class="btn btn-pos btn-lg" type="button" data-auth="signup"><i data-lucide="user-plus"></i><span data-i18n="join.cta">Créer mon compte gratuit</span></button>
+              <button class="btn btn-glass btn-lg" type="button" data-auth="login" data-i18n="join.login">J'ai déjà un compte</button>
+            </div>
+          </div>
+          <div id="joinIn" hidden>
+            <p class="kicker"><span class="dots3"><i></i><i></i><i></i></span><span data-i18n="join.kicker">Gardez le fil</span></p>
+            <h2 id="joinInTitle"></h2>
+            <p style="color:#c4cadb;margin-bottom:26px" data-i18n="join.in.p"></p>
+            <div class="join-actions">
+              <button class="btn btn-pos btn-lg" type="button" data-go="#resultat"><i data-lucide="chart-pie"></i><span data-i18n="nav.results">Mon résultat</span></button>
+              <button class="btn btn-glass btn-lg" type="button" id="joinPrefs"><i data-lucide="mail"></i><span data-i18n="join.in.cta">Gérer mes emails</span></button>
+            </div>
+          </div>
+          <div class="mail-mock" aria-hidden="true">
+            <div class="mm-head"><span class="dots3"><i></i><i></i><i></i></span><span data-i18n="brand">Défi Impact</span><small>09:00</small></div>
+            <div class="mm-body">
+              <p class="mm-sub" data-i18n="qod.badge">Question du jour</p>
+              <p class="mm-q" id="mockQ"></p>
+              <div class="mm-btns"><span style="background:var(--neg)" data-i18n="ans.neg"></span><span style="background:var(--none)" data-i18n="ans.none"></span><span style="background:var(--pos)" data-i18n="ans.pos"></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ===================== Résultat ===================== -->
+  <div id="resultsView" hidden>
+    <section class="results">
+      <div class="wrap">
+        <div class="rs-head">
+          <div>
+            <p class="kicker"><span class="dots3"><i></i><i></i><i></i></span><span data-i18n="rs.kicker">Mon résultat</span></p>
+            <h1 data-i18n-html="rs.title" tabindex="-1" id="rsTitle">Votre empreinte d'<em>impact</em></h1>
+          </div>
+          <div class="rs-actions">
+            <button class="btn btn-pos" type="button" data-start="all"><i data-lucide="play"></i><span data-i18n="rs.continue">Continuer le défi</span></button>
+            <button class="btn btn-line" type="button" id="shareBtn"><i data-lucide="share-2"></i><span data-i18n="rs.share">Partager</span></button>
+            <button class="btn btn-line" type="button" id="restartBtn"><i data-lucide="rotate-ccw"></i><span data-i18n="rs.restart">Recommencer</span></button>
+          </div>
+        </div>
+
+        <div class="summary">
+          <div class="donut-wrap">
+            <svg class="donut" viewBox="0 0 120 120" aria-hidden="true">
+              <circle class="track" cx="60" cy="60" r="52"/>
+              <circle class="arc a-pos" cx="60" cy="60" r="52" stroke-dasharray="0 400"/>
+              <circle class="arc a-none" cx="60" cy="60" r="52" stroke-dasharray="0 400"/>
+              <circle class="arc a-neg" cx="60" cy="60" r="52" stroke-dasharray="0 400"/>
+            </svg>
+            <div class="donut-c"><b id="sumPct">0%</b><span data-i18n="rs.pos.label">positif</span></div>
+          </div>
+          <div class="sum-txt">
+            <p class="answered" id="sumAnswered"></p>
+            <p class="read" id="sumRead"></p>
+            <div class="legend" id="sumLegend"></div>
+            <p class="saved-note" id="savedNote" hidden><i data-lucide="shield-check"></i><span data-i18n="rs.saved"></span></p>
+          </div>
+          <div class="mosaic-wrap">
+            <p><b data-i18n="rs.mosaic">Votre mosaïque</b> — <span data-i18n="rs.mosaic.hint"></span></p>
+            <div class="mosaics" id="mosaics"></div>
+          </div>
+        </div>
+
+        <div class="save-banner" id="saveBanner" hidden>
+          <span class="sb-ic"><i data-lucide="cloud-off"></i></span>
+          <div><b data-i18n="rs.save.t"></b><p data-i18n="rs.save.p"></p></div>
+          <button class="btn btn-pos btn-sm" type="button" data-auth="signup" data-i18n="acc.create">Créer un compte</button>
+          <button class="btn btn-glass btn-sm" type="button" data-auth="login" data-i18n="au.login">Se connecter</button>
+        </div>
+
+        <div class="rs-toolbar">
+          <div class="tabs" id="rsTabs" role="group"></div>
+          <div class="cats" id="rsCats" role="group"></div>
+        </div>
+        <div class="rs-list" id="rsList"></div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <div>
+      <div class="f-brand">
+        <svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true" style="width:42px;height:42px"><circle cx="20" cy="20" r="18.5" fill="none" stroke="#17b26a" stroke-width="1.5" opacity=".35"/><circle cx="20" cy="20" r="12.5" fill="none" stroke="#17b26a" stroke-width="1.5" opacity=".65"/><circle cx="12.5" cy="20" r="3.2" fill="#ff5d5d"/><circle cx="20" cy="20" r="3.2" fill="#8b93a7"/><circle cx="27.5" cy="20" r="3.2" fill="#17b26a"/></svg>
+        <div><b data-i18n="brand">Défi Impact</b><span data-i18n="ft.tag" style="font-size:.86rem"></span></div>
+      </div>
+      <p style="margin-top:16px" data-i18n="ft.privacy"></p>
+    </div>
+    <div class="f-links">
+      <a href="#how" data-i18n="nav.how">Comment ça marche</a>
+      <a href="#mur" data-i18n="nav.wall">Le mur</a>
+      <a href="#resultat" data-i18n="nav.results">Mon résultat</a>
+    </div>
+    <div class="f-bottom">
+      <span><span data-i18n="ft.by">Un projet de</span> <a href="https://dehini.com/" style="color:#fff;font-weight:700">Mohammed Dehini</a> · dehini.com</span>
+      <span>© <span id="year"></span></span>
+    </div>
+  </div>
+</footer>
+
+<!-- ===================== Défi plein écran ===================== -->
+<div class="quiz" id="quiz" hidden role="dialog" aria-modal="true" aria-labelledby="qzQ">
+  <canvas class="fx-canvas" id="quizFx" aria-hidden="true"></canvas>
+  <div class="qz-top">
+    <button class="icon-btn" type="button" id="qzClose" data-i18n-attr="aria-label:a.close" aria-label="Fermer"><i data-lucide="x"></i></button>
+    <div class="qz-prog">
+      <div class="qz-count"><span id="qzCount"></span><span id="qzCatLabel"></span></div>
+      <div class="strip" id="qzStrip" aria-hidden="true"></div>
+    </div>
+    <button class="btn btn-white btn-sm" type="button" data-go="#resultat"><i data-lucide="chart-pie"></i><span class="lbl" data-i18n="qz.results">Voir mon résultat</span></button>
+  </div>
+  <div class="qz-stage" id="qzStage">
+    <div class="qz-filters" id="qzFilters" role="group"></div>
+    <div class="deck">
+      <span class="ghost g2" aria-hidden="true"></span><span class="ghost" aria-hidden="true"></span>
+      <article class="qcard" id="qcard">
+        <span class="stamp s-pos" data-i18n="ans.pos.s">Positif</span>
+        <span class="stamp s-neg" data-i18n="ans.neg.s">Négatif</span>
+        <span class="stamp s-none" data-i18n="ans.none.s">Aucun</span>
+        <div class="qcard-top"><span class="chip" id="qzChip"></span><span class="num" id="qzNum"></span></div>
+        <h2 id="qzQ" tabindex="-1"></h2>
+      </article>
+    </div>
+    <div class="answers qz-answers" id="qzAnswers"></div>
+    <div class="qz-nav">
+      <button type="button" id="qzPrev"><i data-lucide="arrow-left" class="flip"></i><span data-i18n="qz.prev">Précédente</span></button>
+      <span class="hint" id="qzHint"></span>
+      <button type="button" id="qzSkip"><span data-i18n="qz.skip">Passer</span><i data-lucide="arrow-right" class="flip"></i></button>
+    </div>
+    <p class="qz-last" id="qzLast" aria-live="polite"></p>
+    <div class="qz-nudge" id="qzNudge" hidden>
+      <i data-lucide="cloud-upload"></i><p data-i18n="qz.nudge"></p>
+      <button class="btn btn-white btn-xs" type="button" data-auth="signup" data-i18n="acc.create">Créer un compte</button>
+      <button class="x" type="button" id="qzNudgeX" data-i18n-attr="aria-label:a.close" aria-label="Fermer"><i data-lucide="x"></i></button>
+    </div>
+  </div>
+  <div class="qz-done" id="qzDone" hidden>
+    <div class="big"><i data-lucide="party-popper"></i></div>
+    <h2 id="qzDoneT"></h2>
+    <p id="qzDoneP"></p>
+    <div class="row" id="qzDoneRow"></div>
+  </div>
+</div>
+
+<!-- ===================== Compte ===================== -->
+<dialog class="dlg" id="authDlg">
+  <form method="dialog" class="dlg-x"><button data-i18n-attr="aria-label:a.close" aria-label="Fermer"><i data-lucide="x"></i></button></form>
+  <div class="dlg-body">
+    <div class="tabs" role="group" id="authTabs">
+      <button type="button" data-pane="signup" data-i18n="au.signup">Créer un compte</button>
+      <button type="button" data-pane="login" data-i18n="au.login">Se connecter</button>
+    </div>
+    <form class="auth-form" id="signupForm" data-pane="signup" novalidate>
+      <p class="dlg-intro" data-i18n="au.intro"></p>
+      <label class="field"><span data-i18n="au.name">Prénom</span><input name="name" autocomplete="given-name" maxlength="40" required></label>
+      <label class="field"><span data-i18n="au.email">Adresse email</span><input name="email" type="email" autocomplete="email" maxlength="190" required dir="ltr"></label>
+      <label class="field"><span data-i18n="au.pass">Mot de passe</span><input name="password" type="password" autocomplete="new-password" minlength="8" required dir="ltr"><small data-i18n="au.pass.hint"></small></label>
+      <div class="switches">
+        <label class="switch"><input type="checkbox" name="opt_daily" checked><span data-i18n="au.optDaily"></span></label>
+        <label class="switch"><input type="checkbox" name="opt_digest" checked><span data-i18n="au.optDigest"></span></label>
+      </div>
+      <button class="btn btn-pos btn-lg" type="submit" data-i18n="au.submit.signup">Créer mon compte</button>
+      <p class="form-err" role="alert"></p>
+      <p class="fine" data-i18n="au.terms"></p>
+    </form>
+    <form class="auth-form" id="loginForm" data-pane="login" novalidate>
+      <p class="dlg-intro" data-i18n="au.intro"></p>
+      <label class="field"><span data-i18n="au.email">Adresse email</span><input name="email" type="email" autocomplete="email" required dir="ltr"></label>
+      <label class="field"><span data-i18n="au.pass">Mot de passe</span><input name="password" type="password" autocomplete="current-password" required dir="ltr"></label>
+      <div class="auth-links"><button type="button" class="link" data-pane-go="forgot" data-i18n="au.forgot">Mot de passe oublié ?</button></div>
+      <button class="btn btn-ink btn-lg" type="submit" data-i18n="au.submit.login">Me connecter</button>
+      <p class="form-err" role="alert"></p>
+    </form>
+    <form class="auth-form" id="forgotForm" data-pane="forgot" novalidate>
+      <h2 style="margin-top:18px" data-i18n="au.forgot.t">Mot de passe oublié</h2>
+      <p class="dlg-intro" data-i18n="au.forgot.p"></p>
+      <label class="field"><span data-i18n="au.email">Adresse email</span><input name="email" type="email" autocomplete="email" required dir="ltr"></label>
+      <button class="btn btn-ink btn-lg" type="submit" data-i18n="au.forgot.submit">Envoyer le lien</button>
+      <p class="form-err" role="alert"></p>
+      <p class="ok-msg" hidden data-i18n="au.forgot.sent"></p>
+      <div class="auth-links" style="margin-top:14px"><button type="button" class="link" data-pane-go="login" data-i18n="au.back">Retour</button></div>
+    </form>
+    <div data-pane="offline"><p class="dlg-intro" style="margin-top:20px" data-i18n="au.offline"></p></div>
+  </div>
+</dialog>
+
+<dialog class="dlg" id="meDlg">
+  <form method="dialog" class="dlg-x"><button data-i18n-attr="aria-label:a.close" aria-label="Fermer"><i data-lucide="x"></i></button></form>
+  <div class="dlg-body">
+    <div class="me-head"><span class="avatar" id="meAvatar"></span><div><h2 data-i18n="me.title">Mon compte</h2><p id="meEmail"></p></div></div>
+    <div class="me-verify" id="meVerify"></div>
+    <form id="prefsForm" novalidate>
+      <label class="field"><span data-i18n="au.name">Prénom</span><input name="name" maxlength="40" required></label>
+      <fieldset>
+        <legend data-i18n="me.emails">Emails de rappel</legend>
+        <div class="switches">
+          <label class="switch"><input type="checkbox" name="opt_daily"><span data-i18n="au.optDaily"></span></label>
+          <label class="switch"><input type="checkbox" name="opt_digest"><span data-i18n="au.optDigest"></span></label>
+        </div>
+      </fieldset>
+      <p class="me-lang" id="meLang"></p>
+      <button class="btn btn-ink" type="submit" data-i18n="me.save">Enregistrer</button>
+      <p class="form-err" role="alert"></p>
+    </form>
+    <div class="me-actions">
+      <button class="btn btn-line" type="button" data-go="#resultat"><i data-lucide="chart-pie"></i><span data-i18n="nav.results">Mon résultat</span></button>
+      <button class="btn btn-line" type="button" id="logoutBtn"><i data-lucide="log-out" class="flip"></i><span data-i18n="me.logout">Se déconnecter</span></button>
+    </div>
+    <details class="danger-zone">
+      <summary data-i18n="me.delete">Supprimer mon compte</summary>
+      <form id="deleteForm" novalidate>
+        <p data-i18n="me.delete.p"></p>
+        <label class="field"><span data-i18n="au.pass">Mot de passe</span><input name="password" type="password" autocomplete="current-password" required dir="ltr"></label>
+        <button class="btn btn-danger" type="submit" data-i18n="me.delete.btn">Supprimer définitivement</button>
+        <p class="form-err" role="alert"></p>
+      </form>
+    </details>
+  </div>
+</dialog>
+
+<dialog class="dlg" id="resetDlg">
+  <form method="dialog" class="dlg-x"><button data-i18n-attr="aria-label:a.close" aria-label="Fermer"><i data-lucide="x"></i></button></form>
+  <div class="dlg-body">
+    <form class="auth-form" id="resetForm" novalidate>
+      <h2 data-i18n="au.reset.t">Nouveau mot de passe</h2>
+      <p class="dlg-intro" data-i18n="au.pass.hint"></p>
+      <label class="field"><span data-i18n="au.pass">Mot de passe</span><input name="password" type="password" autocomplete="new-password" minlength="8" required dir="ltr"></label>
+      <button class="btn btn-pos btn-lg" type="submit" data-i18n="au.reset.submit">Enregistrer et me connecter</button>
+      <p class="form-err" role="alert"></p>
+    </form>
+  </div>
+</dialog>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<canvas id="fx" aria-hidden="true"></canvas>
+
+<script>
+/* ======================================================================
+   Défi Impact — dehini.com/impact/
+   Les questions vivent dans questions.json (aussi lues par le cron des
+   emails) ; les comptes, réponses et récits passent par api.php. Sans API
+   (page ouverte hors serveur), le défi fonctionne sur l'appareil seul.
+   ====================================================================== */
+(() => {
+"use strict";
+
+/* ---------------------------------------------------------- Textes [fr, ar, en] */
+const T = {
+  "brand": ["Défi Impact", "تحدي الأثر", "Impact Challenge"],
+  "skip": ["Aller au contenu", "انتقل إلى المحتوى", "Skip to content"],
+  "meta.title": ["Défi Impact — partagez vos expériences positives · dehini.com", "تحدي الأثر — شارك تجاربك الإيجابية · dehini.com", "Impact Challenge — share your positive experiences · dehini.com"],
+  "meta.desc": ["120 questions sur votre vie personnelle, sociale et professionnelle. Pour chacune : impact négatif, aucun ou positif ? Découvrez votre empreinte et inspirez les autres avec vos expériences positives.", "120 سؤالاً عن حياتك الشخصية والاجتماعية والمهنية. لكل سؤال: أثر سلبي أم بلا أثر أم أثر إيجابي؟ اكتشف بصمتك وألهِم الآخرين بتجاربك الإيجابية.", "120 questions about your personal, social and professional life. For each one: negative, no or positive impact? Discover your footprint and inspire others with your positive experiences."],
+  "a.nav": ["Navigation", "التنقل", "Navigation"],
+  "a.lang": ["Langue", "اللغة", "Language"],
+  "a.close": ["Fermer", "إغلاق", "Close"],
+  "nav.how": ["Comment ça marche", "كيف يعمل", "How it works"],
+  "nav.uni": ["Univers", "العوالم", "Worlds"],
+  "nav.wall": ["Le mur", "الجدار", "The wall"],
+  "nav.results": ["Mon résultat", "نتيجتي", "My result"],
+  "acc.create": ["Créer un compte", "إنشاء حساب", "Create account"],
+
+  "hero.kicker": ["Le défi des expériences positives", "تحدّي التجارب الإيجابية", "The positive experiences challenge"],
+  "hero.title": ["Votre vie en <em>120 impacts</em>.", "حياتك في <em>120 أثراً</em>.", "Your life in <em>120 impacts</em>."],
+  "hero.sub": ["Question après question, dites si chaque expérience a eu sur vous un impact négatif, aucun impact ou un impact positif. Puis racontez vos impacts positifs : ils deviendront l'inspiration de ceux qui ont vécu l'inverse.", "سؤالاً بعد سؤال، أخبرنا إن كانت كل تجربة قد تركت فيك أثراً سلبياً أو لم تترك أي أثر أو تركت أثراً إيجابياً. ثم احكِ آثارك الإيجابية: ستصبح مصدر إلهام لمن عاشوا العكس.", "Question by question, tell us whether each experience had a negative impact, no impact or a positive impact on you. Then share your positive impacts: they will inspire those who lived the opposite."],
+  "hero.cta": ["Relever le défi", "خُض التحدي", "Take the challenge"],
+  "hero.resume": ["Reprendre le défi", "واصل التحدي", "Resume the challenge"],
+  "hero.how": ["Comment ça marche", "كيف يعمل؟", "How it works"],
+  "hero.progress": ["Vous avez répondu à <b>{n}</b> questions sur {t}.", "أجبت عن <b>{n}</b> من أصل {t}.", "You've answered <b>{n}</b> of {t} questions."],
+  "stat.participants": ["participants", "مشارك", "participants"],
+  "stat.answers": ["réponses données", "إجابة", "answers given"],
+  "stat.stories": ["impacts positifs partagés", "أثر إيجابي تمّت مشاركته", "positive impacts shared"],
+  "stat.participants.1": ["participant", "مشارك", "participant"],
+  "stat.answers.1": ["réponse donnée", "إجابة", "answer given"],
+  "stat.stories.1": ["impact positif partagé", "أثر إيجابي تمّت مشاركته", "positive impact shared"],
+  "qod.badge": ["Question du jour", "سؤال اليوم", "Question of the day"],
+  "qod.foot": ["Répondez pour lancer le défi — sans inscription.", "أجب لتبدأ التحدي — دون تسجيل.", "Answer to start the challenge — no sign-up needed."],
+  "qod.done": ["Réponse enregistrée.", "تم حفظ إجابتك.", "Answer saved."],
+  "qod.continue": ["Continuer le défi", "مواصلة التحدي", "Continue the challenge"],
+
+  "ans.neg": ["Impact négatif", "أثر سلبي", "Negative impact"],
+  "ans.none": ["Aucun impact", "بلا أثر", "No impact"],
+  "ans.pos": ["Impact positif", "أثر إيجابي", "Positive impact"],
+  "ans.neg.s": ["Négatif", "سلبي", "Negative"],
+  "ans.none.s": ["Aucun", "بلا أثر", "None"],
+  "ans.pos.s": ["Positif", "إيجابي", "Positive"],
+
+  "cat.all": ["Tout", "الكل", "All"],
+  "cat.perso": ["Personnel", "شخصي", "Personal"],
+  "cat.social": ["Social", "اجتماعي", "Social"],
+  "cat.pro": ["Professionnel", "مهني", "Professional"],
+  "cat.perso.d": ["Santé, épreuves, habitudes, passions : ce qui vous a construit de l'intérieur.", "الصحة، المحن، العادات، الشغف: ما بناك من الداخل.", "Health, hardships, habits, passions: what shaped you from within."],
+  "cat.social.d": ["Famille, amitiés, rencontres, entraide : ce que les autres ont changé en vous.", "العائلة، الصداقات، اللقاءات، التضامن: ما غيّره الآخرون فيك.", "Family, friendships, encounters, solidarity: what others changed in you."],
+  "cat.pro.d": ["Études, emplois, échecs, réussites : ce que le travail a fait de vous.", "الدراسة، الوظائف، الإخفاقات، النجاحات: ما صنعه العمل منك.", "Studies, jobs, failures, successes: what work made of you."],
+  "cat.count": ["{n} questions", "{n} سؤالاً", "{n} questions"],
+  "cat.progress": ["{a} / {n} répondues", "{a} / {n} تمّت الإجابة", "{a} / {n} answered"],
+  "cat.start": ["Commencer", "ابدأ", "Start"],
+  "cat.continue": ["Continuer", "واصل", "Continue"],
+  "cat.review": ["Revoir mes réponses", "راجع إجاباتي", "Review my answers"],
+
+  "how.kicker": ["Comment ça marche", "كيف يعمل التحدي", "How it works"],
+  "how.title": ["Trois gestes. Des <em>ondes positives</em> qui se propagent.", "ثلاث خطوات… و<em>موجات إيجابية</em> تنتشر.", "Three steps. <em>Positive ripples</em> that spread."],
+  "how.1.t": ["Répondez", "أجب", "Answer"],
+  "how.1.p": ["120 questions, une à la fois. Trois réponses possibles : négatif, aucun, positif. Passez celles qui ne vous concernent pas.", "120 سؤالاً، واحداً تلو الآخر. ثلاث إجابات ممكنة: سلبي، بلا أثر، إيجابي. وتجاوز ما لا يعنيك.", "120 questions, one at a time. Three possible answers: negative, none, positive. Skip the ones that don't apply to you."],
+  "how.2.t": ["Voyez votre résultat", "اكتشف نتيجتك", "See your result"],
+  "how.2.p": ["À tout moment, « Voir mon résultat » révèle votre empreinte : la mosaïque de tous vos impacts.", "في أي لحظة، يكشف زر «عرض نتيجتي» بصمتك: فسيفساء كل آثارك.", "At any time, “See my result” reveals your footprint: a mosaic of all your impacts."],
+  "how.3.t": ["Partagez, inspirez", "شارك وألهِم", "Share & inspire"],
+  "how.3.p": ["Racontez vos impacts positifs. Sur vos réponses négatives, découvrez comment d'autres ont transformé la même expérience.", "احكِ آثارك الإيجابية. وعلى إجاباتك السلبية، اكتشف كيف حوّل الآخرون التجربة نفسها.", "Tell your positive impacts. On your negative answers, discover how others transformed the very same experience."],
+  "uni.kicker": ["Trois univers", "ثلاثة عوالم", "Three worlds"],
+  "uni.title": ["Par où voulez-vous <em>commencer</em> ?", "من أين تريد أن <em>تبدأ</em>؟", "Where would you like to <em>start</em>?"],
+
+  "wall.kicker": ["Le mur des impacts", "جدار الآثار", "The impact wall"],
+  "wall.title": ["Ils ont transformé une expérience en <em>force</em>.", "حوّلوا تجربة إلى <em>قوة</em>.", "They turned an experience into <em>strength</em>."],
+  "wall.sub": ["Les derniers impacts positifs partagés par les participants.", "آخر الآثار الإيجابية التي شاركها المشاركون.", "The latest positive impacts shared by participants."],
+  "wall.more": ["Voir plus", "عرض المزيد", "See more"],
+  "wall.empty": ["Le mur attend ses premiers récits. Relevez le défi et soyez le premier à inspirer les autres !", "الجدار ينتظر قصصه الأولى. خُض التحدي وكن أول من يُلهم الآخرين!", "The wall is waiting for its first stories. Take the challenge and be the first to inspire others!"],
+  "wall.offline": ["Le mur des récits s'affichera ici une fois le site en ligne.", "سيظهر جدار القصص هنا بمجرد تشغيل الموقع.", "The story wall will appear here once the site is online."],
+
+  "story.impact": ["Son impact positif", "أثرها الإيجابي", "Its positive impact"],
+  "story.anon": ["Anonyme", "مجهول", "Anonymous"],
+  "story.inspire": ["Inspirant", "مُلهِم", "Inspiring"],
+  "story.report": ["Signaler", "إبلاغ", "Report"],
+  "story.report.confirm": ["Signaler ce récit comme inapproprié ?", "الإبلاغ عن هذه القصة كمحتوى غير لائق؟", "Report this story as inappropriate?"],
+  "story.reported": ["Merci, le récit a été signalé.", "شكراً، تم الإبلاغ عن القصة.", "Thanks, the story has been reported."],
+  "story.more": ["Lire la suite", "اقرأ المزيد", "Read more"],
+
+  "join.kicker": ["Gardez le fil", "ابقَ على اتصال", "Stay in the loop"],
+  "join.title": ["Créez votre compte : votre résultat se <em>sauvegarde tout seul</em>.", "أنشئ حسابك: نتيجتك <em>تُحفظ تلقائياً</em>.", "Create your account: your result <em>saves itself</em>."],
+  "join.1": ["Sauvegarde automatique de vos réponses et de vos récits, sur tous vos appareils.", "حفظ تلقائي لإجاباتك وقصصك على كل أجهزتك.", "Automatic saving of your answers and stories, on all your devices."],
+  "join.2": ["La question du jour dans votre boîte mail — répondez en un clic.", "سؤال اليوم في بريدك الإلكتروني — أجب بنقرة واحدة.", "The question of the day in your inbox — answer in one click."],
+  "join.3": ["Les impacts positifs des autres sur vos réponses difficiles, directement par email.", "الآثار الإيجابية للآخرين على إجاباتك الصعبة، مباشرة عبر البريد.", "Other people's positive impacts on your difficult answers, straight to your inbox."],
+  "join.cta": ["Créer mon compte gratuit", "أنشئ حسابي المجاني", "Create my free account"],
+  "join.login": ["J'ai déjà un compte", "لديّ حساب بالفعل", "I already have an account"],
+  "join.in.title": ["Vous êtes connecté, {name}.", "أنت متصل يا {name}.", "You're signed in, {name}."],
+  "join.in.p": ["Vos réponses et vos récits sont sauvegardés automatiquement. Gérez vos emails de rappel à tout moment.", "إجاباتك وقصصك تُحفظ تلقائياً. يمكنك إدارة رسائل التذكير في أي وقت.", "Your answers and stories are saved automatically. Manage your reminder emails at any time."],
+  "join.in.cta": ["Gérer mes emails", "إدارة رسائلي", "Manage my emails"],
+
+  "ft.tag": ["Le défi des expériences positives.", "تحدّي التجارب الإيجابية.", "The positive experiences challenge."],
+  "ft.by": ["Un projet de", "مشروع من إعداد", "A project by"],
+  "ft.privacy": ["Vos réponses sont anonymes. Seuls les récits que vous choisissez de publier sont visibles par les autres.", "إجاباتك مجهولة الهوية. وحدها القصص التي تختار نشرها يراها الآخرون.", "Your answers are anonymous. Only the stories you choose to publish are visible to others."],
+
+  "qz.results": ["Voir mon résultat", "عرض نتيجتي", "See my result"],
+  "qz.prev": ["Précédente", "السابق", "Previous"],
+  "qz.skip": ["Passer", "تخطَّ", "Skip"],
+  "qz.of": ["Question <b>{i}</b> / {n}", "السؤال <b>{i}</b> / {n}", "Question <b>{i}</b> / {n}"],
+  "qz.hint.keys": ["Clavier : 1 · 2 · 3 ou ← ↑ →", "لوحة المفاتيح: 1 · 2 · 3 أو الأسهم", "Keyboard: 1 · 2 · 3 or ← ↑ →"],
+  "qz.hint.swipe": ["Glissez la carte vers une réponse", "اسحب البطاقة نحو إجابة", "Swipe the card towards an answer"],
+  "qz.same": ["<b>{p} %</b> des participants ont aussi répondu « {a} ».", "<b>{p}%</b> من المشاركين أجابوا أيضاً «{a}».", "<b>{p}%</b> of participants also answered “{a}”."],
+  "qz.first": ["Vous faites partie des premiers à répondre à cette question.", "أنت من أوائل من أجابوا عن هذا السؤال.", "You're among the first to answer this question."],
+  "qz.posToast": ["Bel impact ! Vous pourrez le raconter dans votre résultat.", "أثر جميل! يمكنك أن ترويه في نتيجتك.", "Great impact! You can tell its story in your result."],
+  "qz.nudge": ["Déjà {n} réponses ! Créez un compte pour ne rien perdre et recevoir la question du jour.", "{n} إجابات بالفعل! أنشئ حساباً كي لا تفقد شيئاً ولتصلك أسئلة اليوم.", "{n} answers already! Create an account so you don't lose anything and get the question of the day."],
+  "qz.done.t": ["Série terminée !", "أتممت السلسلة!", "Series complete!"],
+  "qz.done.p": ["Vous avez répondu à toutes les questions de cette série. Découvrez votre empreinte et racontez vos expériences positives.", "أجبت عن كل أسئلة هذه السلسلة. اكتشف بصمتك واروِ تجاربك الإيجابية.", "You've answered every question in this series. Discover your footprint and tell your positive experiences."],
+  "qz.end.t": ["Fin de la série", "نهاية السلسلة", "End of the series"],
+  "qz.end.p": ["Il vous reste {n} question(s) passée(s). Vous pouvez y revenir quand vous voulez.", "بقي {n} من الأسئلة التي تخطّيتها. يمكنك العودة إليها متى شئت.", "You have {n} skipped question(s) left. You can come back to them anytime."],
+  "qz.done.back": ["Revenir aux questions passées", "العودة إلى الأسئلة المتخطّاة", "Back to skipped questions"],
+  "qz.done.other": ["Explorer un autre univers", "استكشف عالماً آخر", "Explore another world"],
+
+  "rs.kicker": ["Mon résultat", "نتيجتي", "My result"],
+  "rs.title": ["Votre empreinte d'<em>impact</em>", "بصمة <em>أثرك</em>", "Your <em>impact</em> footprint"],
+  "rs.answered": ["{n} questions répondues sur {t}", "الأسئلة المُجاب عنها: {n} من {t}", "{n} of {t} questions answered"],
+  "rs.continue": ["Continuer le défi", "مواصلة التحدي", "Continue the challenge"],
+  "rs.share": ["Partager", "مشاركة", "Share"],
+  "rs.restart": ["Recommencer", "البدء من جديد", "Start over"],
+  "rs.restart.confirm": ["Effacer toutes vos réponses et recommencer le défi ? Vos récits publiés sont conservés.", "مسح كل إجاباتك والبدء من جديد؟ ستبقى قصصك المنشورة محفوظة.", "Erase all your answers and start over? Your published stories are kept."],
+  "rs.share.text": ["J'ai relevé le défi Impact : {p} % de mes expériences ont eu un impact positif sur ma vie. Et vous ?", "خضت تحدي الأثر: {p}% من تجاربي تركت أثراً إيجابياً في حياتي. وأنت؟", "I took the Impact Challenge: {p}% of my experiences had a positive impact on my life. What about you?"],
+  "share.invite": ["Relevez le défi Impact : 120 questions sur votre vie, et des expériences positives à partager.", "خُض تحدي الأثر: 120 سؤالاً عن حياتك، وتجارب إيجابية تشاركها.", "Take the Impact Challenge: 120 questions about your life, and positive experiences to share."],
+  "share.copied": ["Lien copié dans le presse-papiers.", "تم نسخ الرابط.", "Link copied to clipboard."],
+  "rs.pos.label": ["positif", "إيجابي", "positive"],
+  "rs.mosaic": ["Votre mosaïque", "فسيفساؤك", "Your mosaic"],
+  "rs.mosaic.hint": ["une case par question, touchez-en une pour y aller.", "مربّع لكل سؤال، المسه للانتقال إليه.", "one tile per question, tap one to jump to it."],
+  "rs.save.t": ["Votre résultat n'est enregistré que sur cet appareil.", "نتيجتك محفوظة على هذا الجهاز فقط.", "Your result is only stored on this device."],
+  "rs.save.p": ["Créez un compte pour le sauvegarder automatiquement et recevoir la question du jour.", "أنشئ حساباً لحفظها تلقائياً وتلقّي سؤال اليوم.", "Create an account to save it automatically and receive the question of the day."],
+  "rs.saved": ["Sauvegardé automatiquement dans votre compte", "محفوظة تلقائياً في حسابك", "Saved automatically to your account"],
+  "rs.empty": ["Vous n'avez encore répondu à aucune question.", "لم تُجب عن أي سؤال بعد.", "You haven't answered any question yet."],
+  "rs.empty.filter": ["Aucune réponse dans ce filtre.", "لا توجد إجابات في هذا التصنيف.", "No answers in this filter."],
+  "rs.change": ["Votre réponse", "إجابتك", "Your answer"],
+  "read.high": ["Vous avez l'art de transformer vos expériences en force. Vos récits peuvent éclairer ceux qui traversent encore la tempête.", "لديك موهبة تحويل تجاربك إلى قوة. قد تنير قصصك طريق من لا يزال يعبر العاصفة.", "You have a knack for turning experiences into strength. Your stories could light the way for those still in the storm."],
+  "read.mid": ["Un bel équilibre : vos épreuves côtoient vos réussites. Racontez vos impacts positifs et découvrez comment d'autres ont vécu vos moments difficiles.", "توازن جميل: محنك تجاور نجاحاتك. احكِ آثارك الإيجابية واكتشف كيف عاش الآخرون لحظاتك الصعبة.", "A fine balance: your hardships sit alongside your successes. Tell your positive impacts and see how others lived through your difficult moments."],
+  "read.low": ["Votre parcours a connu des passages rudes. Sur chacune de ces réponses, d'autres participants racontent comment ils ont transformé la même expérience : laissez-vous inspirer.", "عرف مسارك محطات قاسية. في كل واحدة من هذه الإجابات، يروي مشاركون آخرون كيف حوّلوا التجربة نفسها: دعها تلهمك.", "Your path has had some rough stretches. On each of those answers, other participants tell how they transformed the very same experience — let them inspire you."],
+  "read.none": ["Répondez à quelques questions de plus pour révéler votre empreinte.", "أجب عن بضعة أسئلة أخرى لتكشف بصمتك.", "Answer a few more questions to reveal your footprint."],
+
+  "st.title": ["Racontez cet impact positif", "احكِ هذا الأثر الإيجابي", "Tell this positive impact"],
+  "st.exp.ph": ["Que s'est-il passé ? Dans quel contexte ?", "ماذا حدث؟ وفي أي سياق؟", "What happened? In what context?"],
+  "st.imp": ["Comment vous a-t-elle impacté positivement ?", "كيف أثّرت فيك إيجابياً؟", "How did it impact you positively?"],
+  "st.imp.ph": ["Ce que vous avez appris, gagné, changé…", "ما تعلّمته، ما كسبته، ما تغيّر فيك…", "What you learned, gained, changed…"],
+  "st.name.ph": ["Votre prénom", "اسمك", "Your first name"],
+  "st.anon": ["Rester anonyme", "البقاء مجهول الهوية", "Stay anonymous"],
+  "st.public": ["Partager avec la communauté pour inspirer les autres", "المشاركة مع المجتمع لإلهام الآخرين", "Share with the community to inspire others"],
+  "st.publish": ["Publier mon impact", "نشر أثري", "Publish my impact"],
+  "st.savePrivate": ["Enregistrer pour moi", "حفظ لنفسي", "Save for myself"],
+  "st.cancel": ["Annuler", "إلغاء", "Cancel"],
+  "st.min": ["Encore quelques mots ({n} caractères minimum).", "بضع كلمات أخرى ({n} حرفاً على الأقل).", "A few more words ({n} characters minimum)."],
+  "st.edit": ["Modifier", "تعديل", "Edit"],
+  "st.delete": ["Supprimer", "حذف", "Delete"],
+  "st.delete.confirm": ["Supprimer définitivement ce récit ?", "حذف هذه القصة نهائياً؟", "Delete this story permanently?"],
+  "st.status.published": ["Publié", "منشورة", "Published"],
+  "st.status.pending": ["En attente de validation", "في انتظار المراجعة", "Awaiting review"],
+  "st.status.private": ["Privé, visible par vous seul", "خاصة، لا يراها غيرك", "Private, only you can see it"],
+  "st.status.hidden": ["Masqué par la modération", "مخفية من قِبل الإشراف", "Hidden by moderation"],
+  "st.sent": ["Merci ! Votre impact inspire déjà la communauté.", "شكراً! أثرك يُلهم المجتمع منذ الآن.", "Thank you! Your impact is already inspiring the community."],
+  "st.sentPending": ["Merci ! Votre récit sera publié après une rapide vérification.", "شكراً! ستُنشر قصتك بعد مراجعة سريعة.", "Thank you! Your story will be published after a quick review."],
+  "st.sentPrivate": ["Récit enregistré, visible par vous seul.", "تم حفظ القصة، ولا يراها غيرك.", "Story saved, visible only to you."],
+  "st.deleted": ["Récit supprimé.", "تم حذف القصة.", "Story deleted."],
+  "st.yours": ["Votre récit", "قصتك", "Your story"],
+  "st.likes": ["{n} personne(s) inspirée(s)", "ألهمت {n} من المشاركين", "{n} people inspired"],
+
+  "ot.title": ["Ce que d'autres en ont tiré de positif", "ما استخلصه الآخرون من إيجابيات", "What others took from it positively"],
+  "ot.more": ["Voir plus ({n})", "عرض المزيد ({n})", "See more ({n})"],
+  "ot.end": ["Vous avez tout vu pour le moment.", "لقد اطّلعت على كل القصص حالياً.", "You've seen everything for now."],
+  "ot.empty": ["Personne n'a encore partagé d'impact positif sur ce sujet. Revenez bientôt, ou invitez vos proches à relever le défi.", "لم يشارك أحد بعد أثراً إيجابياً حول هذا الموضوع. عُد قريباً، أو ادعُ أحبّاءك لخوض التحدي.", "No one has shared a positive impact on this topic yet. Come back soon, or invite your friends to take the challenge."],
+  "ot.invite": ["Inviter au défi", "ادعُ إلى التحدي", "Invite to the challenge"],
+  "ot.offline": ["Les récits de la communauté s'afficheront ici une fois le site en ligne.", "ستظهر قصص المجتمع هنا بمجرد تشغيل الموقع.", "Community stories will appear here once the site is online."],
+
+  "au.signup": ["Créer un compte", "إنشاء حساب", "Create an account"],
+  "au.login": ["Se connecter", "تسجيل الدخول", "Sign in"],
+  "au.intro": ["Votre résultat actuel sera automatiquement rattaché à votre compte.", "ستُربط نتيجتك الحالية بحسابك تلقائياً.", "Your current result will be attached to your account automatically."],
+  "au.name": ["Prénom", "الاسم", "First name"],
+  "au.email": ["Adresse email", "البريد الإلكتروني", "Email address"],
+  "au.pass": ["Mot de passe", "كلمة المرور", "Password"],
+  "au.pass.hint": ["8 caractères minimum", "8 أحرف على الأقل", "At least 8 characters"],
+  "au.optDaily": ["Recevoir la question du jour par email", "تلقّي سؤال اليوم عبر البريد", "Get the question of the day by email"],
+  "au.optDigest": ["Recevoir les impacts positifs des autres sur mes réponses négatives", "تلقّي الآثار الإيجابية للآخرين على إجاباتي السلبية", "Get other people's positive impacts on my negative answers"],
+  "au.submit.signup": ["Créer mon compte", "إنشاء حسابي", "Create my account"],
+  "au.submit.login": ["Me connecter", "دخول", "Sign in"],
+  "au.forgot": ["Mot de passe oublié ?", "نسيت كلمة المرور؟", "Forgot your password?"],
+  "au.forgot.t": ["Mot de passe oublié", "نسيت كلمة المرور", "Forgot password"],
+  "au.forgot.p": ["Indiquez votre adresse email : nous vous enverrons un lien pour choisir un nouveau mot de passe.", "أدخل بريدك الإلكتروني: سنرسل لك رابطاً لاختيار كلمة مرور جديدة.", "Enter your email address: we'll send you a link to choose a new password."],
+  "au.forgot.submit": ["Envoyer le lien", "إرسال الرابط", "Send the link"],
+  "au.forgot.sent": ["Si un compte existe pour cette adresse, un email vient de partir.", "إذا كان هناك حساب بهذا العنوان، فقد أُرسلت إليه رسالة الآن.", "If an account exists for this address, an email is on its way."],
+  "au.back": ["Retour", "رجوع", "Back"],
+  "au.terms": ["Désinscription en un clic dans chaque email. Vos réponses restent anonymes pour les autres participants.", "إلغاء الاشتراك بنقرة واحدة في كل رسالة. تبقى إجاباتك مجهولة بالنسبة للمشاركين الآخرين.", "One-click unsubscribe in every email. Your answers stay anonymous to other participants."],
+  "au.reset.t": ["Nouveau mot de passe", "كلمة مرور جديدة", "New password"],
+  "au.reset.submit": ["Enregistrer et me connecter", "حفظ وتسجيل الدخول", "Save and sign in"],
+  "au.reset.ok": ["Mot de passe modifié, vous êtes connecté.", "تم تغيير كلمة المرور وأنت الآن متصل.", "Password changed, you're signed in."],
+  "au.welcome": ["Bienvenue {name} ! Votre résultat est maintenant sauvegardé.", "مرحباً {name}! نتيجتك محفوظة الآن.", "Welcome {name}! Your result is now saved."],
+  "au.verifyHint": ["Confirmez votre adresse via l'email reçu pour activer les rappels.", "أكّد عنوانك عبر الرسالة التي وصلتك لتفعيل التذكيرات.", "Confirm your address via the email we sent to turn on reminders."],
+  "au.hello": ["Bon retour, {name} !", "مرحباً بعودتك يا {name}!", "Welcome back, {name}!"],
+  "au.verified": ["Adresse confirmée, merci ! Les emails de rappel sont activés.", "تم تأكيد العنوان، شكراً! رسائل التذكير مفعّلة الآن.", "Address confirmed, thank you! Reminder emails are on."],
+  "au.verifyBad": ["Ce lien de confirmation n'est plus valide.", "رابط التأكيد هذا لم يعد صالحاً.", "This confirmation link is no longer valid."],
+  "au.offline": ["Les comptes seront disponibles une fois le site en ligne. En attendant, votre résultat reste enregistré sur cet appareil.", "ستتوفر الحسابات بمجرد تشغيل الموقع. في الأثناء، تبقى نتيجتك محفوظة على هذا الجهاز.", "Accounts will be available once the site is online. Meanwhile, your result stays saved on this device."],
+
+  "me.title": ["Mon compte", "حسابي", "My account"],
+  "me.verified": ["Adresse confirmée", "العنوان مؤكَّد", "Address confirmed"],
+  "me.unverified": ["Adresse non confirmée : les emails de rappel partiront après confirmation.", "العنوان غير مؤكَّد: ستُرسل رسائل التذكير بعد التأكيد.", "Address not confirmed: reminder emails will start after confirmation."],
+  "me.resend": ["Renvoyer l'email de confirmation", "إعادة إرسال رسالة التأكيد", "Resend confirmation email"],
+  "me.resent": ["Email de confirmation envoyé.", "تم إرسال رسالة التأكيد.", "Confirmation email sent."],
+  "me.emails": ["Emails de rappel", "رسائل التذكير", "Reminder emails"],
+  "me.lang": ["Vos emails arrivent dans la langue du site : {l}.", "تصلك الرسائل بلغة الموقع: {l}.", "Your emails arrive in the site's language: {l}."],
+  "me.save": ["Enregistrer", "حفظ", "Save"],
+  "me.saved": ["Préférences enregistrées.", "تم حفظ التفضيلات.", "Preferences saved."],
+  "me.logout": ["Se déconnecter", "تسجيل الخروج", "Sign out"],
+  "me.loggedout": ["Vous êtes déconnecté.", "تم تسجيل خروجك.", "You're signed out."],
+  "me.delete": ["Supprimer mon compte", "حذف حسابي", "Delete my account"],
+  "me.delete.p": ["Vos réponses, vos récits et vos préférences seront définitivement effacés. Confirmez avec votre mot de passe.", "ستُحذف إجاباتك وقصصك وتفضيلاتك نهائياً. أكّد بكلمة المرور.", "Your answers, stories and preferences will be permanently erased. Confirm with your password."],
+  "me.delete.btn": ["Supprimer définitivement", "حذف نهائي", "Delete permanently"],
+  "me.deleted": ["Votre compte a été supprimé.", "تم حذف حسابك.", "Your account has been deleted."],
+
+  "err.network": ["Connexion impossible. Vérifiez votre réseau et réessayez.", "تعذّر الاتصال. تحقّق من شبكتك وأعد المحاولة.", "Couldn't connect. Check your network and try again."],
+  "err.offline": ["Service indisponible pour le moment.", "الخدمة غير متاحة حالياً.", "Service unavailable right now."],
+  "err.email_taken": ["Un compte existe déjà avec cet email. Connectez-vous plutôt.", "يوجد حساب بهذا البريد بالفعل. سجّل الدخول بدلاً من ذلك.", "An account already exists with this email. Sign in instead."],
+  "err.bad_login": ["Email ou mot de passe incorrect.", "البريد الإلكتروني أو كلمة المرور غير صحيحة.", "Incorrect email or password."],
+  "err.bad_email": ["Adresse email invalide.", "عنوان البريد الإلكتروني غير صالح.", "Invalid email address."],
+  "err.weak_pass": ["Mot de passe trop court (8 caractères minimum).", "كلمة المرور قصيرة جداً (8 أحرف على الأقل).", "Password too short (at least 8 characters)."],
+  "err.bad_name": ["Indiquez votre prénom.", "أدخل اسمك.", "Please enter your first name."],
+  "err.rate": ["Trop de tentatives. Réessayez dans quelques minutes.", "محاولات كثيرة. أعد المحاولة بعد بضع دقائق.", "Too many attempts. Try again in a few minutes."],
+  "err.bad_token": ["Lien invalide ou expiré. Refaites une demande.", "الرابط غير صالح أو منتهي الصلاحية. أعد الطلب.", "Invalid or expired link. Please request a new one."],
+  "err.too_short": ["Votre récit est un peu court : quelques mots de plus ?", "قصتك قصيرة بعض الشيء: بضع كلمات أخرى؟", "Your story is a bit short: a few more words?"],
+  "err.auth": ["Session expirée, reconnectez-vous.", "انتهت الجلسة، سجّل الدخول من جديد.", "Session expired, please sign in again."],
+  "err.mail": ["L'email n'a pas pu partir. Réessayez plus tard.", "تعذّر إرسال الرسالة. أعد المحاولة لاحقاً.", "The email couldn't be sent. Try again later."],
+  "err.generic": ["Une erreur est survenue. Réessayez.", "حدث خطأ. أعد المحاولة.", "Something went wrong. Please try again."],
+};
+const LANGS = ["fr", "ar", "en"];
+const LANG_NAMES = { fr: "Français", ar: "العربية", en: "English" };
+const CATS = ["perso", "social", "pro"];
+const CAT_ICON = { all: "sparkles", perso: "heart", social: "users", pro: "briefcase" };
+const KEY = { "-1": "neg", "0": "none", "1": "pos" };
+const FACE = { "-1": "frown", "0": "meh", "1": "smile" };
+const MIN_EXP = 15, MIN_IMP = 10;
+
+/* --------------------------------------------------------------- Outils */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+let lang = "fr";
+
+function t(k, vars) {
+  const row = T[k];
+  let s = row ? (row[LANGS.indexOf(lang)] ?? row[0]) : k;
+  if (vars) for (const [a, b] of Object.entries(vars)) s = s.split("{" + a + "}").join(b);
+  return lang === "fr" ? frTypo(s) : s;
+}
+/** Espace insécable avant « : ? ! ; » et après « en français (pas de ponctuation orpheline en fin de ligne). */
+const frTypo = s => s.replace(/ ([:?!;»%])/g, "\u00a0$1").replace(/« /g, "«\u00a0");
+const fmt = n => new Intl.NumberFormat(lang === "ar" ? "ar-DZ" : lang).format(n);
+
+/** Petit constructeur DOM : les textes passent toujours par textContent. */
+function el(tag, props, ...kids) {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(props || {})) {
+    if (v == null || v === false) continue;
+    if (k === "class") n.className = v;
+    else if (k === "text") n.textContent = v;
+    else if (k === "html") n.innerHTML = v; // uniquement nos propres textes (T)
+    else if (k.startsWith("on")) n.addEventListener(k.slice(2), v);
+    else if (k === "dataset") Object.assign(n.dataset, v);
+    else n.setAttribute(k, v === true ? "" : v);
+  }
+  for (const c of kids.flat(2)) if (c != null && c !== false) n.append(c.nodeType ? c : document.createTextNode(String(c)));
+  return n;
+}
+const ic = (name, cls) => el("i", { "data-lucide": name, class: cls });
+let iconsQueued = false;
+function icons() {
+  if (iconsQueued) return;
+  iconsQueued = true;
+  requestAnimationFrame(() => { iconsQueued = false; if (window.lucide) lucide.createIcons(); });
+}
+document.addEventListener("DOMContentLoaded", icons);
+
+function toast(msg, type = "ok") {
+  const n = el("div", { class: "toast " + type }, ic(type === "err" ? "circle-alert" : type === "info" ? "info" : "circle-check"), el("span", { text: msg }));
+  $("#toasts").append(n);
+  icons();
+  setTimeout(() => { n.classList.add("bye"); setTimeout(() => n.remove(), 350); }, type === "err" ? 5200 : 4200);
+}
+const errText = e => t("err." + (e && e.code)) !== "err." + (e && e.code) ? t("err." + e.code) : t("err.generic");
+
+/* ------------------------------------------------------------- Stockage */
+const STORE = "impact-v1";
+const newDevice = () => [...crypto.getRandomValues(new Uint8Array(16))].map(b => b.toString(16).padStart(2, "0")).join("");
+let S;
+function load() {
+  try { S = JSON.parse(localStorage.getItem(STORE)) || {}; } catch (e) { S = {}; }
+  S = Object.assign({ answers: {}, stories: {}, pending: {}, liked: {}, reported: {}, drafts: {}, author: "", nudged: 0 }, S);
+  if (!/^[a-f0-9]{32}$/.test(S.device || "")) S.device = newDevice();
+}
+function save() { try { localStorage.setItem(STORE, JSON.stringify(S)); } catch (e) {} }
+
+/* ------------------------------------------------------------------ API */
+let online = null, user = null, csrf = null;
+let markReady;
+const apiReady = new Promise(r => (markReady = r));
+class ApiError extends Error { constructor(code, status) { super(code); this.code = code; this.status = status; } }
+
+async function api(action, body, params, keepalive) {
+  const url = "api.php?action=" + action + (params ? "&" + new URLSearchParams(params) : "");
+  const opt = { credentials: "same-origin", headers: {}, keepalive: !!keepalive };
+  if (body !== undefined) {
+    opt.method = "POST";
+    opt.headers["Content-Type"] = "application/json";
+    opt.headers["X-Requested-With"] = "impact";
+    if (csrf) opt.headers["X-CSRF"] = csrf;
+    opt.body = JSON.stringify(body);
+  }
+  let res, data;
+  try { res = await fetch(url, opt); } catch (e) { throw new ApiError("network"); }
+  try { data = await res.json(); } catch (e) { throw new ApiError("offline", res.status); }
+  if (!res.ok || data.error) {
+    const err = new ApiError(data.error || "generic", res.status);
+    if (err.code === "auth" && user) signedOut(true);
+    throw err;
+  }
+  return data;
+}
+
+/* ----------------------------------------------------------- Questions */
+let Q = [], QBY = {}, INTER = [];
+const qText = id => (QBY[id] ? QBY[id][lang] : "");
+const seqFor = cat => (cat === "all" ? INTER : Q.filter(q => q.cat === cat));
+const ans = id => (S.answers[id] ? S.answers[id][0] : undefined);
+function counts(cat) {
+  const c = { neg: 0, none: 0, pos: 0, n: 0, total: 0 };
+  for (const q of Q) {
+    if (cat && cat !== "all" && q.cat !== cat) continue;
+    c.total++;
+    const v = ans(q.id);
+    if (v === undefined) continue;
+    c[KEY[v]]++; c.n++;
+  }
+  return c;
+}
+
+/* --------------------------------------------------------- Réponses */
+let flushTimer;
+function setAnswer(id, v) {
+  S.answers[id] = [v, Date.now()];
+  S.pending[id] = S.answers[id];
+  save();
+  clearTimeout(flushTimer);
+  flushTimer = setTimeout(flush, 700);
+  refreshLight();
+}
+async function flush(keepalive) {
+  await apiReady;
+  if (!online || !Object.keys(S.pending).length) return;
+  const set = S.pending;
+  S.pending = {};
+  save();
+  try { await api("answers", { device: S.device, set }, null, keepalive); }
+  catch (e) { S.pending = Object.assign(set, S.pending); save(); }
+}
+addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") flush(true); });
+
+/** Applique l'état renvoyé par le serveur après connexion / synchronisation. */
+function applyServer(d) {
+  if (d.user) user = d.user;
+  if (d.csrf) csrf = d.csrf;
+  if (d.answers) {
+    const next = {};
+    for (const [k, v] of Object.entries(d.answers)) next[k] = v;
+    for (const [k, v] of Object.entries(S.pending)) next[k] = v;
+    S.answers = next;
+  }
+  if (d.stories) {
+    const next = {};
+    for (const st of d.stories) next[st.qid] = st;
+    S.stories = next;
+  }
+  save();
+}
+
+/* ======================================================== Effets d'ondes */
+class Ripples {
+  constructor(canvas, ambient) {
+    this.c = canvas; this.x = canvas.getContext("2d"); this.items = []; this.dots = [];
+    this.ambient = ambient && !REDUCED; this.visible = true; this.run = false; this.spawn = 0;
+    this.resize();
+    addEventListener("resize", () => this.resize());
+    if (this.ambient) this.start();
+  }
+  resize() {
+    const dpr = Math.min(devicePixelRatio || 1, 2), b = this.c.getBoundingClientRect();
+    this.w = b.width; this.h = b.height;
+    this.c.width = Math.max(1, b.width * dpr); this.c.height = Math.max(1, b.height * dpr);
+    this.x.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  ring(x, y, color, max, dur, delay, alpha, width) {
+    this.items.push({ x, y, color, max, dur, delay: delay || 0, a: alpha, w: width || 2, life: 0 });
+    this.start();
+  }
+  burst(x, y, v) {
+    const color = ["#ff5d5d", "#8b93a7", "#17b26a"][v + 1];
+    if (REDUCED) { this.ring(x, y, color, 70, 600, 0, .5); return; }
+    const rings = v === 1 ? 3 : v === 0 ? 1 : 2;
+    for (let i = 0; i < rings; i++) this.ring(x, y, color, 120 + i * 70, 1100 + i * 200, i * 110, .65, 2.5);
+    if (v === 1) {
+      for (let i = 0; i < 18; i++) {
+        const a = Math.random() * Math.PI * 2, s = 2 + Math.random() * 4.5;
+        this.dots.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 1.5, r: 2 + Math.random() * 3.2, life: 0, dur: 800 + Math.random() * 500, color: Math.random() < .35 ? "#ffc53d" : "#17b26a" });
+      }
+    }
+    this.start();
+  }
+  start() {
+    if (this.run) return;
+    this.run = true; this.last = performance.now();
+    requestAnimationFrame(n => this.tick(n));
+  }
+  tick(now) {
+    const dt = Math.max(0, Math.min(48, now - this.last)); this.last = now;
+    if (this.ambient && this.visible && now - this.spawn > 620) {
+      this.spawn = now;
+      const r = Math.random(), color = r < .55 ? "#17b26a" : r < .78 ? "#8b93a7" : "#ff5d5d";
+      this.ring(Math.random() * this.w, Math.random() * this.h, color, 90 + Math.random() * 190, 3600 + Math.random() * 2400, 0, .32, 1.5);
+    }
+    const x = this.x;
+    x.clearRect(0, 0, this.w, this.h);
+    this.items = this.items.filter(p => {
+      if (p.delay > 0) { p.delay -= dt; return true; }
+      p.life += dt;
+      const k = Math.min(1, p.life / p.dur), e = 1 - Math.pow(1 - k, 3);
+      x.beginPath(); x.arc(p.x, p.y, 3 + e * p.max, 0, Math.PI * 2);
+      x.strokeStyle = p.color; x.globalAlpha = (1 - k) * p.a; x.lineWidth = p.w; x.stroke();
+      return k < 1;
+    });
+    this.dots = this.dots.filter(d => {
+      d.life += dt; d.x += d.vx; d.y += d.vy; d.vy += .12; d.vx *= .985;
+      const k = d.life / d.dur;
+      x.globalAlpha = Math.max(0, 1 - k); x.fillStyle = d.color;
+      x.beginPath(); x.arc(d.x, d.y, d.r * (1 - k * .5), 0, Math.PI * 2); x.fill();
+      return k < 1;
+    });
+    x.globalAlpha = 1;
+    if (this.items.length || this.dots.length || (this.ambient && this.visible)) requestAnimationFrame(n => this.tick(n));
+    else { this.run = false; x.clearRect(0, 0, this.w, this.h); }
+  }
+}
+let FX, HERO_FX, QUIZ_FX;
+function burstFrom(node, v) {
+  if (!node || !FX) return;
+  const b = node.getBoundingClientRect();
+  FX.burst(b.left + b.width / 2, b.top + b.height / 2, v);
+}
+
+/* ============================================================ Langue */
+function pickLang() {
+  const p = new URLSearchParams(location.search).get("lang");
+  if (LANGS.includes(p)) return p;
+  if (LANGS.includes(S.lang)) return S.lang;
+  for (const l of navigator.languages || [navigator.language || ""]) {
+    const s = String(l).slice(0, 2).toLowerCase();
+    if (LANGS.includes(s)) return s;
+  }
+  return "fr";
+}
+function applyI18n(root = document) {
+  $$("[data-i18n]", root).forEach(n => (n.textContent = t(n.dataset.i18n)));
+  $$("[data-i18n-html]", root).forEach(n => (n.innerHTML = t(n.dataset.i18nHtml)));
+  $$("[data-i18n-attr]", root).forEach(n => n.dataset.i18nAttr.split(",").forEach(p => { const [a, k] = p.split(":"); n.setAttribute(a, t(k)); }));
+}
+function setLang(l, fromUser) {
+  lang = LANGS.includes(l) ? l : "fr";
+  S.lang = lang; save();
+  const h = document.documentElement;
+  h.lang = lang; h.dir = lang === "ar" ? "rtl" : "ltr";
+  document.title = t("meta.title");
+  $('meta[name=description]').content = t("meta.desc");
+  $$(".langs button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+  applyI18n();
+  renderAll();
+  if (fromUser && user && user.lang !== lang) api("prefs", { lang }).then(applyServer).catch(() => {});
+}
+
+/* ============================================================== Accueil */
+const todayQ = () => INTER[Math.floor(Date.now() / 864e5) % INTER.length];
+
+function answerButtons(onPick, current, withKeys) {
+  return [-1, 0, 1].map((v, i) => el("button", {
+    type: "button", class: "ans " + KEY[v], "aria-pressed": String(current === v),
+    onclick: e => onPick(v, e.currentTarget),
+  }, el("span", { class: "ans-ic" }, ic(FACE[v])), el("span", { text: t("ans." + KEY[v]) }), withKeys ? el("kbd", { text: i + 1 }) : null));
+}
+
+function catChip(cat) {
+  return el("span", { class: "chip " + cat }, ic(CAT_ICON[cat]), el("span", { text: t("cat." + cat) }));
+}
+
+function renderQod() {
+  const q = todayQ();
+  if (!q) return;
+  $("#qodCat").replaceWith(Object.assign(catChip(q.cat), { id: "qodCat" }));
+  $("#qodText").textContent = q[lang];
+  const v = ans(q.id);
+  $("#qodAnswers").replaceChildren(...answerButtons((nv, btn) => {
+    setAnswer(q.id, nv);
+    burstFrom(btn, nv);
+    renderQod();
+    setTimeout(() => openQuiz("all"), REDUCED ? 0 : 650);
+  }, v));
+  const foot = $("#qodFoot");
+  if (v === undefined) foot.replaceChildren(ic("sparkles"), el("span", { text: t("qod.foot") }));
+  else foot.replaceChildren(ic("circle-check"), el("span", { text: t("qod.done") }),
+    el("button", { type: "button", onclick: () => openQuiz("all") }, el("span", { text: t("qod.continue") }), ic("arrow-right", "flip")));
+  $("#mockQ").textContent = q[lang];
+  icons();
+}
+
+function renderHomeProgress() {
+  const c = counts();
+  $("#heroCtaLabel").textContent = t(c.n ? "hero.resume" : "hero.cta");
+  $("#resumeBox").hidden = !c.n;
+  if (c.n) {
+    $("#resumeRing").style.setProperty("--p", Math.round((c.n / c.total) * 100));
+    $("#resumeTxt").innerHTML = t("hero.progress", { n: fmt(c.n), t: fmt(c.total) });
+  }
+}
+
+function renderUnis() {
+  $("#unis").replaceChildren(...CATS.map((cat, i) => {
+    const c = counts(cat), open = c.total - c.n;
+    return el("article", { class: "uni " + cat, "data-reveal": "", style: "--d:" + i * .1 + "s" },
+      el("span", { class: "uni-ic" }, ic(CAT_ICON[cat])),
+      el("h3", { text: t("cat." + cat) }),
+      el("p", { text: t("cat." + cat + ".d") }),
+      el("div", { class: "uni-meta" }, el("span", { text: t("cat.count", { n: fmt(c.total) }) }), el("span", { text: t("cat.progress", { a: fmt(c.n), n: fmt(c.total) }) })),
+      el("div", { class: "bar" }, el("i", { style: "width:" + (c.n / c.total) * 100 + "%" })),
+      el("button", { class: "btn btn-ink", type: "button", onclick: () => (open ? openQuiz(cat) : go("#resultat")) },
+        el("span", { text: t(!c.n ? "cat.start" : open ? "cat.continue" : "cat.review") }), ic("arrow-right", "flip")));
+  }));
+  reveal($("#unis"));
+  icons();
+}
+
+function renderMiniMosaic() {
+  const pattern = "ppzpnppzpppnpzppzpnppzppnpppz";
+  $("#miniMosaic").replaceChildren(...Array.from({ length: 30 }, (_, i) => el("i", { class: pattern[i] })));
+}
+
+/* -------------------------------------------- Compteurs publics & mur */
+let STATS = null;
+async function loadStats() {
+  await apiReady;
+  if (!online) return;
+  try { STATS = await api("stats"); } catch (e) { return; }
+  const box = $("#liveStats");
+  let any = false;
+  for (const k of ["participants", "answers", "stories"]) {
+    const row = $(`[data-stat=${k}]`, box), n = STATS[k] || 0;
+    row.hidden = !n;
+    $("dd", row).textContent = t("stat." + k + (n === 1 ? ".1" : ""));
+    if (n) { any = true; countUp($("dt", row), n); }
+  }
+  box.hidden = !any;
+}
+function countUp(node, to) {
+  if (REDUCED) { node.textContent = fmt(to); return; }
+  const t0 = performance.now(), d = 1300;
+  const step = now => { const k = Math.min(1, (now - t0) / d); node.textContent = fmt(Math.round(to * (1 - Math.pow(1 - k, 3)))); if (k < 1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}
+
+const FEED = { items: [], total: 0 };
+async function loadFeed(more) {
+  await apiReady;
+  const btn = $("#wallMore");
+  if (!online) { renderFeed(); return; }
+  btn.disabled = true;
+  try {
+    const d = await api("feed", undefined, { offset: more ? FEED.items.length : 0, limit: 6 });
+    if (!more) FEED.items = [];
+    FEED.items.push(...d.items.filter(s => !FEED.items.some(x => x.id === s.id)));
+    FEED.total = d.total;
+  } catch (e) { if (more) toast(errText(e), "err"); }
+  btn.disabled = false;
+  renderFeed();
+}
+function renderFeed() {
+  if (online === null) return; // l'API n'a pas encore répondu
+  const items = FEED.items.filter(s => !S.reported[s.id]);
+  $("#wallGrid").replaceChildren(...items.map(s => storyCard(s, true)));
+  $("#wallEmpty").hidden = items.length > 0;
+  $("#wallEmptyTxt").textContent = t(online === false ? "wall.offline" : "wall.empty");
+  $("#wallMore").hidden = FEED.items.length >= FEED.total;
+  clampCheck($("#wallGrid"));
+  icons();
+}
+
+/* ------------------------------------------------------------- Récits */
+const initial = s => (s || "").trim().charAt(0) || "·";
+function storyCard(st, showQ) {
+  const liked = !!S.liked[st.id];
+  return el("article", { class: "story", dataset: { sid: st.id } },
+    showQ ? el("p", { class: "story-q" }, el("span", { class: "dotp" }), el("span", { text: qText(st.qid) })) : null,
+    el("blockquote", { class: "story-exp", dir: "auto", text: st.exp }),
+    el("p", { class: "story-imp" }, el("b", { text: t("story.impact") }), el("span", { dir: "auto", text: st.imp })),
+    el("button", { class: "read-more", type: "button", hidden: true, onclick: e => { e.currentTarget.closest(".story").classList.add("open"); e.currentTarget.remove(); } }, t("story.more")),
+    el("footer", { class: "story-foot" },
+      el("span", { class: "who" }, el("span", { class: "av", text: initial(st.author) || "·" }), el("span", { dir: "auto", text: st.author || t("story.anon") })),
+      el("button", { class: "like" + (liked ? " on" : ""), type: "button", "aria-pressed": String(liked), title: t("story.inspire"), onclick: e => toggleLike(st, e.currentTarget) },
+        ic("heart"), el("span", { class: "n", text: fmt(st.likes || 0) }), el("span", { class: "txt", text: t("story.inspire") })),
+      el("button", { class: "report", type: "button", title: t("story.report"), "aria-label": t("story.report"), onclick: () => reportStory(st) }, ic("flag"))));
+}
+function clampCheck(root) {
+  requestAnimationFrame(() => $$(".story", root).forEach(card => {
+    const more = $(".read-more", card);
+    if (!more) return;
+    const over = [".story-exp", ".story-imp > span"].some(s => { const n = $(s, card); return n && n.scrollHeight - n.clientHeight > 6; });
+    more.hidden = !over;
+  }));
+}
+async function toggleLike(st, btn) {
+  const undo = !!S.liked[st.id];
+  if (undo) delete S.liked[st.id]; else S.liked[st.id] = 1;
+  save();
+  st.likes = Math.max(0, (st.likes || 0) + (undo ? -1 : 1));
+  $$(`.story[data-sid="${st.id}"] .like`).forEach(b => {
+    b.classList.toggle("on", !undo); b.setAttribute("aria-pressed", String(!undo));
+    $(".n", b).textContent = fmt(st.likes);
+  });
+  if (!undo) { btn.classList.remove("bump"); void btn.offsetWidth; btn.classList.add("bump"); burstFrom(btn, 1); }
+  try { await api("like", { id: st.id, undo }); } catch (e) { /* déjà compté depuis cette connexion */ }
+}
+async function reportStory(st) {
+  if (!confirm(t("story.report.confirm"))) return;
+  S.reported[st.id] = 1; save();
+  $$(`.story[data-sid="${st.id}"]`).forEach(n => n.remove());
+  toast(t("story.reported"));
+  try { await api("report", { id: st.id }); } catch (e) {}
+}
+
+/* =================================================== Le défi (assistant) */
+const QZ = { cat: "all", seq: [], i: 0, open: false, opener: null, pushed: false };
+
+function openQuiz(cat, startId) {
+  QZ.cat = cat || "all";
+  QZ.seq = seqFor(QZ.cat);
+  const at = startId ? QZ.seq.findIndex(q => q.id === startId) : QZ.seq.findIndex(q => ans(q.id) === undefined);
+  QZ.i = at;
+  QZ.opener = document.activeElement;
+  go("#defi/" + QZ.cat);
+}
+function showQuiz() {
+  const quiz = $("#quiz");
+  if (!QZ.seq.length) { QZ.seq = seqFor(QZ.cat); QZ.i = QZ.seq.findIndex(q => ans(q.id) === undefined); }
+  if (!QZ.open) {
+    QZ.open = true;
+    quiz.hidden = false;
+    document.documentElement.classList.add("lock");
+    QUIZ_FX.resize();
+    QUIZ_FX.visible = true;
+    QUIZ_FX.start();
+  }
+  renderQuiz(true);
+}
+function hideQuiz() {
+  if (!QZ.open) return;
+  QZ.open = false;
+  QUIZ_FX.visible = false;
+  $("#quiz").hidden = true;
+  document.documentElement.classList.remove("lock");
+  if (QZ.opener && document.contains(QZ.opener)) QZ.opener.focus({ preventScroll: true });
+  renderAll();
+}
+function closeQuiz() {
+  if (QZ.pushed) history.back();
+  else go("");
+}
+
+function renderQuizFilters() {
+  $("#qzFilters").replaceChildren(...["all", ...CATS].map(cat => el("button", {
+    type: "button", "aria-pressed": String(QZ.cat === cat),
+    onclick: () => {
+      if (QZ.cat === cat) return;
+      QZ.cat = cat; QZ.seq = seqFor(cat); QZ.i = QZ.seq.findIndex(q => ans(q.id) === undefined);
+      history.replaceState(null, "", "#defi/" + cat);
+      renderQuiz(true);
+    },
+  }, ic(CAT_ICON[cat]), el("span", { text: t("cat." + cat) }))));
+}
+
+function renderStrip() {
+  const strip = $("#qzStrip");
+  strip.replaceChildren(...QZ.seq.map((q, i) => {
+    const v = ans(q.id);
+    return el("span", { class: (v !== undefined ? KEY[v] : "") + (i === QZ.i ? " cur" : ""), dataset: { i } });
+  }));
+}
+
+function renderQuiz(enter) {
+  renderQuizFilters();
+  const done = QZ.i < 0 || QZ.i >= QZ.seq.length;
+  $("#qzStage").hidden = done;
+  $("#qzDone").hidden = !done;
+  const answered = QZ.seq.filter(q => ans(q.id) !== undefined).length;
+  $("#qzCount").innerHTML = t("qz.of", { i: fmt(Math.min(QZ.i + 1, QZ.seq.length) || QZ.seq.length), n: fmt(QZ.seq.length) });
+  $("#qzCatLabel").textContent = t("cat.progress", { a: fmt(answered), n: fmt(QZ.seq.length) });
+  renderStrip();
+  if (done) { renderDone(); icons(); return; }
+
+  const q = QZ.seq[QZ.i], v = ans(q.id);
+  const card = $("#qcard");
+  card.className = "qcard" + (enter ? " enter" : "");
+  card.style.transform = "";
+  $$(".stamp", card).forEach(s => (s.style.opacity = 0));
+  $("#qzChip").replaceWith(Object.assign(catChip(q.cat), { id: "qzChip" }));
+  $("#qzNum").textContent = "#" + q.id;
+  $("#qzQ").textContent = q[lang];
+  $("#qzAnswers").replaceChildren(...answerButtons((nv, btn) => answerQuiz(nv, btn), v, true));
+  $("#qzPrev").disabled = QZ.i === 0;
+  renderLast();
+  $("#qzHint").textContent = matchMedia("(hover: none)").matches ? t("qz.hint.swipe") : t("qz.hint.keys");
+  icons();
+}
+
+/** Question suivante ; -1 en fin de série (l'écran de fin propose les questions passées). */
+const nextIndex = from => (from + 1 < QZ.seq.length ? from + 1 : -1);
+
+let animating = false;
+function advance(cls, after) {
+  const card = $("#qcard");
+  if (REDUCED) { after(); return; }
+  animating = true;
+  card.classList.remove("enter", "drag");
+  card.style.transform = "";
+  card.classList.add(cls);
+  setTimeout(() => { animating = false; after(); }, 320);
+}
+
+function answerQuiz(v, node) {
+  if (animating) return;
+  const q = QZ.seq[QZ.i];
+  setAnswer(q.id, v);
+  burstFrom(node || $("#qcard"), v);
+  QZ.last = { id: q.id, v };
+  renderLast();
+  if (v === 1 && !S.posHint) { S.posHint = 1; save(); toast(t("qz.posToast")); }
+  maybeNudge();
+  advance("out-" + KEY[v], () => { QZ.i = nextIndex(QZ.i); renderQuiz(true); });
+}
+/** « 58 % des participants ont aussi répondu… » sous la carte, après chaque réponse. */
+function renderLast() {
+  const l = QZ.last;
+  if (!l) { $("#qzLast").textContent = ""; return; }
+  const c = STATS && STATS.q && STATS.q[l.id];
+  const total = c ? c[0] + c[1] + c[2] : 0;
+  $("#qzLast").innerHTML = total >= 5
+    ? t("qz.same", { p: Math.round((c[l.v + 1] / total) * 100), a: t("ans." + KEY[l.v]) })
+    : t("qz.first");
+}
+function skipQuiz() {
+  if (animating) return;
+  QZ.last = null;
+  renderLast();
+  advance("out-skip", () => { QZ.i = nextIndex(QZ.i); renderQuiz(true); });
+}
+function prevQuiz() {
+  if (animating || QZ.i <= 0) return;
+  QZ.i--;
+  QZ.last = null;
+  renderLast();
+  renderQuiz(true);
+}
+
+function renderDone() {
+  const left = QZ.seq.filter(q => ans(q.id) === undefined).length;
+  $("#qzDoneT").textContent = t(left ? "qz.end.t" : "qz.done.t");
+  $("#qzDoneP").textContent = left ? t("qz.end.p", { n: fmt(left) }) : t("qz.done.p");
+  const row = [el("button", { class: "btn btn-pos btn-lg", type: "button", onclick: () => go("#resultat") }, ic("chart-pie"), el("span", { text: t("qz.results") }))];
+  if (left) row.push(el("button", { class: "btn btn-glass btn-lg", type: "button", onclick: () => { QZ.i = QZ.seq.findIndex(q => ans(q.id) === undefined); renderQuiz(true); } }, el("span", { text: t("qz.done.back") })));
+  else if (QZ.cat !== "all") {
+    const other = CATS.find(c => c !== QZ.cat && counts(c).n < counts(c).total);
+    if (other) row.push(el("button", { class: "btn btn-glass btn-lg", type: "button", onclick: () => { QZ.cat = other; QZ.seq = seqFor(other); QZ.i = QZ.seq.findIndex(q => ans(q.id) === undefined); history.replaceState(null, "", "#defi/" + other); renderQuiz(true); } }, el("span", { text: t("qz.done.other") })));
+  }
+  $("#qzDoneRow").replaceChildren(...row);
+  if (!left && !REDUCED) setTimeout(() => { const b = $("#qzDone .big").getBoundingClientRect(); FX.burst(b.left + b.width / 2, b.top + b.height / 2, 1); }, 250);
+}
+
+function maybeNudge() {
+  if (user || online === false) return;
+  const n = counts().n;
+  const step = [10, 40, 80].find(s => n >= s && S.nudged < s);
+  if (!step) return;
+  S.nudged = step; save();
+  const box = $("#qzNudge");
+  $("p", box).textContent = t("qz.nudge", { n: fmt(n) });
+  box.hidden = false;
+}
+
+/* Glisser la carte : vers le bouton de la réponse (gauche/droite suivant le sens de lecture, haut = aucun). */
+function setupSwipe() {
+  const card = $("#qcard");
+  let sx = 0, sy = 0, dx = 0, dy = 0, active = false;
+  const intent = () => {
+    const dist = Math.hypot(dx, dy);
+    if (dist < 24) return null;
+    if (Math.abs(dx) > Math.abs(dy)) {
+      const right = dx > 0, rtl = document.documentElement.dir === "rtl";
+      return right !== rtl ? 1 : -1;
+    }
+    return dy < 0 ? 0 : null;
+  };
+  card.addEventListener("pointerdown", e => {
+    if (e.button !== 0 || animating) return;
+    active = true; sx = e.clientX; sy = e.clientY; dx = dy = 0;
+    card.setPointerCapture(e.pointerId);
+    card.classList.add("drag");
+    card.classList.remove("enter");
+  });
+  card.addEventListener("pointermove", e => {
+    if (!active) return;
+    dx = e.clientX - sx; dy = e.clientY - sy;
+    card.style.transform = `translate(${dx}px,${Math.min(dy, 40)}px) rotate(${dx / 22}deg)`;
+    const it = intent(), k = Math.min(1, Math.hypot(dx, dy) / 110);
+    $$(".stamp", card).forEach(s => (s.style.opacity = it !== null && s.classList.contains("s-" + KEY[it]) ? k : 0));
+  });
+  const end = () => {
+    if (!active) return;
+    active = false;
+    card.classList.remove("drag");
+    const it = intent(), far = Math.abs(dx) > Math.min(120, card.offsetWidth * .28) || dy < -110;
+    if (it !== null && far) {
+      const btn = $(`#qzAnswers .ans.${KEY[it]}`);
+      answerQuiz(it, btn);
+    } else {
+      card.style.transform = "";
+      $$(".stamp", card).forEach(s => (s.style.opacity = 0));
+    }
+  };
+  card.addEventListener("pointerup", end);
+  card.addEventListener("pointercancel", end);
+}
+
+document.addEventListener("keydown", e => {
+  if (!QZ.open || $("dialog[open]") || /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) return;
+  if (e.key === "Escape") { e.preventDefault(); closeQuiz(); return; }
+  if ($("#qzStage").hidden || e.metaKey || e.ctrlKey || e.altKey) return;
+  const rtl = document.documentElement.dir === "rtl";
+  const map = { "1": -1, "2": 0, "3": 1, ArrowUp: 0, ArrowLeft: rtl ? 1 : -1, ArrowRight: rtl ? -1 : 1 };
+  if (e.key in map) { e.preventDefault(); const v = map[e.key]; answerQuiz(v, $(`#qzAnswers .ans.${KEY[v]}`)); }
+  else if (e.key === "ArrowDown") { e.preventDefault(); skipQuiz(); }
+  else if (e.key === "Backspace") { e.preventDefault(); prevQuiz(); }
+});
+
+/* ============================================================= Résultat */
+const RS = { tab: "all", cat: "all", focus: null };
+const EDITING = new Set();
+const OTH = {};
+
+function renderResults() {
+  renderSummary();
+  renderTabs();
+  const list = $("#rsList");
+  const answered = Q.filter(q => ans(q.id) !== undefined);
+  if (!answered.length) {
+    list.replaceChildren(el("div", { class: "rs-empty" }, ic("sprout"), el("p", { text: t("rs.empty") }),
+      el("button", { class: "btn btn-pos btn-lg", type: "button", onclick: () => openQuiz("all") }, el("span", { text: t("hero.cta") }), ic("arrow-right", "flip"))));
+    icons();
+    return;
+  }
+  const items = answered.filter(q => (RS.tab === "all" || KEY[ans(q.id)] === RS.tab) && (RS.cat === "all" || q.cat === RS.cat));
+  list.replaceChildren(...(items.length ? items.map(resultItem) : [el("p", { class: "empty", text: t("rs.empty.filter") })]));
+  clampCheck(list);
+  icons();
+}
+
+function renderSummary() {
+  const c = counts(), C = 2 * Math.PI * 52;
+  const parts = [["pos", c.pos], ["none", c.none], ["neg", c.neg]];
+  let off = 0;
+  for (const [k, n] of parts) {
+    const len = c.n ? (n / c.n) * C : 0;
+    const arc = $(".donut .a-" + k);
+    arc.style.strokeDasharray = `${len} ${C}`;
+    arc.style.strokeDashoffset = String(-off);
+    off += len;
+  }
+  const pct = c.n ? Math.round((c.pos / c.n) * 100) : 0;
+  $("#sumPct").textContent = fmt(pct) + (lang === "fr" ? "\u00a0%" : "%");
+  $("#sumAnswered").textContent = t("rs.answered", { n: fmt(c.n), t: fmt(c.total) });
+  $("#sumRead").textContent = t(c.n < 5 ? "read.none" : pct >= 65 ? "read.high" : pct >= 35 ? "read.mid" : "read.low");
+  $("#sumLegend").replaceChildren(...parts.map(([k, n]) => el("span", { class: "l-" + k }, el("i"), el("span", { text: fmt(n) + " · " + t("ans." + k + ".s") }))));
+  $("#mosaics").replaceChildren(...CATS.map(cat => {
+    const cc = counts(cat);
+    return el("div", { class: "mosaic" },
+      el("h4", {}, catChip(cat), el("small", { text: cc.n ? fmt(Math.round((cc.pos / cc.n) * 100)) + "% " + t("rs.pos.label") : "—" })),
+      el("div", { class: "tiles" }, ...Q.filter(q => q.cat === cat).map(q => {
+        const v = ans(q.id);
+        return el("button", {
+          type: "button", class: (v !== undefined ? KEY[v] : "") + (S.stories[q.id] ? " has-story" : ""),
+          title: q[lang] + (v !== undefined ? " — " + t("ans." + KEY[v]) : ""), "aria-label": q[lang],
+          onclick: () => (v === undefined ? openQuiz("all", q.id) : focusItem(q.id, true)),
+        });
+      })));
+  }));
+  $("#saveBanner").hidden = !!user;
+  $("#savedNote").hidden = !user;
+}
+
+function renderTabs() {
+  const c = counts();
+  $("#rsTabs").replaceChildren(...[["all", c.n], ["pos", c.pos], ["none", c.none], ["neg", c.neg]].map(([k, n]) => el("button", {
+    type: "button", class: "t-" + k, "aria-pressed": String(RS.tab === k), onclick: () => { RS.tab = k; renderResults(); },
+  }, k !== "all" ? el("i") : null, el("span", { text: k === "all" ? t("cat.all") : t("ans." + k + ".s") }), el("span", { class: "n", text: fmt(n) }))));
+  $("#rsCats").replaceChildren(...["all", ...CATS].map(cat => el("button", {
+    type: "button", "aria-pressed": String(RS.cat === cat), onclick: () => { RS.cat = cat; renderResults(); },
+  }, t("cat." + cat))));
+}
+
+function resultItem(q) {
+  const v = ans(q.id);
+  return el("article", { class: "r-item v-" + KEY[v], id: "r-" + q.id, dataset: { q: q.id } },
+    el("div", { class: "r-top" }, catChip(q.cat), el("span", { class: "r-num", text: "#" + q.id })),
+    el("div", { class: "r-head" }, el("h3", { class: "r-q", text: q[lang] }), segControl(q.id, v)),
+    v === 1 ? storyBox(q) : othersBox(q));
+}
+function rerenderItem(id) {
+  const old = $("#r-" + id);
+  if (!old) return;
+  const n = resultItem(QBY[id]);
+  n.style.animation = "none";
+  old.replaceWith(n);
+  clampCheck(n);
+  icons();
+}
+function segControl(id, v) {
+  return el("div", { class: "seg", role: "radiogroup", "aria-label": t("rs.change") }, ...[-1, 0, 1].map(x => el("button", {
+    type: "button", class: KEY[x], role: "radio", "aria-checked": String(x === v), title: t("ans." + KEY[x]),
+    onclick: e => {
+      if (ans(id) === x) return;
+      setAnswer(id, x);
+      burstFrom(e.currentTarget, x);
+      rerenderItem(id);
+      renderSummary();
+      renderTabs();
+    },
+  }, ic(FACE[x]), el("span", { text: t("ans." + KEY[x] + ".s") }))));
+}
+
+function focusItem(id, smooth) {
+  let n = $("#r-" + id);
+  if (!n && ans(id) !== undefined) { RS.tab = "all"; RS.cat = "all"; renderResults(); n = $("#r-" + id); }
+  if (!n) return;
+  n.scrollIntoView({ behavior: smooth && !REDUCED ? "smooth" : "auto", block: "center" });
+  n.classList.remove("flash"); void n.offsetWidth; n.classList.add("flash");
+  const ta = $("textarea", n);
+  if (ta && RS.expand === id) { $(".story-form", n).classList.add("open"); setTimeout(() => ta.focus({ preventScroll: true }), 400); }
+  RS.expand = null;
+}
+
+/* --- Mon récit (réponse positive) --- */
+const statusBadge = s => el("span", { class: "badge " + s }, el("i"), el("span", { text: t("st.status." + s) }));
+let draftTimer;
+function storyBox(q) {
+  const st = S.stories[q.id];
+  if (st && !EDITING.has(q.id)) {
+    return el("div", { class: "mine" },
+      el("div", { class: "mine-head" }, el("span", { class: "mine-t" }, ic("feather"), el("span", { text: t("st.yours") })), statusBadge(st.status || "published")),
+      el("div", { class: "story", style: "box-shadow:none;padding:0;background:none;animation:none" },
+        el("blockquote", { class: "story-exp", dir: "auto", text: st.exp }),
+        el("p", { class: "story-imp" }, el("b", { text: t("story.impact") }), el("span", { dir: "auto", text: st.imp })),
+        el("button", { class: "read-more", type: "button", hidden: true, onclick: e => { e.currentTarget.closest(".story").classList.add("open"); e.currentTarget.remove(); } }, t("story.more"))),
+      el("div", { class: "mine-foot" },
+        st.status === "published" ? el("span", { class: "likes-n" }, ic("heart"), el("span", { text: t("st.likes", { n: fmt(st.likes || 0) }) })) : null,
+        el("span", { class: "grow" }),
+        el("button", { class: "btn btn-xs btn-line", type: "button", onclick: () => { EDITING.add(q.id); rerenderItem(q.id); } }, ic("pencil"), el("span", { text: t("st.edit") })),
+        el("button", { class: "btn btn-xs btn-line danger", type: "button", onclick: () => deleteStory(q.id) }, ic("trash-2"), el("span", { text: t("st.delete") }))));
+  }
+
+  const d = S.drafts[q.id] || (st ? { exp: st.exp, imp: st.imp } : { exp: "", imp: "" });
+  const pub = st ? st.status !== "private" : true;
+  const exp = el("textarea", { name: "exp", rows: 3, maxlength: 1500, placeholder: t("st.exp.ph"), dir: "auto", "aria-label": t("st.title") });
+  const imp = el("textarea", { name: "imp", rows: 2, maxlength: 1000, placeholder: t("st.imp.ph"), dir: "auto" });
+  exp.value = d.exp || ""; imp.value = d.imp || "";
+  const author = el("input", { type: "text", name: "author", maxlength: 40, placeholder: t("st.name.ph"), dir: "auto", "aria-label": t("st.name.ph") });
+  author.value = st ? st.author || "" : S.author || (user ? user.name : "");
+  const anon = el("input", { type: "checkbox", name: "anon" });
+  anon.checked = st ? !st.author : false;
+  author.disabled = anon.checked;
+  anon.addEventListener("change", () => (author.disabled = anon.checked));
+  const pubBox = el("input", { type: "checkbox", name: "public" });
+  pubBox.checked = pub;
+  const submit = el("button", { class: "btn btn-pos", type: "submit" }, ic("send", "flip"), el("span", { text: t(pub ? "st.publish" : "st.savePrivate") }));
+  pubBox.addEventListener("change", () => ($("span", submit).textContent = t(pubBox.checked ? "st.publish" : "st.savePrivate")));
+  const cnt = el("p", { class: "sf-count" });
+  const updCount = () => (cnt.textContent = fmt(exp.value.length) + " / " + fmt(1500));
+  updCount();
+  const err = el("p", { class: "sf-err", role: "alert" });
+  const form = el("form", { class: "story-form" + (d.exp || d.imp || st ? " open" : ""), novalidate: true },
+    el("label", { class: "lb", text: t("st.title") }), exp, cnt,
+    el("div", { class: "sf-more" },
+      el("label", { class: "lb", text: t("st.imp") }), imp,
+      el("div", { class: "sf-row" }, author, el("label", { class: "check" }, anon, el("span", { text: t("st.anon") }))),
+      el("div", { class: "sf-row" }, el("label", { class: "check" }, pubBox, el("span", { text: t("st.public") }))),
+      el("input", { class: "hp", name: "website", tabindex: "-1", autocomplete: "off", "aria-hidden": "true" }),
+      el("div", { class: "sf-actions" }, submit,
+        st ? el("button", { class: "btn btn-line", type: "button", onclick: () => { EDITING.delete(q.id); delete S.drafts[q.id]; save(); rerenderItem(q.id); } }, t("st.cancel")) : null),
+      err));
+  const keep = () => { clearTimeout(draftTimer); draftTimer = setTimeout(() => { S.drafts[q.id] = { exp: exp.value, imp: imp.value }; save(); }, 400); };
+  exp.addEventListener("focus", () => form.classList.add("open"));
+  exp.addEventListener("input", () => { updCount(); keep(); });
+  imp.addEventListener("input", keep);
+  form.addEventListener("submit", e => { e.preventDefault(); saveStory(q.id, form, submit, err); });
+  return el("div", { class: "mine" }, form);
+}
+
+async function saveStory(id, form, btn, err) {
+  const f = new FormData(form);
+  const exp = String(f.get("exp") || "").trim(), imp = String(f.get("imp") || "").trim();
+  err.textContent = "";
+  if (exp.length < MIN_EXP) { err.textContent = t("st.min", { n: MIN_EXP }); $("textarea[name=exp]", form).focus(); return; }
+  if (imp.length < MIN_IMP) { err.textContent = t("st.min", { n: MIN_IMP }); $("textarea[name=imp]", form).focus(); return; }
+  await apiReady;
+  if (!online) { err.textContent = t("ot.offline"); return; }
+  const st = S.stories[id];
+  const anon = !!f.get("anon"), author = String(f.get("author") || "").trim(), pub = !!f.get("public");
+  btn.disabled = true;
+  try {
+    const d = await api("story_save", { qid: id, exp, imp, author, anon, public: pub, lang, id: st && st.id, token: st && st.token, website: f.get("website") || "" });
+    S.stories[id] = Object.assign({}, d.story, { token: d.story.token || (st && st.token) });
+    if (author && !anon) S.author = author;
+    delete S.drafts[id];
+    EDITING.delete(id);
+    save();
+    const s = d.story.status;
+    toast(t(s === "pending" ? "st.sentPending" : s === "private" ? "st.sentPrivate" : "st.sent"));
+    burstFrom(btn, 1);
+    rerenderItem(id);
+    renderSummary();
+    if (s === "published") loadFeed();
+  } catch (e) {
+    err.textContent = errText(e);
+    btn.disabled = false;
+  }
+}
+
+async function deleteStory(id) {
+  const st = S.stories[id];
+  if (!st || !confirm(t("st.delete.confirm"))) return;
+  try {
+    await api("story_delete", { id: st.id, token: st.token });
+    delete S.stories[id];
+    save();
+    toast(t("st.deleted"));
+    rerenderItem(id);
+    renderSummary();
+    loadFeed();
+  } catch (e) { toast(errText(e), "err"); }
+}
+
+/* --- Ce que d'autres en ont tiré (réponse négative ou aucune) --- */
+const pickQueue = new Set();
+let pickTimer;
+const othersIO = new IntersectionObserver(entries => entries.forEach(e => {
+  if (!e.isIntersecting) return;
+  othersIO.unobserve(e.target);
+  pickQueue.add(+e.target.dataset.q);
+  clearTimeout(pickTimer);
+  pickTimer = setTimeout(loadPicks, 120);
+}), { rootMargin: "400px 0px" });
+
+function othersBox(q) {
+  const box = el("div", { class: "others", dataset: { q: q.id } },
+    el("p", { class: "others-t" }, ic("sparkles"), el("span", { text: t("ot.title") })),
+    el("div", { class: "others-list" }), el("div", { class: "others-foot" }));
+  fillOthers(box, q.id);
+  if (!OTH[q.id]) othersIO.observe(box);
+  return box;
+}
+function fillOthers(box, id) {
+  const list = $(".others-list", box), foot = $(".others-foot", box), o = OTH[id];
+  foot.replaceChildren();
+  if (online === false) { list.replaceChildren(el("p", { class: "msg", text: t("ot.offline") })); return; }
+  if (!o) { list.replaceChildren(el("div", { class: "skel" })); return; }
+  const items = o.items.filter(s => !S.reported[s.id]);
+  if (!items.length) {
+    list.replaceChildren(el("p", { class: "msg", text: t("ot.empty") }));
+    foot.append(el("button", { class: "btn btn-xs btn-line", type: "button", onclick: () => share(t("share.invite")) }, ic("share-2"), el("span", { text: t("ot.invite") })));
+    return;
+  }
+  list.replaceChildren(...items.map(s => storyCard(s)));
+  if (o.left > 0) foot.append(el("button", { class: "btn btn-xs btn-line", type: "button", onclick: e => moreOthers(id, box, e.currentTarget) }, ic("plus"), el("span", { text: t("ot.more", { n: fmt(o.left) }) })));
+  else if (o.more) foot.append(el("span", { text: t("ot.end") }));
+  clampCheck(box);
+}
+async function loadPicks() {
+  await apiReady;
+  const ids = [...pickQueue].filter(id => !OTH[id]);
+  pickQueue.clear();
+  if (!ids.length) return;
+  if (online) {
+    try {
+      const d = await api("picks", undefined, { q: ids.join(","), lang });
+      for (const id of ids) {
+        const it = d.items[id];
+        OTH[id] = { items: it ? [it] : [], left: Math.max(0, (d.counts[id] || 0) - (it ? 1 : 0)) };
+      }
+    } catch (e) { for (const id of ids) OTH[id] = { items: [], left: 0 }; }
+  }
+  for (const id of ids) $$(`.others[data-q="${id}"]`).forEach(b => fillOthers(b, id));
+  icons();
+}
+async function moreOthers(id, box, btn) {
+  const o = OTH[id];
+  btn.disabled = true;
+  try {
+    const d = await api("stories", undefined, { q: id, exclude: o.items.map(s => s.id).join(","), limit: 1, lang });
+    o.items.push(...d.items);
+    o.left = d.items.length ? d.left : 0;
+    o.more = true;
+  } catch (e) { toast(errText(e), "err"); }
+  fillOthers(box, id);
+  icons();
+}
+
+/* --- Partage & recommencer --- */
+async function share(text) {
+  const url = location.origin + location.pathname;
+  if (navigator.share) {
+    try { await navigator.share({ title: t("brand"), text, url }); return; }
+    catch (e) { if (e.name === "AbortError") return; }
+  }
+  try { await navigator.clipboard.writeText(text + " " + url); toast(t("share.copied")); }
+  catch (e) { prompt("", text + " " + url); }
+}
+$("#shareBtn").addEventListener("click", () => {
+  const c = counts();
+  share(c.n ? t("rs.share.text", { p: Math.round((c.pos / c.n) * 100) }) : t("share.invite"));
+});
+$("#restartBtn").addEventListener("click", async () => {
+  if (!confirm(t("rs.restart.confirm"))) return;
+  S.answers = {}; S.pending = {}; S.nudged = 0; save();
+  renderAll();
+  await apiReady;
+  if (online) api("answers", { device: S.device, set: {}, reset: true }).catch(() => {});
+  openQuiz("all");
+});
+
+/* =============================================================== Compte */
+function renderAccount() {
+  const btn = $("#accountBtn");
+  if (user) {
+    btn.className = "head-btn me";
+    btn.replaceChildren(el("span", { class: "avatar", text: initial(user.name) }), el("span", { class: "lbl", dir: "auto", text: user.name }));
+  } else {
+    btn.className = "head-btn solid";
+    btn.replaceChildren(ic("user-plus"), el("span", { class: "lbl", text: t("acc.create") }));
+  }
+  $("#joinOut").hidden = !!user;
+  $("#joinIn").hidden = !user;
+  if (user) $("#joinInTitle").textContent = t("join.in.title", { name: user.name });
+  icons();
+}
+
+function showAuth(pane) {
+  const dlg = $("#authDlg");
+  const p = online === false ? "offline" : pane;
+  $$("[data-pane]", dlg).forEach(n => {
+    if (n.closest("#authTabs")) { n.setAttribute("aria-pressed", String(n.dataset.pane === p)); return; }
+    n.hidden = n.dataset.pane !== p;
+  });
+  $("#authTabs").hidden = p === "forgot" || p === "offline";
+  $$(".form-err", dlg).forEach(n => (n.textContent = ""));
+  $("#forgotForm .ok-msg").hidden = true;
+  if (!dlg.open) dlg.showModal();
+  const first = $(`form[data-pane="${p}"] input`, dlg);
+  if (first) setTimeout(() => first.focus(), 30);
+}
+function showMe() {
+  if (!user) return showAuth("signup");
+  const dlg = $("#meDlg");
+  $("#meAvatar").textContent = initial(user.name);
+  $("#meEmail").textContent = user.email;
+  const v = $("#meVerify");
+  v.className = "me-verify " + (user.verified ? "ok" : "no");
+  v.replaceChildren(...(user.verified
+    ? [ic("badge-check"), el("span", { text: t("me.verified") })]
+    : [ic("mail-warning"), el("span", { text: t("me.unverified") }), el("button", { class: "link", type: "button", onclick: resendVerify }, t("me.resend"))]));
+  const f = $("#prefsForm");
+  f.elements.namedItem("name").value = user.name;
+  f.elements.namedItem("opt_daily").checked = !!user.opt_daily;
+  f.elements.namedItem("opt_digest").checked = !!user.opt_digest;
+  $("#meLang").textContent = t("me.lang", { l: LANG_NAMES[lang] });
+  $$(".form-err", dlg).forEach(n => (n.textContent = ""));
+  $(".danger-zone", dlg).open = false;
+  if (!dlg.open) dlg.showModal();
+  icons();
+}
+async function resendVerify(e) {
+  e.currentTarget.disabled = true;
+  try { await api("resend_verify", {}); toast(t("me.resent")); } catch (err) { toast(errText(err), "err"); }
+}
+
+function ownStoryTokens() {
+  return Object.values(S.stories).filter(s => s && s.id && s.token).map(s => ({ id: s.id, token: s.token }));
+}
+function afterSignIn(d, msg) {
+  applyServer(d);
+  for (const k of Object.keys(OTH)) delete OTH[k];
+  renderAll();
+  renderAccount();
+  toast(msg);
+}
+function signedOut(expired) {
+  user = null; csrf = null;
+  S.answers = {}; S.stories = {}; S.pending = {}; S.drafts = {}; S.nudged = 0;
+  S.device = newDevice();
+  save();
+  EDITING.clear();
+  renderAll();
+  renderAccount();
+  if (expired) toast(t("err.auth"), "info");
+}
+
+function bindForm(form, handler) {
+  form.addEventListener("submit", async e => {
+    e.preventDefault();
+    const btn = $("button[type=submit]", form), err = $(".form-err", form);
+    err.textContent = "";
+    btn.disabled = true;
+    try { await handler(Object.fromEntries(new FormData(form)), form); }
+    catch (ex) { err.textContent = errText(ex); }
+    finally { btn.disabled = false; }
+  });
+}
+
+bindForm($("#signupForm"), async (v, form) => {
+  if (!v.name.trim()) throw new ApiError("bad_name");
+  if (!/^\S+@\S+\.\S+$/.test(v.email)) throw new ApiError("bad_email");
+  if ((v.password || "").length < 8) throw new ApiError("weak_pass");
+  await flush();
+  const d = await api("signup", {
+    name: v.name.trim(), email: v.email.trim(), password: v.password, lang,
+    opt_daily: !!v.opt_daily, opt_digest: !!v.opt_digest, device: S.device, stories: ownStoryTokens(),
+  });
+  form.reset();
+  $("#authDlg").close();
+  afterSignIn(d, t("au.welcome", { name: d.user.name }));
+  setTimeout(() => toast(t("au.verifyHint"), "info"), 900);
+  burstFrom($("#accountBtn"), 1);
+});
+bindForm($("#loginForm"), async (v, form) => {
+  await flush();
+  const d = await api("login", { email: v.email.trim(), password: v.password, device: S.device, stories: ownStoryTokens() });
+  form.reset();
+  $("#authDlg").close();
+  afterSignIn(d, t("au.hello", { name: d.user.name }));
+});
+bindForm($("#forgotForm"), async v => {
+  if (!/^\S+@\S+\.\S+$/.test(v.email)) throw new ApiError("bad_email");
+  await api("forgot", { email: v.email.trim(), lang });
+  $("#forgotForm .ok-msg").hidden = false;
+});
+let resetToken = null;
+bindForm($("#resetForm"), async (v, form) => {
+  if ((v.password || "").length < 8) throw new ApiError("weak_pass");
+  await flush();
+  const d = await api("reset", { token: resetToken, password: v.password });
+  form.reset();
+  $("#resetDlg").close();
+  afterSignIn(d, t("au.reset.ok"));
+});
+bindForm($("#prefsForm"), async v => {
+  const d = await api("prefs", { name: v.name.trim(), opt_daily: !!v.opt_daily, opt_digest: !!v.opt_digest, lang });
+  applyServer(d);
+  renderAccount();
+  $("#meDlg").close();
+  toast(t("me.saved"));
+});
+bindForm($("#deleteForm"), async v => {
+  await api("delete_account", { password: v.password });
+  $("#meDlg").close();
+  signedOut();
+  toast(t("me.deleted"));
+});
+$("#logoutBtn").addEventListener("click", async () => {
+  await flush();
+  try { await api("logout", {}); } catch (e) {}
+  $("#meDlg").close();
+  signedOut();
+  toast(t("me.loggedout"));
+});
+$("#authTabs").addEventListener("click", e => { const b = e.target.closest("[data-pane]"); if (b) showAuth(b.dataset.pane); });
+$$("[data-pane-go]").forEach(b => b.addEventListener("click", () => showAuth(b.dataset.paneGo)));
+$$("dialog").forEach(d => d.addEventListener("click", e => { if (e.target === d) d.close(); }));
+$("#accountBtn").addEventListener("click", () => (user ? showMe() : showAuth("signup")));
+$("#joinPrefs").addEventListener("click", showMe);
+
+/* ============================================================= Routage */
+function go(hash) {
+  const target = hash || location.pathname + location.search;
+  if ((location.hash || "") !== hash) {
+    QZ.pushed = hash.startsWith("#defi") && !location.hash.startsWith("#defi");
+    history.pushState(null, "", target);
+  }
+  route();
+}
+function showView(name) {
+  const home = name === "home";
+  const was = $("#resultsView").hidden ? "home" : "results";
+  $("#homeView").hidden = !home;
+  $("#resultsView").hidden = home;
+  if (name !== was) scrollTo({ top: 0, behavior: "instant" });
+  HERO_FX.visible = home;
+  if (home) HERO_FX.start();
+}
+function route() {
+  const [name, arg] = decodeURIComponent(location.hash.slice(1)).split("/");
+  if (name === "defi") {
+    if (!QZ.open || (arg && arg !== QZ.cat)) {
+      if (arg && (arg === "all" || CATS.includes(arg)) && arg !== QZ.cat) { QZ.cat = arg; QZ.seq = seqFor(arg); QZ.i = QZ.seq.findIndex(q => ans(q.id) === undefined); }
+    }
+    showQuiz();
+    return;
+  }
+  hideQuiz();
+  QZ.pushed = false;
+  if (name === "resultat") {
+    showView("results");
+    renderResults();
+    const id = +arg;
+    if (id && QBY[id]) setTimeout(() => focusItem(id), 60);
+    else $("#rsTitle").focus({ preventScroll: true });
+    return;
+  }
+  showView("home");
+  if (name && document.getElementById(name)) requestAnimationFrame(() => document.getElementById(name).scrollIntoView({ behavior: REDUCED ? "auto" : "smooth" }));
+}
+addEventListener("popstate", route);
+addEventListener("hashchange", route);
+
+document.addEventListener("click", e => {
+  const s = e.target.closest("[data-start]");
+  if (s) { e.preventDefault(); openQuiz(s.dataset.start); return; }
+  const g = e.target.closest("[data-go]");
+  if (g) { e.preventDefault(); if ($("#meDlg").open) $("#meDlg").close(); go(g.dataset.go); return; }
+  const a = e.target.closest("[data-auth]");
+  if (a) { e.preventDefault(); showAuth(a.dataset.auth); return; }
+  const l = e.target.closest("[data-lang]");
+  if (l && l.closest(".langs")) setLang(l.dataset.lang, true);
+});
+$("#resultsBtn").addEventListener("click", () => go("#resultat"));
+$("#brandLink").addEventListener("click", e => { e.preventDefault(); go(""); scrollTo({ top: 0, behavior: REDUCED ? "auto" : "smooth" }); });
+$("#qzClose").addEventListener("click", closeQuiz);
+$("#qzPrev").addEventListener("click", prevQuiz);
+$("#qzSkip").addEventListener("click", skipQuiz);
+$("#qzNudgeX").addEventListener("click", () => ($("#qzNudge").hidden = true));
+$("#qzStrip").addEventListener("click", e => {
+  const s = e.target.closest("span[data-i]");
+  if (s) { QZ.i = +s.dataset.i; QZ.last = null; renderLast(); renderQuiz(true); }
+});
+$("#wallMore").addEventListener("click", () => loadFeed(true));
+
+/* ======================================================= Rendu général */
+function reveal(root) {
+  $$("[data-reveal]:not(.in)", root).forEach(n => revealIO.observe(n));
+}
+const revealIO = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add("in"); revealIO.unobserve(e.target); } }), { threshold: .12 });
+
+/** Mise à jour légère après une réponse (sans reconstruire la liste du résultat). */
+function refreshLight() {
+  renderHomeProgress();
+  if (!$("#resultsView").hidden && !QZ.open) renderSummary();
+}
+function renderAll() {
+  if (!Q.length) return;
+  if (STATS) $$("#liveStats [data-stat]").forEach(r => ($("dd", r).textContent = t("stat." + r.dataset.stat + (STATS[r.dataset.stat] === 1 ? ".1" : ""))));
+  renderQod();
+  renderHomeProgress();
+  renderUnis();
+  renderFeed();
+  if (!$("#resultsView").hidden) renderResults();
+  if (QZ.open) renderQuiz(false);
+  renderAccount();
+}
+
+/* ============================================================ Démarrage */
+async function boot() {
+  load();
+  $("#year").textContent = new Date().getFullYear();
+  FX = new Ripples($("#fx"), false);
+  HERO_FX = new Ripples($("#heroFx"), true);
+  QUIZ_FX = new Ripples($("#quizFx"), true);
+  QUIZ_FX.visible = false;
+  new IntersectionObserver(([e]) => { HERO_FX.visible = e.isIntersecting && !$("#homeView").hidden; if (HERO_FX.visible) HERO_FX.start(); }).observe($(".hero"));
+  $(".hero").addEventListener("pointerdown", e => { if (!e.target.closest("button,a")) { const b = $("#heroFx").getBoundingClientRect(); HERO_FX.burst(e.clientX - b.left, e.clientY - b.top, [1, 1, 0, -1][Math.floor(Math.random() * 4)]); } });
+  setupSwipe();
+  renderMiniMosaic();
+
+  lang = pickLang();
+  try {
+    const raw = await (await fetch("questions.json", { cache: "no-cache" })).json();
+    raw.forEach(q => (q.fr = frTypo(q.fr)));
+    Q = raw; QBY = Object.fromEntries(raw.map(q => [q.id, q]));
+    const by = CATS.map(c => raw.filter(q => q.cat === c));
+    INTER = [];
+    for (let i = 0; i < Math.max(...by.map(b => b.length)); i++) by.forEach(b => b[i] && INTER.push(b[i]));
+  } catch (e) { console.error("questions.json introuvable", e); }
+
+  // Liens des emails : ?q=42&a=1 enregistre la réponse, ?reset=… / ?verified=…
+  const p = new URLSearchParams(location.search);
+  const pq = +p.get("q"), pa = p.get("a");
+  if (QBY[pq] && ["-1", "0", "1"].includes(pa)) { setAnswer(pq, +pa); if (pa === "1") RS.expand = pq; }
+  const verified = p.get("verified");
+  resetToken = p.get("reset");
+  if (p.toString()) history.replaceState(null, "", location.pathname + location.hash);
+
+  setLang(lang);
+  route();
+  reveal(document);
+
+  try { const me = await api("me"); online = true; user = me.user; csrf = me.csrf; }
+  catch (e) { online = false; }
+  markReady();
+  renderAccount();
+  if (user) {
+    await flush();
+    try { applyServer(await api("pull")); } catch (e) {}
+    renderAll();
+  } else flush();
+  if (verified === "1") { toast(t("au.verified")); if (user) user.verified = true; }
+  if (verified === "0") toast(t("au.verifyBad"), "err");
+  if (resetToken && /^[a-f0-9]{48}$/.test(resetToken)) $("#resetDlg").showModal();
+  renderFeed();
+  loadStats();
+  loadFeed();
+}
+boot();
+})();
+</script>
+</body>
+</html>

@@ -13,6 +13,9 @@ Site personnel de Mohammed Dehini.
 - `elbahiferti/` — page vitrine du laboratoire ELBAHI FERTI — DIAG PMA, publiée sur
   `https://dehini.com/elbahiferti/`. Page statique autonome (français / arabe), ses images et la
   vidéo du logo sont dans `elbahiferti/assets/`. Elle ne dépend ni de `data.json` ni de l'admin.
+- `impact/` — le **Défi Impact** (`https://dehini.com/impact/`), arabe / français / anglais :
+  120 questions sur la vie personnelle, sociale et professionnelle, comptes, récits partagés et
+  emails de rappel. Voir la section « Défi Impact » plus bas.
 
 ## Installation (serveur dzSecurity, compte cPanel `dehini91`)
 
@@ -28,6 +31,7 @@ cp -f dehini-com/admin/index.html dehini-com/admin/api.php dehini-com/admin/.hta
 cp -f dehini-com/uploads/.htaccess ~/public_html/uploads/.htaccess
 cp -rf dehini-com/img ~/public_html/
 cp -rf dehini-com/elbahiferti ~/public_html/
+cp -rf dehini-com/impact ~/public_html/
 ```
 
 ### 2. Créer le mot de passe de l'admin
@@ -57,11 +61,86 @@ depuis `/admin`, jamais depuis ce dépôt.
 Dans **cPanel → Tâches Cron**, toutes les 5 minutes :
 
 ```bash
-cd ~/dehini-com && git pull -q && cp -f index.html ~/public_html/index.html && cp -f admin/index.html admin/api.php admin/.htaccess admin/.user.ini ~/public_html/admin/ && cp -f uploads/.htaccess ~/public_html/uploads/.htaccess && cp -rf img ~/public_html/ && cp -rf elbahiferti ~/public_html/
+cd ~/dehini-com && git pull -q && cp -f index.html ~/public_html/index.html && cp -f admin/index.html admin/api.php admin/.htaccess admin/.user.ini ~/public_html/admin/ && cp -f uploads/.htaccess ~/public_html/uploads/.htaccess && cp -rf img ~/public_html/ && cp -rf elbahiferti ~/public_html/ && cp -rf impact ~/public_html/
 ```
 
-Cette commande ne touche jamais `data.json`, `admin/config.php` ni les images envoyées dans
-`uploads/` : seul le code (`index.html`, `admin/*.php`, `elbahiferti/`) est mis à jour.
+Cette commande ne touche jamais `data.json`, `admin/config.php`, `impact/config.php`, la base du
+défi Impact ni les images envoyées dans `uploads/` : seul le code (`index.html`, `admin/*.php`,
+`elbahiferti/`, `impact/`) est mis à jour.
+
+## Défi Impact (`/impact/`)
+
+Le visiteur répond question par question (impact négatif / aucun / positif), consulte son
+résultat à tout moment, raconte ses impacts positifs et découvre, sur ses réponses négatives ou
+« aucun impact », les impacts positifs partagés par les autres. Sans compte, tout est gardé sur
+l'appareil ; avec un compte, réponses et récits sont sauvegardés automatiquement.
+
+- `impact/index.html` — la page (vitrine + défi + résultat + compte), en arabe, français et anglais.
+- `impact/questions.json` — les 120 questions (40 par univers), dans les trois langues.
+- `impact/api.php` — comptes, synchronisation des réponses, récits, « j'aime », signalements,
+  désabonnement.
+- `impact/cron.php` — emails de rappel (question du jour, impacts positifs des autres).
+- `impact/moderation.html` — modération des récits, avec **le même mot de passe que `/admin`**.
+- La base de données (SQLite) est créée toute seule au premier passage, **hors de
+  `public_html`** : `~/impact-data/impact.sqlite`. Elle n'est jamais dans Git ni écrasée par le
+  déploiement. Pour la sauvegarder, il suffit de copier ce fichier.
+
+### 1. Créer le compte email d'envoi
+
+Dans **cPanel → Comptes de messagerie**, créer `impact@dehini.com` (c'est l'expéditeur des
+emails). Puis, dans le **Terminal cPanel** :
+
+```bash
+cp ~/dehini-com/impact/config.example.php ~/public_html/impact/config.php
+nano ~/public_html/impact/config.php
+```
+
+Renseigner le mot de passe de ce compte email (`IMPACT_SMTP_PASS`) et l'adresse qui reçoit les
+récits à valider (`IMPACT_NOTIFY_EMAIL`). Ce fichier n'est jamais envoyé sur GitHub et est
+bloqué en accès direct. Sans `config.php`, le site fonctionne quand même et envoie avec la
+fonction `mail()` de PHP (moins fiable pour la boîte de réception).
+
+### 2. Tester l'envoi
+
+```bash
+php ~/public_html/impact/cron.php --test=ton-adresse@gmail.com
+```
+
+Envoie un exemple de chaque email (question du jour, rappel de récit, impacts positifs,
+bienvenue, mot de passe oublié). Ajouter `--lang=ar` ou `--lang=en` pour les autres langues. Si
+la connexion SMTP échoue à cause du certificat, essayer `IMPACT_SMTP_HOST` = le nom du serveur
+cPanel (visible dans « Configurer le client de messagerie »).
+
+### 3. Programmer les rappels
+
+Dans **cPanel → Tâches Cron**, **une fois par heure** :
+
+```bash
+/usr/local/bin/php ~/public_html/impact/cron.php > /dev/null 2>&1
+```
+
+À chaque passage (80 emails max, réglable) :
+
+- **Question du jour** — à partir de 9 h (heure d'Alger), une fois par jour, pour chaque compte
+  confirmé qui l'a demandée : une question sans réponse avec trois boutons ; un clic enregistre
+  la réponse et ouvre le résultat. Quand tout est répondu : un rappel tous les 3 jours pour
+  raconter un impact positif pas encore écrit.
+- **Impacts positifs des autres** — au plus une fois par semaine : jusqu'à 3 récits publiés par
+  d'autres sur les questions où la personne a répondu « négatif » ou « aucun impact » (jamais deux
+  fois le même).
+
+Les emails ne partent qu'aux adresses **confirmées** (lien envoyé à l'inscription), dans la
+langue du site choisie par la personne, et chacun contient un lien de désabonnement en un clic
+(question du jour, impacts positifs ou tout). `php cron.php --dry-run` affiche ce qui partirait
+sans rien envoyer.
+
+### 4. Modération
+
+Les récits sont publiés tout de suite (`IMPACT_MODERATION = 'auto'`), sauf ceux qui contiennent
+un lien, une adresse ou un numéro de téléphone : ils attendent une validation. Un récit signalé
+3 fois est masqué automatiquement. Tout se gère sur `https://dehini.com/impact/moderation.html`
+(publier, masquer, supprimer). Avec `IMPACT_MODERATION = 'manual'`, chaque récit attend une
+validation avant d'apparaître.
 
 ## Utiliser l'admin
 
@@ -110,3 +189,8 @@ pas mis à jour automatiquement après coup.
   d'exécuter un script.
 - `admin/config.php` contient le hash du mot de passe : il est exclu de Git (`.gitignore`) et
   bloqué en accès direct par `admin/.htaccess`.
+- Défi Impact : mots de passe des comptes hachés (`password_hash`), sessions et liens (confirmation,
+  mot de passe oublié valable 1 h, désabonnement) à jetons aléatoires, jeton anti-CSRF sur les
+  écritures d'un compte connecté, limites d'essais par IP (connexion, inscription, récits, « j'aime »,
+  signalements), IP jamais stockées en clair. `impact/config.php`, `impact/cron.php` et
+  `impact/lib/` sont bloqués en accès direct ; la base est hors de `public_html`.

@@ -1,0 +1,13 @@
+Options -Indexes
+
+# Seuls la page, ses fichiers statiques et l'API sont accessibles.
+<FilesMatch "^(config\.php|config\.example\.php|cron\.php|\.user\.ini)$">
+  Require all denied
+</FilesMatch>
+
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  <FilesMatch "\.(html|json)$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+</IfModule>
