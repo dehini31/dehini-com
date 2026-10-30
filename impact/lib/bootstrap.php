@@ -22,7 +22,7 @@ $defaults = [
     'IMPACT_SMTP_USER'      => '',
     'IMPACT_SMTP_PASS'      => '',
     'IMPACT_SMTP_VERIFY'    => true,        // vérification du certificat TLS
-    'IMPACT_MODERATION'     => 'auto',      // auto = publié tout de suite | manual = validé dans /impact/moderation.html
+    'IMPACT_MODERATION'     => 'auto',      // auto = publié tout de suite | manual = validé dans /impact/admin.html
     'IMPACT_NOTIFY_EMAIL'   => '',          // reçoit un email quand un récit attend une validation
     'IMPACT_DAILY_HOUR'     => 9,           // heure locale à partir de laquelle part la question du jour
     'IMPACT_DIGEST_DAYS'    => 7,           // au plus un email « impacts positifs » tous les N jours
@@ -77,7 +77,12 @@ function db(): PDO
 function migrate(PDO $pdo): void
 {
     $v = (int) $pdo->query('PRAGMA user_version')->fetchColumn();
-    if ($v >= 1) return;
+    if ($v < 1) migrate_v1($pdo);
+    if ($v < 2) migrate_v2($pdo);
+}
+
+function migrate_v1(PDO $pdo): void
+{
     $pdo->exec(<<<SQL
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -148,6 +153,45 @@ function migrate(PDO $pdo): void
     SQL);
 }
 
+/**
+ * v2 : les questions passent dans la base (modifiables depuis l'admin, jamais écrasées
+ * par le déploiement) et chaque participant garde son pays pour l'impact mondial.
+ * AUTOINCREMENT : un numéro de question supprimée n'est jamais réattribué.
+ */
+function migrate_v2(PDO $pdo): void
+{
+    $pdo->exec(<<<SQL
+    CREATE TABLE IF NOT EXISTS questions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        cat TEXT NOT NULL,
+        fr TEXT NOT NULL DEFAULT '',
+        ar TEXT NOT NULL DEFAULT '',
+        en TEXT NOT NULL DEFAULT '',
+        active INTEGER NOT NULL DEFAULT 1,
+        pos INTEGER NOT NULL DEFAULT 0,
+        updated INTEGER NOT NULL DEFAULT 0
+    );
+    CREATE INDEX IF NOT EXISTS questions_pos ON questions(active, pos);
+    CREATE TABLE IF NOT EXISTS people (
+        pid TEXT PRIMARY KEY,
+        cc TEXT NOT NULL DEFAULT '',
+        seen INTEGER NOT NULL DEFAULT 0
+    );
+    CREATE INDEX IF NOT EXISTS answers_pid ON answers(pid);
+    SQL);
+    // Premier passage : on part des questions livrées avec le site (questions.json).
+    if (!(int) $pdo->query('SELECT COUNT(*) FROM questions')->fetchColumn()) {
+        $raw = json_decode((string) @file_get_contents(dirname(__DIR__) . '/questions.json'), true) ?: [];
+        $ins = $pdo->prepare('INSERT INTO questions (id, cat, fr, ar, en, active, pos, updated) VALUES (?, ?, ?, ?, ?, 1, ?, ?)');
+        $pdo->beginTransaction();
+        foreach ($raw as $q) {
+            $ins->execute([(int) $q['id'], (string) $q['cat'], (string) ($q['fr'] ?? ''), (string) ($q['ar'] ?? ''), (string) ($q['en'] ?? ''), (int) $q['id'], time()]);
+        }
+        $pdo->commit();
+    }
+    $pdo->exec('PRAGMA user_version = 2');
+}
+
 function meta_get(string $k): ?string
 {
     $s = db()->prepare('SELECT v FROM meta WHERE k = ?');
@@ -176,15 +220,82 @@ function token(int $bytes = 24): string
     return bin2hex(random_bytes($bytes));
 }
 
-/** @return array<int, array{id:int,cat:string,fr:string,ar:string,en:string}> indexé par id */
-function questions(): array
+const IMPACT_CATS = ['perso', 'social', 'pro'];
+
+/**
+ * Questions indexées par id, dans l'ordre du défi.
+ * $all = true inclut les questions masquées (pour retrouver le texte d'un ancien récit).
+ * @return array<int, array{id:int,cat:string,fr:string,ar:string,en:string,active:int}>
+ */
+function questions(bool $all = false): array
 {
-    static $q = null;
-    if ($q !== null) return $q;
-    $raw = json_decode((string) file_get_contents(dirname(__DIR__) . '/questions.json'), true) ?: [];
-    $q = [];
-    foreach ($raw as $item) $q[(int) $item['id']] = $item;
-    return $q;
+    static $cache = [];
+    $k = $all ? 'all' : 'active';
+    if (isset($cache[$k])) return $cache[$k];
+    $rows = db()->query('SELECT id, cat, fr, ar, en, active FROM questions' . ($all ? '' : ' WHERE active = 1') . ' ORDER BY pos, id')->fetchAll();
+    $out = [];
+    foreach ($rows as $r) {
+        $r['id'] = (int) $r['id'];
+        $r['active'] = (int) $r['active'];
+        $out[$r['id']] = $r;
+    }
+    return $cache[$k] = $out;
+}
+
+/** Texte d'une question dans une langue, avec repli si l'admin ne l'a pas encore traduite. */
+function qtext(array $q, string $lang): string
+{
+    foreach ([$lang, 'fr', 'en', 'ar'] as $l) {
+        if (!empty($q[$l])) return (string) $q[$l];
+    }
+    return '';
+}
+
+/** Version des questions : change à chaque modification depuis l'admin (cache navigateur). */
+function questions_version(): string
+{
+    return meta_get('qv') ?? '1';
+}
+function questions_changed(): void
+{
+    meta_set('qv', (string) ((int) questions_version() + 1));
+    meta_set('stats_cache', '');
+}
+
+/**
+ * Anciens noms de fuseaux encore renvoyés par certains navigateurs (Chrome/ICU)
+ * mais inconnus de PHP : sans cette table, l'Inde, l'Ukraine, le Vietnam…
+ * disparaîtraient de l'impact mondial.
+ */
+const TZ_ALIASES = [
+    'Asia/Calcutta' => 'IN', 'Asia/Saigon' => 'VN', 'Asia/Katmandu' => 'NP', 'Asia/Rangoon' => 'MM', 'Asia/Dacca' => 'BD',
+    'Asia/Thimbu' => 'BT', 'Asia/Ulan_Bator' => 'MN', 'Asia/Ujung_Pandang' => 'ID', 'Asia/Macao' => 'MO', 'Asia/Istanbul' => 'TR',
+    'Asia/Tel_Aviv' => 'IL', 'Asia/Chongqing' => 'CN', 'Asia/Chungking' => 'CN', 'Asia/Harbin' => 'CN', 'Asia/Kashgar' => 'CN',
+    'Europe/Kiev' => 'UA', 'Europe/Uzhgorod' => 'UA', 'Europe/Zaporozhye' => 'UA', 'Europe/Belfast' => 'GB', 'Europe/Nicosia' => 'CY',
+    'America/Buenos_Aires' => 'AR', 'America/Catamarca' => 'AR', 'America/Cordoba' => 'AR', 'America/Jujuy' => 'AR', 'America/Mendoza' => 'AR',
+    'America/Indianapolis' => 'US', 'America/Louisville' => 'US', 'America/Fort_Wayne' => 'US', 'America/Knox_IN' => 'US',
+    'America/Montreal' => 'CA', 'America/Coral_Harbour' => 'CA', 'America/Godthab' => 'GL', 'America/Ensenada' => 'MX',
+    'America/Santa_Isabel' => 'MX', 'America/Porto_Acre' => 'BR', 'America/Virgin' => 'VI', 'Africa/Asmera' => 'ER',
+    'Africa/Timbuktu' => 'ML', 'Atlantic/Faeroe' => 'FO', 'Atlantic/Jan_Mayen' => 'SJ', 'Pacific/Ponape' => 'FM', 'Pacific/Truk' => 'FM',
+    'Pacific/Yap' => 'FM', 'Pacific/Samoa' => 'AS', 'Pacific/Enderbury' => 'KI',
+];
+const TZ_ALIAS_PREFIXES = ['US/' => 'US', 'Canada/' => 'CA', 'Brazil/' => 'BR', 'Mexico/' => 'MX', 'Chile/' => 'CL'];
+
+/** Pays (code ISO) déduit du fuseau horaire du navigateur, sans IP ni géolocalisation. */
+function tz_country($tz): string
+{
+    if (!is_string($tz) || strlen($tz) > 64 || !preg_match('~^[A-Za-z_]+(/[A-Za-z0-9_+\-]+){1,2}$~', $tz)) return '';
+    if (isset(TZ_ALIASES[$tz])) return TZ_ALIASES[$tz];
+    foreach (TZ_ALIAS_PREFIXES as $prefix => $cc) {
+        if (strncmp($tz, $prefix, strlen($prefix)) === 0) return $cc;
+    }
+    try {
+        $loc = (new DateTimeZone($tz))->getLocation();
+    } catch (Exception $e) {
+        return '';
+    }
+    $cc = is_array($loc) ? (string) ($loc['country_code'] ?? '') : '';
+    return preg_match('/^[A-Z]{2}$/', $cc) ? $cc : '';
 }
 
 function str_clean(string $s, int $max): string

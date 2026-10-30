@@ -14,8 +14,9 @@ Site personnel de Mohammed Dehini.
   `https://dehini.com/elbahiferti/`. Page statique autonome (français / arabe), ses images et la
   vidéo du logo sont dans `elbahiferti/assets/`. Elle ne dépend ni de `data.json` ni de l'admin.
 - `impact/` — le **Défi Impact** (`https://dehini.com/impact/`), arabe / français / anglais :
-  120 questions sur la vie personnelle, sociale et professionnelle, comptes, récits partagés et
-  emails de rappel. Voir la section « Défi Impact » plus bas.
+  1000 questions sur la vie personnelle, sociale et professionnelle (modifiables depuis l'admin),
+  impact mondial, comptes, récits partagés et emails de rappel. Voir la section « Défi Impact »
+  plus bas.
 
 ## Installation (serveur dzSecurity, compte cPanel `dehini91`)
 
@@ -72,18 +73,33 @@ défi Impact ni les images envoyées dans `uploads/` : seul le code (`index.html
 
 Le visiteur répond question par question (impact négatif / aucun / positif), consulte son
 résultat à tout moment, raconte ses impacts positifs et découvre, sur ses réponses négatives ou
-« aucun impact », les impacts positifs partagés par les autres. Sans compte, tout est gardé sur
-l'appareil ; avec un compte, réponses et récits sont sauvegardés automatiquement.
+« aucun impact », les impacts positifs partagés par les autres. Sans compte, les réponses sont
+gardées sur l'appareil ; avec un compte, elles sont sauvegardées automatiquement. **Raconter un
+impact positif demande un compte** : le texte écrit sans compte est gardé, la fenêtre
+d'inscription s'ouvre, et le récit est publié dès que le compte est créé.
 
-- `impact/index.html` — la page (vitrine + défi + résultat + compte), en arabe, français et anglais.
-- `impact/questions.json` — les 120 questions (40 par univers), dans les trois langues.
-- `impact/api.php` — comptes, synchronisation des réponses, récits, « j'aime », signalements,
-  désabonnement.
+L'**impact mondial** (`https://dehini.com/impact/#monde`, bouton globe en haut) montre les
+résultats de tous les participants : part d'impacts positifs, « vous et le monde », les trois
+univers, la carte des 1000 questions (cliquer une case ouvre la question et ses chiffres), les
+questions les plus positives, les plus difficiles, les plus partagées, et les pays. Le pays est
+déduit du fuseau horaire du navigateur (jamais de l'adresse IP).
+
+- `impact/index.html` — la page (vitrine + défi + résultat + impact mondial + compte), en arabe,
+  français et anglais.
+- `impact/admin.html` — l'administration du défi, avec **le même mot de passe que `/admin`**
+  (lien « Défi Impact » en bas du menu de `/admin`) : ajouter, modifier, masquer ou supprimer les
+  questions (avec leurs chiffres), et modérer les récits.
+- `impact/questions.json` — les 1000 questions de départ (340 personnelles, 330 sociales, 330
+  professionnelles) dans les trois langues. Elles sont copiées dans la base au premier passage ;
+  ensuite **c'est l'admin qui fait foi** et modifier ce fichier n'a plus d'effet (il sert
+  seulement de secours si l'API ne répond pas).
+- `impact/api.php` — questions, comptes, synchronisation des réponses, statistiques mondiales,
+  récits, « j'aime », signalements, désabonnement.
 - `impact/cron.php` — emails de rappel (question du jour, impacts positifs des autres).
-- `impact/moderation.html` — modération des récits, avec **le même mot de passe que `/admin`**.
 - La base de données (SQLite) est créée toute seule au premier passage, **hors de
   `public_html`** : `~/impact-data/impact.sqlite`. Elle n'est jamais dans Git ni écrasée par le
-  déploiement. Pour la sauvegarder, il suffit de copier ce fichier.
+  déploiement, et se met à jour toute seule quand le code évolue. Pour la sauvegarder, il suffit
+  de copier ce fichier.
 
 ### 1. Créer le compte email d'envoi
 
@@ -138,9 +154,24 @@ sans rien envoyer.
 
 Les récits sont publiés tout de suite (`IMPACT_MODERATION = 'auto'`), sauf ceux qui contiennent
 un lien, une adresse ou un numéro de téléphone : ils attendent une validation. Un récit signalé
-3 fois est masqué automatiquement. Tout se gère sur `https://dehini.com/impact/moderation.html`
-(publier, masquer, supprimer). Avec `IMPACT_MODERATION = 'manual'`, chaque récit attend une
+3 fois est masqué automatiquement. Tout se gère dans l'onglet « Récits » de
+`https://dehini.com/impact/admin.html` (publier, masquer, supprimer ; l'ancienne adresse
+`moderation.html` y redirige). Avec `IMPACT_MODERATION = 'manual'`, chaque récit attend une
 validation avant d'apparaître.
+
+### 5. Gérer les questions
+
+Onglet « Questions » de `https://dehini.com/impact/admin.html` : recherche (texte ou `#numéro`),
+filtres par univers et par état (affichées, masquées, traduction manquante), « + Nouvelle
+question », « Exporter (JSON) ». Une question peut être écrite dans une seule langue : les autres
+langues affichent alors ce texte en attendant la traduction.
+
+- **Masquer** retire la question du défi, des emails et de la carte de l'impact mondial, sans rien effacer :
+  on peut la réafficher plus tard avec ses réponses et ses récits.
+- **Supprimer** efface définitivement la question avec toutes ses réponses et tous ses récits.
+  Son numéro n'est jamais réutilisé.
+
+Les changements apparaissent sur le site dès le chargement suivant de la page.
 
 ## Utiliser l'admin
 

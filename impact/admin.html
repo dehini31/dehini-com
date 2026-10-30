@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Administration — Défi Impact</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Readex+Pro:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#0b1020;--ink-soft:#4b5470;--paper-50:#f7f7f9;--paper-100:#f0f1f4;--paper-200:#e3e5ea;--muted:#6b7185;
+    --pos:#17b26a;--pos-600:#07854b;--pos-50:#eafaf2;--neg:#ff5d5d;--neg-600:#d93b3b;--neg-50:#fff1f1;--none:#8b93a7;--warn:#b86700;--warn-50:#fff5e6;
+    --perso:#7c5cff;--perso-50:#f2efff;--social:#2f5bff;--social-50:#eef2ff;--pro:#b86700;--pro-50:#fff5e6;
+    --font:"DM Sans","Readex Pro",system-ui,-apple-system,"Segoe UI",sans-serif;--shadow:0 1px 2px rgba(11,16,32,.05),0 10px 30px -14px rgba(11,16,32,.18)}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--font);background:var(--paper-50);color:var(--ink);line-height:1.55}
+  button,input,select,textarea{font:inherit;color:inherit}
+  button{cursor:pointer;border:0;background:none}
+  [hidden]{display:none!important}
+  .wrap{max-width:1040px;margin:0 auto;padding:28px 16px 80px}
+  #loginView{min-height:100vh;display:grid;place-items:center;padding:16px}
+  #loginView form{width:min(360px,100%);background:#fff;border-radius:20px;padding:30px;box-shadow:var(--shadow)}
+  #loginView h1{font-size:1.3rem;margin-bottom:4px}
+  #loginView p{color:var(--muted);font-size:.9rem;margin-bottom:18px}
+  #loginView input{width:100%;padding:12px 14px;border:1px solid var(--paper-200);border-radius:10px;margin-bottom:12px}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 16px;border-radius:999px;font-weight:700;font-size:.86rem;white-space:nowrap}
+  .btn:disabled{opacity:.5;cursor:default}
+  .btn-ink{background:var(--ink);color:#fff}
+  .btn-pos{background:var(--pos);color:#fff}
+  .btn-line{border:1px solid var(--paper-200);background:#fff}
+  .btn-neg{border:1px solid #ffc9c9;background:#fff;color:var(--neg-600)}
+  .btn-sm{padding:6px 12px;font-size:.8rem}
+  #loginView .btn{width:100%;padding:12px}
+  .err{color:var(--neg-600);font-size:.85rem;min-height:1.2em;margin-top:10px}
+  header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px;margin-bottom:22px}
+  header h1{font-size:1.5rem;letter-spacing:-.02em}
+  header a{color:var(--muted);font-size:.88rem}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:22px}
+  .kpi{background:#fff;border-radius:16px;padding:16px;box-shadow:var(--shadow)}
+  .kpi b{display:block;font-size:1.6rem;line-height:1.1}
+  .kpi span{font-size:.8rem;color:var(--muted)}
+  .main-tabs{display:flex;gap:4px;padding:4px;border-radius:999px;background:#fff;box-shadow:var(--shadow);width:max-content;max-width:100%;margin-bottom:20px}
+  .main-tabs a{padding:9px 18px;border-radius:999px;font-weight:700;font-size:.9rem;color:var(--muted);text-decoration:none}
+  .main-tabs a.on{background:var(--ink);color:#fff}
+  .tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px}
+  .tabs button{padding:8px 14px;border-radius:999px;background:#fff;border:1px solid var(--paper-200);font-size:.86rem;font-weight:700;color:var(--muted)}
+  .tabs button[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:#fff}
+  .tabs .n{font-weight:500;opacity:.75;margin-left:4px}
+  .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
+  .toolbar input[type=search]{flex:1;min-width:220px;padding:10px 14px;border:1px solid var(--paper-200);border-radius:999px;background:#fff}
+  .toolbar select{padding:9px 12px;border:1px solid var(--paper-200);border-radius:999px;background:#fff}
+  .summary{font-size:.86rem;color:var(--muted);margin-bottom:14px}
+  .item{background:#fff;border-radius:18px;padding:18px 20px;box-shadow:var(--shadow);margin-bottom:12px}
+  .item.off{opacity:.7;background:#fbfbfc}
+  .q-top{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:8px;font-size:.8rem;color:var(--muted)}
+  .chip{display:inline-block;padding:2px 10px;border-radius:999px;font-weight:700;font-size:.75rem}
+  .chip.perso{background:var(--perso-50);color:var(--perso)} .chip.social{background:var(--social-50);color:var(--social)} .chip.pro{background:var(--pro-50);color:var(--pro)}
+  .badge{display:inline-block;padding:2px 9px;border-radius:999px;font-weight:700;font-size:.75rem}
+  .b-off{background:var(--paper-100);color:var(--ink-soft)}
+  .b-published{background:var(--pos-50);color:var(--pos-600)} .b-pending{background:var(--warn-50);color:var(--warn)}
+  .b-hidden{background:var(--neg-50);color:var(--neg-600)} .b-private{background:var(--paper-100);color:var(--ink-soft)}
+  .q-fr{font-weight:700}
+  .q-ar{direction:rtl;text-align:right;color:var(--ink-soft);margin-top:4px}
+  .q-en{color:var(--muted);font-size:.92rem;margin-top:4px}
+  .q-miss{color:var(--warn);font-size:.8rem;font-style:italic}
+  .q-stats{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin-top:10px;font-size:.8rem;color:var(--muted)}
+  .bar{display:inline-flex;width:120px;height:6px;border-radius:4px;overflow:hidden;background:var(--paper-100);vertical-align:middle}
+  .bar i{display:block;height:100%} .bar .p{background:var(--pos)} .bar .z{background:var(--none)} .bar .n{background:var(--neg)}
+  .actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  .qform{display:grid;gap:10px}
+  .qform label{display:grid;gap:4px;font-size:.82rem;font-weight:700;color:var(--ink-soft)}
+  .qform textarea{width:100%;padding:10px 12px;border:1px solid var(--paper-200);border-radius:12px;resize:vertical;font-weight:400;color:var(--ink);font-size:.95rem}
+  .qform textarea[dir=rtl]{text-align:right}
+  .qform select{padding:8px 12px;border:1px solid var(--paper-200);border-radius:10px;background:#fff;font-weight:400;color:var(--ink);width:max-content}
+  .qform .row{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+  .qform .check{display:flex;flex-direction:row;align-items:center;gap:8px;font-weight:500}
+  .qform .hint{font-size:.8rem;color:var(--muted);font-weight:400}
+  .new-box{border:2px dashed var(--paper-200);background:#fff}
+  .pager{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:18px;font-size:.88rem;color:var(--muted)}
+  .exp{white-space:pre-line;margin-bottom:10px}
+  .imp{white-space:pre-line;background:var(--pos-50);color:#0a5c37;border-radius:12px;padding:10px 12px;font-size:.92rem}
+  .meta{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:12px;font-size:.8rem;color:var(--muted)}
+  .empty{text-align:center;color:var(--muted);padding:40px;background:#fff;border-radius:18px}
+  .toast{position:fixed;bottom:20px;left:50%;translate:-50% 0;background:var(--ink);color:#fff;padding:12px 18px;border-radius:14px;font-size:.9rem;box-shadow:var(--shadow);z-index:9}
+</style>
+</head>
+<body>
+<!-- Administration du défi Impact : questions (ajout, modification, masquage, suppression) et modération des récits.
+     Connexion avec le mot de passe de /admin (même session). -->
+<div id="loginView" hidden>
+  <form id="loginForm">
+    <h1>Administration — Défi Impact</h1>
+    <p>Même mot de passe que l'administration du site.</p>
+    <input type="password" name="password" placeholder="Mot de passe" autocomplete="current-password" required>
+    <button class="btn btn-ink" type="submit">Se connecter</button>
+    <p class="err" id="loginErr"></p>
+  </form>
+</div>
+
+<div class="wrap" id="appView" hidden>
+  <header>
+    <h1>Administration — Défi Impact</h1>
+    <div><a href="./" target="_blank" rel="noopener">↗ Voir le défi</a> · <a href="../admin/">Administration du site</a></div>
+  </header>
+  <div class="kpis" id="kpis"></div>
+  <nav class="main-tabs">
+    <a href="#questions" data-tab="questions">Questions</a>
+    <a href="#recits" data-tab="recits">Récits</a>
+  </nav>
+
+  <section id="tab-questions" hidden>
+    <div class="toolbar">
+      <input type="search" id="qSearch" placeholder="Rechercher (français, arabe ou anglais) ou #numéro…">
+      <select id="qCat"><option value="">Tous les univers</option><option value="perso">Personnel</option><option value="social">Social</option><option value="pro">Professionnel</option></select>
+      <select id="qState"><option value="">Toutes</option><option value="1">Affichées</option><option value="0">Masquées</option><option value="miss">Traduction manquante</option></select>
+      <button class="btn btn-pos" type="button" id="qNew">+ Nouvelle question</button>
+      <button class="btn btn-line" type="button" id="qExport">Exporter (JSON)</button>
+    </div>
+    <p class="summary" id="qSummary"></p>
+    <div id="qNewBox"></div>
+    <div id="qList"></div>
+    <div class="pager" id="qPager"></div>
+  </section>
+
+  <section id="tab-recits" hidden>
+    <div class="tabs" id="sTabs"></div>
+    <div id="sList"></div>
+  </section>
+</div>
+
+<script>
+(() => {
+"use strict";
+const $ = s => document.querySelector(s);
+let csrf = null;
+const CATS = { perso: "Personnel", social: "Social", pro: "Professionnel" };
+const LANG = { fr: "Français", ar: "Arabe", en: "Anglais" };
+
+function el(tag, props, ...kids) {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(props || {})) {
+    if (v == null || v === false) continue;
+    if (k === "class") n.className = v;
+    else if (k === "text") n.textContent = v;
+    else if (k.startsWith("on")) n.addEventListener(k.slice(2), v);
+    else n.setAttribute(k, v === true ? "" : v);
+  }
+  for (const c of kids.flat()) if (c != null && c !== false) n.append(c.nodeType ? c : document.createTextNode(String(c)));
+  return n;
+}
+function toast(msg) {
+  const n = el("div", { class: "toast", text: msg });
+  document.body.append(n);
+  setTimeout(() => n.remove(), 3000);
+}
+
+async function call(url, body) {
+  const opt = { credentials: "same-origin", headers: {} };
+  if (body !== undefined) {
+    opt.method = "POST";
+    opt.headers["Content-Type"] = "application/json";
+    opt.headers["X-Requested-With"] = "impact";
+    if (csrf) opt.headers["X-CSRF"] = csrf;
+    opt.body = JSON.stringify(body);
+  }
+  const res = await fetch(url, opt);
+  let data = {};
+  try { data = await res.json(); } catch (e) {}
+  if (!res.ok || data.error) {
+    const err = new Error(data.error === "auth" ? "Session expirée, reconnecte-toi." : data.error || "Erreur serveur");
+    err.status = res.status;
+    if (res.status === 401) showLogin();
+    throw err;
+  }
+  return data;
+}
+
+/* ------------------------------------------------------------ Questions */
+const QS = { items: [], page: 0, per: 50, editing: null };
+
+async function loadQuestions() {
+  const d = await call("api.php?action=mod_questions");
+  QS.items = d.items;
+  renderQuestions();
+}
+const missing = q => ["fr", "ar", "en"].filter(l => !q[l]);
+function filtered() {
+  const term = $("#qSearch").value.trim().toLowerCase(), cat = $("#qCat").value, st = $("#qState").value;
+  const num = /^#?\d+$/.test(term) ? +term.replace("#", "") : null;
+  return QS.items.filter(q =>
+    (!cat || q.cat === cat) &&
+    (st === "" || (st === "miss" ? missing(q).length > 0 : String(q.active) === st)) &&
+    (!term || (num !== null ? q.id === num : (q.fr + " " + q.ar + " " + q.en).toLowerCase().includes(term))));
+}
+function renderQuestions() {
+  const list = filtered(), pages = Math.max(1, Math.ceil(list.length / QS.per));
+  QS.page = Math.min(QS.page, pages - 1);
+  const active = QS.items.filter(q => q.active).length;
+  $("#qSummary").textContent = `${QS.items.length} questions · ${active} affichées · ${QS.items.length - active} masquées — ${list.length} résultat(s)`;
+  $("#qList").replaceChildren(...(list.length
+    ? list.slice(QS.page * QS.per, (QS.page + 1) * QS.per).map(q => QS.editing === q.id ? qForm(q) : qRow(q))
+    : [el("p", { class: "empty", text: "Aucune question ne correspond." })]));
+  $("#qPager").replaceChildren(...(pages > 1 ? [
+    el("button", { class: "btn btn-line btn-sm", type: "button", disabled: QS.page === 0, onclick: () => { QS.page--; renderQuestions(); scrollTo(0, 0); } }, "← Précédent"),
+    el("span", { text: `Page ${QS.page + 1} / ${pages}` }),
+    el("button", { class: "btn btn-line btn-sm", type: "button", disabled: QS.page >= pages - 1, onclick: () => { QS.page++; renderQuestions(); scrollTo(0, 0); } }, "Suivant →"),
+  ] : []));
+}
+function qRow(q) {
+  const [neg, none, pos] = q.n, total = neg + none + pos;
+  const miss = missing(q);
+  return el("article", { class: "item" + (q.active ? "" : " off") },
+    el("div", { class: "q-top" }, el("b", { text: "#" + q.id }), el("span", { class: "chip " + q.cat, text: CATS[q.cat] || q.cat }),
+      q.active ? null : el("span", { class: "badge b-off", text: "Masquée du site" }),
+      miss.length ? el("span", { class: "q-miss", text: "À traduire : " + miss.map(l => LANG[l]).join(", ") }) : null),
+    el("p", { class: "q-fr", text: q.fr || "—" }),
+    q.ar ? el("p", { class: "q-ar", text: q.ar }) : null,
+    q.en ? el("p", { class: "q-en", text: q.en }) : null,
+    el("div", { class: "q-stats" },
+      el("span", { text: total + " réponse(s)" }),
+      total ? el("span", { class: "bar", title: `${pos} positif · ${none} aucun · ${neg} négatif` },
+        el("i", { class: "p", style: `width:${pos / total * 100}%` }), el("i", { class: "z", style: `width:${none / total * 100}%` }), el("i", { class: "n", style: `width:${neg / total * 100}%` })) : null,
+      total ? el("span", { text: Math.round(pos / total * 100) + " % positif" }) : null,
+      el("span", { text: q.stories + " récit(s)" })),
+    el("div", { class: "actions" },
+      el("button", { class: "btn btn-line btn-sm", type: "button", onclick: () => { QS.editing = q.id; renderQuestions(); } }, "Modifier"),
+      el("button", { class: "btn btn-line btn-sm", type: "button", onclick: () => saveQ(Object.assign({}, q, { active: q.active ? 0 : 1 })) }, q.active ? "Masquer du site" : "Afficher sur le site"),
+      el("button", { class: "btn btn-neg btn-sm", type: "button", onclick: () => deleteQ(q) }, "Supprimer")));
+}
+function qForm(q) {
+  const isNew = !q.id;
+  const f = el("form", { class: "qform" },
+    el("div", { class: "row" },
+      el("label", {}, "Univers", el("select", { name: "cat" }, ...Object.entries(CATS).map(([k, v]) => el("option", { value: k, selected: q.cat === k }, v)))),
+      el("label", { class: "check" }, el("input", { type: "checkbox", name: "active", checked: isNew || !!q.active }), "Affichée sur le site")),
+    el("label", {}, "Français", el("textarea", { name: "fr", rows: 2, maxlength: 300 })),
+    el("label", {}, "Arabe", el("textarea", { name: "ar", rows: 2, maxlength: 300, dir: "rtl" })),
+    el("label", {}, "Anglais", el("textarea", { name: "en", rows: 2, maxlength: 300 })),
+    el("p", { class: "hint", text: "Une langue laissée vide s'affiche en français sur le site. Les réponses déjà données restent attachées à la question si vous la reformulez." }),
+    el("div", { class: "actions" },
+      el("button", { class: "btn btn-pos", type: "submit" }, isNew ? "Ajouter la question" : "Enregistrer"),
+      el("button", { class: "btn btn-line", type: "button", onclick: () => { QS.editing = null; if (isNew) $("#qNewBox").replaceChildren(); else renderQuestions(); } }, "Annuler")),
+    el("p", { class: "err" }));
+  for (const l of ["fr", "ar", "en"]) f.elements[l].value = q[l] || "";
+  f.addEventListener("submit", async e => {
+    e.preventDefault();
+    const v = { id: q.id || 0, cat: f.elements.cat.value, active: f.elements.active.checked ? 1 : 0 };
+    for (const l of ["fr", "ar", "en"]) v[l] = f.elements[l].value.trim();
+    await saveQ(v, f);
+  });
+  return el("article", { class: "item" + (isNew ? " new-box" : "") }, el("div", { class: "q-top" }, el("b", { text: isNew ? "Nouvelle question" : "#" + q.id })), f);
+}
+async function saveQ(v, form) {
+  const btn = form && form.querySelector("button[type=submit]");
+  if (btn) btn.disabled = true;
+  try {
+    const d = await call("api.php?action=mod_q_save", { id: v.id, cat: v.cat, fr: v.fr, ar: v.ar, en: v.en, active: v.active });
+    const i = QS.items.findIndex(x => x.id === d.item.id);
+    if (i >= 0) QS.items[i] = Object.assign(QS.items[i], d.item);
+    else QS.items.push(Object.assign({ n: [0, 0, 0], stories: 0 }, d.item));
+    if (!v.id) { $("#qNewBox").replaceChildren(); toast("Question #" + d.item.id + " ajoutée."); }
+    else toast("Question #" + d.item.id + " enregistrée.");
+    QS.editing = null;
+    renderQuestions();
+  } catch (e) {
+    if (form) form.querySelector(".err").textContent = e.message; else toast(e.message);
+    if (btn) btn.disabled = false;
+  }
+}
+async function deleteQ(q) {
+  const total = q.n[0] + q.n[1] + q.n[2];
+  if (!confirm(`Supprimer définitivement la question #${q.id} ?\n\nSes ${total} réponse(s) et ${q.stories} récit(s) seront effacés.\nPour la retirer du site sans rien perdre, utilisez plutôt « Masquer du site ».`)) return;
+  try {
+    await call("api.php?action=mod_q_delete", { id: q.id });
+    QS.items = QS.items.filter(x => x.id !== q.id);
+    toast("Question #" + q.id + " supprimée.");
+    renderQuestions();
+  } catch (e) { toast(e.message); }
+}
+$("#qNew").addEventListener("click", () => {
+  $("#qNewBox").replaceChildren(qForm({ cat: $("#qCat").value || "perso" }));
+  $("#qNewBox textarea").focus();
+});
+$("#qExport").addEventListener("click", () => {
+  const data = QS.items.map(({ id, cat, fr, ar, en, active }) => ({ id, cat, fr, ar, en, active }));
+  const a = el("a", { href: URL.createObjectURL(new Blob([JSON.stringify(data, null, 1)], { type: "application/json" })), download: "questions-impact-" + new Date().toISOString().slice(0, 10) + ".json" });
+  document.body.append(a); a.click(); a.remove();
+});
+let searchTimer;
+$("#qSearch").addEventListener("input", () => { clearTimeout(searchTimer); searchTimer = setTimeout(() => { QS.page = 0; renderQuestions(); }, 200); });
+$("#qCat").addEventListener("change", () => { QS.page = 0; renderQuestions(); });
+$("#qState").addEventListener("change", () => { QS.page = 0; renderQuestions(); });
+
+/* --------------------------------------------------------------- Récits */
+const STABS = [["pending", "En attente"], ["reported", "Signalés"], ["published", "Publiés"], ["hidden", "Masqués"], ["private", "Privés"]];
+const LABEL = { published: "Publié", pending: "En attente", hidden: "Masqué", private: "Privé" };
+let status = "pending";
+
+async function loadStories() {
+  const d = await call("api.php?action=mod_list&status=" + status);
+  const c = d.counts;
+  $("#kpis").replaceChildren(
+    ...[[d.participants, "participants"], [d.users, "comptes"], [d.verified, "adresses confirmées"], [c.published || 0, "récits publiés"], [c.pending || 0, "récits en attente"]]
+      .map(([n, l]) => el("div", { class: "kpi" }, el("b", { text: n }), el("span", { text: l }))));
+  $("#sTabs").replaceChildren(...STABS.map(([k, l]) => el("button", { type: "button", "aria-pressed": String(k === status), onclick: () => { status = k; loadStories(); } },
+    l, el("span", { class: "n", text: "(" + (c[k] || 0) + ")" }))));
+  $("#sList").replaceChildren(...(d.items.length ? d.items.map(storyItem) : [el("p", { class: "empty", text: "Rien à afficher ici." })]));
+}
+function storyItem(s) {
+  const act = (label, cls, fn) => el("button", { class: "btn btn-sm " + cls, type: "button", onclick: fn }, label);
+  const set = st => async () => { await call("api.php?action=mod_set", { id: s.id, status: st }); loadStories(); };
+  return el("article", { class: "item" },
+    el("p", { class: "q-top", text: "#" + s.qid + " · " + s.question }),
+    el("p", { class: "exp", dir: "auto", text: s.exp }),
+    el("p", { class: "imp", dir: "auto", text: s.imp }),
+    el("div", { class: "meta" },
+      el("span", { class: "badge b-" + s.status, text: LABEL[s.status] || s.status }),
+      el("span", { text: s.author || "Anonyme" }),
+      el("span", { text: s.email || "sans compte" }),
+      el("span", { text: LANG[s.lang] || s.lang }),
+      el("span", { text: "♥ " + s.likes }),
+      s.reports ? el("span", { text: "⚑ " + s.reports + " signalement(s)" }) : null,
+      el("span", { text: new Date(s.created * 1000).toLocaleString("fr-FR") })),
+    el("div", { class: "actions" },
+      s.status !== "published" && s.status !== "private" ? act("Publier", "btn-pos", set("published")) : null,
+      s.status === "published" && s.reports ? act("Garder en ligne", "btn-pos", set("published")) : null,
+      s.status !== "hidden" && s.status !== "private" ? act("Masquer", "btn-line", set("hidden")) : null,
+      act("Supprimer", "btn-neg", async () => { if (confirm("Supprimer définitivement ce récit ?")) { await call("api.php?action=mod_delete", { id: s.id }); loadStories(); } })));
+}
+
+/* ------------------------------------------------------------ Navigation */
+function showTab() {
+  const tab = location.hash === "#recits" ? "recits" : "questions";
+  document.querySelectorAll(".main-tabs a").forEach(a => a.classList.toggle("on", a.dataset.tab === tab));
+  $("#tab-questions").hidden = tab !== "questions";
+  $("#tab-recits").hidden = tab !== "recits";
+}
+addEventListener("hashchange", showTab);
+
+function showLogin() { $("#appView").hidden = true; $("#loginView").hidden = false; }
+async function showApp() {
+  $("#loginView").hidden = true;
+  $("#appView").hidden = false;
+  showTab();
+  try { await Promise.all([loadStories(), loadQuestions()]); } catch (e) { if (e.status !== 401) toast(e.message); }
+}
+
+$("#loginForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  $("#loginErr").textContent = "";
+  try {
+    const d = await call("../admin/api.php?action=login", { password: e.target.password.value });
+    csrf = d.csrf;
+    e.target.reset();
+    showApp();
+  } catch (err) { $("#loginErr").textContent = err.message; }
+});
+
+call("../admin/api.php?action=session").then(d => { csrf = d.csrf; showApp(); }).catch(showLogin);
+})();
+</script>
+</body>
+</html>

@@ -6,14 +6,14 @@
 <meta name="color-scheme" content="light">
 <meta name="theme-color" content="#0b1020">
 <title>Défi Impact — partagez vos expériences positives · dehini.com</title>
-<meta name="description" content="120 questions sur votre vie personnelle, sociale et professionnelle. Pour chacune : impact négatif, aucun ou positif ? Découvrez votre empreinte et inspirez les autres avec vos expériences positives.">
+<meta name="description" content="1000 questions sur votre vie personnelle, sociale et professionnelle. Pour chacune : impact négatif, aucun ou positif ? Découvrez votre empreinte et inspirez les autres avec vos expériences positives.">
 <link rel="canonical" href="https://dehini.com/impact/">
 <link rel="alternate" hreflang="fr" href="https://dehini.com/impact/?lang=fr">
 <link rel="alternate" hreflang="ar" href="https://dehini.com/impact/?lang=ar">
 <link rel="alternate" hreflang="en" href="https://dehini.com/impact/?lang=en">
 <link rel="alternate" hreflang="x-default" href="https://dehini.com/impact/">
 <meta property="og:title" content="Défi Impact — partagez vos expériences positives">
-<meta property="og:description" content="120 questions sur votre vie. Impact négatif, aucun ou positif ? Découvrez votre empreinte et inspirez les autres.">
+<meta property="og:description" content="1000 questions sur votre vie. Impact négatif, aucun ou positif ? Découvrez votre empreinte et inspirez les autres.">
 <meta property="og:url" content="https://dehini.com/impact/">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="fr_DZ">
@@ -140,6 +140,7 @@
   .avatar{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,var(--pos),var(--cobalt));color:#fff;font-size:.8rem;font-weight:800;flex-shrink:0;text-transform:uppercase}
   .head-btn.me{padding-inline-start:6px;background:rgba(255,255,255,.08);color:#fff}
   @media(max-width:980px){.nav{display:none}}
+  @media(max-width:900px){#worldBtn .lbl,#resultsBtn .lbl{display:none}#worldBtn,#resultsBtn{padding:0 11px}}
   @media(max-width:600px){.head-btn .lbl{display:none}.head-btn{padding:0 11px}.head-btn.me{padding:0 6px}.brand-txt small{display:none}}
   @media(max-width:480px){.brand-txt{display:none}}
 
@@ -333,7 +334,9 @@
   .strip span{flex:1;border-radius:3px;background:rgba(255,255,255,.12);transition:background .3s,transform .3s}
   .strip span.neg{background:var(--neg)} .strip span.none{background:var(--none)} .strip span.pos{background:var(--pos)}
   .strip span.cur{background:#fff;transform:scaleY(1.6)}
-  @media(max-width:700px){.strip{gap:0}.strip span{border-radius:0}.strip span.cur{border-radius:2px}}
+  .qz-all{display:flex;height:3px;margin-top:7px;border-radius:3px;overflow:hidden;background:rgba(255,255,255,.08)}
+  .qz-all i{display:block;height:100%;width:0;transition:width .4s var(--ease)}
+  .qz-all .pos{background:var(--pos)} .qz-all .none{background:var(--none)} .qz-all .neg{background:var(--neg)}
   .qz-stage{flex:1;width:100%;max-width:640px;margin:0 auto;padding:6px var(--gutter) 28px;display:flex;flex-direction:column;justify-content:center}
   .qz-filters{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-bottom:18px}
   .qz-filters button{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:999px;font-size:.8rem;font-weight:700;color:#c4cadb;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);transition:background .2s,color .2s}
@@ -424,11 +427,11 @@
   .mosaics{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
   .mosaic h4{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:.86rem;margin-bottom:10px}
   .mosaic h4 small{color:var(--muted);font-weight:500}
-  .tiles{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}
-  .tiles button{aspect-ratio:1;border-radius:4px;background:var(--paper-100);border:1px dashed var(--paper-200);transition:transform .2s var(--ease),background .3s}
-  .tiles button:hover{transform:scale(1.25);z-index:1;position:relative}
-  .tiles button.neg{background:var(--neg);border:0} .tiles button.none{background:var(--none);border:0} .tiles button.pos{background:var(--pos);border:0}
-  .tiles button.has-story{box-shadow:inset 0 0 0 2px rgba(255,255,255,.75)}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(9px,1fr));gap:2px;cursor:pointer}
+  .tiles span{aspect-ratio:1;border-radius:2px;background:var(--paper-100);transition:transform .2s var(--ease),background .3s}
+  .tiles span:hover{transform:scale(1.8);z-index:1;position:relative;box-shadow:0 2px 6px rgba(11,16,32,.3)}
+  .tiles span.neg{background:var(--neg)} .tiles span.none{background:var(--none)} .tiles span.pos{background:var(--pos)}
+  .tiles span.has-story{box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.85)}
   @media(max-width:860px){.summary{grid-template-columns:1fr;justify-items:center;text-align:center}.legend{justify-content:center}.mosaics{grid-template-columns:1fr}.sum-txt .read{margin-inline:auto}.mosaic-wrap{text-align:start}}
 
   .save-banner{display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin-top:18px;padding:18px 20px;border-radius:var(--r-lg);background:var(--cobalt-600);background:linear-gradient(110deg,var(--ink) 0%,#1d2a5c 100%);color:#fff}
@@ -494,6 +497,11 @@
   .check{display:inline-flex;align-items:center;gap:8px;font-size:.88rem;cursor:pointer;color:var(--ink-soft)}
   .check input{width:18px;height:18px;accent-color:var(--pos)}
   .sf-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:16px}
+  .sf-note{display:flex;gap:8px;align-items:flex-start;margin-top:14px;font-size:.84rem;color:#0a5c37;line-height:1.45}
+  .sf-note svg{width:17px;height:17px;flex-shrink:0;margin-top:1px}
+  .auth-why{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:14px;background:var(--pos-50);color:var(--pos-600);font-weight:500;font-size:.9rem;line-height:1.45;margin:0 44px 14px 0}
+  [dir=rtl] .auth-why{margin:0 0 14px 44px}
+  .auth-why svg{width:18px;height:18px;flex-shrink:0;margin-top:1px}
   .sf-err,.form-err{font-size:.84rem;color:var(--neg-600);font-weight:500;min-height:0}
   .hp{position:absolute!important;inset-inline-start:-9999px;width:1px;height:1px;opacity:0}
 
@@ -510,6 +518,87 @@
   .rs-empty{text-align:center;padding:60px 20px;background:#fff;border-radius:var(--r-xl);box-shadow:var(--shadow)}
   .rs-empty svg{width:40px;height:40px;margin:0 auto 14px;color:var(--pos)}
   .rs-empty p{color:var(--muted);margin-bottom:20px}
+
+  /* ============ Impact mondial ============ */
+  .w-hero{position:relative;background:var(--ink);color:#fff;overflow:hidden;isolation:isolate;padding:clamp(48px,7vw,92px) 0 clamp(44px,6vw,76px)}
+  .w-hero::before{content:"";position:absolute;inset:-40% -10% auto auto;width:70vw;height:70vw;max-width:820px;max-height:820px;background:radial-gradient(circle,rgba(47,91,255,.3),transparent 62%);z-index:-2}
+  .w-hero .kicker{color:#7ff0b5}
+  .w-hero h1{font-size:clamp(2.5rem,6.4vw,4.6rem);margin-bottom:18px;max-width:780px}
+  .w-hero h1 em{font-style:normal;background:linear-gradient(100deg,#5ef0a6 10%,var(--sun) 90%);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .w-hero .lead{color:#c4cadb;max-width:600px;font-size:clamp(1rem,1.5vw,1.15rem)}
+  .w-hero .live{margin-top:34px}
+  .w-rings{position:absolute;top:50%;inset-inline-end:-140px;width:min(620px,90vw);aspect-ratio:1;translate:0 -50%;z-index:-1}
+  .w-rings span{position:absolute;inset:0;border-radius:50%;border:1.5px solid rgba(23,178,106,.45);animation:wring 8s linear infinite;opacity:0}
+  .w-rings span:nth-child(2){animation-delay:-2s;border-color:rgba(255,197,61,.35)} .w-rings span:nth-child(3){animation-delay:-4s} .w-rings span:nth-child(4){animation-delay:-6s;border-color:rgba(47,91,255,.5)}
+  @keyframes wring{0%{transform:scale(.15);opacity:0}25%{opacity:1}100%{transform:scale(1);opacity:0}}
+  .world{padding-top:clamp(36px,5vw,56px)}
+  .w-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  .w-card{background:#fff;border-radius:var(--r-xl);padding:clamp(20px,3vw,30px);box-shadow:var(--shadow)}
+  .w-card h2{font-size:1.35rem;margin-bottom:16px}
+  .w-note{color:var(--muted);font-size:.94rem;margin-top:14px;line-height:1.55}
+  .w-note b{color:var(--ink)}
+  .w-big{font-family:"Bricolage Grotesque",var(--f-body);font-size:clamp(3rem,6vw,4.6rem);font-weight:800;line-height:1;color:var(--pos-600);margin-bottom:16px}
+  .spectrum{display:flex;height:12px;border-radius:8px;overflow:hidden;background:var(--paper-100)}
+  .spectrum i{display:flex;align-items:center;justify-content:center;flex-basis:0;min-width:0;color:#fff;font-style:normal;font-weight:800;font-size:.86rem;white-space:nowrap;overflow:hidden;transition:flex-grow .9s var(--ease)}
+  .spectrum .pos{background:var(--pos)} .spectrum .none{background:var(--none)} .spectrum .neg{background:var(--neg)}
+  .spectrum.big{height:48px;border-radius:14px}
+  .spectrum.sm{height:6px;border-radius:4px}
+  .hist{display:flex;align-items:flex-end;gap:5px;height:150px;padding-top:24px}
+  .hist span{flex:1;height:3%;background:var(--paper-200);border-radius:6px 6px 2px 2px;position:relative;transition:height .8s var(--ease)}
+  .hist span.me{background:var(--pos)}
+  .hist span.me::after{content:attr(data-you);position:absolute;bottom:100%;left:50%;translate:-50% -4px;font-size:.72rem;font-weight:800;color:var(--pos-600);white-space:nowrap}
+  .w-axis{display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted-2);margin-top:6px}
+  .w-h3{font-size:1.25rem;margin:40px 0 14px}
+  .w-unis{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .w-uni{background:#fff;border-radius:var(--r-lg);padding:20px;box-shadow:var(--shadow)}
+  .w-uni .top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px}
+  .w-uni .top b{font-family:"Bricolage Grotesque",var(--f-body);font-size:1.7rem;line-height:1;color:var(--pos-600)}
+  .w-uni .w-note{margin-top:10px;font-size:.84rem}
+  .w-map{margin-top:40px}
+  .w-legend{display:flex;flex-wrap:wrap;align-items:center;gap:10px;font-size:.8rem;color:var(--muted);margin:16px 0 18px}
+  .w-legend i{width:140px;height:8px;border-radius:6px;background:linear-gradient(90deg,var(--neg),var(--none),var(--pos))}
+  [dir=rtl] .w-legend i{background:linear-gradient(-90deg,var(--neg),var(--none),var(--pos))}
+  .w-legend b{display:inline-flex;align-items:center;gap:6px;font-weight:500;margin-inline-start:auto}
+  .w-legend b em{width:11px;height:11px;border-radius:2px;background:var(--paper-100)}
+  #wMosaic .tiles span{transition:transform .2s var(--ease)}
+  .w-ranks{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:40px}
+  .w-ranks > .empty{grid-column:1/-1}
+  .w-rank h3{display:flex;align-items:center;gap:8px;font-size:1.05rem;margin-bottom:10px}
+  .w-rank h3 svg{width:19px;height:19px}
+  .w-rank ol{list-style:none;display:grid;gap:2px}
+  .w-rank button{display:grid;grid-template-columns:auto 1fr auto;gap:6px 10px;align-items:center;width:100%;text-align:start;padding:9px 10px;border-radius:12px;transition:background .2s}
+  .w-rank button:hover{background:var(--paper-50)}
+  .w-rank .rk{font-weight:800;color:var(--muted-2);font-size:.78rem;min-width:16px}
+  .w-rank .qq{font-size:.88rem;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .w-rank .pc{font-weight:800;font-size:.84rem;white-space:nowrap}
+  .w-rank .pc.pos{color:var(--pos-600)} .w-rank .pc.neg{color:var(--neg-600)} .w-rank .pc.mix{color:var(--ink-soft);font-size:.76rem}
+  .w-rank .spectrum{grid-column:2/4}
+  .w-countries{list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px 28px;margin-top:18px}
+  .w-countries li{display:grid;grid-template-columns:auto 1fr auto;gap:6px 10px;align-items:center}
+  .w-countries .fl{font-size:1.5rem;line-height:1}
+  .w-countries .nm{font-weight:700;font-size:.92rem}
+  .w-countries .ct{font-size:.8rem;color:var(--muted);white-space:nowrap}
+  .w-countries .spectrum{grid-column:2/4}
+  .w-cta{text-align:center;margin-top:60px}
+  .w-cta h2{font-size:clamp(1.7rem,3.4vw,2.4rem);margin-bottom:10px}
+  .w-cta p{color:var(--muted);margin-bottom:24px}
+  .w-teaser{display:grid;grid-template-columns:1.1fr .9fr;gap:clamp(24px,4vw,48px);align-items:center;background:#fff;border-radius:var(--r-xl);padding:clamp(24px,4vw,44px);box-shadow:var(--shadow)}
+  .w-teaser h2{font-size:clamp(1.8rem,3.4vw,2.6rem);margin-bottom:12px}
+  .w-teaser .sub{color:var(--muted);margin-bottom:24px}
+  .w-teaser-top{margin-top:18px;padding:14px 16px;border-radius:16px;background:var(--pos-50)}
+  .w-teaser-top small{display:block;font-size:.74rem;font-weight:800;text-transform:uppercase;letter-spacing:.12em;color:var(--pos-600);margin-bottom:6px}
+  html[lang=ar] .w-teaser-top small{letter-spacing:0;font-size:.84rem}
+  .w-teaser-top button{display:flex;gap:12px;align-items:center;justify-content:space-between;width:100%;text-align:start;font-weight:700;line-height:1.35}
+  .w-teaser-top button b{color:var(--pos-600);white-space:nowrap}
+  .qd-q{font-size:1.4rem;line-height:1.3;margin:14px 0 18px}
+  html[lang=ar] .qd-q{line-height:1.6}
+  .qd-meta{font-size:.86rem;color:var(--muted);margin-top:10px}
+  .qd-mine{display:flex;align-items:center;gap:8px;margin-top:12px;font-weight:700;font-size:.92rem}
+  .qd-mine i{width:10px;height:10px;border-radius:50%}
+  .qd-mine .pos{background:var(--pos)} .qd-mine .none{background:var(--none)} .qd-mine .neg{background:var(--neg)}
+  .qd-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+  .dlg-wide{width:min(580px,calc(100vw - 24px))}
+  @media(max-width:860px){.w-grid,.w-unis,.w-ranks,.w-teaser{grid-template-columns:1fr}.w-rings{inset-inline-end:-45%;opacity:.6}}
 
   /* ============ Fenêtres ============ */
   .dlg{border:0;padding:0;border-radius:var(--r-xl);width:min(460px,calc(100vw - 24px));max-height:calc(100dvh - 24px);margin:auto;box-shadow:var(--shadow-lg);background:#fff;color:var(--ink);overflow:auto}
@@ -585,7 +674,6 @@
     </a>
     <nav class="nav" data-i18n-attr="aria-label:a.nav" aria-label="Navigation">
       <a href="#how" data-i18n="nav.how">Comment ça marche</a>
-      <a href="#univers" data-i18n="nav.uni">Univers</a>
       <a href="#mur" data-i18n="nav.wall">Le mur</a>
     </nav>
     <div class="langs" role="group" data-i18n-attr="aria-label:a.lang" aria-label="Langue">
@@ -593,6 +681,7 @@
       <button type="button" data-lang="ar" lang="ar" title="العربية">ع</button>
       <button type="button" data-lang="en" lang="en" title="English">EN</button>
     </div>
+    <button class="head-btn ghost" type="button" id="worldBtn"><i data-lucide="globe"></i><span class="lbl" data-i18n="nav.world">Impact mondial</span></button>
     <button class="head-btn ghost" type="button" id="resultsBtn"><i data-lucide="chart-pie"></i><span class="lbl" data-i18n="nav.results">Mon résultat</span></button>
     <button class="head-btn solid" type="button" id="accountBtn"><i data-lucide="user-plus"></i><span class="lbl" data-i18n="acc.create">Créer un compte</span></button>
   </div>
@@ -606,7 +695,7 @@
       <div class="wrap hero-grid">
         <div>
           <p class="kicker"><span class="dots3"><i></i><i></i><i></i></span><span data-i18n="hero.kicker">Le défi des expériences positives</span></p>
-          <h1 data-i18n-html="hero.title">Votre vie en <em>120 impacts</em>.</h1>
+          <h1 data-i18n-html="hero.title">Votre vie en <em>1000 impacts</em>.</h1>
           <p class="lead" data-i18n="hero.sub">Question après question, dites si chaque expérience a eu sur vous un impact négatif, aucun impact ou un impact positif.</p>
           <div class="cta-row">
             <button class="btn btn-pos btn-lg" type="button" data-start="all"><span data-i18n="hero.cta" id="heroCtaLabel">Relever le défi</span><i data-lucide="arrow-right" class="flip"></i></button>
@@ -676,6 +765,24 @@
           <h2 data-i18n-html="uni.title">Par où voulez-vous <em>commencer</em> ?</h2>
         </div>
         <div class="unis" id="unis"></div>
+      </div>
+    </section>
+
+    <section class="sec" id="monde-teaser" style="padding-top:0" hidden>
+      <div class="wrap">
+        <div class="w-teaser" data-reveal>
+          <div>
+            <p class="kicker"><span class="dots3"><i></i><i></i><i></i></span><span data-i18n="nav.world">Impact mondial</span></p>
+            <h2 data-i18n-html="wt.title">Et le reste du <em>monde</em> ?</h2>
+            <p class="sub" data-i18n="wt.p"></p>
+            <button class="btn btn-ink btn-lg" type="button" data-go="#monde"><i data-lucide="globe"></i><span data-i18n="wt.cta">Explorer l'impact mondial</span></button>
+          </div>
+          <div>
+            <p class="w-note" style="margin:0 0 10px" data-i18n="w.pulse">Le pouls du monde</p>
+            <div class="spectrum big" id="tSpectrum"></div>
+            <div class="w-teaser-top" id="tTop" hidden></div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -783,6 +890,66 @@
       </div>
     </section>
   </div>
+
+  <!-- ===================== Impact mondial ===================== -->
+  <div id="worldView" hidden>
+    <section class="w-hero">
+      <div class="w-rings" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+      <div class="wrap">
+        <p class="kicker"><span class="dots3"><i></i><i></i><i></i></span><span data-i18n="nav.world">Impact mondial</span></p>
+        <h1 data-i18n-html="w.title" tabindex="-1" id="wTitle">Ce que le <em>monde</em> a vécu.</h1>
+        <p class="lead" data-i18n="w.sub"></p>
+        <dl class="live" id="wLive">
+          <div data-stat="participants"><dt>0</dt><dd></dd></div>
+          <div data-stat="answers"><dt>0</dt><dd></dd></div>
+          <div data-stat="countries"><dt>0</dt><dd></dd></div>
+          <div data-stat="stories"><dt>0</dt><dd></dd></div>
+        </dl>
+      </div>
+    </section>
+    <section class="sec world">
+      <div class="wrap">
+        <p class="empty" id="wMsg" hidden></p>
+        <div id="wBody" hidden>
+          <div class="w-grid">
+            <article class="w-card">
+              <h2 data-i18n="w.pulse">Le pouls du monde</h2>
+              <p class="w-big" id="wBig"></p>
+              <div class="spectrum big" id="wSpectrum"></div>
+              <p class="w-note" id="wPulse"></p>
+              <div class="legend" id="wLegend"></div>
+            </article>
+            <article class="w-card">
+              <h2 data-i18n="w.you">Vous et le monde</h2>
+              <p class="w-note" style="margin:0 0 8px" data-i18n="w.hist"></p>
+              <div class="hist" id="wHist" role="img"></div>
+              <p class="w-axis" dir="ltr"><span>0 %</span><span>50 %</span><span>100 %</span></p>
+              <p class="w-note" id="wYou"></p>
+            </article>
+          </div>
+          <h3 class="w-h3" data-i18n="w.unis">Dans les trois univers</h3>
+          <div class="w-unis" id="wUnis"></div>
+          <article class="w-card w-map">
+            <h2 data-i18n="w.map">La carte de toutes les expériences</h2>
+            <p class="w-note" data-i18n="w.map.p"></p>
+            <div class="w-legend"><span data-i18n="w.legend.neg"></span><i></i><span data-i18n="w.legend.pos"></span><b><em></em><span data-i18n="w.legend.empty"></span></b></div>
+            <div class="mosaics" id="wMosaic"></div>
+          </article>
+          <div class="w-ranks" id="wRanks"></div>
+          <article class="w-card w-map" id="wCountriesCard" hidden>
+            <h2 data-i18n="w.countries">Le défi autour du monde</h2>
+            <p class="w-note" data-i18n="w.countries.p"></p>
+            <ol class="w-countries" id="wCountries"></ol>
+          </article>
+        </div>
+        <div class="w-cta">
+          <h2 data-i18n="w.cta.t">Ajoutez votre voix au monde.</h2>
+          <p data-i18n="w.cta.p"></p>
+          <button class="btn btn-pos btn-lg" type="button" data-start="all"><span data-i18n="hero.cta">Relever le défi</span><i data-lucide="arrow-right" class="flip"></i></button>
+        </div>
+      </div>
+    </section>
+  </div>
 </main>
 
 <footer class="site-foot">
@@ -796,7 +963,9 @@
     </div>
     <div class="f-links">
       <a href="#how" data-i18n="nav.how">Comment ça marche</a>
+      <a href="#univers" data-i18n="nav.uni">Univers</a>
       <a href="#mur" data-i18n="nav.wall">Le mur</a>
+      <a href="#monde" data-i18n="nav.world">Impact mondial</a>
       <a href="#resultat" data-i18n="nav.results">Mon résultat</a>
     </div>
     <div class="f-bottom">
@@ -814,6 +983,7 @@
     <div class="qz-prog">
       <div class="qz-count"><span id="qzCount"></span><span id="qzCatLabel"></span></div>
       <div class="strip" id="qzStrip" aria-hidden="true"></div>
+      <div class="qz-all" id="qzAll" aria-hidden="true"><i class="pos"></i><i class="none"></i><i class="neg"></i></div>
     </div>
     <button class="btn btn-white btn-sm" type="button" data-go="#resultat"><i data-lucide="chart-pie"></i><span class="lbl" data-i18n="qz.results">Voir mon résultat</span></button>
   </div>
@@ -854,6 +1024,7 @@
 <dialog class="dlg" id="authDlg">
   <form method="dialog" class="dlg-x"><button data-i18n-attr="aria-label:a.close" aria-label="Fermer"><i data-lucide="x"></i></button></form>
   <div class="dlg-body">
+    <p class="auth-why" id="authWhy" hidden><i data-lucide="feather"></i><span data-i18n="au.toPublish"></span></p>
     <div class="tabs" role="group" id="authTabs">
       <button type="button" data-pane="signup" data-i18n="au.signup">Créer un compte</button>
       <button type="button" data-pane="login" data-i18n="au.login">Se connecter</button>
@@ -926,6 +1097,11 @@
   </div>
 </dialog>
 
+<dialog class="dlg dlg-wide" id="qDlg">
+  <form method="dialog" class="dlg-x"><button data-i18n-attr="aria-label:a.close" aria-label="Fermer"><i data-lucide="x"></i></button></form>
+  <div class="dlg-body" id="qDlgBody"></div>
+</dialog>
+
 <dialog class="dlg" id="resetDlg">
   <form method="dialog" class="dlg-x"><button data-i18n-attr="aria-label:a.close" aria-label="Fermer"><i data-lucide="x"></i></button></form>
   <div class="dlg-body">
@@ -957,7 +1133,7 @@ const T = {
   "brand": ["Défi Impact", "تحدي الأثر", "Impact Challenge"],
   "skip": ["Aller au contenu", "انتقل إلى المحتوى", "Skip to content"],
   "meta.title": ["Défi Impact — partagez vos expériences positives · dehini.com", "تحدي الأثر — شارك تجاربك الإيجابية · dehini.com", "Impact Challenge — share your positive experiences · dehini.com"],
-  "meta.desc": ["120 questions sur votre vie personnelle, sociale et professionnelle. Pour chacune : impact négatif, aucun ou positif ? Découvrez votre empreinte et inspirez les autres avec vos expériences positives.", "120 سؤالاً عن حياتك الشخصية والاجتماعية والمهنية. لكل سؤال: أثر سلبي أم بلا أثر أم أثر إيجابي؟ اكتشف بصمتك وألهِم الآخرين بتجاربك الإيجابية.", "120 questions about your personal, social and professional life. For each one: negative, no or positive impact? Discover your footprint and inspire others with your positive experiences."],
+  "meta.desc": ["{q} sur votre vie personnelle, sociale et professionnelle. Pour chacune : impact négatif, aucun ou positif ? Découvrez votre empreinte, l'impact mondial, et inspirez les autres avec vos expériences positives.", "{q} عن حياتك الشخصية والاجتماعية والمهنية. لكل سؤال: أثر سلبي أم بلا أثر أم أثر إيجابي؟ اكتشف بصمتك والأثر العالمي، وألهِم الآخرين بتجاربك الإيجابية.", "{q} about your personal, social and professional life. For each one: negative, no or positive impact? Discover your footprint, the world impact, and inspire others with your positive experiences."],
   "a.nav": ["Navigation", "التنقل", "Navigation"],
   "a.lang": ["Langue", "اللغة", "Language"],
   "a.close": ["Fermer", "إغلاق", "Close"],
@@ -965,10 +1141,13 @@ const T = {
   "nav.uni": ["Univers", "العوالم", "Worlds"],
   "nav.wall": ["Le mur", "الجدار", "The wall"],
   "nav.results": ["Mon résultat", "نتيجتي", "My result"],
+  "nav.world": ["Impact mondial", "الأثر العالمي", "World impact"],
   "acc.create": ["Créer un compte", "إنشاء حساب", "Create account"],
 
   "hero.kicker": ["Le défi des expériences positives", "تحدّي التجارب الإيجابية", "The positive experiences challenge"],
-  "hero.title": ["Votre vie en <em>120 impacts</em>.", "حياتك في <em>120 أثراً</em>.", "Your life in <em>120 impacts</em>."],
+  "hero.title": ["Votre vie en <em>{n} impacts</em>.", "حياتك في <em>{n} أثر</em>.", "Your life in <em>{n} impacts</em>."],
+  "hero.title.few": ["Votre vie en <em>{n} impacts</em>.", "حياتك في <em>{n} آثار</em>.", "Your life in <em>{n} impacts</em>."],
+  "hero.title.many": ["Votre vie en <em>{n} impacts</em>.", "حياتك في <em>{n} أثراً</em>.", "Your life in <em>{n} impacts</em>."],
   "hero.sub": ["Question après question, dites si chaque expérience a eu sur vous un impact négatif, aucun impact ou un impact positif. Puis racontez vos impacts positifs : ils deviendront l'inspiration de ceux qui ont vécu l'inverse.", "سؤالاً بعد سؤال، أخبرنا إن كانت كل تجربة قد تركت فيك أثراً سلبياً أو لم تترك أي أثر أو تركت أثراً إيجابياً. ثم احكِ آثارك الإيجابية: ستصبح مصدر إلهام لمن عاشوا العكس.", "Question by question, tell us whether each experience had a negative impact, no impact or a positive impact on you. Then share your positive impacts: they will inspire those who lived the opposite."],
   "hero.cta": ["Relever le défi", "خُض التحدي", "Take the challenge"],
   "hero.resume": ["Reprendre le défi", "واصل التحدي", "Resume the challenge"],
@@ -980,6 +1159,8 @@ const T = {
   "stat.participants.1": ["participant", "مشارك", "participant"],
   "stat.answers.1": ["réponse donnée", "إجابة", "answer given"],
   "stat.stories.1": ["impact positif partagé", "أثر إيجابي تمّت مشاركته", "positive impact shared"],
+  "stat.countries": ["pays", "بلد", "countries"],
+  "stat.countries.1": ["pays", "بلد", "country"],
   "qod.badge": ["Question du jour", "سؤال اليوم", "Question of the day"],
   "qod.foot": ["Répondez pour lancer le défi — sans inscription.", "أجب لتبدأ التحدي — دون تسجيل.", "Answer to start the challenge — no sign-up needed."],
   "qod.done": ["Réponse enregistrée.", "تم حفظ إجابتك.", "Answer saved."],
@@ -999,7 +1180,11 @@ const T = {
   "cat.perso.d": ["Santé, épreuves, habitudes, passions : ce qui vous a construit de l'intérieur.", "الصحة، المحن، العادات، الشغف: ما بناك من الداخل.", "Health, hardships, habits, passions: what shaped you from within."],
   "cat.social.d": ["Famille, amitiés, rencontres, entraide : ce que les autres ont changé en vous.", "العائلة، الصداقات، اللقاءات، التضامن: ما غيّره الآخرون فيك.", "Family, friendships, encounters, solidarity: what others changed in you."],
   "cat.pro.d": ["Études, emplois, échecs, réussites : ce que le travail a fait de vous.", "الدراسة، الوظائف، الإخفاقات، النجاحات: ما صنعه العمل منك.", "Studies, jobs, failures, successes: what work made of you."],
-  "cat.count": ["{n} questions", "{n} سؤالاً", "{n} questions"],
+  "cat.count": ["{n} questions", "{n} سؤال", "{n} questions"],
+  "cat.count.one": ["{n} question", "سؤال واحد", "{n} question"],
+  "cat.count.two": ["{n} questions", "سؤالان", "{n} questions"],
+  "cat.count.few": ["{n} questions", "{n} أسئلة", "{n} questions"],
+  "cat.count.many": ["{n} questions", "{n} سؤالاً", "{n} questions"],
   "cat.progress": ["{a} / {n} répondues", "{a} / {n} تمّت الإجابة", "{a} / {n} answered"],
   "cat.start": ["Commencer", "ابدأ", "Start"],
   "cat.continue": ["Continuer", "واصل", "Continue"],
@@ -1008,7 +1193,7 @@ const T = {
   "how.kicker": ["Comment ça marche", "كيف يعمل التحدي", "How it works"],
   "how.title": ["Trois gestes. Des <em>ondes positives</em> qui se propagent.", "ثلاث خطوات… و<em>موجات إيجابية</em> تنتشر.", "Three steps. <em>Positive ripples</em> that spread."],
   "how.1.t": ["Répondez", "أجب", "Answer"],
-  "how.1.p": ["120 questions, une à la fois. Trois réponses possibles : négatif, aucun, positif. Passez celles qui ne vous concernent pas.", "120 سؤالاً، واحداً تلو الآخر. ثلاث إجابات ممكنة: سلبي، بلا أثر، إيجابي. وتجاوز ما لا يعنيك.", "120 questions, one at a time. Three possible answers: negative, none, positive. Skip the ones that don't apply to you."],
+  "how.1.p": ["{q}, une à la fois. Trois réponses possibles : négatif, aucun, positif. Passez celles qui ne vous concernent pas.", "{q}، واحداً تلو الآخر. ثلاث إجابات ممكنة: سلبي، بلا أثر، إيجابي. وتجاوز ما لا يعنيك.", "{q}, one at a time. Three possible answers: negative, none, positive. Skip the ones that don't apply to you."],
   "how.2.t": ["Voyez votre résultat", "اكتشف نتيجتك", "See your result"],
   "how.2.p": ["À tout moment, « Voir mon résultat » révèle votre empreinte : la mosaïque de tous vos impacts.", "في أي لحظة، يكشف زر «عرض نتيجتي» بصمتك: فسيفساء كل آثارك.", "At any time, “See my result” reveals your footprint: a mosaic of all your impacts."],
   "how.3.t": ["Partagez, inspirez", "شارك وألهِم", "Share & inspire"],
@@ -1044,7 +1229,7 @@ const T = {
 
   "ft.tag": ["Le défi des expériences positives.", "تحدّي التجارب الإيجابية.", "The positive experiences challenge."],
   "ft.by": ["Un projet de", "مشروع من إعداد", "A project by"],
-  "ft.privacy": ["Vos réponses sont anonymes. Seuls les récits que vous choisissez de publier sont visibles par les autres.", "إجاباتك مجهولة الهوية. وحدها القصص التي تختار نشرها يراها الآخرون.", "Your answers are anonymous. Only the stories you choose to publish are visible to others."],
+  "ft.privacy": ["Vos réponses sont anonymes. Seuls les récits que vous choisissez de publier sont visibles par les autres ; pour l'impact mondial, seul votre pays est estimé, à partir du fuseau horaire.", "إجاباتك مجهولة الهوية. وحدها القصص التي تختار نشرها يراها الآخرون؛ ولأجل الأثر العالمي، يُقدَّر بلدك فقط انطلاقاً من المنطقة الزمنية.", "Your answers are anonymous. Only the stories you choose to publish are visible to others; for world impact, only your country is estimated, from your time zone."],
 
   "qz.results": ["Voir mon résultat", "عرض نتيجتي", "See my result"],
   "qz.prev": ["Précédente", "السابق", "Previous"],
@@ -1055,7 +1240,7 @@ const T = {
   "qz.same": ["<b>{p} %</b> des participants ont aussi répondu « {a} ».", "<b>{p}%</b> من المشاركين أجابوا أيضاً «{a}».", "<b>{p}%</b> of participants also answered “{a}”."],
   "qz.first": ["Vous faites partie des premiers à répondre à cette question.", "أنت من أوائل من أجابوا عن هذا السؤال.", "You're among the first to answer this question."],
   "qz.posToast": ["Bel impact ! Vous pourrez le raconter dans votre résultat.", "أثر جميل! يمكنك أن ترويه في نتيجتك.", "Great impact! You can tell its story in your result."],
-  "qz.nudge": ["Déjà {n} réponses ! Créez un compte pour ne rien perdre et recevoir la question du jour.", "{n} إجابات بالفعل! أنشئ حساباً كي لا تفقد شيئاً ولتصلك أسئلة اليوم.", "{n} answers already! Create an account so you don't lose anything and get the question of the day."],
+  "qz.nudge": ["Déjà {n} réponses ! Créez un compte pour ne rien perdre et recevoir la question du jour.", "لقد أجبت عن {n} من الأسئلة! أنشئ حساباً كي لا تفقد شيئاً ولتصلك أسئلة اليوم.", "{n} answers already! Create an account so you don't lose anything and get the question of the day."],
   "qz.done.t": ["Série terminée !", "أتممت السلسلة!", "Series complete!"],
   "qz.done.p": ["Vous avez répondu à toutes les questions de cette série. Découvrez votre empreinte et racontez vos expériences positives.", "أجبت عن كل أسئلة هذه السلسلة. اكتشف بصمتك واروِ تجاربك الإيجابية.", "You've answered every question in this series. Discover your footprint and tell your positive experiences."],
   "qz.end.t": ["Fin de la série", "نهاية السلسلة", "End of the series"],
@@ -1071,7 +1256,7 @@ const T = {
   "rs.restart": ["Recommencer", "البدء من جديد", "Start over"],
   "rs.restart.confirm": ["Effacer toutes vos réponses et recommencer le défi ? Vos récits publiés sont conservés.", "مسح كل إجاباتك والبدء من جديد؟ ستبقى قصصك المنشورة محفوظة.", "Erase all your answers and start over? Your published stories are kept."],
   "rs.share.text": ["J'ai relevé le défi Impact : {p} % de mes expériences ont eu un impact positif sur ma vie. Et vous ?", "خضت تحدي الأثر: {p}% من تجاربي تركت أثراً إيجابياً في حياتي. وأنت؟", "I took the Impact Challenge: {p}% of my experiences had a positive impact on my life. What about you?"],
-  "share.invite": ["Relevez le défi Impact : 120 questions sur votre vie, et des expériences positives à partager.", "خُض تحدي الأثر: 120 سؤالاً عن حياتك، وتجارب إيجابية تشاركها.", "Take the Impact Challenge: 120 questions about your life, and positive experiences to share."],
+  "share.invite": ["Relevez le défi Impact : {q} sur votre vie, et des expériences positives à partager.", "خُض تحدي الأثر: {q} عن حياتك، وتجارب إيجابية تشاركها.", "Take the Impact Challenge: {q} about your life, and positive experiences to share."],
   "share.copied": ["Lien copié dans le presse-papiers.", "تم نسخ الرابط.", "Link copied to clipboard."],
   "rs.pos.label": ["positif", "إيجابي", "positive"],
   "rs.mosaic": ["Votre mosaïque", "فسيفساؤك", "Your mosaic"],
@@ -1095,6 +1280,8 @@ const T = {
   "st.anon": ["Rester anonyme", "البقاء مجهول الهوية", "Stay anonymous"],
   "st.public": ["Partager avec la communauté pour inspirer les autres", "المشاركة مع المجتمع لإلهام الآخرين", "Share with the community to inspire others"],
   "st.publish": ["Publier mon impact", "نشر أثري", "Publish my impact"],
+  "st.publishAuth": ["Créer un compte et publier", "إنشاء حساب ونشر القصة", "Create an account and publish"],
+  "st.authNote": ["Un compte est nécessaire pour partager une expérience : il protège la communauté. Votre texte est gardé en attendant.", "يلزم حساب لمشاركة تجربة: هذا يحمي المجتمع. يبقى نصّك محفوظاً في الأثناء.", "An account is needed to share an experience: it protects the community. Your text is kept in the meantime."],
   "st.savePrivate": ["Enregistrer pour moi", "حفظ لنفسي", "Save for myself"],
   "st.cancel": ["Annuler", "إلغاء", "Cancel"],
   "st.min": ["Encore quelques mots ({n} caractères minimum).", "بضع كلمات أخرى ({n} حرفاً على الأقل).", "A few more words ({n} characters minimum)."],
@@ -1122,6 +1309,7 @@ const T = {
   "au.signup": ["Créer un compte", "إنشاء حساب", "Create an account"],
   "au.login": ["Se connecter", "تسجيل الدخول", "Sign in"],
   "au.intro": ["Votre résultat actuel sera automatiquement rattaché à votre compte.", "ستُربط نتيجتك الحالية بحسابك تلقائياً.", "Your current result will be attached to your account automatically."],
+  "au.toPublish": ["Créez votre compte, ou connectez-vous : votre expérience sera publiée juste après.", "أنشئ حسابك أو سجّل الدخول: ستُنشر تجربتك مباشرة بعد ذلك.", "Create your account, or sign in: your experience will be published right after."],
   "au.name": ["Prénom", "الاسم", "First name"],
   "au.email": ["Adresse email", "البريد الإلكتروني", "Email address"],
   "au.pass": ["Mot de passe", "كلمة المرور", "Password"],
@@ -1176,6 +1364,55 @@ const T = {
   "err.auth": ["Session expirée, reconnectez-vous.", "انتهت الجلسة، سجّل الدخول من جديد.", "Session expired, please sign in again."],
   "err.mail": ["L'email n'a pas pu partir. Réessayez plus tard.", "تعذّر إرسال الرسالة. أعد المحاولة لاحقاً.", "The email couldn't be sent. Try again later."],
   "err.generic": ["Une erreur est survenue. Réessayez.", "حدث خطأ. أعد المحاولة.", "Something went wrong. Please try again."],
+  "err.login_required": ["Créez un compte ou connectez-vous pour partager votre expérience.", "أنشئ حساباً أو سجّل الدخول لمشاركة تجربتك.", "Create an account or sign in to share your experience."],
+
+  "w.title": ["Ce que le <em>monde</em> a vécu.", "ما عاشه <em>العالم</em>.", "What the <em>world</em> has lived through."],
+  "w.sub": ["Les réponses de tous les participants, réunies en temps réel : anonymes, agrégées, vivantes.", "إجابات كل المشاركين، مجمّعة في الوقت الحقيقي: مجهولة الهوية، إجمالية، وحيّة.", "Every participant's answers, gathered in real time: anonymous, aggregated, alive."],
+  "w.pulse": ["Le pouls du monde", "نبض العالم", "The world's pulse"],
+  "w.pulse.p": ["<b>{p}</b> des réponses décrivent un impact positif.", "<b>{p}</b> من الإجابات تصف أثراً إيجابياً.", "<b>{p}</b> of answers describe a positive impact."],
+  "w.you": ["Vous et le monde", "أنت والعالم", "You and the world"],
+  "w.you.p": ["Votre indice d'impact positif : <b>{me}</b>. Vous voyez le positif davantage que <b>{p}</b> des participants.", "مؤشّر أثرك الإيجابي: <b>{me}</b>. ترى الجانب الإيجابي أكثر من <b>{p}</b> من المشاركين.", "Your positive impact index: <b>{me}</b>. You see the positive side more than <b>{p}</b> of participants."],
+  "w.you.need": ["Répondez à au moins 5 questions pour vous situer parmi les participants.", "أجب عن 5 أسئلة على الأقل لتعرف موقعك بين المشاركين.", "Answer at least 5 questions to see where you stand among participants."],
+  "w.you.few": ["Pas encore assez de participants pour vous comparer. Revenez bientôt !", "لا يوجد بعد عدد كافٍ من المشاركين للمقارنة. عُد قريباً!", "Not enough participants to compare yet. Come back soon!"],
+  "w.hist": ["Participants selon leur part d'impacts positifs", "المشاركون حسب نسبة آثارهم الإيجابية", "Participants by their share of positive impacts"],
+  "w.hist.you": ["vous", "أنت", "you"],
+  "w.unis": ["Dans les trois univers", "في العوالم الثلاثة", "Across the three worlds"],
+  "w.map": ["La carte de toutes les expériences", "خريطة كل التجارب", "The map of every experience"],
+  "w.map.p": ["Chaque case est une question, colorée selon les réponses du monde : du rouge (plutôt négatif) au vert (plutôt positif). Touchez une case pour la découvrir.", "كل مربّع سؤال، ملوّن حسب إجابات العالم: من الأحمر (سلبي في الغالب) إلى الأخضر (إيجابي في الغالب). المس مربّعاً لاكتشافه.", "Each tile is a question, coloured by the world's answers: from red (mostly negative) to green (mostly positive). Tap a tile to explore it."],
+  "w.legend.neg": ["Plutôt négatif", "سلبي غالباً", "Mostly negative"],
+  "w.legend.pos": ["Plutôt positif", "إيجابي غالباً", "Mostly positive"],
+  "w.legend.empty": ["Pas encore de réponses", "لا إجابات بعد", "No answers yet"],
+  "w.top.pos": ["Les plus positives", "الأكثر إيجابية", "The most positive"],
+  "w.top.neg": ["Les plus difficiles", "الأكثر صعوبة", "The hardest"],
+  "w.top.split": ["Celles qui divisent", "الأكثر تبايناً في الآراء", "The most divisive"],
+  "w.ranks.empty": ["Les classements apparaîtront dès que les questions auront reçu quelques réponses.", "ستظهر الترتيبات بمجرد أن تتلقّى الأسئلة بعض الإجابات.", "Rankings will appear as soon as questions have received a few answers."],
+  "w.countries": ["Le défi autour du monde", "التحدي حول العالم", "The challenge around the world"],
+  "w.countries.p": ["Pays estimé à partir du fuseau horaire de chaque participant, jamais de son adresse IP.", "يُقدَّر البلد انطلاقاً من المنطقة الزمنية لكل مشارك، لا من عنوان IP أبداً.", "Country estimated from each participant's time zone, never from their IP address."],
+  "w.cta.t": ["Ajoutez votre voix au monde.", "أضف صوتك إلى العالم.", "Add your voice to the world."],
+  "w.cta.p": ["Chaque réponse rend la carte plus juste, chaque récit la rend plus inspirante.", "كل إجابة تجعل الخريطة أدقّ، وكل قصة تجعلها أكثر إلهاماً.", "Every answer makes the map more accurate, every story makes it more inspiring."],
+  "w.offline": ["L'impact mondial s'affichera ici une fois le site en ligne.", "سيظهر الأثر العالمي هنا بمجرد تشغيل الموقع.", "World impact will appear here once the site is online."],
+  "w.empty": ["Le monde n'a pas encore répondu. Soyez parmi les premiers !", "لم يُجب العالم بعد. كن من الأوائل!", "The world hasn't answered yet. Be among the first!"],
+  "w.answers": ["{n} réponses", "{n} إجابة", "{n} answers"],
+  "w.answers.one": ["{n} réponse", "إجابة واحدة", "{n} answer"],
+  "w.answers.two": ["{n} réponses", "إجابتان", "{n} answers"],
+  "w.answers.few": ["{n} réponses", "{n} إجابات", "{n} answers"],
+  "w.part": ["{n} participants", "{n} مشارك", "{n} participants"],
+  "w.part.one": ["{n} participant", "مشارك واحد", "{n} participant"],
+  "w.part.two": ["{n} participants", "مشاركان", "{n} participants"],
+  "w.part.few": ["{n} participants", "{n} مشاركين", "{n} participants"],
+  "w.part.many": ["{n} participants", "{n} مشاركاً", "{n} participants"],
+  "w.stories": ["{n} récits positifs", "{n} قصة إيجابية", "{n} positive stories"],
+  "w.stories.one": ["{n} récit positif", "قصة إيجابية واحدة", "{n} positive story"],
+  "w.stories.two": ["{n} récits positifs", "قصتان إيجابيتان", "{n} positive stories"],
+  "w.stories.few": ["{n} récits positifs", "{n} قصص إيجابية", "{n} positive stories"],
+  "qd.answer": ["Répondre à cette question", "أجب عن هذا السؤال", "Answer this question"],
+  "qd.mine": ["Votre réponse : {a}", "إجابتك: {a}", "Your answer: {a}"],
+  "qd.see": ["Voir dans mon résultat", "عرض في نتيجتي", "See in my result"],
+  "qd.none": ["Pas encore de réponses à cette question : soyez le premier !", "لا توجد إجابات عن هذا السؤال بعد: كن الأول!", "No answers to this question yet: be the first!"],
+  "wt.title": ["Et le reste du <em>monde</em> ?", "وماذا عن بقية <em>العالم</em>؟", "What about the rest of the <em>world</em>?"],
+  "wt.p": ["Découvrez en direct comment tous les participants ont vécu ces expériences : les plus positives, les plus difficiles, et où vous vous situez.", "اكتشف مباشرة كيف عاش كل المشاركين هذه التجارب: الأكثر إيجابية، والأصعب، وأين تقف أنت.", "See live how all participants lived these experiences: the most positive, the hardest, and where you stand."],
+  "wt.cta": ["Explorer l'impact mondial", "استكشف الأثر العالمي", "Explore world impact"],
+  "rs.more": ["Afficher plus de réponses", "عرض المزيد من الإجابات", "Show more answers"],
 };
 const LANGS = ["fr", "ar", "en"];
 const LANG_NAMES = { fr: "Français", ar: "العربية", en: "English" };
@@ -1197,6 +1434,15 @@ function t(k, vars) {
   if (vars) for (const [a, b] of Object.entries(vars)) s = s.split("{" + a + "}").join(b);
   return lang === "fr" ? frTypo(s) : s;
 }
+/** Texte au pluriel selon la langue (l'arabe a 6 formes : زوج، قليل، كثير…). Variantes « clé.one », « clé.few »… */
+const PR = {};
+function tn(k, n, vars) {
+  const c = (PR[lang] || (PR[lang] = new Intl.PluralRules(lang))).select(n);
+  return t(T[k + "." + c] ? k + "." + c : k, Object.assign({ n: fmt(n) }, vars));
+}
+/** Variables communes : nombre de questions du défi (il change quand l'admin en ajoute). */
+const GV = () => ({ n: fmt(Q.length), q: tn("cat.count", Q.length) });
+const ti = k => (T[k + ".few"] || T[k + ".one"] ? tn(k, Q.length, GV()) : t(k, GV()));
 /** Espace insécable avant « : ? ! ; » et après « en français (pas de ponctuation orpheline en fin de ligne). */
 const frTypo = s => s.replace(/ ([:?!;»%])/g, "\u00a0$1").replace(/« /g, "«\u00a0");
 const fmt = n => new Intl.NumberFormat(lang === "ar" ? "ar-DZ" : lang).format(n);
@@ -1273,7 +1519,9 @@ async function api(action, body, params, keepalive) {
 
 /* ----------------------------------------------------------- Questions */
 let Q = [], QBY = {}, INTER = [];
-const qText = id => (QBY[id] ? QBY[id][lang] : "");
+/** Texte d'une question, avec repli si l'admin ne l'a pas encore traduite dans cette langue. */
+const qt = q => (q ? q[lang] || q.fr || q.en || q.ar || "" : "");
+const qText = id => qt(QBY[id]);
 const seqFor = cat => (cat === "all" ? INTER : Q.filter(q => q.cat === cat));
 const ans = id => (S.answers[id] ? S.answers[id][0] : undefined);
 function counts(cat) {
@@ -1290,6 +1538,8 @@ function counts(cat) {
 
 /* --------------------------------------------------------- Réponses */
 let flushTimer;
+/** Fuseau horaire du navigateur : le serveur n'en déduit que le pays, pour l'impact mondial. */
+const TZ = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || ""; } catch (e) { return ""; } })();
 function setAnswer(id, v) {
   S.answers[id] = [v, Date.now()];
   S.pending[id] = S.answers[id];
@@ -1304,7 +1554,7 @@ async function flush(keepalive) {
   const set = S.pending;
   S.pending = {};
   save();
-  try { await api("answers", { device: S.device, set }, null, keepalive); }
+  try { await api("answers", { device: S.device, set, tz: TZ }, null, keepalive); }
   catch (e) { S.pending = Object.assign(set, S.pending); save(); }
 }
 addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") flush(true); });
@@ -1412,8 +1662,8 @@ function pickLang() {
   return "fr";
 }
 function applyI18n(root = document) {
-  $$("[data-i18n]", root).forEach(n => (n.textContent = t(n.dataset.i18n)));
-  $$("[data-i18n-html]", root).forEach(n => (n.innerHTML = t(n.dataset.i18nHtml)));
+  $$("[data-i18n]", root).forEach(n => (n.textContent = ti(n.dataset.i18n)));
+  $$("[data-i18n-html]", root).forEach(n => (n.innerHTML = ti(n.dataset.i18nHtml)));
   $$("[data-i18n-attr]", root).forEach(n => n.dataset.i18nAttr.split(",").forEach(p => { const [a, k] = p.split(":"); n.setAttribute(a, t(k)); }));
 }
 function setLang(l, fromUser) {
@@ -1422,7 +1672,7 @@ function setLang(l, fromUser) {
   const h = document.documentElement;
   h.lang = lang; h.dir = lang === "ar" ? "rtl" : "ltr";
   document.title = t("meta.title");
-  $('meta[name=description]').content = t("meta.desc");
+  $('meta[name=description]').content = ti("meta.desc");
   $$(".langs button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
   applyI18n();
   renderAll();
@@ -1447,7 +1697,7 @@ function renderQod() {
   const q = todayQ();
   if (!q) return;
   $("#qodCat").replaceWith(Object.assign(catChip(q.cat), { id: "qodCat" }));
-  $("#qodText").textContent = q[lang];
+  $("#qodText").textContent = qt(q);
   const v = ans(q.id);
   $("#qodAnswers").replaceChildren(...answerButtons((nv, btn) => {
     setAnswer(q.id, nv);
@@ -1459,7 +1709,7 @@ function renderQod() {
   if (v === undefined) foot.replaceChildren(ic("sparkles"), el("span", { text: t("qod.foot") }));
   else foot.replaceChildren(ic("circle-check"), el("span", { text: t("qod.done") }),
     el("button", { type: "button", onclick: () => openQuiz("all") }, el("span", { text: t("qod.continue") }), ic("arrow-right", "flip")));
-  $("#mockQ").textContent = q[lang];
+  $("#mockQ").textContent = qt(q);
   icons();
 }
 
@@ -1480,7 +1730,7 @@ function renderUnis() {
       el("span", { class: "uni-ic" }, ic(CAT_ICON[cat])),
       el("h3", { text: t("cat." + cat) }),
       el("p", { text: t("cat." + cat + ".d") }),
-      el("div", { class: "uni-meta" }, el("span", { text: t("cat.count", { n: fmt(c.total) }) }), el("span", { text: t("cat.progress", { a: fmt(c.n), n: fmt(c.total) }) })),
+      el("div", { class: "uni-meta" }, el("span", { text: tn("cat.count", c.total) }), el("span", { text: t("cat.progress", { a: fmt(c.n), n: fmt(c.total) }) })),
       el("div", { class: "bar" }, el("i", { style: "width:" + (c.n / c.total) * 100 + "%" })),
       el("button", { class: "btn btn-ink", type: "button", onclick: () => (open ? openQuiz(cat) : go("#resultat")) },
         el("span", { text: t(!c.n ? "cat.start" : open ? "cat.continue" : "cat.review") }), ic("arrow-right", "flip")));
@@ -1495,11 +1745,13 @@ function renderMiniMosaic() {
 }
 
 /* -------------------------------------------- Compteurs publics & mur */
-let STATS = null;
+let STATS = null, STATS_AT = 0;
 async function loadStats() {
   await apiReady;
   if (!online) return;
-  try { STATS = await api("stats"); } catch (e) { return; }
+  try { STATS = await api("stats"); STATS_AT = Date.now(); } catch (e) { return; }
+  renderTeaser();
+  if (!$("#worldView").hidden) renderWorld(true);
   const box = $("#liveStats");
   let any = false;
   for (const k of ["participants", "answers", "stories"]) {
@@ -1586,6 +1838,170 @@ async function reportStory(st) {
   try { await api("report", { id: st.id }); } catch (e) {}
 }
 
+/* ======================================================== Impact mondial */
+const pctTxt = x => fmt(Math.round(x)) + (lang === "fr" ? "\u00a0%" : "%");
+/** Statistiques d'une question : [négatif, aucun, positif, récits] côté API. */
+function qStat(id) {
+  const c = (STATS && STATS.q && STATS.q[id]) || [0, 0, 0, 0];
+  return { neg: c[0], none: c[1], pos: c[2], n: c[0] + c[1] + c[2], stories: c[3] };
+}
+function worldTotals(cat) {
+  const tot = { pos: 0, none: 0, neg: 0, n: 0 };
+  for (const q of Q) {
+    if (cat && q.cat !== cat) continue;
+    const s = qStat(q.id);
+    tot.pos += s.pos; tot.none += s.none; tot.neg += s.neg; tot.n += s.n;
+  }
+  return tot;
+}
+/** Barre positif · aucun · négatif (pourcentages écrits dedans si « labels »). */
+function spectrum(c, labels, cls, id) {
+  const n = c.pos + c.none + c.neg;
+  const parts = [["pos", c.pos], ["none", c.none], ["neg", c.neg]];
+  return el("div", {
+    class: "spectrum" + (cls ? " " + cls : ""), id, role: "img",
+    "aria-label": parts.map(([k, v]) => t("ans." + k + ".s") + " " + (n ? pctTxt((v / n) * 100) : "0")).join(", "),
+  }, ...parts.map(([k, v]) => el("i", { class: k, style: "flex-grow:" + (n ? v : 0), text: labels && n && v / n >= 0.09 ? pctTxt((v / n) * 100) : "" })));
+}
+/** Couleur d'une case de la carte : rouge (négatif) → gris (partagé) → vert (positif). */
+function mixColor(r) {
+  const neg = [255, 93, 93], mid = [139, 147, 167], pos = [23, 178, 106];
+  const to = r < 0 ? neg : pos, k = Math.abs(r);
+  return "rgb(" + mid.map((v, i) => Math.round(v + (to[i] - v) * k)).join(",") + ")";
+}
+const flag = cc => cc.replace(/./g, ch => String.fromCodePoint(127397 + ch.charCodeAt(0)));
+const DN = {};
+function countryName(cc) {
+  try { return (DN[lang] || (DN[lang] = new Intl.DisplayNames([lang], { type: "region" }))).of(cc) || cc; }
+  catch (e) { return cc; }
+}
+
+function renderTeaser() {
+  const box = $("#monde-teaser");
+  if (!STATS || !STATS.answers || !Q.length) { box.hidden = true; return; }
+  box.hidden = false;
+  spectrumInto("#tSpectrum", worldTotals(), true, "big");
+  const top = Q.map(q => Object.assign({ q }, qStat(q.id))).filter(r => r.n >= 3).sort((a, b) => b.pos / b.n - a.pos / a.n || b.n - a.n)[0];
+  const tp = $("#tTop");
+  tp.hidden = !top;
+  if (top) tp.replaceChildren(el("small", { text: t("w.top.pos") }),
+    el("button", { type: "button", onclick: () => openQDlg(top.q.id) }, el("span", { text: qt(top.q) }), el("b", { text: pctTxt((top.pos / top.n) * 100) })));
+  reveal(box);
+}
+function spectrumInto(sel, c, labels, cls) {
+  const old = $(sel);
+  old.replaceWith(spectrum(c, labels, cls, old.id));
+}
+
+function renderWorld(animate) {
+  const msg = $("#wMsg"), body = $("#wBody");
+  if (online === false) { msg.textContent = t("w.offline"); msg.hidden = false; body.hidden = true; return; }
+  if (!STATS || !Q.length) { msg.hidden = true; body.hidden = true; return; }
+  for (const row of $$("#wLive [data-stat]")) {
+    const k = row.dataset.stat, n = STATS[k] || 0;
+    row.hidden = !n && k !== "participants";
+    $("dd", row).textContent = t("stat." + k + (n === 1 ? ".1" : ""));
+    if (animate) countUp($("dt", row), n); else $("dt", row).textContent = fmt(n);
+  }
+  const tot = worldTotals();
+  msg.hidden = !!tot.n;
+  msg.textContent = t("w.empty");
+  body.hidden = false;
+  spectrumInto("#wSpectrum", tot, true, "big");
+  $("#wPulse").innerHTML = tot.n ? t("w.pulse.p", { p: pctTxt((tot.pos / tot.n) * 100) }) : "";
+  $("#wBig").textContent = tot.n ? pctTxt((tot.pos / tot.n) * 100) : "—";
+  $("#wLegend").replaceChildren(...[["pos", tot.pos], ["none", tot.none], ["neg", tot.neg]].map(([k, n]) =>
+    el("span", { class: "l-" + k }, el("i"), el("span", { text: fmt(n) + " · " + t("ans." + k + ".s") }))));
+  renderYou();
+  $("#wUnis").replaceChildren(...CATS.map(cat => {
+    const c = worldTotals(cat);
+    return el("div", { class: "w-uni" },
+      el("div", { class: "top" }, catChip(cat), el("b", { text: c.n ? pctTxt((c.pos / c.n) * 100) : "—" })),
+      spectrum(c, false, "sm"), el("p", { class: "w-note", text: tn("w.answers", c.n) }));
+  }));
+  $("#wMosaic").replaceChildren(...CATS.map(cat => el("div", { class: "mosaic" },
+    el("h4", {}, catChip(cat)),
+    el("div", { class: "tiles", "aria-hidden": "true" }, ...Q.filter(q => q.cat === cat).map(q => {
+      const s = qStat(q.id);
+      return el("span", {
+        dataset: { q: q.id }, title: qt(q) + (s.n ? " — " + tn("w.answers", s.n) : ""),
+        style: s.n ? "background:" + mixColor((s.pos - s.neg) / s.n) + ";opacity:" + (0.45 + 0.55 * Math.min(1, s.n / 8)).toFixed(2) : null,
+      });
+    })))));
+  renderRanks();
+  renderCountries();
+  icons();
+}
+
+/** « Vous et le monde » : où se situe votre part d'impacts positifs parmi les participants. */
+function renderYou() {
+  const prof = (STATS && STATS.profiles) || [];
+  const total = prof.reduce((a, b) => a + b, 0), max = Math.max(1, ...prof);
+  const c = counts(), mine = c.n >= 5 ? c.pos / c.n : null;
+  const bin = mine === null ? -1 : Math.min(9, Math.floor(mine * 10));
+  const hist = $("#wHist");
+  hist.setAttribute("aria-label", t("w.hist"));
+  hist.replaceChildren(...prof.map((v, i) => el("span", {
+    class: i === bin ? "me" : null, "data-you": t("w.hist.you"), title: i * 10 + "–" + (i * 10 + 10) + " % · " + fmt(v),
+    style: "height:" + Math.max(3, (v / max) * 100) + "%",
+  })));
+  let txt = t("w.you.need");
+  if (mine !== null && total < 3) txt = t("w.you.few");
+  else if (mine !== null) {
+    const below = prof.slice(0, bin).reduce((a, b) => a + b, 0) + prof[bin] / 2;
+    txt = t("w.you.p", { me: pctTxt(mine * 100), p: pctTxt((below / total) * 100) });
+  }
+  $("#wYou").innerHTML = txt;
+}
+
+function renderRanks() {
+  const rows = Q.map(q => Object.assign({ q }, qStat(q.id))).filter(r => r.n >= 3);
+  const box = $("#wRanks");
+  if (rows.length < 3) { box.replaceChildren(el("p", { class: "empty", text: t("w.ranks.empty") })); return; }
+  const top = f => rows.filter(r => f(r) > 0).sort((a, b) => f(b) - f(a) || b.n - a.n).slice(0, 8);
+  const lists = [
+    ["w.top.pos", "smile", r => r.pos / r.n, "pos"],
+    ["w.top.neg", "frown", r => r.neg / r.n, "neg"],
+    ["w.top.split", "scale", r => Math.min(r.pos, r.neg) / r.n, "mix"],
+  ];
+  box.replaceChildren(...lists.map(([k, icon, f, kind]) => el("article", { class: "w-card w-rank" },
+    el("h3", {}, ic(icon), el("span", { text: t(k) })),
+    el("ol", {}, ...top(f).map((r, i) => el("li", {}, el("button", { type: "button", onclick: () => openQDlg(r.q.id) },
+      el("span", { class: "rk", text: fmt(i + 1) }),
+      el("span", { class: "qq", text: qt(r.q) }),
+      el("span", { class: "pc " + kind, text: kind === "mix" ? pctTxt((r.pos / r.n) * 100) + " / " + pctTxt((r.neg / r.n) * 100) : pctTxt(f(r) * 100) }),
+      spectrum(r, false, "sm"))))))));
+}
+
+function renderCountries() {
+  const list = (STATS && STATS.world) || [];
+  $("#wCountriesCard").hidden = !list.length;
+  $("#wCountries").replaceChildren(...list.slice(0, 16).map(([cc, n, pos, none, neg]) => el("li", {},
+    el("span", { class: "fl", text: flag(cc), "aria-hidden": "true" }),
+    el("span", { class: "nm", text: countryName(cc) }),
+    el("span", { class: "ct", text: tn("w.part", n) }),
+    spectrum({ pos, none, neg }, false, "sm"))));
+}
+
+/** Fiche d'une question : répartition mondiale, votre réponse, et un récit positif. */
+function openQDlg(id) {
+  const q = QBY[id];
+  if (!q) return;
+  const s = qStat(id), v = ans(id);
+  $("#qDlgBody").replaceChildren(
+    catChip(q.cat),
+    el("h2", { class: "qd-q", text: qt(q) }),
+    s.n ? spectrum(s, true, "big") : el("p", { class: "w-note", text: t("qd.none") }),
+    s.n ? el("p", { class: "qd-meta", text: tn("w.answers", s.n) + (s.stories ? " · " + tn("w.stories", s.stories) : "") }) : null,
+    v !== undefined ? el("p", { class: "qd-mine" }, el("i", { class: KEY[v] }), el("span", { text: t("qd.mine", { a: t("ans." + KEY[v]) }) })) : null,
+    el("div", { class: "qd-actions" }, v === undefined
+      ? el("button", { class: "btn btn-pos", type: "button", onclick: () => { $("#qDlg").close(); openQuiz("all", id); } }, ic("play"), el("span", { text: t("qd.answer") }))
+      : el("button", { class: "btn btn-ink", type: "button", onclick: () => { $("#qDlg").close(); go("#resultat/" + id); } }, ic("chart-pie"), el("span", { text: t("qd.see") }))),
+    s.stories ? othersBox(q) : null);
+  if (!$("#qDlg").open) $("#qDlg").showModal();
+  icons();
+}
+
 /* =================================================== Le défi (assistant) */
 const QZ = { cat: "all", seq: [], i: 0, open: false, opener: null, pushed: false };
 
@@ -1636,12 +2052,19 @@ function renderQuizFilters() {
   }, ic(CAT_ICON[cat]), el("span", { text: t("cat." + cat) }))));
 }
 
+/** Bande de progression : les 25 questions autour de la question en cours, et une barre fine pour toute la série. */
+const BLOCK = 25;
 function renderStrip() {
-  const strip = $("#qzStrip");
-  strip.replaceChildren(...QZ.seq.map((q, i) => {
-    const v = ans(q.id);
+  const at = QZ.i >= 0 ? QZ.i : QZ.seq.length - 1;
+  const start = Math.floor(Math.max(0, at) / BLOCK) * BLOCK;
+  $("#qzStrip").replaceChildren(...QZ.seq.slice(start, start + BLOCK).map((q, k) => {
+    const i = start + k, v = ans(q.id);
     return el("span", { class: (v !== undefined ? KEY[v] : "") + (i === QZ.i ? " cur" : ""), dataset: { i } });
   }));
+  const c = { 1: 0, 0: 0, "-1": 0 };
+  for (const q of QZ.seq) { const v = ans(q.id); if (v !== undefined) c[v]++; }
+  const n = QZ.seq.length || 1, bars = $$("#qzAll i");
+  [1, 0, -1].forEach((v, j) => (bars[j].style.width = (c[v] / n) * 100 + "%"));
 }
 
 function renderQuiz(enter) {
@@ -1662,7 +2085,7 @@ function renderQuiz(enter) {
   $$(".stamp", card).forEach(s => (s.style.opacity = 0));
   $("#qzChip").replaceWith(Object.assign(catChip(q.cat), { id: "qzChip" }));
   $("#qzNum").textContent = "#" + q.id;
-  $("#qzQ").textContent = q[lang];
+  $("#qzQ").textContent = qt(q);
   $("#qzAnswers").replaceChildren(...answerButtons((nv, btn) => answerQuiz(nv, btn), v, true));
   $("#qzPrev").disabled = QZ.i === 0;
   renderLast();
@@ -1736,7 +2159,7 @@ function renderDone() {
 function maybeNudge() {
   if (user || online === false) return;
   const n = counts().n;
-  const step = [10, 40, 80].find(s => n >= s && S.nudged < s);
+  const step = [10, 50, 200].find(s => n >= s && S.nudged < s);
   if (!step) return;
   S.nudged = step; save();
   const box = $("#qzNudge");
@@ -1800,7 +2223,7 @@ document.addEventListener("keydown", e => {
 });
 
 /* ============================================================= Résultat */
-const RS = { tab: "all", cat: "all", focus: null };
+const RS = { tab: "all", cat: "all", focus: null, items: [], limit: 40 };
 const EDITING = new Set();
 const OTH = {};
 
@@ -1815,10 +2238,30 @@ function renderResults() {
     icons();
     return;
   }
-  const items = answered.filter(q => (RS.tab === "all" || KEY[ans(q.id)] === RS.tab) && (RS.cat === "all" || q.cat === RS.cat));
-  list.replaceChildren(...(items.length ? items.map(resultItem) : [el("p", { class: "empty", text: t("rs.empty.filter") })]));
+  RS.items = answered.filter(q => (RS.tab === "all" || KEY[ans(q.id)] === RS.tab) && (RS.cat === "all" || q.cat === RS.cat));
+  list.replaceChildren(...(RS.items.length ? RS.items.slice(0, RS.limit).map(resultItem) : [el("p", { class: "empty", text: t("rs.empty.filter") })]));
+  moreButton();
   clampCheck(list);
   icons();
+}
+/** La liste s'affiche par tranches de 40 : avec 1000 questions, tout afficher d'un coup serait trop lourd. */
+const PAGE = 40;
+function moreButton() {
+  const left = RS.items.length - RS.limit;
+  if (left <= 0) return;
+  $("#rsList").append(el("div", { class: "center-row", id: "rsMore" }, el("button", {
+    class: "btn btn-line", type: "button",
+    onclick: () => {
+      const from = RS.limit;
+      RS.limit += PAGE;
+      $("#rsMore").remove();
+      const frag = RS.items.slice(from, RS.limit).map(resultItem);
+      $("#rsList").append(...frag);
+      moreButton();
+      frag.forEach(clampCheck);
+      icons();
+    },
+  }, ic("chevron-down"), el("span", { text: t("rs.more") + " (" + fmt(left) + ")" }))));
 }
 
 function renderSummary() {
@@ -1841,12 +2284,11 @@ function renderSummary() {
     const cc = counts(cat);
     return el("div", { class: "mosaic" },
       el("h4", {}, catChip(cat), el("small", { text: cc.n ? fmt(Math.round((cc.pos / cc.n) * 100)) + "% " + t("rs.pos.label") : "—" })),
-      el("div", { class: "tiles" }, ...Q.filter(q => q.cat === cat).map(q => {
+      el("div", { class: "tiles", "aria-hidden": "true" }, ...Q.filter(q => q.cat === cat).map(q => {
         const v = ans(q.id);
-        return el("button", {
-          type: "button", class: (v !== undefined ? KEY[v] : "") + (S.stories[q.id] ? " has-story" : ""),
-          title: q[lang] + (v !== undefined ? " — " + t("ans." + KEY[v]) : ""), "aria-label": q[lang],
-          onclick: () => (v === undefined ? openQuiz("all", q.id) : focusItem(q.id, true)),
+        return el("span", {
+          class: (v !== undefined ? KEY[v] : "") + (S.stories[q.id] ? " has-story" : ""), dataset: { q: q.id },
+          title: qt(q) + (v !== undefined ? " — " + t("ans." + KEY[v]) : ""),
         });
       })));
   }));
@@ -1857,10 +2299,10 @@ function renderSummary() {
 function renderTabs() {
   const c = counts();
   $("#rsTabs").replaceChildren(...[["all", c.n], ["pos", c.pos], ["none", c.none], ["neg", c.neg]].map(([k, n]) => el("button", {
-    type: "button", class: "t-" + k, "aria-pressed": String(RS.tab === k), onclick: () => { RS.tab = k; renderResults(); },
+    type: "button", class: "t-" + k, "aria-pressed": String(RS.tab === k), onclick: () => { RS.tab = k; RS.limit = PAGE; renderResults(); },
   }, k !== "all" ? el("i") : null, el("span", { text: k === "all" ? t("cat.all") : t("ans." + k + ".s") }), el("span", { class: "n", text: fmt(n) }))));
   $("#rsCats").replaceChildren(...["all", ...CATS].map(cat => el("button", {
-    type: "button", "aria-pressed": String(RS.cat === cat), onclick: () => { RS.cat = cat; renderResults(); },
+    type: "button", "aria-pressed": String(RS.cat === cat), onclick: () => { RS.cat = cat; RS.limit = PAGE; renderResults(); },
   }, t("cat." + cat))));
 }
 
@@ -1868,7 +2310,7 @@ function resultItem(q) {
   const v = ans(q.id);
   return el("article", { class: "r-item v-" + KEY[v], id: "r-" + q.id, dataset: { q: q.id } },
     el("div", { class: "r-top" }, catChip(q.cat), el("span", { class: "r-num", text: "#" + q.id })),
-    el("div", { class: "r-head" }, el("h3", { class: "r-q", text: q[lang] }), segControl(q.id, v)),
+    el("div", { class: "r-head" }, el("h3", { class: "r-q", text: qt(q) }), segControl(q.id, v)),
     v === 1 ? storyBox(q) : othersBox(q));
 }
 function rerenderItem(id) {
@@ -1896,7 +2338,14 @@ function segControl(id, v) {
 
 function focusItem(id, smooth) {
   let n = $("#r-" + id);
-  if (!n && ans(id) !== undefined) { RS.tab = "all"; RS.cat = "all"; renderResults(); n = $("#r-" + id); }
+  if (!n && ans(id) !== undefined) {
+    // Question hors filtre ou pas encore affichée : on montre tout, jusqu'à elle.
+    RS.tab = "all"; RS.cat = "all";
+    const idx = Q.filter(q => ans(q.id) !== undefined).findIndex(q => q.id === id);
+    RS.limit = Math.max(PAGE, Math.ceil((idx + 1) / PAGE) * PAGE);
+    renderResults();
+    n = $("#r-" + id);
+  }
   if (!n) return;
   n.scrollIntoView({ behavior: smooth && !REDUCED ? "smooth" : "auto", block: "center" });
   n.classList.remove("flash"); void n.offsetWidth; n.classList.add("flash");
@@ -1937,8 +2386,10 @@ function storyBox(q) {
   anon.addEventListener("change", () => (author.disabled = anon.checked));
   const pubBox = el("input", { type: "checkbox", name: "public" });
   pubBox.checked = pub;
-  const submit = el("button", { class: "btn btn-pos", type: "submit" }, ic("send", "flip"), el("span", { text: t(pub ? "st.publish" : "st.savePrivate") }));
-  pubBox.addEventListener("change", () => ($("span", submit).textContent = t(pubBox.checked ? "st.publish" : "st.savePrivate")));
+  // Partager une expérience demande un compte : sans compte, le bouton mène à l'inscription.
+  const label = () => t(!user ? "st.publishAuth" : pubBox.checked ? "st.publish" : "st.savePrivate");
+  const submit = el("button", { class: "btn btn-pos", type: "submit" }, ic(user ? "send" : "user-plus", user ? "flip" : null), el("span", { text: label() }));
+  pubBox.addEventListener("change", () => ($("span", submit).textContent = label()));
   const cnt = el("p", { class: "sf-count" });
   const updCount = () => (cnt.textContent = fmt(exp.value.length) + " / " + fmt(1500));
   updCount();
@@ -1950,6 +2401,7 @@ function storyBox(q) {
       el("div", { class: "sf-row" }, author, el("label", { class: "check" }, anon, el("span", { text: t("st.anon") }))),
       el("div", { class: "sf-row" }, el("label", { class: "check" }, pubBox, el("span", { text: t("st.public") }))),
       el("input", { class: "hp", name: "website", tabindex: "-1", autocomplete: "off", "aria-hidden": "true" }),
+      !user ? el("p", { class: "sf-note" }, ic("shield-check"), el("span", { text: t("st.authNote") })) : null,
       el("div", { class: "sf-actions" }, submit,
         st ? el("button", { class: "btn btn-line", type: "button", onclick: () => { EDITING.delete(q.id); delete S.drafts[q.id]; save(); rerenderItem(q.id); } }, t("st.cancel")) : null),
       err));
@@ -1969,26 +2421,48 @@ async function saveStory(id, form, btn, err) {
   if (imp.length < MIN_IMP) { err.textContent = t("st.min", { n: MIN_IMP }); $("textarea[name=imp]", form).focus(); return; }
   await apiReady;
   if (!online) { err.textContent = t("ot.offline"); return; }
-  const st = S.stories[id];
-  const anon = !!f.get("anon"), author = String(f.get("author") || "").trim(), pub = !!f.get("public");
+  const v = { exp, imp, anon: !!f.get("anon"), author: String(f.get("author") || "").trim(), pub: !!f.get("public"), website: f.get("website") || "" };
+  if (!user) { askAccountToPublish(id, v); return; }
   btn.disabled = true;
-  try {
-    const d = await api("story_save", { qid: id, exp, imp, author, anon, public: pub, lang, id: st && st.id, token: st && st.token, website: f.get("website") || "" });
-    S.stories[id] = Object.assign({}, d.story, { token: d.story.token || (st && st.token) });
-    if (author && !anon) S.author = author;
-    delete S.drafts[id];
-    EDITING.delete(id);
-    save();
-    const s = d.story.status;
-    toast(t(s === "pending" ? "st.sentPending" : s === "private" ? "st.sentPrivate" : "st.sent"));
-    burstFrom(btn, 1);
-    rerenderItem(id);
-    renderSummary();
-    if (s === "published") loadFeed();
-  } catch (e) {
-    err.textContent = errText(e);
+  try { await publishStory(id, v, btn); }
+  catch (e) {
+    if (e.code === "login_required") askAccountToPublish(id, v);
+    else err.textContent = errText(e);
     btn.disabled = false;
   }
+}
+
+/** Sans compte : le texte est gardé, l'inscription s'ouvre, et le récit part dès la connexion. */
+function askAccountToPublish(id, v) {
+  S.drafts[id] = { exp: v.exp, imp: v.imp };
+  S.pendingPublish = { qid: id, anon: v.anon, author: v.author, pub: v.pub };
+  save();
+  showAuth("signup");
+}
+async function publishPending() {
+  const p = S.pendingPublish, d = p && S.drafts[p.qid];
+  if (!p || !user) return;
+  delete S.pendingPublish;
+  save();
+  if (!d) return;
+  try { await publishStory(p.qid, { exp: d.exp, imp: d.imp, anon: p.anon, author: p.author, pub: p.pub }); }
+  catch (e) { toast(errText(e), "err"); }
+}
+
+async function publishStory(id, v, btn) {
+  const st = S.stories[id];
+  const d = await api("story_save", { qid: id, exp: v.exp, imp: v.imp, author: v.author, anon: v.anon, public: v.pub, lang, id: st && st.id, token: st && st.token, website: v.website || "" });
+  S.stories[id] = Object.assign({}, d.story, { token: d.story.token || (st && st.token) });
+  if (v.author && !v.anon) S.author = v.author;
+  delete S.drafts[id];
+  EDITING.delete(id);
+  save();
+  const s = d.story.status;
+  toast(t(s === "pending" ? "st.sentPending" : s === "private" ? "st.sentPrivate" : "st.sent"));
+  burstFrom(btn || $("#r-" + id) || $("#accountBtn"), 1);
+  rerenderItem(id);
+  renderSummary();
+  if (s === "published") loadFeed();
 }
 
 async function deleteStory(id) {
@@ -2032,7 +2506,7 @@ function fillOthers(box, id) {
   const items = o.items.filter(s => !S.reported[s.id]);
   if (!items.length) {
     list.replaceChildren(el("p", { class: "msg", text: t("ot.empty") }));
-    foot.append(el("button", { class: "btn btn-xs btn-line", type: "button", onclick: () => share(t("share.invite")) }, ic("share-2"), el("span", { text: t("ot.invite") })));
+    foot.append(el("button", { class: "btn btn-xs btn-line", type: "button", onclick: () => share(ti("share.invite")) }, ic("share-2"), el("span", { text: t("ot.invite") })));
     return;
   }
   list.replaceChildren(...items.map(s => storyCard(s)));
@@ -2082,14 +2556,14 @@ async function share(text) {
 }
 $("#shareBtn").addEventListener("click", () => {
   const c = counts();
-  share(c.n ? t("rs.share.text", { p: Math.round((c.pos / c.n) * 100) }) : t("share.invite"));
+  share(c.n ? t("rs.share.text", { p: Math.round((c.pos / c.n) * 100) }) : ti("share.invite"));
 });
 $("#restartBtn").addEventListener("click", async () => {
   if (!confirm(t("rs.restart.confirm"))) return;
   S.answers = {}; S.pending = {}; S.nudged = 0; save();
   renderAll();
   await apiReady;
-  if (online) api("answers", { device: S.device, set: {}, reset: true }).catch(() => {});
+  if (online) api("answers", { device: S.device, set: {}, reset: true, tz: TZ }).catch(() => {});
   openQuiz("all");
 });
 
@@ -2117,6 +2591,7 @@ function showAuth(pane) {
     n.hidden = n.dataset.pane !== p;
   });
   $("#authTabs").hidden = p === "forgot" || p === "offline";
+  $("#authWhy").hidden = !S.pendingPublish || p === "offline";
   $$(".form-err", dlg).forEach(n => (n.textContent = ""));
   $("#forgotForm .ok-msg").hidden = true;
   if (!dlg.open) dlg.showModal();
@@ -2157,6 +2632,7 @@ function afterSignIn(d, msg) {
   renderAll();
   renderAccount();
   toast(msg);
+  publishPending();
 }
 function signedOut(expired) {
   user = null; csrf = null;
@@ -2191,8 +2667,8 @@ bindForm($("#signupForm"), async (v, form) => {
     opt_daily: !!v.opt_daily, opt_digest: !!v.opt_digest, device: S.device, stories: ownStoryTokens(),
   });
   form.reset();
-  $("#authDlg").close();
   afterSignIn(d, t("au.welcome", { name: d.user.name }));
+  $("#authDlg").close();
   setTimeout(() => toast(t("au.verifyHint"), "info"), 900);
   burstFrom($("#accountBtn"), 1);
 });
@@ -2200,8 +2676,8 @@ bindForm($("#loginForm"), async (v, form) => {
   await flush();
   const d = await api("login", { email: v.email.trim(), password: v.password, device: S.device, stories: ownStoryTokens() });
   form.reset();
-  $("#authDlg").close();
   afterSignIn(d, t("au.hello", { name: d.user.name }));
+  $("#authDlg").close();
 });
 bindForm($("#forgotForm"), async v => {
   if (!/^\S+@\S+\.\S+$/.test(v.email)) throw new ApiError("bad_email");
@@ -2240,6 +2716,8 @@ $("#logoutBtn").addEventListener("click", async () => {
 $("#authTabs").addEventListener("click", e => { const b = e.target.closest("[data-pane]"); if (b) showAuth(b.dataset.pane); });
 $$("[data-pane-go]").forEach(b => b.addEventListener("click", () => showAuth(b.dataset.paneGo)));
 $$("dialog").forEach(d => d.addEventListener("click", e => { if (e.target === d) d.close(); }));
+// Fenêtre d'inscription fermée sans se connecter : on oublie la publication en attente (le brouillon reste).
+$("#authDlg").addEventListener("close", () => { if (!user && S.pendingPublish) { delete S.pendingPublish; save(); } });
 $("#accountBtn").addEventListener("click", () => (user ? showMe() : showAuth("signup")));
 $("#joinPrefs").addEventListener("click", showMe);
 
@@ -2252,14 +2730,13 @@ function go(hash) {
   }
   route();
 }
+const VIEWS = { home: "#homeView", results: "#resultsView", world: "#worldView" };
 function showView(name) {
-  const home = name === "home";
-  const was = $("#resultsView").hidden ? "home" : "results";
-  $("#homeView").hidden = !home;
-  $("#resultsView").hidden = home;
+  const was = Object.keys(VIEWS).find(k => !$(VIEWS[k]).hidden) || "home";
+  for (const [k, sel] of Object.entries(VIEWS)) $(sel).hidden = k !== name;
   if (name !== was) scrollTo({ top: 0, behavior: "instant" });
-  HERO_FX.visible = home;
-  if (home) HERO_FX.start();
+  HERO_FX.visible = name === "home";
+  if (HERO_FX.visible) HERO_FX.start();
 }
 function route() {
   const [name, arg] = decodeURIComponent(location.hash.slice(1)).split("/");
@@ -2280,6 +2757,13 @@ function route() {
     else $("#rsTitle").focus({ preventScroll: true });
     return;
   }
+  if (name === "monde") {
+    showView("world");
+    renderWorld(true);
+    $("#wTitle").focus({ preventScroll: true });
+    if (Date.now() - STATS_AT > 60000) loadStats();
+    return;
+  }
   showView("home");
   if (name && document.getElementById(name)) requestAnimationFrame(() => document.getElementById(name).scrollIntoView({ behavior: REDUCED ? "auto" : "smooth" }));
 }
@@ -2297,6 +2781,8 @@ document.addEventListener("click", e => {
   if (l && l.closest(".langs")) setLang(l.dataset.lang, true);
 });
 $("#resultsBtn").addEventListener("click", () => go("#resultat"));
+$("#worldBtn").addEventListener("click", () => go("#monde"));
+$("#wMosaic").addEventListener("click", e => { const tile = e.target.closest("[data-q]"); if (tile) openQDlg(+tile.dataset.q); });
 $("#brandLink").addEventListener("click", e => { e.preventDefault(); go(""); scrollTo({ top: 0, behavior: REDUCED ? "auto" : "smooth" }); });
 $("#qzClose").addEventListener("click", closeQuiz);
 $("#qzPrev").addEventListener("click", prevQuiz);
@@ -2307,6 +2793,12 @@ $("#qzStrip").addEventListener("click", e => {
   if (s) { QZ.i = +s.dataset.i; QZ.last = null; renderLast(); renderQuiz(true); }
 });
 $("#wallMore").addEventListener("click", () => loadFeed(true));
+$("#mosaics").addEventListener("click", e => {
+  const tile = e.target.closest("[data-q]");
+  if (!tile) return;
+  const id = +tile.dataset.q;
+  if (ans(id) === undefined) openQuiz("all", id); else focusItem(id, true);
+});
 
 /* ======================================================= Rendu général */
 function reveal(root) {
@@ -2327,6 +2819,8 @@ function renderAll() {
   renderUnis();
   renderFeed();
   if (!$("#resultsView").hidden) renderResults();
+  if (!$("#worldView").hidden) renderWorld();
+  renderTeaser();
   if (QZ.open) renderQuiz(false);
   renderAccount();
 }
@@ -2345,9 +2839,12 @@ async function boot() {
   renderMiniMosaic();
 
   lang = pickLang();
+  // Les questions viennent de l'API (modifiables depuis l'admin) ; questions.json sert de secours hors serveur.
+  let raw = null;
+  try { raw = (await api("questions")).items; } catch (e) {}
   try {
-    const raw = await (await fetch("questions.json", { cache: "no-cache" })).json();
-    raw.forEach(q => (q.fr = frTypo(q.fr)));
+    if (!raw) raw = await (await fetch("questions.json", { cache: "no-cache" })).json();
+    raw.forEach(q => (q.fr = frTypo(q.fr || "")));
     Q = raw; QBY = Object.fromEntries(raw.map(q => [q.id, q]));
     const by = CATS.map(c => raw.filter(q => q.cat === c));
     INTER = [];

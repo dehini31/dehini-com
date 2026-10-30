@@ -7,8 +7,9 @@
  * X-Requested-With: impact, et pour un compte connecté le jeton X-CSRF.
  *
  *   GET  me                       session courante -> {user|null, csrf}
- *   GET  stats                    compteurs publics + répartition par question
- *   POST answers   {device,set,reset?}   enregistre des réponses (compte ou appareil)
+ *   GET  questions                questions actives (cache navigateur par ETag)
+ *   GET  stats                    compteurs publics, répartition par question, pays, profils
+ *   POST answers   {device,set,reset?,tz}  enregistre des réponses (compte ou appareil)
  *   GET  pull                     réponses + récits du compte connecté
  *   POST signup    {name,email,password,lang,opt_daily,opt_digest,device,stories}
  *   POST login     {email,password,device,stories}
@@ -18,10 +19,10 @@
  *   GET  feed      ?offset&limit&lang          derniers récits publiés
  *   GET  picks     ?q=1,2,3&lang               un récit au hasard par question
  *   GET  stories   ?q=&exclude=&limit&lang     « voir plus » sur une question
- *   POST story_save {qid,exp,imp,author,public,lang,id?,token?} | story_delete {id,token?}
+ *   POST story_save {qid,exp,imp,author,anon,public,lang,id?} (compte requis) | story_delete {id}
  *   POST like {id,undo?} | report {id}
  *   GET|POST unsub ?type=daily|digest|all&token=   page de désabonnement
- *   mod_* : modération, réservée à la session de /admin (même mot de passe)
+ *   mod_* : administration (récits et questions), réservée à la session de /admin
  */
 declare(strict_types=1);
 
@@ -218,6 +219,12 @@ function merge_device(int $uid, $device): void
     $rows = $s->fetchAll();
     foreach ($rows as $r) save_answer('u' . $uid, (int) $r['qid'], (int) $r['v'], (int) $r['t']);
     $pdo->prepare('DELETE FROM answers WHERE pid = ?')->execute(['d' . $device]);
+    $s = $pdo->prepare('SELECT cc, seen FROM people WHERE pid = ?');
+    $s->execute(['d' . $device]);
+    if ($p = $s->fetch()) {
+        $pdo->prepare('INSERT OR REPLACE INTO people (pid, cc, seen) VALUES (?, ?, ?)')->execute(['u' . $uid, $p['cc'], $p['seen']]);
+        $pdo->prepare('DELETE FROM people WHERE pid = ?')->execute(['d' . $device]);
+    }
 }
 
 /** Rattache au compte les récits publiés sans compte (prouvés par leur jeton d'édition). */
@@ -261,8 +268,8 @@ function looks_spammy(string $s): bool
 function notify_moderator(array $story): void
 {
     if (IMPACT_NOTIFY_EMAIL === '') return;
-    $q = questions()[(int) $story['qid']]['fr'] ?? '';
-    $url = site_url() . 'moderation.html';
+    $q = qtext(questions(true)[(int) $story['qid']] ?? [], 'fr');
+    $url = site_url() . 'admin.html#recits';
     $text = "Un récit attend une validation sur le défi Impact.\n\nQuestion : $q\n\n« {$story['exp']} »\n\nImpact positif : {$story['imp']}\n\nModérer : $url";
     $html = mail_layout('fr', 'Récit à valider', 'Un récit attend une validation',
         '<p style="margin:0 0 12px"><b>' . h($q) . '</b></p><p style="margin:0 0 12px">' . ugc((string) $story['exp']) . '</p>'
@@ -366,6 +373,22 @@ switch ($action) {
         break;
     }
 
+    case 'questions': {
+        // Questions actives : le navigateur garde sa copie tant que l'admin n'a rien changé.
+        $etag = '"q' . questions_version() . '"';
+        header('Cache-Control: no-cache');
+        header('ETag: ' . $etag);
+        if (trim((string) ($_SERVER['HTTP_IF_NONE_MATCH'] ?? '')) === $etag) {
+            http_response_code(304);
+            exit;
+        }
+        $items = [];
+        foreach (questions() as $q) $items[] = ['id' => $q['id'], 'cat' => $q['cat'], 'fr' => $q['fr'], 'ar' => $q['ar'], 'en' => $q['en']];
+        if (extension_loaded('zlib') && !ini_get('zlib.output_compression')) ob_start('ob_gzhandler');
+        ok(['v' => questions_version(), 'items' => $items]);
+        break;
+    }
+
     case 'stats': {
         $cached = meta_get('stats_cache');
         if ($cached) {
@@ -380,10 +403,24 @@ switch ($action) {
         foreach ($pdo->query("SELECT qid, COUNT(*) AS n FROM stories WHERE status = 'published' GROUP BY qid") as $r) {
             if (isset($q[(string) $r['qid']])) $q[(string) $r['qid']][3] = (int) $r['n'];
         }
+        // Impact mondial : pays des participants [code, participants, positif, aucun, négatif]…
+        $countries = [];
+        foreach ($pdo->query("SELECT p.cc AS cc, COUNT(DISTINCT a.pid) AS n, SUM(a.v = 1) AS pos, SUM(a.v = 0) AS non, SUM(a.v = -1) AS neg
+            FROM answers a JOIN people p ON p.pid = a.pid WHERE p.cc != '' GROUP BY p.cc ORDER BY n DESC, pos DESC LIMIT 40") as $r) {
+            $countries[] = [(string) $r['cc'], (int) $r['n'], (int) $r['pos'], (int) $r['non'], (int) $r['neg']];
+        }
+        // … et profils : combien de participants (5 réponses ou plus) ont 0-10 %, 10-20 %… d'impacts positifs.
+        $profiles = array_fill(0, 10, 0);
+        foreach ($pdo->query('SELECT MIN(9, (p * 10) / n) AS b, COUNT(*) AS c FROM (SELECT SUM(v = 1) AS p, COUNT(*) AS n FROM answers GROUP BY pid HAVING COUNT(*) >= 5) GROUP BY b') as $r) {
+            $profiles[(int) $r['b']] = (int) $r['c'];
+        }
         $data = [
             'participants' => (int) $pdo->query('SELECT COUNT(DISTINCT pid) FROM answers')->fetchColumn(),
             'answers'      => (int) $pdo->query('SELECT COUNT(*) FROM answers')->fetchColumn(),
             'stories'      => (int) $pdo->query("SELECT COUNT(*) FROM stories WHERE status = 'published'")->fetchColumn(),
+            'countries'    => (int) $pdo->query("SELECT COUNT(DISTINCT p.cc) FROM people p WHERE p.cc != '' AND EXISTS (SELECT 1 FROM answers a WHERE a.pid = p.pid)")->fetchColumn(),
+            'world'        => $countries,
+            'profiles'     => $profiles,
             'q'            => (object) $q,
         ];
         meta_set('stats_cache', (string) json_encode(['at' => time(), 'data' => $data]));
@@ -399,11 +436,13 @@ switch ($action) {
         $pid = $u ? 'u' . $u['id'] : 'd' . $device;
         rate('answers', 900, 3600);
         $set = $b['set'] ?? [];
-        if (!is_array($set) || count($set) > 300) fail('generic');
+        if (!is_array($set) || count($set) > 1500) fail('generic');
         $qs = questions();
         $maxT = (int) (microtime(true) * 1000) + 60000;
         $pdo->beginTransaction();
         if (!empty($b['reset'])) $pdo->prepare('DELETE FROM answers WHERE pid = ?')->execute([$pid]);
+        $cc = tz_country($b['tz'] ?? '');
+        if ($cc !== '') $pdo->prepare('INSERT OR REPLACE INTO people (pid, cc, seen) VALUES (?, ?, ?)')->execute([$pid, $cc, time()]);
         foreach ($set as $qid => $pair) {
             $qid = (int) $qid;
             if (!isset($qs[$qid])) continue;
@@ -586,6 +625,7 @@ switch ($action) {
             fail('bad_login', 401);
         }
         $pdo->prepare('DELETE FROM answers WHERE pid = ?')->execute(['u' . $u['id']]);
+        $pdo->prepare('DELETE FROM people WHERE pid = ?')->execute(['u' . $u['id']]);
         $pdo->prepare('DELETE FROM users WHERE id = ?')->execute([$u['id']]); // sessions, récits : ON DELETE CASCADE
         setcookie(SID_COOKIE, '', cookie_opts(time() - 3600));
         ok();
@@ -643,10 +683,11 @@ switch ($action) {
     case 'story_save': {
         if (!$isPost) fail('generic', 405);
         $u = user_for_write();
+        if (!$u) fail('login_required', 401); // partager une expérience demande un compte
         if (!empty($b['website'])) fail('generic'); // champ piège invisible : robot
         rate('story', 30, 3600);
         $qid = (int) ($b['qid'] ?? 0);
-        if (!isset(questions()[$qid])) fail('generic');
+        if (!isset(questions(true)[$qid])) fail('generic');
         $exp = str_clean((string) ($b['exp'] ?? ''), 1500);
         $imp = str_clean((string) ($b['imp'] ?? ''), 1000);
         if (mb_strlen($exp) < 15 || mb_strlen($imp) < 10) fail('too_short');
@@ -656,22 +697,20 @@ switch ($action) {
             : ((IMPACT_MODERATION === 'manual' || looks_spammy($exp . ' ' . $imp)) ? 'pending' : 'published');
         $now = time();
         $id = (int) ($b['id'] ?? 0);
-        if (!$id && $u) {
+        if (!$id) {
             // Un seul récit par question et par compte : on met à jour l'existant.
             $s = $pdo->prepare('SELECT id FROM stories WHERE uid = ? AND qid = ?');
             $s->execute([$u['id'], $qid]);
             $id = (int) ($s->fetchColumn() ?: 0);
         }
-        $tok = null;
         if ($id) {
             $st = story_for_edit($id, $u, $b['token'] ?? null);
             if ($st['status'] === 'hidden' && $status === 'published') $status = 'pending';
             $pdo->prepare('UPDATE stories SET qid = ?, author = ?, exp = ?, imp = ?, lang = ?, status = ?, updated = ? WHERE id = ?')
                 ->execute([$qid, $author, $exp, $imp, $lang, $status, $now, $id]);
         } else {
-            $tok = token(16);
             $pdo->prepare('INSERT INTO stories (qid, uid, author, exp, imp, lang, status, ehash, iph, created, updated) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-                ->execute([$qid, $u ? $u['id'] : null, $author, $exp, $imp, $lang, $status, hash('sha256', $tok), ip_hash(), $now, $now]);
+                ->execute([$qid, $u['id'], $author, $exp, $imp, $lang, $status, hash('sha256', token(16)), ip_hash(), $now, $now]);
             $id = (int) $pdo->lastInsertId();
         }
         $s = $pdo->prepare('SELECT * FROM stories WHERE id = ?');
@@ -679,7 +718,7 @@ switch ($action) {
         $row = $s->fetch();
         if ($status === 'pending') notify_moderator($row);
         meta_set('stats_cache', '');
-        ok(['story' => story_row($row, true) + ($tok ? ['token' => $tok] : [])]);
+        ok(['story' => story_row($row, true)]);
         break;
     }
 
@@ -732,10 +771,10 @@ switch ($action) {
         if ($status === 'reported') $where = 'WHERE s.reports > 0';
         $offset = max(0, (int) ($_GET['offset'] ?? 0));
         $rows = $pdo->query("SELECT s.*, u.email AS email FROM stories s LEFT JOIN users u ON u.id = s.uid $where ORDER BY s.created DESC LIMIT 50 OFFSET $offset")->fetchAll();
-        $qs = questions();
+        $qs = questions(true);
         $items = array_map(function ($r) use ($qs) {
             return story_row($r, true) + ['reports' => (int) $r['reports'], 'email' => (string) ($r['email'] ?? ''),
-                'question' => $qs[(int) $r['qid']]['fr'] ?? ''];
+                'question' => qtext($qs[(int) $r['qid']] ?? [], 'fr')];
         }, $rows);
         $counts = ['reported' => (int) $pdo->query('SELECT COUNT(*) FROM stories WHERE reports > 0')->fetchColumn()];
         foreach ($pdo->query('SELECT status, COUNT(*) AS n FROM stories GROUP BY status') as $r) $counts[$r['status']] = (int) $r['n'];
@@ -763,6 +802,69 @@ switch ($action) {
         require_admin();
         $pdo->prepare('DELETE FROM stories WHERE id = ?')->execute([(int) ($b['id'] ?? 0)]);
         meta_set('stats_cache', '');
+        ok();
+        break;
+    }
+
+    /* ------------------------------------------------- questions (admin) */
+
+    case 'mod_questions': {
+        require_admin();
+        $n = [];
+        foreach ($pdo->query('SELECT qid, v, COUNT(*) AS n FROM answers GROUP BY qid, v') as $r) $n[(int) $r['qid']][(int) $r['v'] + 1] = (int) $r['n'];
+        $st = [];
+        foreach ($pdo->query('SELECT qid, COUNT(*) AS n FROM stories GROUP BY qid') as $r) $st[(int) $r['qid']] = (int) $r['n'];
+        $items = [];
+        foreach (questions(true) as $q) {
+            $d = $n[$q['id']] ?? [];
+            $items[] = $q + ['n' => [(int) ($d[0] ?? 0), (int) ($d[1] ?? 0), (int) ($d[2] ?? 0)], 'stories' => $st[$q['id']] ?? 0];
+        }
+        ok(['items' => $items]);
+        break;
+    }
+
+    case 'mod_q_save': {
+        if (!$isPost) fail('generic', 405);
+        require_admin();
+        $cat = (string) ($b['cat'] ?? '');
+        if (!in_array($cat, IMPACT_CATS, true)) fail('Univers invalide.');
+        $t = [];
+        foreach (IMPACT_LANGS as $l) $t[$l] = str_clean((string) ($b[$l] ?? ''), 300);
+        if ($t['fr'] === '' && $t['ar'] === '' && $t['en'] === '') fail('Écris la question dans au moins une langue.');
+        $active = array_key_exists('active', $b) && empty($b['active']) ? 0 : 1;
+        $id = (int) ($b['id'] ?? 0);
+        if ($id) {
+            $s = $pdo->prepare('UPDATE questions SET cat = ?, fr = ?, ar = ?, en = ?, active = ?, updated = ? WHERE id = ?');
+            $s->execute([$cat, $t['fr'], $t['ar'], $t['en'], $active, time(), $id]);
+            if (!$s->rowCount()) fail('Question introuvable.', 404);
+        } else {
+            $pos = (int) $pdo->query('SELECT COALESCE(MAX(pos), 0) + 1 FROM questions')->fetchColumn();
+            $pdo->prepare('INSERT INTO questions (cat, fr, ar, en, active, pos, updated) VALUES (?, ?, ?, ?, ?, ?, ?)')
+                ->execute([$cat, $t['fr'], $t['ar'], $t['en'], $active, $pos, time()]);
+            $id = (int) $pdo->lastInsertId();
+        }
+        questions_changed();
+        $s = $pdo->prepare('SELECT id, cat, fr, ar, en, active FROM questions WHERE id = ?');
+        $s->execute([$id]);
+        $item = $s->fetch();
+        $item['id'] = (int) $item['id'];
+        $item['active'] = (int) $item['active'];
+        ok(['item' => $item]);
+        break;
+    }
+
+    case 'mod_q_delete': {
+        if (!$isPost) fail('generic', 405);
+        require_admin();
+        $id = (int) ($b['id'] ?? 0);
+        // Suppression définitive : la question, ses réponses et ses récits.
+        $pdo->beginTransaction();
+        $pdo->prepare('DELETE FROM digest_seen WHERE sid IN (SELECT id FROM stories WHERE qid = ?)')->execute([$id]);
+        $pdo->prepare('DELETE FROM stories WHERE qid = ?')->execute([$id]);
+        $pdo->prepare('DELETE FROM answers WHERE qid = ?')->execute([$id]);
+        $pdo->prepare('DELETE FROM questions WHERE id = ?')->execute([$id]);
+        $pdo->commit();
+        questions_changed();
         ok();
         break;
     }

@@ -221,7 +221,7 @@ function compose_daily(array $user, array $q, int $answered, int $total): array
         $cells .= '<td width="33%" style="padding:4px"><a href="' . h($href) . '" style="display:block;padding:14px 6px;border-radius:14px;background:'
             . MAIL_COLORS[$k] . ';color:#ffffff;text-decoration:none;text-align:center;font:700 14px/1.25 ' . $f . '">' . h(ms($l, $k)) . '</a></td>';
     }
-    $qt = typo($l, (string) $q[$l]);
+    $qt = typo($l, qtext($q, $l));
     $inner = '<p style="margin:0 0 14px">' . h(ms($l, 'hello', ['name' => $user['name']])) . '</p>'
         . '<p style="margin:0 0 18px;color:#4b5470">' . h(ms($l, 'daily_intro')) . '</p>'
         . '<p style="margin:0 0 20px;font:800 23px/1.35 ' . $f . ';color:#0b1020">' . h($qt) . '</p>'
@@ -242,7 +242,7 @@ function compose_story_prompt(array $user, array $q): array
     $l = $user['lang'];
     $f = mail_font($l);
     $href = site_url() . '?lang=' . $l . '#resultat/' . $q['id'];
-    $qt = typo($l, (string) $q[$l]);
+    $qt = typo($l, qtext($q, $l));
     $inner = '<p style="margin:0 0 14px">' . h(ms($l, 'hello', ['name' => $user['name']])) . '</p>'
         . '<p style="margin:0 0 18px;font:800 22px/1.35 ' . $f . ';color:#0b1020">' . h($qt) . '</p>'
         . '<p style="margin:0;color:#4b5470">' . h(ms($l, 'story_intro')) . '</p>'
@@ -257,7 +257,7 @@ function compose_digest(array $user, array $stories): array
 {
     $l = $user['lang'];
     $f = mail_font($l);
-    $qs = questions();
+    $qs = questions(true);
     $n = count($stories);
     $blocks = '';
     $text = ms($l, 'hello', ['name' => $user['name']]) . "\n\n" . ms($l, 'digest_intro') . "\n\n";
@@ -268,12 +268,12 @@ function compose_digest(array $user, array $stories): array
         $exp = mb_strimwidth((string) $s['exp'], 0, 320, '…');
         $imp = mb_strimwidth((string) $s['imp'], 0, 240, '…');
         $blocks .= '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 14px;border-radius:16px;background:#f7f7f9"><tr><td style="padding:18px 20px">'
-            . '<p style="margin:0 0 10px;font:700 14px/1.4 ' . $f . ';color:#4b5470">' . h(typo($l, (string) $q[$l])) . '</p>'
+            . '<p style="margin:0 0 10px;font:700 14px/1.4 ' . $f . ';color:#4b5470">' . h(typo($l, qtext($q, $l))) . '</p>'
             . '<p style="margin:0 0 10px;font:400 15px/1.6 ' . $f . ';color:#0b1020;border-inline-start:3px solid #17b26a;padding-inline-start:12px">' . ugc($exp) . '</p>'
             . '<p style="margin:0 0 8px;font:400 14px/1.6 ' . $f . ';color:#079455"><b>' . h(ms($l, 'digest_impact')) . '</b> ' . ugc($imp) . '</p>'
             . '<p style="margin:0;font:400 12px/1.4 ' . $f . ';color:#6b7185">— ' . ugc($author) . '</p>'
             . '</td></tr></table>';
-        $text .= '* ' . $q[$l] . "\n  « " . $exp . " »\n  " . ms($l, 'digest_impact') . ' ' . $imp . "\n  — " . $author . "\n\n";
+        $text .= '* ' . qtext($q, $l) . "\n  « " . $exp . " »\n  " . ms($l, 'digest_impact') . ' ' . $imp . "\n  — " . $author . "\n\n";
     }
     $href = site_url() . '?lang=' . $l . '#resultat';
     $inner = '<p style="margin:0 0 14px">' . h(ms($l, 'hello', ['name' => $user['name']])) . '</p>'
