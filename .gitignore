@@ -3,8 +3,9 @@
 # /admin directement sur le serveur et n'est plus synchronisé avec Git — le
 # déploiement automatique ne le touche plus jamais (voir README.md).
 
-# Secret de l'admin : jamais commité.
+# Secrets : jamais commités.
 /admin/config.php
+/impact/config.php
 
 # Images envoyées depuis /admin.
 /uploads/*
