@@ -1107,13 +1107,8 @@
             <form id="supportForm" novalidate>
               <div class="amounts" id="sAmounts" role="group"></div>
               <label class="field"><span data-i18n="sp.other">Autre montant (DA)</span><input name="amount" type="number" inputmode="numeric" min="100" max="200000" step="50" dir="ltr"></label>
-              <label class="field"><span data-i18n="sp.name">Nom complet</span><input name="name" autocomplete="name" maxlength="60" required></label>
-              <div class="s-row">
-                <label class="field"><span data-i18n="au.email">Adresse email</span><input name="email" type="email" autocomplete="email" maxlength="190" required dir="ltr"></label>
-                <label class="field"><span data-i18n="sp.phone">Téléphone</span><input name="phone" type="tel" autocomplete="tel" maxlength="20" required dir="ltr" placeholder="0550 12 34 56"><small data-i18n="sp.phone.hint"></small></label>
-              </div>
               <label class="field"><span data-i18n="sp.msg">Un mot pour nous (facultatif)</span><textarea name="message" maxlength="300" rows="2" dir="auto"></textarea></label>
-              <label class="switch"><input type="checkbox" name="public"><span data-i18n="sp.public"></span></label>
+              <label class="switch" id="sPublic"><input type="checkbox" name="public"><span data-i18n="sp.public"></span></label>
               <button class="btn btn-pos btn-lg" type="submit"><i data-lucide="lock"></i><span id="sPayLbl"></span></button>
               <p class="form-err" role="alert"></p>
               <p class="pay-note"><i data-lucide="shield-check"></i><span data-i18n="sp.secure"></span></p>
@@ -3329,11 +3324,7 @@ function renderSupport() {
       m.note ? el("p", { class: "m-note", dir: "auto", text: m.note }) : null))));
   $("#sCount").textContent = t("sp.count", { n: fmt(sp.count) });
   $("#sWall").replaceChildren(...sp.wall.map(n => el("span", { dir: "auto", text: n })));
-  const f = $("#supportForm");
-  if (user) {
-    if (!f.elements.namedItem("name").value) f.elements.namedItem("name").value = user.name;
-    if (!f.elements.namedItem("email").value) f.elements.namedItem("email").value = user.email;
-  }
+  $("#sPublic").hidden = !user; // le mur affiche le prénom du compte
   const r = $("#sResult");
   r.hidden = !DON_RESULT;
   if (DON_RESULT) {
@@ -3350,11 +3341,8 @@ $("#supportForm").elements.namedItem("amount").addEventListener("input", () => r
 bindForm($("#supportForm"), async v => {
   const sp = CFG.support, amount = Math.round(donAmount());
   if (!(amount >= sp.min && amount <= sp.max)) throw new ApiError("bad_amount");
-  if (!v.name.trim()) throw new ApiError("bad_name");
-  if (!/^\S+@\S+\.\S+$/.test(v.email)) throw new ApiError("bad_email");
-  if ((v.phone || "").replace(/\D/g, "").length < 9) throw new ApiError("bad_phone");
   const d = await api("support_start", {
-    amount, name: v.name.trim(), email: v.email.trim(), phone: v.phone, message: v.message || "", public: !!v.public, lang,
+    amount, message: v.message || "", public: !!v.public, lang,
   });
   location.href = d.url; // page de paiement SATIM
 });

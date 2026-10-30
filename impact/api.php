@@ -1106,20 +1106,20 @@ switch ($action) {
         rate('support', 10, 3600);
         $amount = (int) ($b['amount'] ?? 0);
         if ($amount < DON_MIN || $amount > DON_MAX) fail('bad_amount');
-        $name = str_clean((string) ($b['name'] ?? ''), 60);
-        if ($name === '') fail('bad_name');
-        $email = strtolower(trim((string) ($b['email'] ?? '')));
-        if (strlen($email) > 190 || !filter_var($email, FILTER_VALIDATE_EMAIL)) fail('bad_email');
-        $phone = sofiz_phone((string) ($b['phone'] ?? ''));
-        if (strlen($phone) < 10 || strlen($phone) > 16) fail('bad_phone');
+        // Rien n'est demandé au donateur : le compte connecté fournit nom et email s'il existe,
+        // sinon des valeurs neutres (la passerelle exige nom, email et téléphone).
+        $name = $u ? str_clean((string) $u['name'], 60) : '';
+        $email = $u ? (string) $u['email'] : '';
+        $phone = '+213000000000';
         $lang = impact_lang($b['lang'] ?? 'fr');
         $ref = token(12);
         $pdo->prepare('INSERT INTO donations (ref, amount, name, email, phone, message, public, lang, uid, created) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
             ->execute([$ref, $amount, $name, $email, $phone, str_clean((string) ($b['message'] ?? ''), 300),
-                empty($b['public']) ? 0 : 1, $lang, $u ? $u['id'] : null, time()]);
+                $u && !empty($b['public']) ? 1 : 0, $lang, $u ? $u['id'] : null, time()]);
         $id = (int) $pdo->lastInsertId();
         $res = sofiz_create([
-            'amount' => $amount, 'name' => $name, 'phone' => $phone, 'email' => $email, 'lang' => $lang,
+            'amount' => $amount, 'name' => $name !== '' ? $name : 'Soutien anonyme', 'phone' => $phone,
+            'email' => $email !== '' ? $email : mail_from(), 'lang' => $lang,
             'return_url'  => site_url() . 'support.php?r=' . $ref,
             'webhook_url' => site_url() . 'support.php?hook=1',
             'reference'   => 'DON-' . $id,
