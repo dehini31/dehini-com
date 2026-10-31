@@ -3364,8 +3364,10 @@ function showView(name) {
   HERO_FX.visible = name === "home";
   if (HERO_FX.visible) HERO_FX.start();
 }
+let CUR_VIEW = "home";
 function route() {
   const [name, arg] = decodeURIComponent(location.hash.slice(1)).split("/");
+  CUR_VIEW = name || "home";
   if (name === "defi") {
     if (!QZ.open || (arg && arg !== QZ.cat)) {
       if (arg && (arg === "all" || CATS.includes(arg)) && arg !== QZ.cat) { QZ.cat = arg; QZ.seq = seqFor(arg); QZ.i = QZ.seq.findIndex(q => ans(q.id) === undefined); }
@@ -3409,6 +3411,16 @@ function route() {
 }
 addEventListener("popstate", route);
 addEventListener("hashchange", route);
+
+/** Signal de présence pour l'admin (« en ligne maintenant ») : ni compte ni mot de passe requis. */
+async function ping() {
+  if (document.visibilityState !== "visible") return;
+  await apiReady;
+  if (!online) return;
+  try { await api("ping", { device: S.device, view: QZ.open ? "defi" : CUR_VIEW }, null, true); } catch (e) {}
+}
+setInterval(ping, 45000);
+addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") ping(); });
 
 document.addEventListener("click", e => {
   const s = e.target.closest("[data-start]");
@@ -3527,6 +3539,7 @@ async function boot() {
   renderFeed();
   loadStats();
   loadFeed();
+  ping();
 }
 boot();
 })();

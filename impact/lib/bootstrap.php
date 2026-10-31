@@ -83,6 +83,7 @@ function migrate(PDO $pdo): void
     if ($v < 1) migrate_v1($pdo);
     if ($v < 2) migrate_v2($pdo);
     if ($v < 3) migrate_v3($pdo);
+    if ($v < 4) migrate_v4($pdo);
 }
 
 function migrate_v1(PDO $pdo): void
@@ -278,6 +279,26 @@ function migrate_v3(PDO $pdo): void
     PRAGMA user_version = 3;
     SQL);
 }
+
+/**
+ * v4 : présence (qui est sur le site en ce moment, pour l'admin), rafraîchie par un
+ * signal léger envoyé par la page toutes les ~45 s tant que l'onglet est visible.
+ */
+function migrate_v4(PDO $pdo): void
+{
+    $pdo->exec(<<<SQL
+    CREATE TABLE IF NOT EXISTS presence (
+        pid TEXT PRIMARY KEY,
+        seen INTEGER NOT NULL,
+        view TEXT NOT NULL DEFAULT ''
+    );
+    CREATE INDEX IF NOT EXISTS presence_seen ON presence(seen);
+    PRAGMA user_version = 4;
+    SQL);
+}
+
+/** Fenêtre considérée « en ligne » : un peu plus que deux signaux manqués. */
+const ONLINE_WINDOW = 150;
 
 function meta_get(string $k): ?string
 {

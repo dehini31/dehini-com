@@ -81,7 +81,7 @@
   .imp{white-space:pre-line;background:var(--pos-50);color:#0a5c37;border-radius:12px;padding:10px 12px;font-size:.92rem}
   .meta{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:12px;font-size:.8rem;color:var(--muted)}
   .empty{text-align:center;color:var(--muted);padding:40px;background:#fff;border-radius:18px}
-  .panel{background:#fff;border-radius:18px;padding:20px 22px;box-shadow:var(--shadow);margin-bottom:16px}
+  .panel{background:#fff;border-radius:18px;padding:20px 22px;box-shadow:var(--shadow);margin-bottom:16px;max-width:100%;overflow-x:auto}
   .panel h2{font-size:1.1rem;margin-bottom:4px}
   .panel > p{color:var(--muted);font-size:.88rem;margin-bottom:14px}
   .panel ol{color:var(--ink-soft);font-size:.88rem;margin:0 0 14px 20px;display:grid;gap:4px}
@@ -102,6 +102,39 @@
   .don-top{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 14px}
   .don-top b{font-size:1.25rem}
   .b-paid{background:var(--pos-50);color:var(--pos-600)} .b-failed{background:var(--neg-50);color:var(--neg-600)}
+
+  /* -------------------------------------------------------------- Statistiques */
+  .online-hero{display:flex;flex-wrap:wrap;align-items:center;gap:20px 32px}
+  .online-n{display:flex;align-items:baseline;gap:12px}
+  .online-n b{font-size:2.6rem;line-height:1;font-family:inherit}
+  .dot-live{width:10px;height:10px;border-radius:50%;background:var(--pos);flex-shrink:0;animation:pulse 1.8s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  .online-split{display:flex;gap:18px;font-size:.86rem;color:var(--muted)}
+  .online-split b{color:var(--ink);font-weight:700}
+  .online-views{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+  .online-views span{padding:4px 10px;border-radius:999px;background:var(--paper-100);font-size:.78rem;color:var(--ink-soft)}
+  .online-refresh{margin-inline-start:auto;font-size:.78rem;color:var(--muted)}
+  .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+  .stat-card{background:#fff;border-radius:16px;padding:16px;box-shadow:var(--shadow)}
+  .stat-card b{display:block;font-size:1.5rem;line-height:1.15}
+  .stat-card span{font-size:.78rem;color:var(--muted)}
+  .stat-cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:780px){.stat-cols{grid-template-columns:1fr}}
+  .cat-table{width:100%;border-collapse:collapse;font-size:.88rem}
+  .cat-table th,.cat-table td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--paper-100)}
+  .cat-table th{color:var(--muted);font-weight:700;font-size:.78rem;text-transform:uppercase;letter-spacing:.02em}
+  .trend-row{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .trend-label{width:84px;flex-shrink:0;font-size:.82rem;color:var(--muted)}
+  .trend-bars{flex:1;display:flex;align-items:flex-end;gap:3px;height:48px}
+  .trend-bars i{flex:1;border-radius:3px 3px 0 0;min-height:2px;position:relative}
+  .trend-bars.s i{background:var(--social)}
+  .trend-bars.a i{background:var(--pos)}
+  .trend-n{width:30px;text-align:right;font-size:.78rem;color:var(--ink-soft);flex-shrink:0}
+  .ctry-list,.top-list{list-style:none;display:grid;grid-template-columns:minmax(0,1fr);gap:8px;font-size:.88rem}
+  .ctry-list li,.top-list li{display:flex;align-items:center;gap:10px}
+  .ctry-list .fl{font-size:1.1rem}
+  .ctry-n,.top-n{margin-inline-start:auto;color:var(--muted);font-size:.8rem;white-space:nowrap}
+  .top-list .q{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .toast{position:fixed;bottom:20px;left:50%;translate:-50% 0;background:var(--ink);color:#fff;padding:12px 18px;border-radius:14px;font-size:.9rem;box-shadow:var(--shadow);z-index:9}
 </style>
 </head>
@@ -126,11 +159,50 @@
   </header>
   <div class="kpis" id="kpis"></div>
   <nav class="main-tabs">
+    <a href="#stats" data-tab="stats">Statistiques</a>
     <a href="#questions" data-tab="questions">Questions</a>
     <a href="#recits" data-tab="recits">Récits</a>
     <a href="#soutiens" data-tab="soutiens">Soutiens</a>
     <a href="#reglages" data-tab="reglages">Réglages</a>
   </nav>
+
+  <section id="tab-stats" hidden>
+    <div class="panel online-hero">
+      <div class="online-n"><span class="dot-live"></span><b id="onlineN">—</b> en ligne maintenant</div>
+      <div class="online-split" id="onlineSplit"></div>
+      <div class="online-refresh" id="onlineAt"></div>
+    </div>
+    <div class="online-views" id="onlineViews"></div>
+
+    <div class="stat-grid" id="sgAccounts"></div>
+    <div class="stat-grid" id="sgEngagement"></div>
+    <div class="stat-grid" id="sgContent"></div>
+
+    <div class="stat-cols">
+      <div class="panel">
+        <h2>14 derniers jours</h2>
+        <div class="trend-row"><span class="trend-label">Comptes créés</span><div class="trend-bars s" id="trendSignups"></div></div>
+        <div class="trend-row"><span class="trend-label">Réponses</span><div class="trend-bars a" id="trendAnswers"></div></div>
+      </div>
+      <div class="panel">
+        <h2>Pays (<span id="ctryTotal">0</span>)</h2>
+        <ol class="ctry-list" id="ctryList"></ol>
+      </div>
+    </div>
+
+    <div class="stat-cols">
+      <div class="panel"><h2>Les trois univers</h2><table class="cat-table" id="catTable"></table></div>
+      <div class="panel">
+        <h2>Questions les plus répondues</h2>
+        <ol class="top-list" id="topAnswered"></ol>
+      </div>
+    </div>
+
+    <div class="stat-cols">
+      <div class="panel"><h2>Les plus positives</h2><ol class="top-list" id="topPositive"></ol></div>
+      <div class="panel"><h2>Les plus difficiles</h2><ol class="top-list" id="topNegative"></ol></div>
+    </div>
+  </section>
 
   <section id="tab-questions" hidden>
     <div class="toolbar">
@@ -501,12 +573,84 @@ function donItem(x) {
     } }, "Revérifier auprès de SofizPay")) : null);
 }
 
+/* --------------------------------------------------------- Statistiques */
+const VIEWN = { home: "Accueil", resultat: "Résultat", defi: "Défi en cours", monde: "Impact mondial", messages: "Messages", soutenir: "Soutenir", autre: "Autre" };
+const flag = cc => cc.replace(/./g, ch => String.fromCodePoint(127397 + ch.charCodeAt(0)));
+let DN;
+const countryName = cc => (DN || (DN = new Intl.DisplayNames(["fr"], { type: "region" }))).of(cc) || cc;
+const fmt = n => n.toLocaleString("fr-FR");
+let statsTimer = null;
+
+function stat(n, label) {
+  return el("div", { class: "stat-card" }, el("b", { text: typeof n === "string" ? n : fmt(n) }), el("span", { text: label }));
+}
+function topRow(q, extra) {
+  return el("li", {}, el("span", { class: "q", text: "#" + q.id + " " + (q.q || "—") }), el("span", { class: "top-n", text: extra }));
+}
+async function loadStats() {
+  let d;
+  try { d = await call("api.php?action=mod_stats"); } catch (e) { if (e.status !== 401) toast(e.message); return; }
+  renderStats(d);
+}
+function renderStats(d) {
+  $("#onlineN").textContent = fmt(d.online.total);
+  $("#onlineSplit").replaceChildren(
+    el("span", {}, el("b", { text: fmt(d.online.accounts) }), " avec compte"),
+    el("span", {}, el("b", { text: fmt(d.online.visitors) }), " sans compte"));
+  $("#onlineAt").textContent = "Actualisé à " + new Date().toLocaleTimeString("fr-FR");
+  const views = Object.entries(d.online.views);
+  $("#onlineViews").replaceChildren(...(views.length
+    ? views.map(([k, n]) => el("span", { text: (VIEWN[k] || k) + " · " + n }))
+    : [el("span", { text: "Personne sur le site en ce moment." })]));
+
+  $("#sgAccounts").replaceChildren(
+    stat(d.accounts.total, "comptes créés"), stat(d.accounts.verified, "adresses confirmées"),
+    stat(d.accounts.google, "connexion Google"), stat(d.accounts.daily, "question du jour activée"));
+
+  $("#sgEngagement").replaceChildren(
+    stat(d.engagement.participants, "participants (≥ 1 réponse)"), stat(d.engagement.answers, "réponses au total"),
+    stat(d.engagement.answers_today, "réponses aujourd'hui"), stat(d.engagement.answers_week, "réponses cette semaine"));
+
+  $("#sgContent").replaceChildren(
+    stat(d.stories.published, "récits publiés"), stat(d.stories.pending, "récits en attente"),
+    stat(d.stories.likes, "« j'aime »"), stat(d.stories.dislikes, "« je n'aime pas »"),
+    stat(d.messages.threads, "conversations"), stat(d.messages.messages, "messages échangés"),
+    stat(d.donations.paid, "soutiens payés"), stat(da(d.donations.sum), "collectés en ligne"));
+
+  const maxS = Math.max(1, ...d.trend.signups), maxA = Math.max(1, ...d.trend.answers);
+  $("#trendSignups").replaceChildren(...d.trend.signups.map((n, i) => el("i", { style: "height:" + Math.max(3, n / maxS * 100) + "%", title: d.trend.days[i] + " : " + n + " compte(s)" })));
+  $("#trendAnswers").replaceChildren(...d.trend.answers.map((n, i) => el("i", { style: "height:" + Math.max(3, n / maxA * 100) + "%", title: d.trend.days[i] + " : " + n + " réponse(s)" })));
+
+  $("#ctryTotal").textContent = d.countries_total;
+  $("#ctryList").replaceChildren(...(d.countries.length
+    ? d.countries.map(([cc, n]) => el("li", {}, el("span", { class: "fl", text: flag(cc) }), el("span", { text: countryName(cc) }), el("span", { class: "ctry-n", text: fmt(n) })))
+    : [el("li", { text: "Aucun pays pour l'instant." })]));
+
+  $("#catTable").replaceChildren(
+    el("tr", {}, el("th", { text: "Univers" }), el("th", { text: "Questions" }), el("th", { text: "Réponses" }), el("th", { text: "% positif" })),
+    ...Object.keys(CATS).map(c => {
+      const x = d.cats[c], pct = x.answers ? Math.round(x.pos / x.answers * 100) : null;
+      return el("tr", {},
+        el("td", {}, el("span", { class: "chip " + c, text: CATS[c] })),
+        el("td", { text: fmt(x.active) + " / " + fmt(x.questions) }),
+        el("td", { text: fmt(x.answers) }),
+        el("td", { text: pct === null ? "—" : pct + " %" }));
+    }));
+
+  $("#topAnswered").replaceChildren(...(d.top.answered.length ? d.top.answered.map(q => topRow(q, fmt(q.n) + " réponse(s)")) : [el("li", { text: "Pas encore de réponses." })]));
+  $("#topPositive").replaceChildren(...(d.top.positive.length ? d.top.positive.map(q => topRow(q, q.pct + " % positif")) : [el("li", { text: "Pas assez de réponses (8 minimum)." })]));
+  $("#topNegative").replaceChildren(...(d.top.negative.length ? d.top.negative.map(q => topRow(q, q.pct + " % négatif")) : [el("li", { text: "Pas assez de réponses (8 minimum)." })]));
+}
+
 /* ------------------------------------------------------------ Navigation */
-const TABS = ["questions", "recits", "soutiens", "reglages"];
+const TABS = ["stats", "questions", "recits", "soutiens", "reglages"];
 function showTab() {
-  const tab = TABS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "questions";
+  const tab = TABS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "stats";
   document.querySelectorAll(".main-tabs a").forEach(a => a.classList.toggle("on", a.dataset.tab === tab));
   for (const k of TABS) $("#tab-" + k).hidden = tab !== k;
+  // « En ligne maintenant » ne se rafraîchit tout seul que pendant qu'on regarde cet onglet.
+  clearInterval(statsTimer);
+  if (tab === "stats") { loadStats(); statsTimer = setInterval(loadStats, 20000); }
 }
 addEventListener("hashchange", showTab);
 
