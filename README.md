@@ -245,7 +245,7 @@ Extension Chrome pour Meta Ads Manager + son site, en français et en anglais.
   l'extension »), connexion Meta Ads, « Mes statistiques » (dernières analyses par compte publicitaire : dépense,
   achats, CPA, ROAS, CTR, CPM, gagnantes / perdantes), campagnes créées (publier / mettre en pause), partage des
   données, activité, suppression du compte.
-- `metakpis/extension/` — l'extension (v2.0.0). Téléchargeable sur
+- `metakpis/extension/` — l'extension (v2.1.0). Téléchargeable sur
   `https://dehini.com/metakpis/download.php` (zip fabriqué à la volée, toujours à jour avec le code déployé).
   Mode d'emploi dans `metakpis/extension/README.md`.
 - `metakpis/api.php` — comptes, jetons de l'extension, statistiques partagées, export Meta (âge, genre, placement,

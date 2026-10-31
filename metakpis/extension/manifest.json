@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "__MSG_ext_name__",
   "short_name": "Stats Meta KPIs",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "__MSG_ext_desc__",
   "default_locale": "en",
   "homepage_url": "https://dehini.com/metakpis/",
