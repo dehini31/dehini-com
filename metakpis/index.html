@@ -820,6 +820,8 @@ async function doConnectExtension() {
   const r = await extSend({ type: "connect", token: d.token, user: { name: user.name, email: user.email } }, 4000);
   if (!r || r.type !== "connected") { toast(t("ext_connect_fail"), 5000); return false; }
   store.set("smk.wantExt", "");
+  // The request is fulfilled: drop ?connect=extension so a reload doesn't link this browser again.
+  if (qs.has("connect")) { qs.delete("connect"); history.replaceState(null, "", location.pathname + (qs.toString() ? "?" + qs : "") + location.hash); }
   toast(t("ext_connected_toast"), 5000);
   await loadProfile();
   return true;
@@ -939,8 +941,12 @@ async function loadProfile() {
   $("#pLoading").hidden = true; $("#pBody").hidden = false;
   renderProfile();
   if (WANT_EXT && store.get("smk.wantExt") === "1") {
-    if (!EXT.present) await extSend({ type: "status" }, 1200);
-    if (EXT.present && !(EXT.connected && EXT.email === user.email)) connectExtension();
+    // Ask the extension where it stands before linking (its first status message may not have arrived yet).
+    await extSend({ type: "status" }, 1500);
+    if (EXT.present && EXT.connected && EXT.email === user.email) {
+      store.set("smk.wantExt", "");
+      if (qs.has("connect")) { qs.delete("connect"); history.replaceState(null, "", location.pathname + (qs.toString() ? "?" + qs : "") + location.hash); }
+    } else if (EXT.present) connectExtension();
   }
 }
 const SVG = {

@@ -374,14 +374,35 @@ function creative_texts(array $cr): array
     return $t;
 }
 
-/** Détails de plusieurs publicités (par lots de 50 identifiants). */
+/**
+ * Détails de plusieurs publicités. Le paramètre « ids » (plusieurs objets en un appel) n'est plus accepté
+ * par Meta depuis la v26 : on passe par des requêtes groupées (batch, 50 par appel), et si Meta refusait
+ * le batch, par des lectures une à une des publicités qui ont le plus dépensé.
+ */
 function ads_details(array $ids, string $token): array
 {
+    $fields = 'name,effective_status,campaign{name,objective},adset{name},creative{' . CREATIVE_FIELDS . '}';
+    $ids = array_values(array_unique(array_filter(array_map('strval', $ids), function ($id) { return preg_match('/^\d+$/', $id) === 1; })));
     $out = [];
-    foreach (array_chunk(array_values(array_unique($ids)), 50) as $chunk) {
-        $d = graph('GET', '', ['ids' => implode(',', $chunk), 'fields' => 'name,effective_status,campaign{name,objective},adset{name},creative{' . CREATIVE_FIELDS . '}'], $token);
-        foreach ($d as $id => $ad) {
-            if (is_array($ad)) $out[(string) $id] = $ad;
+    try {
+        foreach (array_chunk($ids, 50) as $chunk) {
+            $batch = array_map(function ($id) use ($fields) {
+                return ['method' => 'GET', 'relative_url' => $id . '?fields=' . rawurlencode($fields)];
+            }, $chunk);
+            $res = graph('POST', '', ['batch' => $batch, 'include_headers' => false], $token);
+            foreach ($chunk as $i => $id) {
+                $r = $res[$i] ?? null;
+                if (!is_array($r) || (int) ($r['code'] ?? 0) !== 200) continue;
+                $ad = json_decode((string) ($r['body'] ?? ''), true);
+                if (is_array($ad) && !isset($ad['error'])) $out[$id] = $ad;
+            }
+        }
+    } catch (GraphError $e) {
+        $code = (int) ($e->err['code'] ?? 0);
+        if (in_array($code, [4, 17, 32, 190, 613, 80000, 80004], true)) throw $e; // jeton ou limite : inutile d'insister
+        foreach (array_slice($ids, 0, 40) as $id) {
+            if (isset($out[$id])) continue;
+            $out[$id] = graph('GET', $id, ['fields' => $fields], $token);
         }
     }
     return $out;
