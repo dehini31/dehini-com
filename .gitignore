@@ -6,6 +6,7 @@
 # Secrets : jamais commités.
 /admin/config.php
 /impact/config.php
+/metakpis/config.php
 
 # Images envoyées depuis /admin.
 /uploads/*
