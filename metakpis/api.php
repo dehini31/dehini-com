@@ -33,7 +33,7 @@ header('Content-Type: application/json; charset=utf-8');
 
 const SID_COOKIE = 'smk_sid';
 const SESSION_DAYS = 60;
-const EXT_VERSION = '2.0.0';
+const EXT_VERSION = '2.1.0';
 
 $action = (string) ($_GET['action'] ?? '');
 $isPost = ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST';

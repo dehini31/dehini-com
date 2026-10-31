@@ -1,4 +1,4 @@
-# Stats Meta KPIs — extension Chrome (v2.0.0)
+# Stats Meta KPIs — extension Chrome (v2.1.0)
 
 *English below.*
 
@@ -7,7 +7,7 @@ Tableau de bord KPI dans Meta Ads Manager, relié à un compte gratuit sur
 
 ## Installer (1 minute)
 
-1. Décompresser `stats-meta-kpis-2.0.0.zip` dans un dossier que vous gardez.
+1. Décompresser `stats-meta-kpis-2.1.0.zip` dans un dossier que vous gardez.
 2. Ouvrir `chrome://extensions` et activer le **Mode développeur** (en haut à droite).
 3. Cliquer sur **Charger l'extension non empaquetée** et choisir le dossier `stats-meta-kpis`.
 4. Créer un compte sur [dehini.com/metakpis](https://dehini.com/metakpis/) (Google ou email), puis dans le profil
@@ -22,6 +22,10 @@ précédente (« Rotinia – Meta Ads KPI Dashboard ») sont repris automatiquem
 - **Tableau de bord** (sans connexion Meta) : lit le tableau Ads Manager affiché, colore CPA, ROAS, CTR, CPC, CPM,
   fréquence, hook / hold rate (vert / orange / rouge selon vos seuils) et répond aux 5 questions : campagnes qui
   performent, ensembles à optimiser, publicités qui perdent de l'argent, publicités à analyser, budget gaspillé.
+- **Que faire ?** (v2.1) : pour chaque campagne, ensemble et publicité, un diagnostic étape par étape du tunnel
+  (diffusion, accroche, rétention, clic, page de destination, conversion, rentabilité) et les actions à mener :
+  refaire l'accroche, clarifier l'offre, accélérer la page, revoir le ciblage, augmenter le budget ou couper (avec la
+  cause probable). « Plan d'action » regroupe les lignes par étape à traiter ; les commentaires sont aussi dans l'export Excel.
 - **Export Excel** (`⬇ Excel`) : un fichier `.xlsx` avec un résumé, les campagnes / ensembles / publicités analysés et,
   avec la connexion Meta Ads, les statistiques par **placement**, **âge** et **genre** (au niveau compte, campagne,
   ensemble ou publicité) et les **textes des annonces** (titre, texte principal, description, lien, bouton) avec leurs KPI.
@@ -43,14 +47,14 @@ précédente (« Rotinia – Meta Ads KPI Dashboard ») sont repris automatiquem
 
 ---
 
-# Stats Meta KPIs — Chrome extension (v2.0.0)
+# Stats Meta KPIs — Chrome extension (v2.1.0)
 
 KPI dashboard inside Meta Ads Manager, linked to a free account on
 [dehini.com/metakpis](https://dehini.com/metakpis/?lang=en). French and English.
 
 ## Install (about 1 minute)
 
-1. Unzip `stats-meta-kpis-2.0.0.zip` into a folder you will keep.
+1. Unzip `stats-meta-kpis-2.1.0.zip` into a folder you will keep.
 2. Open `chrome://extensions` and switch on **Developer mode** (top right).
 3. Click **Load unpacked** and select the `stats-meta-kpis` folder.
 4. Create an account on [dehini.com/metakpis](https://dehini.com/metakpis/?lang=en) (Google or email), then click
@@ -61,6 +65,9 @@ KPI dashboard inside Meta Ads Manager, linked to a free account on
 
 - **Dashboard** (no Meta connection needed): reads the Ads Manager table on screen, colours CPA, ROAS, CTR, CPC, CPM,
   frequency, hook / hold rate against your thresholds and answers the 5 questions.
+- **What to do** (v2.1): for every campaign, ad set and ad, a step-by-step funnel diagnosis (delivery, hook, retention,
+  click, landing page, conversion, profitability) with the actions to take — new hook, clearer offer, faster page,
+  targeting, scale or cut (with the probable cause). Also in the Excel export.
 - **Excel export**: summary, scanned campaigns / ad sets / ads and, with the Meta Ads connection, stats by
   **placement**, **age** and **gender** plus **ad copy** (headline, primary text, description, link, call to action).
 - **Suggested campaign** (Meta Ads connection required): built from your best ad, ages, gender and placements; fully

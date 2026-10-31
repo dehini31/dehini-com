@@ -1,4 +1,4 @@
-// Stats Meta KPIs · Meta Ads KPI dashboard  v2.0.0  (FR / EN)
+// Stats Meta KPIs · Meta Ads KPI dashboard  v2.1.0  (FR / EN)
 // Overlay for Meta Ads Manager, linked to a dehini.com/metakpis account.
 // - Dashboard: reads only the table already loaded on screen. It scrolls the grid view, switches the
 //   Campaigns / Ad sets / Ads tabs and (when you ask) reloads the page with another date range or column set.
@@ -12,7 +12,7 @@
   if (window.__smk) { try { window.__smk.open(); } catch (e) { } return; }
 
   // ------------------------------------------------------------------ config
-  const VERSION = '2.0.0';
+  const VERSION = '2.1.0';
   const LS_KEY = 'smk.settings.v2';
   const LS_OLD = 'rotiniaKpi.settings.v1';
   const SS_REOPEN = 'smk.reopen';
@@ -38,9 +38,10 @@
       hook: { dir: 'up', good: 30, warn: 20 },
       hold: { dir: 'up', good: 20, warn: 10 },
       lpvr: { dir: 'up', good: 70, warn: 50 },
+      cvr: { dir: 'up', good: 3, warn: 1.5 },   // purchases ÷ landing page views (or link clicks)
     },
   };
-  const TMETA = { roas: { unit: '×' }, ctr: { unit: '%' }, cpc: { unit: 'cur' }, cpm: { unit: 'cur' }, freq: { unit: '' }, hook: { unit: '%' }, hold: { unit: '%' }, lpvr: { unit: '%' } };
+  const TMETA = { roas: { unit: '×' }, ctr: { unit: '%' }, cpc: { unit: 'cur' }, cpm: { unit: 'cur' }, freq: { unit: '' }, hook: { unit: '%' }, hold: { unit: '%' }, lpvr: { unit: '%' }, cvr: { unit: '%' } };
   const PURCHASE_ACTIONS = ['offsite_conversion.fb_pixel_purchase', 'omni_purchase', 'purchase', 'onsite_web_purchase'];
   const PURCHASE_RE = /achat|purchase|compra|acquist|kauf|شراء|aankoop|zakup|satın/i;
   const LEVELS = ['campaign', 'adset', 'ad'];
@@ -181,6 +182,130 @@
       err_meta_error: 'Meta a refusé : {m}', err_meta_rate: 'Meta limite les requêtes pour le moment : réessayez dans quelques minutes.', err_auth: 'Session de l\'extension expirée : reconnectez-vous.',
       err_network: 'Serveur Stats Meta KPIs injoignable.', err_rate: 'Trop de demandes : patientez un peu.', err_bad_account: 'Compte publicitaire invalide.', err_bad_date: 'Période invalide.', err_bad_budget: 'Budget invalide.',
       err_bad_placements: 'Choisissez au moins un placement.', err_bad_link: 'Lien invalide (https://…).', err_bad_source: 'Annonce source inutilisable.', err_generic: 'Une erreur est survenue.', err_bridge: 'L\'extension ne répond pas : rechargez la page.',
+      th_action: "Que faire ?",
+      th_cvr: "Conv.",
+      m_cvr: "Taux de conversion (achats ÷ vues de page)",
+      card_cvr: "Taux de conversion",
+      cvr_sub: "achats ÷ vues de page",
+      x_cvr: "Taux de conversion (%)",
+      x_stage: "Étape à traiter",
+      x_action: "Que faire en priorité",
+      x_comments: "Tous les commentaires",
+      cause: "cause probable : {c}",
+      note_adset: "→ à régler dans l'ensemble de publicités.",
+      note_ads: "→ voir le détail au niveau Publicités.",
+      funnel: "Tunnel :",
+      adv_none: "Rien à signaler.",
+      show_comments: "Tous les commentaires",
+      plan_t: "Plan d'action — {lv}",
+      plan_all: "Tout afficher",
+      plan_h: "Nombre de lignes par étape à traiter en priorité (pour les perdantes : la cause probable) et dépense concernée. Cliquez pour filtrer le tableau, puis sur « Que faire ? » pour le détail.",
+      sg_data: "Données",
+      sg_learning: "Apprentissage",
+      sg_delivery: "Diffusion",
+      sg_audience: "Ciblage",
+      sg_hook: "Accroche",
+      sg_hold: "Rétention",
+      sg_click: "Clic",
+      sg_offer: "Offre",
+      sg_landing: "Page",
+      sg_conversion: "Conversion",
+      sg_value: "Rentabilité",
+      sg_scale: "Budget",
+      sg_cut: "Couper",
+      adv_nodata_t: "Pas encore assez de données",
+      adv_nodata_w: "{i} impressions, {s} dépensés (minimum : {mi} impressions ou {ms}).",
+      adv_nodata_d: "Laisser tourner sans rien modifier|Juger seulement une fois le minimum atteint",
+      adv_learnlim_t: "Apprentissage limité",
+      adv_learnlim_w: "Meta n'obtient pas assez de conversions (≈ 50 par semaine) pour bien optimiser.",
+      adv_learnlim_d: "Regrouper les ensembles qui visent la même audience|Augmenter le budget de l'ensemble|Ou optimiser pour un événement plus fréquent (ajout au panier, début de commande)",
+      adv_learning_t: "En phase d'apprentissage",
+      adv_learning_w: "La diffusion se stabilise encore.",
+      adv_learning_d: "Ne pas toucher au budget, au ciblage ni aux créas pendant l'apprentissage (≈ 7 jours ou 50 conversions)",
+      adv_cpm_t: "Diffusion trop chère (CPM)",
+      adv_cpm_w: "CPM {v}, au-dessus de {w}.",
+      adv_cpm_d: "Élargir l'audience (Audience Advantage+, moins d'exclusions et d'intérêts)|Passer en placements Advantage+ ou ajouter Reels et Stories|Vérifier le classement de qualité de la publicité|Éviter que plusieurs ensembles visent la même audience",
+      adv_freq_hi_t: "Audience saturée",
+      adv_freq_hi_w: "Fréquence {v} : les mêmes personnes voient la publicité trop souvent.",
+      adv_freq_hi_d: "Ajouter 2 ou 3 nouvelles créas|Élargir l'audience ou ajouter un lookalike|Exclure les acheteurs récents",
+      adv_freq_mid_t: "Fréquence à surveiller",
+      adv_freq_mid_w: "Fréquence {v}.",
+      adv_freq_mid_d: "Préparer de nouvelles créas avant la saturation",
+      adv_target_t: "Ciblage peu réceptif",
+      adv_target_w: "Le CPM est bas ({cpm}) mais le CTR lien est faible ({ctr}) : la publicité est vue par des gens peu intéressés.",
+      adv_target_d: "Tester une audience plus qualifiée : lookalike d'acheteurs, intérêts proches du produit|Vérifier âge, genre et pays (export Excel par âge et genre)|Retirer les placements à faible intention (Audience Network)",
+      adv_hook_lo_t: "Accroche faible (3 premières secondes)",
+      adv_hook_lo_w: "Seulement {v} des personnes regardent 3 secondes (objectif ≥ {g} %).",
+      adv_hook_lo_d: "Montrer le produit ou le résultat dès la première seconde|Ajouter un texte fort à l'écran : problème, promesse ou prix|Commencer par du mouvement ou un visage, pas par un logo|Tester 3 accroches différentes sur la même vidéo",
+      adv_hook_mid_t: "Accroche à renforcer",
+      adv_hook_mid_w: "{v} regardent 3 secondes (objectif ≥ {g} %).",
+      adv_hook_mid_d: "Tester une ouverture plus directe (produit, prix ou résultat dès le début)",
+      adv_hold_lo_t: "La vidéo perd l'attention",
+      adv_hold_lo_w: "Hold rate {v} : les gens décrochent avant la fin.",
+      adv_hold_lo_d: "Raccourcir à 15–20 secondes|Montrer le bénéfice et l'offre plus tôt|Rythme plus rapide, sous-titres, gros plans sur le produit",
+      adv_hold_mid_t: "Rétention moyenne",
+      adv_hold_mid_w: "Hold rate {v}.",
+      adv_hold_mid_d: "Couper les passages lents et avancer l'offre",
+      adv_ctr_lo_t: "Peu de clics : visuel ou message",
+      adv_ctr_lo_w: "CTR lien {v} (objectif ≥ {g} %).",
+      adv_ctr_lo_d: "Nouveau visuel : produit en situation, avant / après, avis clients|Tester un autre angle : problème, bénéfice, prix, urgence|Mettre le bénéfice principal dans la première ligne du texte",
+      adv_ctr_mid_t: "CTR à améliorer",
+      adv_ctr_mid_w: "CTR lien {v} (objectif ≥ {g} %).",
+      adv_ctr_mid_d: "Tester une variante du visuel ou de la première ligne du texte",
+      adv_watch_noclick_t: "Ils regardent mais ne cliquent pas : l'offre",
+      adv_watch_noclick_w: "Bonne accroche ({h}) mais CTR lien faible ({v}) : l'offre ou l'appel à l'action ne convainc pas.",
+      adv_watch_noclick_d: "Rendre l'offre claire et visible : prix, réduction, livraison, paiement à la livraison|Donner une raison d'agir maintenant : stock limité, promo jusqu'à une date|Dire clairement quoi faire (« Commandez maintenant ») avec le bon bouton",
+      adv_cta_t: "Interactions sans clic sur le lien",
+      adv_cta_w: "CTR (tous) {a} contre CTR lien {v} : les gens réagissent mais ne vont pas sur la page.",
+      adv_cta_d: "Ajouter un appel à l'action explicite dans la vidéo et le texte|Vérifier le bouton (Acheter, Commander)|Éviter les visuels qui invitent à cliquer sur l'image plutôt que sur le lien",
+      adv_lpv_lo_t: "Page de destination : clics perdus",
+      adv_lpv_lo_w: "{lost} des clics n'arrivent pas sur la page (vues de page ÷ clics : {v}).",
+      adv_lpv_lo_d: "Tester la vitesse sur mobile (objectif moins de 3 secondes) et alléger les images|Vérifier que le lien fonctionne, sans redirection|Vérifier que le pixel (PageView) se déclenche sur la page",
+      adv_lpv_mid_t: "Page un peu lente",
+      adv_lpv_mid_w: "Vues de page ÷ clics : {v}.",
+      adv_lpv_mid_d: "Alléger la page (images, scripts) et retester la vitesse mobile",
+      adv_click_nobuy_t: "Ils cliquent mais n'achètent pas : page ou offre",
+      adv_click_nobuy_w: "{c} visites, taux de conversion {v} (objectif ≥ {g} %).",
+      adv_click_nobuy_d: "Reprendre en haut de la page la promesse de la publicité (titre, photo, prix)|Photos réelles, avis clients, garantie, livraison et paiement à la livraison bien visibles|Formulaire de commande court (nom, téléphone, wilaya)|Revoir le prix ou proposer un lot / une promotion|Vérifier que l'événement Achat (Purchase) remonte bien",
+      adv_cvr_lo_t: "Conversion faible",
+      adv_cvr_lo_w: "Taux de conversion {v} sur {c} visites (objectif ≥ {g} %).",
+      adv_cvr_lo_d: "Corriger d'abord le visuel (peu de clics, souvent peu qualifiés)|Puis aligner la page sur la promesse de la publicité",
+      adv_cvr_mid_t: "Conversion à optimiser",
+      adv_cvr_mid_w: "Taux de conversion {v} (objectif ≥ {g} %).",
+      adv_cvr_mid_d: "Tester un titre de page plus clair, des avis clients, un formulaire plus court",
+      adv_aov_lo_t: "Panier trop petit",
+      adv_aov_lo_w: "CPA correct mais ROAS {roas} : panier moyen {aov}.",
+      adv_aov_lo_d: "Proposer des lots (2 ou 3 pièces) ou un produit complémentaire|Livraison offerte à partir d'un montant|Mettre en avant l'offre la plus rentable",
+      adv_aov_hi_t: "Panier élevé : rentable malgré le CPA",
+      adv_aov_hi_w: "Panier moyen {aov}, ROAS {roas}.",
+      adv_aov_hi_d: "Garder si la marge suit|Ajuster le CPA cible dans les réglages si besoin",
+      adv_scale_campaign_t: "Gagnante : augmenter le budget",
+      adv_scale_campaign_w: "{p} achats, CPA {cpa}, ROAS {roas}.",
+      adv_scale_campaign_d: "Augmenter le budget de 20 à 30 % tous les 3–4 jours|Déplacer le budget des campagnes perdantes vers celle-ci|Utiliser « ✨ Campagne » pour en créer une variante",
+      adv_scale_adset_t: "Gagnant : augmenter ou dupliquer",
+      adv_scale_adset_w: "{p} achats, CPA {cpa}, ROAS {roas}.",
+      adv_scale_adset_d: "Augmenter le budget de 20 à 30 % tous les 3–4 jours|Dupliquer vers une audience plus large ou un lookalike|Ne pas modifier le ciblage qui fonctionne",
+      adv_scale_ad_t: "Gagnante : la décliner",
+      adv_scale_ad_w: "{p} achats, CPA {cpa}, ROAS {roas}.",
+      adv_scale_ad_d: "Garder cette publicité active|Créer 2 ou 3 variantes (nouvelles accroches, autres visuels, même offre)|La réutiliser dans d'autres ensembles",
+      adv_win_wait_t: "Prometteuse, à confirmer",
+      adv_win_wait_w: "Seulement {p} achat(s) : pas encore fiable (seuil : {n}).",
+      adv_win_wait_d: "Laisser tourner sans modifier jusqu'à {n} achats",
+      adv_cut_campaign_t: "Perdante : couper ou corriger",
+      adv_cut_campaign_w: "{s} dépensés sans rentabilité.",
+      adv_cut_campaign_d: "Mettre en pause ou baisser fortement le budget|Réaffecter le budget aux campagnes gagnantes",
+      adv_cut_adset_t: "Perdant : mettre en pause",
+      adv_cut_adset_w: "{s} dépensés sans rentabilité.",
+      adv_cut_adset_d: "Mettre l'ensemble en pause|Si l'audience est nouvelle, la retester avec la meilleure créa du compte",
+      adv_cut_ad_t: "Perdante : mettre en pause",
+      adv_cut_ad_w: "{s} dépensés sans rentabilité.",
+      adv_cut_ad_d: "Mettre cette publicité en pause|Garder les autres publicités de l'ensemble",
+      adv_wait_buy_t: "Pas encore d'achat",
+      adv_wait_buy_w: "{s} dépensés, aucune vente pour l'instant.",
+      adv_wait_buy_d: "Attendre jusqu'à {k} de dépense avant de couper|Vérifier que le pixel enregistre bien les achats",
+      adv_hold_budget_t: "Ne pas augmenter le budget",
+      adv_hold_budget_w: "CPA {cpa}, au-dessus de l'objectif ({t}).",
+      adv_hold_budget_d: "Corriger d'abord les étapes en rouge ou orange",
     },
     en: {
       sub_readonly: 'Read-only · data from this Ads Manager view', rescan: '↻ Rescan', rescan_t: 'Read the table again',
@@ -290,6 +415,130 @@
       err_meta_error: 'Meta refused: {m}', err_meta_rate: 'Meta is rate-limiting requests: try again in a few minutes.', err_auth: 'Extension session expired: sign in again.',
       err_network: 'Stats Meta KPIs server unreachable.', err_rate: 'Too many requests: wait a little.', err_bad_account: 'Invalid ad account.', err_bad_date: 'Invalid date range.', err_bad_budget: 'Invalid budget.',
       err_bad_placements: 'Pick at least one placement.', err_bad_link: 'Invalid link (https://…).', err_bad_source: 'Source ad can\'t be used.', err_generic: 'Something went wrong.', err_bridge: 'The extension does not answer: reload the page.',
+      th_action: "What to do",
+      th_cvr: "Conv.",
+      m_cvr: "Conversion rate (purchases ÷ landing page views)",
+      card_cvr: "Conversion rate",
+      cvr_sub: "purchases ÷ landing page views",
+      x_cvr: "Conversion rate (%)",
+      x_stage: "Step to fix",
+      x_action: "Priority action",
+      x_comments: "All comments",
+      cause: "probable cause: {c}",
+      note_adset: "→ set in the ad set.",
+      note_ads: "→ see the details at Ads level.",
+      funnel: "Funnel:",
+      adv_none: "Nothing to report.",
+      show_comments: "All comments",
+      plan_t: "Action plan — {lv}",
+      plan_all: "Show all",
+      plan_h: "Rows per step to fix first (for losing rows: the probable cause) and the spend involved. Click to filter the table, then on “What to do” for details.",
+      sg_data: "Data",
+      sg_learning: "Learning",
+      sg_delivery: "Delivery",
+      sg_audience: "Targeting",
+      sg_hook: "Hook",
+      sg_hold: "Retention",
+      sg_click: "Click",
+      sg_offer: "Offer",
+      sg_landing: "Landing page",
+      sg_conversion: "Conversion",
+      sg_value: "Profitability",
+      sg_scale: "Budget",
+      sg_cut: "Cut",
+      adv_nodata_t: "Not enough data yet",
+      adv_nodata_w: "{i} impressions, {s} spent (minimum: {mi} impressions or {ms}).",
+      adv_nodata_d: "Let it run without changes|Judge only once the minimum is reached",
+      adv_learnlim_t: "Learning limited",
+      adv_learnlim_w: "Meta isn't getting enough conversions (≈ 50 a week) to optimize well.",
+      adv_learnlim_d: "Merge ad sets that target the same audience|Raise the ad set budget|Or optimize for a more frequent event (add to cart, initiate checkout)",
+      adv_learning_t: "In the learning phase",
+      adv_learning_w: "Delivery is still stabilizing.",
+      adv_learning_d: "Don't change budget, targeting or creatives during learning (≈ 7 days or 50 conversions)",
+      adv_cpm_t: "Delivery too expensive (CPM)",
+      adv_cpm_w: "CPM {v}, above {w}.",
+      adv_cpm_d: "Broaden the audience (Advantage+ audience, fewer exclusions and interests)|Use Advantage+ placements or add Reels and Stories|Check the ad's quality ranking|Avoid several ad sets targeting the same audience",
+      adv_freq_hi_t: "Audience fatigue",
+      adv_freq_hi_w: "Frequency {v}: the same people see the ad too often.",
+      adv_freq_hi_d: "Add 2 or 3 new creatives|Broaden the audience or add a lookalike|Exclude recent buyers",
+      adv_freq_mid_t: "Frequency to watch",
+      adv_freq_mid_w: "Frequency {v}.",
+      adv_freq_mid_d: "Prepare new creatives before fatigue sets in",
+      adv_target_t: "Unreceptive targeting",
+      adv_target_w: "CPM is low ({cpm}) but link CTR is weak ({ctr}): the ad reaches people who aren't interested.",
+      adv_target_d: "Test a more qualified audience: buyer lookalike, interests close to the product|Check age, gender and country (Excel export by age and gender)|Remove low-intent placements (Audience Network)",
+      adv_hook_lo_t: "Weak hook (first 3 seconds)",
+      adv_hook_lo_w: "Only {v} of people watch 3 seconds (target ≥ {g}%).",
+      adv_hook_lo_d: "Show the product or the result in the first second|Add strong on-screen text: problem, promise or price|Open with motion or a face, not a logo|Test 3 different hooks on the same video",
+      adv_hook_mid_t: "Hook could be stronger",
+      adv_hook_mid_w: "{v} watch 3 seconds (target ≥ {g}%).",
+      adv_hook_mid_d: "Test a more direct opening (product, price or result up front)",
+      adv_hold_lo_t: "The video loses attention",
+      adv_hold_lo_w: "Hold rate {v}: people drop before the end.",
+      adv_hold_lo_d: "Cut to 15–20 seconds|Show the benefit and the offer earlier|Faster pace, captions, product close-ups",
+      adv_hold_mid_t: "Average retention",
+      adv_hold_mid_w: "Hold rate {v}.",
+      adv_hold_mid_d: "Cut slow parts and bring the offer forward",
+      adv_ctr_lo_t: "Few clicks: creative or message",
+      adv_ctr_lo_w: "Link CTR {v} (target ≥ {g}%).",
+      adv_ctr_lo_d: "New visual: product in use, before / after, customer reviews|Test another angle: problem, benefit, price, urgency|Put the main benefit in the first line of the text",
+      adv_ctr_mid_t: "CTR to improve",
+      adv_ctr_mid_w: "Link CTR {v} (target ≥ {g}%).",
+      adv_ctr_mid_d: "Test a variant of the visual or of the first line of text",
+      adv_watch_noclick_t: "They watch but don't click: the offer",
+      adv_watch_noclick_w: "Good hook ({h}) but weak link CTR ({v}): the offer or call to action doesn't convince.",
+      adv_watch_noclick_d: "Make the offer clear and visible: price, discount, delivery, cash on delivery|Give a reason to act now: limited stock, promo until a date|Say clearly what to do (“Order now”) with the right button",
+      adv_cta_t: "Engagement without link clicks",
+      adv_cta_w: "CTR (all) {a} vs link CTR {v}: people react but don't go to the page.",
+      adv_cta_d: "Add an explicit call to action in the video and the text|Check the button (Shop now, Order now)|Avoid visuals that invite clicking the image instead of the link",
+      adv_lpv_lo_t: "Landing page: lost clicks",
+      adv_lpv_lo_w: "{lost} of clicks never reach the page (landing page views ÷ clicks: {v}).",
+      adv_lpv_lo_d: "Test mobile speed (target under 3 seconds) and lighten images|Check the link works, with no redirect|Check the pixel (PageView) fires on the page",
+      adv_lpv_mid_t: "Page a bit slow",
+      adv_lpv_mid_w: "Landing page views ÷ clicks: {v}.",
+      adv_lpv_mid_d: "Lighten the page (images, scripts) and retest mobile speed",
+      adv_click_nobuy_t: "They click but don't buy: page or offer",
+      adv_click_nobuy_w: "{c} visits, conversion rate {v} (target ≥ {g}%).",
+      adv_click_nobuy_d: "Repeat the ad's promise at the top of the page (headline, photo, price)|Real photos, customer reviews, guarantee, delivery and cash on delivery clearly visible|Short order form (name, phone, region)|Review the price or offer a bundle / promotion|Check the Purchase event is tracked",
+      adv_cvr_lo_t: "Low conversion",
+      adv_cvr_lo_w: "Conversion rate {v} over {c} visits (target ≥ {g}%).",
+      adv_cvr_lo_d: "Fix the creative first (few clicks, often poorly qualified)|Then align the page with the ad's promise",
+      adv_cvr_mid_t: "Conversion to optimize",
+      adv_cvr_mid_w: "Conversion rate {v} (target ≥ {g}%).",
+      adv_cvr_mid_d: "Test a clearer page headline, customer reviews, a shorter form",
+      adv_aov_lo_t: "Basket too small",
+      adv_aov_lo_w: "CPA is fine but ROAS is {roas}: average order {aov}.",
+      adv_aov_lo_d: "Offer bundles (2 or 3 items) or a complementary product|Free delivery above an amount|Highlight the most profitable offer",
+      adv_aov_hi_t: "Large basket: profitable despite the CPA",
+      adv_aov_hi_w: "Average order {aov}, ROAS {roas}.",
+      adv_aov_hi_d: "Keep it if the margin holds|Adjust the target CPA in settings if needed",
+      adv_scale_campaign_t: "Winning: raise the budget",
+      adv_scale_campaign_w: "{p} purchases, CPA {cpa}, ROAS {roas}.",
+      adv_scale_campaign_d: "Raise the budget by 20–30% every 3–4 days|Move budget from losing campaigns to this one|Use “✨ Campaign” to create a variant",
+      adv_scale_adset_t: "Winning: scale or duplicate",
+      adv_scale_adset_w: "{p} purchases, CPA {cpa}, ROAS {roas}.",
+      adv_scale_adset_d: "Raise the budget by 20–30% every 3–4 days|Duplicate to a broader audience or a lookalike|Don't change the targeting that works",
+      adv_scale_ad_t: "Winning: make variations",
+      adv_scale_ad_w: "{p} purchases, CPA {cpa}, ROAS {roas}.",
+      adv_scale_ad_d: "Keep this ad running|Create 2 or 3 variants (new hooks, other visuals, same offer)|Reuse it in other ad sets",
+      adv_win_wait_t: "Promising, to confirm",
+      adv_win_wait_w: "Only {p} purchase(s): not reliable yet (threshold: {n}).",
+      adv_win_wait_d: "Let it run unchanged until {n} purchases",
+      adv_cut_campaign_t: "Losing: cut or fix",
+      adv_cut_campaign_w: "{s} spent without profit.",
+      adv_cut_campaign_d: "Pause it or cut the budget sharply|Move the budget to winning campaigns",
+      adv_cut_adset_t: "Losing: pause it",
+      adv_cut_adset_w: "{s} spent without profit.",
+      adv_cut_adset_d: "Pause the ad set|If the audience is new, retest it with the account's best creative",
+      adv_cut_ad_t: "Losing: pause it",
+      adv_cut_ad_w: "{s} spent without profit.",
+      adv_cut_ad_d: "Pause this ad|Keep the other ads in the ad set",
+      adv_wait_buy_t: "No purchase yet",
+      adv_wait_buy_w: "{s} spent, no sale so far.",
+      adv_wait_buy_d: "Wait until {k} spend before cutting|Check the pixel records purchases",
+      adv_hold_budget_t: "Don't raise the budget",
+      adv_hold_budget_w: "CPA {cpa}, above target ({t}).",
+      adv_hold_budget_d: "Fix the red or orange steps first",
     },
   };
 
@@ -723,6 +972,9 @@
       ? (r.thru != null && r.impressions > 0 ? (r.thru / r.impressions) * 100 : null)
       : (r.thru != null && r.v3s > 0 ? (r.thru / r.v3s) * 100 : null);
     r.lpvRate = r.lpv != null && r.linkClicks > 0 ? (r.lpv / r.linkClicks) * 100 : null;
+    // Conversion rate: purchases ÷ landing page views (link clicks when LPV is not in the view).
+    const den = r.lpv > 0 ? r.lpv : r.linkClicks;
+    r.cvr = r.purchases != null && den > 0 ? (r.purchases / den) * 100 : null;
     return r;
   }
   function availability(hdr) {
@@ -783,6 +1035,7 @@
       case 'cpm': return trafficOK(r) ? band('cpm', r.cpm) : 'gray';
       case 'freq': return trafficOK(r) ? band('freq', r.frequency) : 'gray';
       case 'lpvr': return trafficOK(r) ? band('lpvr', r.lpvRate) : 'gray';
+      case 'cvr': return convDataOK(r) ? band('cvr', r.cvr) : 'gray';
       case 'hook': return trafficOK(r) ? band('hook', r.hook) : 'gray';
       case 'hold': return holdOK(r) ? band('hold', r.hold) : 'gray';
       default: return null;
@@ -823,7 +1076,110 @@
   }
   function enrich(ds) {
     if (!ds) return [];
-    return ds.rows.map(r => Object.assign(r, { v: verdictOf(r), diag: diagOf(r) }));
+    return ds.rows.map(r => { Object.assign(r, { v: verdictOf(r), diag: diagOf(r) }); r.adv = adviceOf(r, ds.level); return r; });
+  }
+
+  // ------------------------------------------------------------------ advice: what to do, step by step through the funnel
+  // Each row gets comments per funnel step (delivery → hook → retention → click → landing page → conversion → value),
+  // plus a budget decision. The primary action is the earliest broken step (fix the top of the funnel first);
+  // winners get "scale", losers get "cut" with the probable cause.
+  const STAGES = { data: '📊', learning: '⏳', delivery: '💸', audience: '🎯', hook: '🎣', hold: '🎬', click: '👆', offer: '🏷️', landing: '🌐', conversion: '🛒', value: '💰', scale: '🚀', cut: '✂️' };
+  const STAGE_ORDER = Object.keys(STAGES);
+  const convDen = r => (r.lpv > 0 ? r.lpv : r.linkClicks);
+  const convDataOK = r => r.purchases != null && (convDen(r) || 0) >= 40;
+  const worst = (...xs) => ['red', 'orange', 'green'].find(c => xs.includes(c)) || 'gray';
+  function adviceOf(r, level) {
+    const out = [];
+    const add = (stage, sev, key, vars) => out.push({ stage, sev, key, vars: vars || {} });
+    const good = m => NF1.format(S.t[m].good);
+    const v = r.v || verdictOf(r);
+    const deliv = String(r.delivery || '');
+    if (/apprentissage limit|learning limited|limited learning/i.test(deliv)) add('learning', 'orange', 'learnlim');
+    else if (/apprentissage|learning/i.test(deliv)) add('learning', 'gray', 'learning');
+    if (r.spend == null || (!trafficOK(r) && !convOK(r))) {
+      add('data', 'gray', 'nodata', { i: int(r.impressions), s: money(r.spend), mi: int(S.minImpressions), ms: money(S.minSpend) });
+      return finishAdvice(out, v);
+    }
+    const bt = trafficOK(r) ? band('ctr', r.ctrLink) : 'gray';
+    if (trafficOK(r)) {
+      const bc = band('cpm', r.cpm), bf = band('freq', r.frequency);
+      if (bc === 'red') add('delivery', 'red', 'cpm', { v: money(r.cpm), w: money(S.t.cpm.warn) });
+      if (bf === 'red') add('audience', 'red', 'freq_hi', { v: x2(r.frequency) });
+      else if (bf === 'orange') add('audience', 'orange', 'freq_mid', { v: x2(r.frequency) });
+      if (bc === 'green' && bt === 'red') add('audience', 'orange', 'target', { cpm: money(r.cpm), ctr: pct(r.ctrLink) });
+      const bh = r.hook != null ? band('hook', r.hook) : null;
+      if (bh === 'red') add('hook', 'red', 'hook_lo', { v: pct(r.hook, 1), g: good('hook') });
+      else if (bh === 'orange') add('hook', 'orange', 'hook_mid', { v: pct(r.hook, 1), g: good('hook') });
+      if (holdOK(r) && r.hold != null) {
+        const bo = band('hold', r.hold);
+        if (bo === 'red') add('hold', 'red', 'hold_lo', { v: pct(r.hold, 1) });
+        else if (bo === 'orange') add('hold', 'orange', 'hold_mid', { v: pct(r.hold, 1) });
+      }
+      if (bt === 'red') {
+        if (bh && bh !== 'red') add('offer', 'red', 'watch_noclick', { h: pct(r.hook, 1), v: pct(r.ctrLink), g: good('ctr') });
+        else add('click', 'red', 'ctr_lo', { v: pct(r.ctrLink), g: good('ctr') });
+      } else if (bt === 'orange') add('click', 'orange', 'ctr_mid', { v: pct(r.ctrLink), g: good('ctr') });
+      if (r.ctrAll != null && r.ctrLink > 0 && r.ctrAll >= 2 * r.ctrLink && bt !== 'green') add('offer', 'orange', 'cta', { a: pct(r.ctrAll), v: pct(r.ctrLink) });
+      if (r.lpvRate != null) {
+        const bl = band('lpvr', r.lpvRate);
+        if (bl === 'red') add('landing', 'red', 'lpv_lo', { v: pct(r.lpvRate, 0), lost: pct(Math.max(0, 100 - r.lpvRate), 0) });
+        else if (bl === 'orange') add('landing', 'orange', 'lpv_mid', { v: pct(r.lpvRate, 0) });
+      }
+    }
+    if (convDataOK(r) && r.cvr != null) {
+      const bv = band('cvr', r.cvr), vars = { v: pct(r.cvr), c: int(convDen(r)), g: good('cvr') };
+      if (bv === 'red') add('conversion', 'red', bt === 'red' ? 'cvr_lo' : 'click_nobuy', vars);
+      else if (bv === 'orange') add('conversion', 'orange', 'cvr_mid', vars);
+    }
+    if (r.purchases > 0 && convOK(r) && r.value != null && r.roas != null) {
+      const cb = cpaBand(r.cpa), br = band('roas', r.roas), aov = money(r.value / r.purchases);
+      if (cb !== 'red' && br === 'red') add('value', 'orange', 'aov_lo', { aov, roas: x2(r.roas) });
+      else if (cb === 'red' && br === 'green') add('value', 'green', 'aov_hi', { aov, roas: x2(r.roas) });
+    }
+    const kv = { p: int(r.purchases), cpa: money(r.cpa), roas: r.roas == null ? '—' : x2(r.roas), s: money(r.spend), n: S.minPurchasesConfidence, t: money(S.targetCpa), k: money(S.killMultiplier * S.targetCpa) };
+    const lv = LEVELS.includes(level) ? level : 'ad';
+    if (v.k === 'win') {
+      if (r.purchases >= S.minPurchasesConfidence) add('scale', 'green', 'scale_' + lv, kv); else add('scale', 'gray', 'win_wait', kv);
+    } else if (v.k === 'lose') add('cut', 'red', 'cut_' + lv, kv);
+    else if (v.noPurchase) add('cut', 'gray', 'wait_buy', kv);
+    else if (v.k === 'opt' && r.purchases > 0 && cpaBand(r.cpa) !== 'green') add('scale', 'orange', 'hold_budget', kv);
+    return finishAdvice(out, v);
+  }
+  function finishAdvice(list, v) {
+    list.sort((a, b) => STAGE_ORDER.indexOf(a.stage) - STAGE_ORDER.indexOf(b.stage));
+    const issues = list.filter(a => a.stage !== 'scale' && a.stage !== 'cut' && (a.sev === 'red' || a.sev === 'orange'));
+    const cause = issues.find(a => a.sev === 'red') || issues.find(a => a.sev === 'orange') || null;
+    let primary = null;
+    if (v.k === 'win') primary = list.find(a => a.stage === 'scale') || null;
+    else if (v.k === 'lose') { const c = list.find(a => a.stage === 'cut'); primary = c ? Object.assign({}, c, { cause }) : cause; }
+    else primary = cause || list.find(a => a.stage === 'cut' || a.stage === 'scale') || null;
+    return { list, primary: primary || list[0] || null };
+  }
+  const advT = (a, part) => t('adv_' + a.key + '_' + part, a.vars);
+  const advTodo = a => advT(a, 'd').split('|').filter(Boolean);
+  const advShort = a => !a ? '' : `${STAGES[a.stage]} ${t('sg_' + a.stage)} · ${advT(a, 't')}` + (a.cause ? ' — ' + t('cause', { c: advT(a.cause, 't') }) : '');
+  function scopeNote(a, level) {
+    if (level === 'ad' && ['delivery', 'audience', 'learning'].includes(a.stage)) return t('note_adset');
+    if (level !== 'ad' && ['hook', 'hold', 'click', 'offer', 'landing'].includes(a.stage)) return t('note_ads');
+    return '';
+  }
+  function funnelSteps(r) {
+    return [
+      ['delivery', trafficOK(r) ? worst(band('cpm', r.cpm), band('freq', r.frequency)) : 'gray'],
+      ['hook', rb(r, 'hook')], ['hold', rb(r, 'hold')], ['click', rb(r, 'ctr')], ['landing', rb(r, 'lpvr')],
+      ['conversion', rb(r, 'cvr')], ['value', worst(rb(r, 'cpa'), rb(r, 'roas'))],
+    ];
+  }
+  function adviceHtml(r, level) {
+    const A = r.adv || adviceOf(r, level);
+    const fun = funnelSteps(r).map(([k, c]) => `<span class="fs" style="${cssC(c)}" title="${esc(t('st_' + c))}"><i></i>${esc(t('sg_' + k))}</span>`).join('<b class="fa">›</b>');
+    const items = A.list.map(a => {
+      const note = scopeNote(a, level);
+      return `<li style="${cssC(a.sev)}"><div class="ah"><span class="sgc">${STAGES[a.stage]} ${esc(t('sg_' + a.stage))}</span><b>${esc(advT(a, 't'))}</b></div>
+        <div class="aw">${esc(advT(a, 'w'))}${note ? ` <em>${esc(note)}</em>` : ''}</div>
+        <ul class="td">${advTodo(a).map(x => `<li>${esc(x)}</li>`).join('')}</ul></li>`;
+    }).join('');
+    return `<div class="adv"><div class="fun"><span class="fl">${esc(t('funnel'))}</span>${fun}</div><ul class="al">${items || `<li style="${cssC('gray')}"><b>${esc(t('adv_none'))}</b></li>`}</ul></div>`;
   }
   function rankPerf(a, b) {
     const ra = a.roas == null ? -1 : a.roas, rbv = b.roas == null ? -1 : b.roas;
@@ -862,6 +1218,9 @@
     const both = r => r.lpv != null && r.linkClicks > 0;
     const lc = sum(r => r.linkClicks, both);
     T.lpvRate = lc > 0 ? (sum(r => r.lpv, both) / lc) * 100 : null;
+    const cv = r => r.purchases != null && (convDen(r) || 0) > 0;
+    const cden = sum(r => convDen(r), cv);
+    T.cvr = cden > 0 ? (sum(r => r.purchases, cv) / cden) * 100 : null;
     const vid = r => r.v3s != null && r.impressions > 0;
     const vi = sum(r => r.impressions, vid);
     T.hook = vi > 0 ? (sum(r => r.v3s, vid) / vi) * 100 : null;
@@ -897,7 +1256,7 @@
   }
 
   // ------------------------------------------------------------------ state
-  const state = { open: false, levels: {}, view: null, sort: { k: 'spend', dir: -1 }, filter: 'all', q: '', scanning: false, progress: 0, msg: '', error: '', modal: null, showCustom: false };
+  const state = { open: false, levels: {}, view: null, sort: { k: 'spend', dir: -1 }, filter: 'all', q: '', scanning: false, progress: 0, msg: '', error: '', modal: null, showCustom: false, exp: new Set(), expAll: false, stage: '' };
   const EX = { busy: false, msg: '', err: '', parts: { summary: true, campaign: true, adset: true, ad: true, placement: true, age: true, gender: true, copy: true }, level: 'campaign', since: '', until: '' };
   const PR = { step: 'idle', msg: '', err: '', since: '', until: '', exp: null, src: null, an: null, f: null, result: null, busy: false };
 
@@ -1003,6 +1362,25 @@ tr:hover td{filter:brightness(.985)}
 .tag{font-size:10px;font-weight:800;border-radius:4px;padding:0 5px;margin-left:5px}
 .tag.b{background:#DCFCE7;color:#166534}.tag.w{background:#FEE2E2;color:#991B1B}
 .foot{color:#667085;font-size:11px;margin-top:12px;line-height:1.55}
+.plan{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px}
+.pc{display:inline-flex;align-items:center;gap:6px;border:1px solid #E4E7EC;border-left:4px solid var(--c,#D0D5DD);background:#fff;border-radius:9px;padding:6px 10px;font:inherit;font-size:12px;cursor:pointer;color:#101828}
+.pc b{font-size:13px}.pc small{color:#667085}.pc.on{outline:2px solid #0B1B33;outline-offset:-1px}
+.ph{margin:2px 0 6px;color:#667085;font-size:11px}
+.ab{display:inline-flex;align-items:center;gap:6px;max-width:340px;border:1px solid color-mix(in srgb,var(--c) 35%,#fff);background:color-mix(in srgb,var(--c) 9%,#fff);color:#101828;border-radius:8px;padding:4px 8px;font:inherit;font-size:11.5px;cursor:pointer;text-align:left}
+.ab{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ab .chev{color:var(--c);font-size:10px}
+.tw tr.xp td{position:static;white-space:normal;background:#F9FAFB;padding:0}
+.tw tr.xp:hover td{filter:none}
+.adv{position:sticky;left:0;max-width:min(1150px,96vw);padding:10px 14px 12px}
+.fun{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin-bottom:8px;font-size:11.5px}
+.fun .fl{font-weight:700;color:#475467;margin-right:4px}
+.fs{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:999px;background:color-mix(in srgb,var(--c) 12%,#fff);color:#101828;font-weight:600}
+.fs i{width:8px;height:8px;border-radius:50%;background:var(--c)}.fa{color:#98A2B3;font-weight:400}
+.al{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:8px}
+.al>li{background:#fff;border:1px solid #E4E7EC;border-left:4px solid var(--c);border-radius:9px;padding:8px 10px}
+.ah{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}.ah b{font-size:12.5px}
+.sgc{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--c)}
+.aw{color:#475467;font-size:11.5px;margin:3px 0 4px}.aw em{color:#7A5AF8;font-style:normal}
+.td{margin:0;padding-left:16px;font-size:11.5px;color:#101828}.td li{margin:2px 0}
 .ovl{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;gap:10px;background:rgba(245,246,248,.88);font-weight:700;color:#101828;z-index:5}
 .ovl.on{display:flex}
 .spin{width:28px;height:28px;border:3px solid #D0D5DD;border-top-color:#0B1B33;border-radius:50%;animation:sp .8s linear infinite}
@@ -1172,10 +1550,12 @@ tr:hover td{filter:brightness(.985)}
       card(t('card_cpm'), money(T.cpm), band('cpm', T.cpm), esc(t('cpm_sub'))),
       card(t('card_freq'), T.freqMax == null ? '—' : x2(T.freqMax), band('freq', T.freqMax), T.freqMax == null ? (av.frequency ? esc(t('na')) : na) : esc(T.freqMaxName)),
       card(t('card_lpv'), pct(T.lpvRate, 0), band('lpvr', T.lpvRate), T.lpvRate == null && !av.lpv ? na : esc(t('lpv_sub'))),
+      card(t('card_cvr'), pct(T.cvr), T.cvr == null ? 'gray' : band('cvr', T.cvr), T.cvr == null ? na : esc(t('cvr_sub'))),
       card(t('card_hook'), pct(T.hook, 1), band('hook', T.hook), T.hook == null ? (av.v3s ? esc(t('no_video')) : na) : esc(t('hook_sub'))),
       card(t('card_hold'), pct(T.hold, 1), band('hold', T.hold), T.hold == null ? (av.thru ? esc(t('no_thru')) : na) : esc(S.holdFormula === 'thru_over_3s' ? t('hold_3s') : t('hold_impr'))),
     ];
     parts.push(`<div class="cards">${cards.join('')}</div>`);
+    parts.push(planHtml(rows, D.level));
     parts.push(`<h3>${esc(t('glance'))}</h3>${renderAnswers()}`);
     const sorts = [['spend', 'th_spend'], ['roas', 'th_roas'], ['cpa', 'th_cpa'], ['ctrLink', 'th_ctrLink'], ['purchases', 'th_purch']];
     parts.push(`<h3>${esc(t('detail', { lv: lvMany(D.level) }))}</h3>
@@ -1185,6 +1565,7 @@ tr:hover td{filter:brightness(.985)}
         <span class="grow"></span>
         <label>${esc(t('sort'))} <select data-act="sortsel">${sorts.map(([k, l]) => `<option value="${k}" ${state.sort.k === k ? 'selected' : ''}>${esc(t(l))}</option>`).join('')}</select></label>
         <label><input type="checkbox" data-act="hidezero" ${S.hideZeroSpend ? 'checked' : ''}> ${esc(t('hide_zero'))}</label>
+        <button class="chip ${state.expAll ? 'on' : ''}" data-act="expAll">💬 ${esc(t('show_comments'))}</button>
       </div>
       <div class="tw"></div>
       <div class="foot">${t('foot', { src: esc(av.purchasesExplicit ? t('foot_src_col') : t('foot_src_res')), ms: esc(money(S.minSpend)), mi: esc(int(S.minImpressions)) })}</div>`);
@@ -1192,12 +1573,30 @@ tr:hover td{filter:brightness(.985)}
     renderTable();
   }
 
+
+  // Losing rows are grouped by their probable cause (hook, offer, page…): that is what has to be fixed.
+  const planKey = r => { const p = r.adv && r.adv.primary; return !p ? '' : p.cause ? p.cause.stage : p.stage; };
+  function planHtml(rows, level) {
+    const by = {};
+    rows.forEach(r => {
+      const p = r.adv && r.adv.primary;
+      if (!p || (r.spend || 0) <= 0) return;
+      const k = planKey(r);
+      const o = by[k] || (by[k] = { n: 0, spend: 0, sev: 'gray' });
+      o.n++; o.spend += r.spend || 0; o.sev = worst(o.sev, p.sev, p.cause ? 'red' : 'gray');
+    });
+    const keys = STAGE_ORDER.filter(k => by[k]);
+    if (!keys.length) return '';
+    const chip = k => `<button class="pc ${state.stage === k ? 'on' : ''}" style="${cssC(by[k].sev)}" data-act="stage:${k}">${STAGES[k]} ${esc(t('sg_' + k))} <b>${by[k].n}</b><small>${esc(money(by[k].spend))}</small></button>`;
+    return `<h3>${esc(t('plan_t', { lv: lvMany(level) }))}</h3><div class="plan">${keys.map(chip).join('')}${state.stage ? `<button class="pc" data-act="stage:">${esc(t('plan_all'))}</button>` : ''}</div><p class="ph">${esc(t('plan_h'))}</p>`;
+  }
+
   const TCOLS = [
-    { k: 'verdict', l: true }, { k: 'name', l: true },
+    { k: 'verdict', l: true }, { k: 'name', l: true }, { k: 'action', l: true },
     { k: 'spend', f: money, need: 'spend' }, { k: 'purchases', th: 'purch', f: int, need: 'purchases' }, { k: 'cpa', f: money, b: 'cpa', need: 'purchases' },
     { k: 'value', f: money, need: 'value' }, { k: 'roas', f: x2, b: 'roas', need: 'roas' }, { k: 'ctrLink', f: v => pct(v), b: 'ctr', need: 'ctrLink' },
     { k: 'cpcLink', f: money, b: 'cpc', need: 'cpcLink' }, { k: 'cpm', f: money, b: 'cpm', need: 'cpm' }, { k: 'frequency', f: x2, b: 'freq', need: 'frequency' },
-    { k: 'lpvRate', f: v => pct(v, 0), b: 'lpvr', need: 'lpv' }, { k: 'hook', f: v => pct(v, 1), b: 'hook', need: 'v3s' }, { k: 'hold', f: v => pct(v, 1), b: 'hold', need: 'thru' },
+    { k: 'lpvRate', f: v => pct(v, 0), b: 'lpvr', need: 'lpv' }, { k: 'cvr', f: v => pct(v), b: 'cvr', need: 'purchases' }, { k: 'hook', f: v => pct(v, 1), b: 'hook', need: 'v3s' }, { k: 'hold', f: v => pct(v, 1), b: 'hold', need: 'thru' },
     { k: 'impressions', f: int, need: 'impressions' }, { k: 'reach', f: int, need: 'reach' }, { k: 'linkClicks', f: int, need: 'linkClicks' },
     { k: 'lpv', f: int, need: 'lpv' }, { k: 'v3s', f: int, need: 'v3s' }, { k: 'thru', f: int, need: 'thru' },
     { k: 'ctrAll', f: v => pct(v), need: 'ctrAll' }, { k: 'cpcAll', f: money, need: 'cpcAll' },
@@ -1211,6 +1610,7 @@ tr:hover td{filter:brightness(.985)}
     let rows = D.rows.slice();
     if (S.hideZeroSpend) rows = rows.filter(r => (r.spend || 0) > 0);
     if (state.filter !== 'all') rows = rows.filter(r => r.v.k === state.filter);
+    if (state.stage) rows = rows.filter(r => planKey(r) === state.stage);
     if (state.q) { const q = state.q.toLowerCase(); rows = rows.filter(r => r.name.toLowerCase().includes(q)); }
     const { k, dir } = state.sort;
     const val = r => (k === 'verdict' ? VERDICT[r.v.k].order : k === 'name' ? r.name.toLowerCase() : r[k]);
@@ -1228,8 +1628,12 @@ tr:hover td{filter:brightness(.985)}
         if (c.k === 'verdict') return `<td class="l" title="${esc(r.v.why)}"><span class="vb" style="${cssC(VERDICT[r.v.k].c)}"><i></i>${esc(t('v_' + r.v.k))}</span></td>`;
         if (c.k === 'name') {
           const tag = bw.best.has(r.id) ? `<span class="tag b">${esc(t('best_tag'))}</span>` : bw.worst.has(r.id) ? `<span class="tag w">${esc(t('worst_tag'))}</span>` : '';
-          const sub = [r.v.why].concat(r.diag.slice(0, 2)).filter(Boolean).join(' · ');
+          const sub = r.v.why || '';
           return `<td class="l" title="${esc(r.name + '\n' + (r.delivery || '') + '\n' + sub)}"><div class="nm2">${esc(r.name)}${tag}</div><div class="sub">${esc(sub)}</div></td>`;
+        }
+        if (c.k === 'action') {
+          const p = r.adv && r.adv.primary, open = state.expAll || state.exp.has(r.id);
+          return `<td class="l"><button class="ab" data-act="exp:${esc(r.id)}" style="${cssC(p ? p.sev : 'gray')}" title="${esc(advShort(p))}"><span class="chev">${open ? '▾' : '▸'}</span>${esc(advShort(p) || '—')}</button></td>`;
         }
         const v = r[c.k];
         if (c.k === 'cpa' && r.purchases === 0) return `<td class="gy" title="${esc(t('no_purch'))}">N/A</td>`;
@@ -1239,7 +1643,8 @@ tr:hover td{filter:brightness(.985)}
         if (b === 'gray') return `<td class="gy" title="${esc(t('insufficient'))}">${txt}</td>`;
         return `<td class="c" style="${cssC(b)}">${txt}</td>`;
       }).join('');
-      return `<tr>${tds}</tr>`;
+      const open = state.expAll || state.exp.has(r.id);
+      return `<tr>${tds}</tr>` + (open ? `<tr class="xp"><td class="l" colspan="${cols.length}">${adviceHtml(r, D.level)}</td></tr>` : '');
     }).join('');
     tw.innerHTML = `<table><thead><tr>${head}</tr></thead><tbody>${body || `<tr><td class="l" colspan="${cols.length}" style="color:#667085;padding:14px">${esc(t('no_rows'))}</td></tr>`}</tbody></table>`;
   }
@@ -1269,7 +1674,7 @@ tr:hover td{filter:brightness(.985)}
       if (!rows) inner = notScanned('adset');
       else {
         const o = rows.filter(r => r.v.k === 'opt' && spent(r)).sort((a, b) => b.spend - a.spend).slice(0, 4);
-        inner = o.length ? `<ul>${o.map(r => li(r, money(r.spend), r.diag[0] || r.v.why)).join('')}</ul>` : `<div class="empty">${esc(t('e2'))}</div>`;
+        inner = o.length ? `<ul>${o.map(r => li(r, money(r.spend), r.adv && r.adv.primary ? advShort(r.adv.primary) : r.v.why)).join('')}</ul>` : `<div class="empty">${esc(t('e2'))}</div>`;
       }
       out.push(box('orange', t('q2'), 'adset', inner));
     }
@@ -1452,10 +1857,13 @@ tr:hover td{filter:brightness(.985)}
     const rows = enrich(D);
     const C = [['x_verdict', r => t('v_' + r.v.k), 'text', 16], ['x_campaign', r => r.name, 'text', 34], ['x_delivery', r => r.delivery, 'text', 14],
     ['x_spend', r => r.spend, 'money'], ['x_purch', r => r.purchases, 'int'], ['x_cpa', r => r.purchases === 0 ? null : r.cpa, 'money'], ['x_value', r => r.value, 'money'], ['x_roas', r => r.roas, 'dec'],
-    ['x_ctrlink', r => r.ctrLink, 'pct'], ['x_cpclink', r => r.cpcLink, 'money'], ['x_cpm', r => r.cpm, 'money'], ['x_freq', r => r.frequency, 'dec'], ['x_lpvrate', r => r.lpvRate, 'pct'],
+    ['x_ctrlink', r => r.ctrLink, 'pct'], ['x_cpclink', r => r.cpcLink, 'money'], ['x_cpm', r => r.cpm, 'money'], ['x_freq', r => r.frequency, 'dec'], ['x_lpvrate', r => r.lpvRate, 'pct'], ['x_cvr', r => r.cvr, 'pct'],
     ['x_hook', r => r.hook, 'pct'], ['x_hold', r => r.hold, 'pct'], ['x_impr', r => r.impressions, 'int'], ['x_reach', r => r.reach, 'int'], ['x_linkclicks', r => r.linkClicks, 'int'],
     ['x_lpv', r => r.lpv, 'int'], ['x_v3s', r => r.v3s, 'int'], ['x_thru', r => r.thru, 'int'], ['x_ctrall', r => r.ctrAll, 'pct'], ['x_cpcall', r => r.cpcAll, 'money'],
-    ['x_reason', r => [r.v.why].concat(r.diag).filter(Boolean).join(' · '), 'text', 60]];
+    ['x_reason', r => r.v.why, 'text', 40],
+    ['x_stage', r => planKey(r) ? t('sg_' + planKey(r)) : '', 'text', 16],
+    ['x_action', r => r.adv && r.adv.primary ? advT(r.adv.primary, 't') + (r.adv.primary.cause ? ' — ' + t('cause', { c: advT(r.adv.primary.cause, 't') }) : '') : '', 'wrap', 40],
+    ['x_comments', r => (r.adv ? r.adv.list : []).map(a => `[${t('sg_' + a.stage)}] ${advT(a, 't')} — ${advT(a, 'w')}\n→ ${advTodo(a).join(' ; ')}`).join('\n'), 'wrap', 90]];
     const nameH = { campaign: 'x_campaign', adset: 'x_adset', ad: 'x_ad' }[D.level];
     return {
       name: t('sh_' + D.level),
@@ -1839,6 +2247,7 @@ tr:hover td{filter:brightness(.985)}
       return navigateDate(parseYmd(f), parseYmd(to), '');
     }
     if (act === 'customCancel') { state.showCustom = false; renderHeader(); renderBody(); return; }
+    if (act === 'expAll') { state.expAll = !state.expAll; state.exp.clear(); renderBody(); return; }
     if (act === 'hidezero' || act === 'q' || act === 'date' || act === 'sortsel') return;
     const [k, v] = act.split(':');
     if (k === 'lang') { S.lang = v; saveSettings(); render(); return; }
@@ -1849,6 +2258,8 @@ tr:hover td{filter:brightness(.985)}
     }
     if (k === 'scan') { if (state.modal === 'export') closeModal(); return scan(v); }
     if (k === 'filter') { state.filter = state.filter === v ? 'all' : v; renderBody(); return; }
+    if (k === 'stage') { state.stage = state.stage === v ? '' : v; renderBody(); const tw = $('.tw'); if (tw && state.stage) tw.scrollIntoView({ block: 'start', behavior: 'smooth' }); return; }
+    if (k === 'exp') { const id = act.slice(4); if (state.exp.has(id)) state.exp.delete(id); else state.exp.add(id); renderTable(); return; }
     if (k === 'sort') {
       if (state.sort.k === v) state.sort.dir *= -1;
       else state.sort = { k: v, dir: (v === 'cpa' || v === 'name' || v === 'verdict') ? 1 : -1 };
