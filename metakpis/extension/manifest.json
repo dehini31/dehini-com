@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "__MSG_ext_name__",
+  "short_name": "Stats Meta KPIs",
+  "version": "2.0.0",
+  "description": "__MSG_ext_desc__",
+  "default_locale": "en",
+  "homepage_url": "https://dehini.com/metakpis/",
+  "icons": { "16": "icons/icon16.png", "32": "icons/icon32.png", "48": "icons/icon48.png", "128": "icons/icon128.png" },
+  "action": {
+    "default_title": "Stats Meta KPIs",
+    "default_popup": "popup.html",
+    "default_icon": { "16": "icons/icon16.png", "32": "icons/icon32.png" }
+  },
+  "background": { "service_worker": "background.js" },
+  "permissions": ["storage"],
+  "host_permissions": ["https://dehini.com/*", "https://www.dehini.com/*"],
+  "content_scripts": [
+    {
+      "matches": ["https://adsmanager.facebook.com/adsmanager/*", "https://business.facebook.com/adsmanager/*"],
+      "js": ["bridge.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["https://adsmanager.facebook.com/adsmanager/*", "https://business.facebook.com/adsmanager/*"],
+      "js": ["xlsx.js", "kpi-dashboard.js"],
+      "run_at": "document_idle",
+      "world": "MAIN"
+    },
+    {
+      "matches": ["https://dehini.com/metakpis/*", "https://www.dehini.com/metakpis/*"],
+      "js": ["site-bridge.js"],
+      "run_at": "document_start"
+    }
+  ]
+}

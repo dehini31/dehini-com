@@ -19,6 +19,10 @@ Site personnel de Mohammed Dehini.
   n'aime pas » et conversations privées avec leur auteur, page « Soutenir » (carte CIB / Edahabia
   via SofizPay, PayPal, RedotPay, CCP…) et emails de rappel. Voir la section « Défi Impact »
   plus bas.
+- `metakpis/` — **Stats Meta KPIs** (`https://dehini.com/metakpis/`), français / anglais : page de
+  présentation, connexion (Google ou email), profil détaillé, et l'extension Chrome qui affiche les KPI Meta Ads
+  en couleur dans Ads Manager, exporte en Excel (placement, âge, genre, textes des annonces) et propose des
+  campagnes à partir des meilleurs KPI. Voir la section « Stats Meta KPIs » plus bas.
 
 ## Installation (serveur dzSecurity, compte cPanel `dehini91`)
 
@@ -35,6 +39,7 @@ cp -f dehini-com/uploads/.htaccess ~/public_html/uploads/.htaccess
 cp -rf dehini-com/img ~/public_html/
 cp -rf dehini-com/elbahiferti ~/public_html/
 cp -rf dehini-com/impact ~/public_html/
+cp -rf dehini-com/metakpis ~/public_html/
 ```
 
 ### 2. Créer le mot de passe de l'admin
@@ -64,12 +69,12 @@ depuis `/admin`, jamais depuis ce dépôt.
 Dans **cPanel → Tâches Cron**, toutes les 5 minutes :
 
 ```bash
-cd ~/dehini-com && git pull -q && cp -f index.html ~/public_html/index.html && cp -f admin/index.html admin/api.php admin/.htaccess admin/.user.ini ~/public_html/admin/ && cp -f uploads/.htaccess ~/public_html/uploads/.htaccess && cp -rf img ~/public_html/ && cp -rf elbahiferti ~/public_html/ && cp -rf impact ~/public_html/
+cd ~/dehini-com && git pull -q && cp -f index.html ~/public_html/index.html && cp -f admin/index.html admin/api.php admin/.htaccess admin/.user.ini ~/public_html/admin/ && cp -f uploads/.htaccess ~/public_html/uploads/.htaccess && cp -rf img ~/public_html/ && cp -rf elbahiferti ~/public_html/ && cp -rf impact ~/public_html/ && cp -rf metakpis ~/public_html/
 ```
 
-Cette commande ne touche jamais `data.json`, `admin/config.php`, `impact/config.php`, la base du
-défi Impact ni les images envoyées dans `uploads/` : seul le code (`index.html`, `admin/*.php`,
-`elbahiferti/`, `impact/`) est mis à jour.
+Cette commande ne touche jamais `data.json`, `admin/config.php`, `impact/config.php`,
+`metakpis/config.php`, les bases du défi Impact et de Stats Meta KPIs ni les images envoyées dans
+`uploads/` : seul le code (`index.html`, `admin/*.php`, `elbahiferti/`, `impact/`, `metakpis/`) est mis à jour.
 
 ## Défi Impact (`/impact/`)
 
@@ -231,6 +236,77 @@ Onglet « Soutiens » de `https://dehini.com/impact/admin.html` :
 Montants acceptés : de 100 à 200 000 DA. Seul le prénom (et l'initiale du nom) des donateurs qui
 l'ont accepté apparaît sur le mur des soutiens ; jamais les montants.
 
+## Stats Meta KPIs (`/metakpis/`)
+
+Extension Chrome pour Meta Ads Manager + son site, en français et en anglais.
+
+- `metakpis/index.html` — page de présentation, connexion / inscription (Google ou email + mot de passe, « mot de
+  passe oublié »), et **profil** : extension connectée ou non (navigateurs reliés, bouton « Connecter
+  l'extension »), connexion Meta Ads, « Mes statistiques » (dernières analyses par compte publicitaire : dépense,
+  achats, CPA, ROAS, CTR, CPM, gagnantes / perdantes), campagnes créées (publier / mettre en pause), partage des
+  données, activité, suppression du compte.
+- `metakpis/extension/` — l'extension (v2.0.0). Téléchargeable sur
+  `https://dehini.com/metakpis/download.php` (zip fabriqué à la volée, toujours à jour avec le code déployé).
+  Mode d'emploi dans `metakpis/extension/README.md`.
+- `metakpis/api.php` — comptes, jetons de l'extension, statistiques partagées, export Meta (âge, genre, placement,
+  textes), création des campagnes proposées et administration. `metakpis/meta.php` — connexion Facebook (Meta Ads).
+- `metakpis/admin.html` — administration, **même mot de passe que `/admin`** (lien « Stats Meta KPIs » dans le menu
+  de `/admin`) : utilisateurs, KPI agrégés des données partagées, erreurs Meta, réglages Google et app Meta.
+- La base SQLite est créée toute seule **hors de `public_html`** : `~/metakpis-data/metakpis.sqlite`, avec
+  `secret.key` (clé qui chiffre les accès Meta). Ne jamais les mettre dans Git ; pour sauvegarder, copier le dossier.
+
+Le compte est obligatoire pour utiliser l'extension : sans compte, le panneau affiche « Connectez-vous ». Le lien se
+fait en un clic depuis le profil (« Connecter l'extension ») ; déconnecter un navigateur depuis le profil remet
+l'extension sur l'écran de connexion.
+
+**Partage des données.** Sous les boutons de connexion, une note discrète (petits caractères gris) indique que
+l'extension partage les statistiques lues (KPI, ventilations, textes) pour alimenter le profil et améliorer
+l'extension. Le partage est activé par défaut, désactivable et supprimable dans le profil (« Données et
+confidentialité »). Il n'envoie que le résumé de chaque analyse (KPI par ligne, 500 lignes max), jamais de jeton
+Facebook ni de données de clients. La note reste lisible exprès : une mention invisible ne vaut pas accord (RGPD,
+loi algérienne 18-07) et le Chrome Web Store exige une information visible avant toute collecte.
+
+### 1. Connexion avec Google
+
+Rien à faire si le bouton Google fonctionne déjà sur le défi Impact : le même ID client est repris
+automatiquement (même origine `https://dehini.com`). Sinon, le coller dans `metakpis/admin.html` → Réglages.
+
+### 2. App Meta (export âge / genre / placement, textes, campagnes)
+
+Le tableau de bord marche sans elle ; l'export détaillé et les campagnes proposées passent par l'API Marketing
+officielle de Meta. Étapes rappelées dans `metakpis/admin.html` → Réglages :
+
+1. Sur [developers.facebook.com/apps](https://developers.facebook.com/apps), créer une app de type **Entreprise**
+   avec **Facebook Login for Business** et **Marketing API**.
+2. URI de redirection OAuth valide : `https://dehini.com/metakpis/meta.php`. Domaine de l'app : `dehini.com`.
+   Politique de confidentialité : `https://dehini.com/metakpis/#privacy`.
+3. Coller l'ID de l'app et sa clé secrète dans l'admin (la clé n'est jamais renvoyée au navigateur). Si Facebook
+   Login for Business demande une « configuration », en créer une avec `ads_read` et `ads_management` et coller son ID.
+4. Tant que Meta n'a pas validé l'app (App Review de `ads_read` et `ads_management` + vérification de l'entreprise),
+   seuls les administrateurs, développeurs et testeurs de l'app peuvent connecter leur compte : ajouter les
+   premiers utilisateurs comme testeurs dans l'app.
+
+Chaque utilisateur clique ensuite sur « Connecter Meta Ads » dans son profil. L'accès dure environ 60 jours ; le
+profil prévient quand il faut le renouveler.
+
+### 3. Campagnes proposées
+
+L'extension choisit la meilleure annonce de la période (verdict, puis ROAS, puis CPA), les âges, le genre et les
+placements rentables (CPA dans l'objectif réglé dans l'extension, ou ROAS au moins orange ; ceux qui dépensent sans
+vendre sont écartés), et propose un budget quotidien. Tout est modifiable avant la création. Le serveur crée alors
+une campagne (budget de campagne, coût le plus bas), un ensemble (ciblage de l'ensemble source : lieux, centres
+d'intérêt, audiences, pixel ; avec l'âge, le genre et les placements choisis) et une publicité (mêmes visuels, textes
+modifiés) — **tout en pause**. En cas d'erreur Meta, ce qui a été créé est supprimé et le message de Meta s'affiche.
+« Publier » active la publicité, l'ensemble puis la campagne.
+
+### 4. Diffuser l'extension
+
+Aujourd'hui : téléchargement du zip et « Charger l'extension non empaquetée » (étapes sur la page). Pour le Chrome
+Web Store : zipper `metakpis/extension/` (ou utiliser `download.php`), fiche en français et anglais, politique de
+confidentialité `https://dehini.com/metakpis/#privacy`, justification des autorisations : `storage` (jeton du
+compte et réglages) et accès à `dehini.com` (compte et statistiques). L'ID de l'extension change avec le Store : le
+lien « Connecter l'extension » n'en dépend pas.
+
 ## Utiliser l'admin
 
 1. Ouvrir `https://dehini.com/admin/`.
@@ -291,3 +367,8 @@ pas mis à jour automatiquement après coup.
 - Soutiens par carte : les données de carte ne passent jamais par le site (page de paiement SATIM) ;
   un paiement n'est compté qu'après vérification serveur auprès de SofizPay (statut, montant et
   compte destinataire), jamais sur la seule foi du retour navigateur ou de la notification.
+- Stats Meta KPIs : mots de passe hachés, sessions à jeton aléatoire + anti-CSRF, jetons de l'extension stockés
+  hachés (un par navigateur, révocables depuis le profil), limites d'essais. L'accès Meta est chiffré
+  (AES-256-GCM, clé `secret.key` hors `public_html`) et chaque appel à Meta est signé (`appsecret_proof`). La page
+  Ads Manager ne voit jamais le jeton du compte : seul le service worker de l'extension parle au serveur, pour une
+  liste fermée d'actions. `metakpis/config.php` et `metakpis/lib/` sont bloqués en accès direct.
