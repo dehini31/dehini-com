@@ -31,6 +31,7 @@ $defaults = [
     'METAKPIS_SMTP_PASS'     => defined('IMPACT_SMTP_PASS') ? IMPACT_SMTP_PASS : '',
     'METAKPIS_SMTP_VERIFY'   => defined('IMPACT_SMTP_VERIFY') ? IMPACT_SMTP_VERIFY : true,
     'METAKPIS_IMPACT_DB'     => dirname(__DIR__, 3) . '/impact-data/impact.sqlite', // pour reprendre l'ID client Google du défi Impact
+    'METAKPIS_ECOM_ENV'      => dirname(__DIR__, 3) . '/ecom/.env', // ecom.dehini.com : on reprend son app Meta (META_APP_ID / META_APP_SECRET)
 ];
 foreach ($defaults as $k => $v) {
     if (!defined($k)) define($k, $v);

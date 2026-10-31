@@ -51,15 +51,61 @@ final class GraphError extends RuntimeException
     }
 }
 
+/**
+ * Variables Meta d'ecom.dehini.com, lues dans son fichier .env (même compte cPanel, ~/ecom/.env).
+ * Seules META_APP_ID et META_APP_SECRET sont lues ; le reste du fichier est ignoré.
+ */
+function ecom_meta_env(): array
+{
+    static $env = null;
+    if ($env !== null) return $env;
+    $env = [];
+    $f = (string) METAKPIS_ECOM_ENV;
+    if ($f === '' || !is_file($f) || !is_readable($f)) return $env;
+    foreach ((array) @file($f, FILE_IGNORE_NEW_LINES) as $line) {
+        if (!preg_match('/^\s*(?:export\s+)?(META_APP_ID|META_APP_SECRET)\s*=\s*(.*)$/', (string) $line, $m)) continue;
+        $v = trim($m[2]);
+        if ($v !== '' && ($v[0] === '"' || $v[0] === "'")) {
+            $q = $v[0];
+            $end = strpos($v, $q, 1);
+            $v = $end === false ? substr($v, 1) : substr($v, 1, $end - 1);
+        } else {
+            $v = trim((string) preg_replace('/\s+#.*$/', '', $v));
+        }
+        $env[$m[1]] = $v;
+    }
+    return $env;
+}
+
+/** D'où vient l'app Meta : « admin », « config », « ecom » ou « » (aucune). */
+function meta_app_source(): string
+{
+    if (trim(setting('meta_app_id')) !== '') return 'admin';
+    if (defined('METAKPIS_META_APP_ID') && (string) METAKPIS_META_APP_ID !== '') return 'config';
+    return (ecom_meta_env()['META_APP_ID'] ?? '') !== '' ? 'ecom' : '';
+}
+
+/**
+ * App Meta : réglage de l'admin, sinon config.php, sinon celle d'ecom.dehini.com.
+ * L'ID et la clé secrète viennent toujours de la même source (jamais l'ID de l'une avec la clé de l'autre).
+ */
 function meta_app_id(): string
 {
-    $v = trim(setting('meta_app_id'));
-    return $v !== '' ? $v : (defined('METAKPIS_META_APP_ID') ? (string) METAKPIS_META_APP_ID : '');
+    switch (meta_app_source()) {
+        case 'admin': return trim(setting('meta_app_id'));
+        case 'config': return (string) METAKPIS_META_APP_ID;
+        case 'ecom': return (string) ecom_meta_env()['META_APP_ID'];
+    }
+    return '';
 }
 function meta_app_secret(): string
 {
-    $v = trim(setting('meta_app_secret'));
-    return $v !== '' ? $v : (defined('METAKPIS_META_APP_SECRET') ? (string) METAKPIS_META_APP_SECRET : '');
+    switch (meta_app_source()) {
+        case 'admin': return trim(setting('meta_app_secret'));
+        case 'config': return defined('METAKPIS_META_APP_SECRET') ? (string) METAKPIS_META_APP_SECRET : '';
+        case 'ecom': return (string) (ecom_meta_env()['META_APP_SECRET'] ?? '');
+    }
+    return '';
 }
 function meta_config_id(): string
 {

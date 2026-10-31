@@ -858,7 +858,8 @@ switch ($action) {
     case 'adm_settings': {
         require_admin();
         ok(['google_client_id' => setting('google_client_id'), 'google_effective' => google_client_id(),
-            'meta_app_id' => meta_app_id(), 'meta_secret_set' => meta_app_secret() !== '', 'meta_config_id' => meta_config_id(),
+            'meta_app_id' => trim(setting('meta_app_id')), 'meta_effective' => meta_app_id(), 'meta_source' => meta_app_source(),
+            'meta_secret_set' => trim(setting('meta_app_secret')) !== '', 'meta_effective_secret' => meta_app_secret() !== '', 'meta_config_id' => meta_config_id(),
             'graph_version' => graph_ver(), 'redirect_uri' => meta_redirect_uri(), 'site' => site_url()]);
         break;
     }
