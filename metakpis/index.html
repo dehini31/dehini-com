@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#0B1B33">
+<title>Stats Meta KPIs — vos KPI Meta Ads en couleur, export Excel et campagnes prêtes à publier</title>
+<meta name="description" content="Extension Chrome pour Meta Ads Manager : KPI colorés (CPA, ROAS, CTR, CPM…), export Excel par âge, genre et placement avec les textes des annonces, et campagnes proposées à partir de vos meilleurs KPI. Français et anglais.">
+<link rel="canonical" href="https://dehini.com/metakpis/">
+<link rel="alternate" hreflang="fr" href="https://dehini.com/metakpis/?lang=fr">
+<link rel="alternate" hreflang="en" href="https://dehini.com/metakpis/?lang=en">
+<link rel="alternate" hreflang="x-default" href="https://dehini.com/metakpis/">
+<meta property="og:title" content="Stats Meta KPIs — vos KPI Meta Ads en couleur">
+<meta property="og:description" content="KPI colorés dans Ads Manager, export Excel (âge, genre, placement, textes) et campagnes proposées à partir de vos meilleurs KPI.">
+<meta property="og:url" content="https://dehini.com/metakpis/">
+<meta property="og:type" content="website">
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#0B1B33; --navy-2:#13294b; --navy-3:#1d3a66; --ink:#101828; --ink-2:#344054; --muted:#667085; --muted-2:#98A2B3;
+  --line:#E4E7EC; --line-2:#F2F4F7; --bg:#F5F6F8; --paper:#fff;
+  --green:#16A34A; --green-50:#ECFDF3; --orange:#F59E0B; --orange-50:#FFFAEB; --red:#DC2626; --red-50:#FEF3F2; --gray:#9CA3AF;
+  --blue:#2563EB; --blue-50:#EFF4FF;
+  --r:14px; --shadow:0 1px 2px rgba(16,24,40,.06),0 8px 24px rgba(16,24,40,.06);
+  --head:"Plus Jakarta Sans",Inter,system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:76px}
+body{margin:0;font:15px/1.6 Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:var(--ink);background:var(--paper);-webkit-font-smoothing:antialiased}
+a{color:var(--blue);text-decoration:none}a:hover{text-decoration:underline}
+button,input,select,textarea{font:inherit;color:inherit}
+img,svg{display:block}
+.wrap{width:min(1160px,100% - 32px);margin-inline:auto}
+.dots{display:inline-flex;gap:4px;align-items:center}.dots i{width:9px;height:9px;border-radius:50%;display:block}
+.dots i:nth-child(1){background:var(--green)}.dots i:nth-child(2){background:var(--orange)}.dots i:nth-child(3){background:var(--red)}
+[hidden]{display:none!important}
+
+/* ---------- top bar */
+.top{position:sticky;top:0;z-index:40;background:rgba(255,255,255,.92);backdrop-filter:saturate(1.6) blur(10px);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:18px;height:64px}
+.logo{display:flex;align-items:center;gap:10px;font:800 17px/1 var(--head);color:var(--navy);letter-spacing:-.01em}
+.logo:hover{text-decoration:none}
+.logo .mark{width:34px;height:34px;border-radius:10px;background:var(--navy);display:grid;place-items:center}
+.logo .mark .dots i{width:7px;height:7px}
+.nav{display:flex;gap:4px;margin-left:12px}
+.nav a{color:var(--ink-2);font-weight:500;font-size:14px;padding:8px 10px;border-radius:8px}
+.nav a:hover{background:var(--line-2);text-decoration:none}
+.grow{flex:1}
+.lang{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:2px;background:#fff}
+.lang button{border:0;background:transparent;padding:4px 10px;border-radius:999px;font-size:12.5px;font-weight:700;color:var(--muted);cursor:pointer}
+.lang button.on{background:var(--navy);color:#fff}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:10px;padding:10px 16px;font-weight:700;font-size:14.5px;border:1px solid transparent;cursor:pointer;white-space:nowrap;text-decoration:none!important;transition:background .15s,border-color .15s,transform .1s}
+.btn:active{transform:translateY(1px)}
+.btn.pri{background:var(--navy);color:#fff}.btn.pri:hover{background:var(--navy-2)}
+.btn.sec{background:#fff;color:var(--ink);border-color:var(--line)}.btn.sec:hover{border-color:#cfd4dc;background:#fafbfc}
+.btn.ghost{background:transparent;color:var(--ink-2)}.btn.ghost:hover{background:var(--line-2)}
+.btn.green{background:var(--green);color:#fff}.btn.green:hover{background:#12873d}
+.btn.danger{background:#fff;color:var(--red);border-color:#FECDCA}.btn.danger:hover{background:var(--red-50)}
+.btn.lg{padding:13px 22px;font-size:15.5px;border-radius:12px}
+.btn.sm{padding:6px 11px;font-size:13px;border-radius:8px}
+.btn[disabled]{opacity:.55;cursor:default}
+.btn svg{width:18px;height:18px}
+.me-btn{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:#fff;border-radius:999px;padding:4px 12px 4px 4px;cursor:pointer;font-weight:600;font-size:14px}
+.av{width:30px;height:30px;border-radius:50%;background:var(--navy);color:#fff;display:grid;place-items:center;font-weight:800;font-size:13px;flex:none}
+.burger{display:none;border:1px solid var(--line);background:#fff;border-radius:10px;width:40px;height:40px;place-items:center;cursor:pointer}
+
+/* ---------- hero */
+.hero{background:radial-gradient(1200px 500px at 85% -10%,#e6eeff 0,transparent 60%),radial-gradient(800px 400px at -10% 10%,#effaf3 0,transparent 55%),#fff;padding:64px 0 40px;overflow:hidden}
+.hero .wrap{display:grid;grid-template-columns:1.02fr 1fr;gap:48px;align-items:center}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--navy);background:#fff;border:1px solid var(--line);padding:5px 12px 5px 8px;border-radius:999px;box-shadow:var(--shadow)}
+h1{font:800 clamp(34px,4.6vw,54px)/1.06 var(--head);letter-spacing:-.025em;margin:18px 0 16px;color:var(--navy)}
+h1 em{font-style:normal;background:linear-gradient(90deg,var(--green),var(--orange) 55%,var(--red));-webkit-background-clip:text;background-clip:text;color:transparent}
+.lead{font-size:17.5px;color:var(--ink-2);max-width:560px;margin:0 0 26px}
+.cta{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.fine{font-size:13px;color:var(--muted);margin-top:14px;display:flex;flex-wrap:wrap;gap:6px 14px}
+.fine span{display:inline-flex;align-items:center;gap:6px}
+.fine svg{width:15px;height:15px;color:var(--green)}
+
+/* mock panel */
+.mock{background:#F5F6F8;border:1px solid var(--line);border-radius:18px;box-shadow:0 30px 80px rgba(11,27,51,.18),0 2px 6px rgba(11,27,51,.06);overflow:hidden;font-size:12px;transform:perspective(1600px) rotateY(-6deg) rotateX(2deg);transform-origin:left center}
+.mock .mh{background:var(--navy);color:#fff;padding:10px 14px;display:flex;align-items:center;gap:10px}
+.mock .mh b{font-size:13px}.mock .mh small{display:block;color:#9FB0C8;font-size:10px}
+.mock .seg{display:flex;gap:2px;background:rgba(255,255,255,.08);border-radius:7px;padding:2px;margin-left:auto}
+.mock .seg span{padding:3px 8px;border-radius:5px;color:#CBD5E1;font-size:10.5px}.mock .seg span.on{background:#fff;color:var(--navy);font-weight:700}
+.mock .mb{padding:12px}
+.mv{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px}
+.mv div{background:#fff;border:1px solid var(--line);border-radius:9px;padding:6px 8px;display:flex;gap:7px;align-items:center}
+.mv b{font-size:18px;font-weight:800}.mv span{font-size:10px;font-weight:700;line-height:1.2}
+.mc{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px}
+.mc div{background:#fff;border:1px solid var(--line);border-radius:9px;padding:7px 9px 8px 11px;position:relative;overflow:hidden}
+.mc div:before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--c)}
+.mc small{font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.mc b{display:block;font-size:17px;font-weight:800;margin-top:1px}
+.mc i{font-style:normal;font-size:9px;font-weight:800;color:var(--c);background:color-mix(in srgb,var(--c) 13%,#fff);padding:0 6px;border-radius:9px}
+.mt{background:#fff;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.mt table{width:100%;border-collapse:collapse;font-size:10.5px}
+.mt th{background:#F2F4F7;text-align:right;padding:5px 7px;font-weight:700;color:var(--ink-2)}
+.mt td{padding:5px 7px;border-top:1px solid var(--line-2);text-align:right;white-space:nowrap}
+.mt th:first-child,.mt td:first-child{text-align:left}
+.mt td.c{color:var(--c);background:color-mix(in srgb,var(--c) 11%,#fff);font-weight:700}
+.vb{display:inline-flex;align-items:center;gap:5px;font-weight:800;color:var(--c)}.vb:before{content:"";width:7px;height:7px;border-radius:50%;background:var(--c)}
+
+/* ---------- sections */
+section.s{padding:72px 0}
+section.alt{background:var(--bg)}
+.sh{max-width:720px;margin:0 auto 40px;text-align:center}
+.kicker{font-size:12.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--blue)}
+h2{font:800 clamp(26px,3vw,36px)/1.15 var(--head);letter-spacing:-.02em;margin:8px 0 12px;color:var(--navy)}
+.sh p{color:var(--muted);font-size:16.5px;margin:0}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.feat{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:22px;box-shadow:var(--shadow)}
+.feat .ic{width:42px;height:42px;border-radius:11px;display:grid;place-items:center;background:var(--c-50,var(--blue-50));color:var(--c,var(--blue));margin-bottom:14px}
+.feat .ic svg{width:22px;height:22px}
+.feat h3{margin:0 0 6px;font-size:17px;font-weight:700}
+.feat p{margin:0;color:var(--muted);font-size:14.5px}
+.feat ul{margin:10px 0 0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:6px}
+.feat li{font-size:12px;font-weight:600;background:var(--line-2);color:var(--ink-2);padding:3px 9px;border-radius:999px}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;counter-reset:st}
+.step{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:24px;position:relative}
+.step:before{counter-increment:st;content:counter(st);width:34px;height:34px;border-radius:50%;background:var(--navy);color:#fff;display:grid;place-items:center;font-weight:800;margin-bottom:14px}
+.step h3{margin:0 0 6px;font-size:17px}.step p{margin:0;color:var(--muted);font-size:14.5px}
+.kbd{font:600 12px/1 ui-monospace,Menlo,monospace;background:#fff;border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;padding:2px 6px;color:var(--ink)}
+.install{margin-top:22px;background:#fff;border:1px dashed #cfd4dc;border-radius:var(--r);padding:20px 22px;display:grid;grid-template-columns:1fr auto;gap:18px;align-items:center}
+.install ol{margin:6px 0 0;padding-left:20px;color:var(--ink-2);font-size:14.5px}
+.install code{font:600 13px ui-monospace,Menlo,monospace;background:var(--line-2);padding:1px 6px;border-radius:5px}
+.priv{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.pv{border-radius:var(--r);padding:22px;border:1px solid var(--line);background:#fff}
+.pv h3{display:flex;align-items:center;gap:8px;margin:0 0 8px;font-size:16px}
+.pv h3 svg{width:20px;height:20px;color:var(--c)}
+.pv ul{margin:0;padding-left:18px;color:var(--ink-2);font-size:14.5px}.pv li{margin:4px 0}
+.faq{max-width:820px;margin:0 auto}
+.faq details{background:#fff;border:1px solid var(--line);border-radius:12px;margin-bottom:10px;padding:0 18px}
+.faq summary{cursor:pointer;padding:16px 0;font-weight:700;list-style:none;display:flex;justify-content:space-between;gap:12px}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary:after{content:"+";font-size:20px;line-height:1;color:var(--muted)}
+.faq details[open] summary:after{content:"–"}
+.faq details p{margin:0 0 16px;color:var(--ink-2)}
+.band{background:var(--navy);color:#fff;border-radius:22px;padding:40px;display:flex;gap:24px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.band h2{color:#fff;margin:0 0 6px}.band p{margin:0;color:#C7D2E3}
+footer{border-top:1px solid var(--line);padding:28px 0;color:var(--muted);font-size:13.5px}
+footer .wrap{display:flex;gap:14px;flex-wrap:wrap;justify-content:space-between;align-items:center}
+
+/* ---------- auth */
+.view{min-height:calc(100vh - 64px)}
+#v-auth{background:var(--bg);padding:48px 0 64px}
+.auth{width:min(460px,100% - 32px);margin:0 auto;background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);padding:28px}
+.auth h2{font-size:24px;margin:0 0 4px;text-align:center}
+.auth .sub{color:var(--muted);text-align:center;margin:0 0 20px;font-size:14.5px}
+.tabs{display:grid;grid-template-columns:1fr 1fr;background:var(--line-2);border-radius:11px;padding:3px;margin-bottom:20px}
+.tabs button{border:0;background:transparent;padding:8px;border-radius:9px;font-weight:700;color:var(--muted);cursor:pointer}
+.tabs button.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(16,24,40,.1)}
+.gwrap{display:flex;justify-content:center;min-height:44px}
+.or{display:flex;align-items:center;gap:12px;color:var(--muted-2);font-size:12.5px;margin:16px 0;text-transform:uppercase;letter-spacing:.08em}
+.or:before,.or:after{content:"";flex:1;height:1px;background:var(--line)}
+.f{margin-bottom:12px}
+.f label{display:block;font-weight:600;font-size:13.5px;margin-bottom:5px;color:var(--ink-2)}
+.f input,.f select,.f textarea{width:100%;border:1px solid #D0D5DD;border-radius:10px;padding:10px 12px;background:#fff;font-size:15px}
+.f input:focus,.f select:focus,.f textarea:focus{outline:3px solid #C7D7FE;border-color:#84ADFF}
+.f small{color:var(--muted);font-size:12.5px}
+.err{color:var(--red);font-size:13.5px;min-height:0;margin:6px 0 0}
+.okmsg{color:var(--green);font-size:13.5px;margin:6px 0 0}
+.full{width:100%}
+.note{margin:14px 0 0;font-size:11.5px;line-height:1.5;color:var(--muted-2)}
+.note a{color:var(--muted)}
+.linkbtn{border:0;background:none;color:var(--blue);cursor:pointer;padding:0;font-size:13.5px;font-weight:600}
+.linkbtn:hover{text-decoration:underline}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+
+/* ---------- profile */
+#v-profile{background:var(--bg);padding-bottom:64px}
+.phero{background:linear-gradient(135deg,var(--navy),var(--navy-3));color:#fff;padding:32px 0 76px}
+.phero .wrap{display:flex;gap:20px;align-items:center;flex-wrap:wrap}
+.phero .av{width:76px;height:76px;font-size:30px;background:#fff;color:var(--navy);box-shadow:0 0 0 5px rgba(255,255,255,.15)}
+.phero h1{color:#fff;font-size:clamp(26px,3vw,34px);margin:0 0 4px}
+.phero .em{color:#C7D2E3;font-size:15px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);padding:3px 10px;border-radius:999px;color:#E4EAF3}
+.chip svg{width:14px;height:14px}
+.phero .act{display:flex;gap:8px;margin-left:auto}
+.phero .btn.sec{background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.25)}
+.phero .btn.sec:hover{background:rgba(255,255,255,.18)}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:-52px;position:relative}
+.tile{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;box-shadow:var(--shadow);border-top:4px solid var(--c,var(--gray))}
+.tile .l{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.tile .v{font:800 21px/1.25 var(--head);margin:6px 0 2px;color:var(--ink);display:flex;align-items:center;gap:8px}
+.tile .v i{width:10px;height:10px;border-radius:50%;background:var(--c,var(--gray));flex:none}
+.tile .d{font-size:13px;color:var(--muted);min-height:20px}
+.tile .btn{margin-top:10px}
+.card{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:22px;box-shadow:var(--shadow);margin-top:18px}
+.card h2{font-size:20px;margin:0 0 4px;display:flex;align-items:center;gap:10px}
+.card .cs{color:var(--muted);margin:0 0 16px;font-size:14px}
+.card h2 svg{width:22px;height:22px;color:var(--blue)}
+.ch{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.empty{background:var(--bg);border:1px dashed #D0D5DD;border-radius:12px;padding:22px;text-align:center;color:var(--muted)}
+.empty b{color:var(--ink);display:block;margin-bottom:4px}
+.acc{border:1px solid var(--line);border-radius:14px;padding:18px;margin-top:14px}
+.acc-h{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.acc-h h3{margin:0;font-size:17px}.acc-h small{color:var(--muted);font-size:13px}
+.lvls{display:inline-flex;background:var(--line-2);border-radius:9px;padding:3px;gap:2px}
+.lvls button{border:0;background:transparent;padding:5px 11px;border-radius:7px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer}
+.lvls button.on{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(16,24,40,.1)}
+.big{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+.bk{background:var(--bg);border-radius:12px;padding:12px 14px;border-left:4px solid var(--c,var(--line))}
+.bk small{display:block;font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.bk b{display:block;font:800 22px/1.2 var(--head);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bk b.g{color:var(--muted-2)}
+.vbar{display:flex;height:12px;border-radius:99px;overflow:hidden;background:var(--line-2);margin:14px 0 6px}
+.vbar i{display:block;height:100%}
+.vleg{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--ink-2)}
+.vleg span{display:inline-flex;align-items:center;gap:6px}.vleg span:before{content:"";width:9px;height:9px;border-radius:50%;background:var(--c)}
+.bw{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.bw>div{border:1px solid var(--line);border-radius:12px;padding:12px 14px;border-top:3px solid var(--c)}
+.bw h4{margin:0 0 6px;font-size:14px}
+.bw ul{list-style:none;margin:0;padding:0}
+.bw li{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-top:1px dashed var(--line);font-size:13.5px}
+.bw li:first-child{border-top:0}
+.bw li span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.bw li b{white-space:nowrap;font-variant-numeric:tabular-nums}
+.list{display:flex;flex-direction:column;gap:10px}
+.item{border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.item .t{flex:1;min-width:220px}
+.item .t b{display:block}
+.item .t small{color:var(--muted);font-size:13px}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:800;padding:2px 9px;border-radius:999px;color:var(--c);background:color-mix(in srgb,var(--c) 12%,#fff)}
+.pill:before{content:"";width:7px;height:7px;border-radius:50%;background:var(--c)}
+.sw{position:relative;display:inline-flex;align-items:center;gap:12px;cursor:pointer;font-weight:600}
+.sw input{position:absolute;opacity:0;width:1px;height:1px}
+.sw .tr{width:46px;height:26px;border-radius:99px;background:#D0D5DD;position:relative;transition:background .15s;flex:none}
+.sw .tr:after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:transform .15s}
+.sw input:checked+.tr{background:var(--green)}
+.sw input:checked+.tr:after{transform:translateX(20px)}
+.sw input:focus-visible+.tr{outline:3px solid #C7D7FE}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.two .card{margin-top:18px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:14px}
+.kv dt{color:var(--muted)}.kv dd{margin:0;font-weight:600;overflow-wrap:anywhere}
+.callout{border-radius:12px;padding:14px 16px;font-size:14px;display:flex;gap:12px;align-items:flex-start}
+.callout.info{background:var(--blue-50);color:#1D2939}
+.callout.warn{background:var(--orange-50);color:#4E1D09}
+.callout.ok{background:var(--green-50);color:#054F31}
+.callout svg{width:20px;height:20px;flex:none;margin-top:1px}
+.act-list{list-style:none;margin:0;padding:0;font-size:14px}
+.act-list li{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid var(--line-2)}
+.act-list li:first-child{border-top:0}
+.act-list time{color:var(--muted);white-space:nowrap;font-size:13px}
+dialog{border:0;border-radius:16px;padding:0;width:min(480px,100% - 32px);box-shadow:0 30px 80px rgba(16,24,40,.3)}
+dialog::backdrop{background:rgba(16,24,40,.45)}
+dialog form{padding:24px}
+dialog h3{margin:0 0 14px;font-size:19px}
+.dlg-act{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--navy);color:#fff;padding:11px 18px;border-radius:12px;font-weight:600;font-size:14px;box-shadow:0 12px 30px rgba(0,0,0,.25);opacity:0;pointer-events:none;transition:.2s;z-index:100;max-width:calc(100% - 32px)}
+.toast.on{opacity:1;transform:translateX(-50%)}
+.loading{padding:80px 0;text-align:center;color:var(--muted)}
+.spin{width:28px;height:28px;border:3px solid var(--line);border-top-color:var(--navy);border-radius:50%;animation:sp .8s linear infinite;margin:0 auto 12px}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+@media (max-width:980px){
+  .hero .wrap{grid-template-columns:1fr}
+  .mock{transform:none}
+  .grid3,.priv,.steps{grid-template-columns:1fr 1fr}
+  .tiles{grid-template-columns:1fr 1fr}
+  .big{grid-template-columns:repeat(3,1fr)}
+  .two{grid-template-columns:1fr}
+}
+@media (max-width:760px){
+  .nav{display:none;position:absolute;top:64px;left:0;right:0;background:#fff;border-bottom:1px solid var(--line);flex-direction:column;padding:8px 16px 12px;margin:0}
+  .nav.open{display:flex}
+  .burger{display:grid}
+  .top .wrap{gap:10px}
+  .top .hide-sm{display:none}
+  .grid3,.priv,.steps,.bw{grid-template-columns:1fr}
+  .install{grid-template-columns:1fr}
+  .mv{grid-template-columns:repeat(2,1fr)}
+  .mt{display:none}
+  section.s{padding:52px 0}
+  .band{padding:28px}
+  .phero .act{margin-left:0}
+  .tiles{grid-template-columns:1fr}
+  .big{grid-template-columns:repeat(2,1fr)}
+  .auth{padding:22px}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="logo" href="./#"><span class="mark"><span class="dots"><i></i><i></i><i></i></span></span>Stats Meta KPIs</a>
+    <nav class="nav" id="nav">
+      <a href="./#features" data-i="nav_features">Fonctionnalités</a>
+      <a href="./#how" data-i="nav_how">Comment ça marche</a>
+      <a href="./#privacy" data-i="nav_privacy">Vos données</a>
+      <a href="./#faq" data-i="nav_faq">FAQ</a>
+    </nav>
+    <span class="grow"></span>
+    <div class="lang" role="group" aria-label="Langue / Language"><button data-lang="fr">FR</button><button data-lang="en">EN</button></div>
+    <a class="btn ghost hide-sm" href="#login" id="loginTop" data-i="login">Se connecter</a>
+    <a class="btn pri hide-sm" href="#signup" id="signupTop" data-i="signup_cta_short">Créer un compte</a>
+    <button class="me-btn" id="meTop" hidden><span class="av" id="meAv">?</span><span id="meName" class="hide-sm"></span></button>
+    <button class="burger" id="burger" aria-label="Menu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+  </div>
+</header>
+
+<main>
+<!-- ============================================================ ACCUEIL -->
+<div class="view" id="v-home">
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <span class="eyebrow"><span class="dots"><i></i><i></i><i></i></span><span data-i="eyebrow">Extension Chrome pour Meta Ads Manager</span></span>
+        <h1 data-i-html="hero_title">Vos KPI Meta Ads, <em>en couleur</em>, directement dans Ads Manager.</h1>
+        <p class="lead" data-i="hero_lead">Stats Meta KPIs colore chaque KPI de votre tableau (vert, orange, rouge), exporte vos statistiques par âge, genre et placement en Excel avec les textes de vos annonces, et vous propose une campagne prête à publier à partir de vos meilleurs résultats.</p>
+        <div class="cta">
+          <a class="btn pri lg" href="#signup" data-auth-cta><span data-i="signup_cta">Créer mon compte gratuit</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          <a class="btn sec lg" href="download.php"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4v11m0 0l-4-4m4 4l4-4M5 20h14"/></svg><span data-i="download">Télécharger l'extension</span></a>
+        </div>
+        <div class="fine">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l5 5L20 7"/></svg><span data-i="fine1">Gratuit</span></span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l5 5L20 7"/></svg><span data-i="fine2">Français et anglais</span></span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l5 5L20 7"/></svg><span data-i="fine3">Chrome, Edge, Brave</span></span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l5 5L20 7"/></svg><span data-i="fine4">Campagnes toujours créées en pause</span></span>
+        </div>
+      </div>
+      <div class="mock" aria-hidden="true">
+        <div class="mh"><span class="dots"><i></i><i></i><i></i></span><div><b>Stats Meta KPIs</b><small data-i="mock_sub">Données de cette vue Ads Manager</small></div>
+          <div class="seg"><span data-i="lv_campaigns">Campagnes</span><span class="on" data-i="lv_adsets">Ensembles</span><span data-i="lv_ads">Publicités</span></div></div>
+        <div class="mb">
+          <div class="mv">
+            <div style="--c:var(--green)"><b style="color:var(--green)">4</b><span data-i="v_win">Gagnantes</span></div>
+            <div><b style="color:var(--orange)">3</b><span data-i="v_opt">À optimiser</span></div>
+            <div><b style="color:var(--red)">2</b><span data-i="v_lose">Perdantes</span></div>
+            <div><b style="color:var(--gray)">1</b><span data-i="v_ins">Données insuffisantes</span></div>
+          </div>
+          <div class="mc">
+            <div style="--c:#475467"><small data-i="k_spend">Dépense</small><b>1 240,50 €</b></div>
+            <div style="--c:var(--green)"><small>CPA</small><b>12,92 €</b><i data-i="st_good">Bon</i></div>
+            <div style="--c:var(--green)"><small>ROAS</small><b>3,41</b><i data-i="st_good">Bon</i></div>
+            <div style="--c:var(--orange)"><small data-i="k_ctr">CTR lien</small><b>1,62 %</b><i data-i="st_watch">À surveiller</i></div>
+            <div style="--c:var(--red)"><small>CPM</small><b>9,10 €</b><i data-i="st_bad">À analyser</i></div>
+            <div style="--c:var(--green)"><small>Hook rate</small><b>34,8 %</b><i data-i="st_good">Bon</i></div>
+          </div>
+          <div class="mt"><table>
+            <tr><th data-i="t_verdict">Verdict</th><th data-i="t_name" style="text-align:left">Nom</th><th data-i="k_spend">Dépense</th><th>CPA</th><th>ROAS</th><th>CTR</th></tr>
+            <tr><td><span class="vb" style="--c:var(--green)" data-i="v_win1">Gagnante</span></td><td style="text-align:left">Femmes 25-34 · Reels</td><td>412,00 €</td><td class="c" style="--c:var(--green)">9,80 €</td><td class="c" style="--c:var(--green)">4,12</td><td class="c" style="--c:var(--green)">2,31 %</td></tr>
+            <tr><td><span class="vb" style="--c:var(--orange)" data-i="v_opt1">À optimiser</span></td><td style="text-align:left">Large · Advantage+</td><td>356,20 €</td><td class="c" style="--c:var(--orange)">14,10 €</td><td class="c" style="--c:var(--orange)">2,45</td><td class="c" style="--c:var(--orange)">1,40 %</td></tr>
+            <tr><td><span class="vb" style="--c:var(--red)" data-i="v_lose1">Perdante</span></td><td style="text-align:left">Intérêts mode · Feed</td><td>198,40 €</td><td class="c" style="--c:var(--red)">39,68 €</td><td class="c" style="--c:var(--red)">0,92</td><td class="c" style="--c:var(--red)">0,71 %</td></tr>
+          </table></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="s alt" id="features">
+    <div class="wrap">
+      <div class="sh"><div class="kicker" data-i="feat_kicker">Fonctionnalités</div><h2 data-i="feat_title">Tout ce qu'il faut pour décider vite, sans quitter Ads Manager</h2><p data-i="feat_sub">L'extension lit le tableau que vous avez déjà à l'écran. Connectez Meta Ads pour aller plus loin : ventilations, textes des annonces et création de campagnes.</p></div>
+      <div class="grid3">
+        <div class="feat" style="--c:var(--green);--c-50:var(--green-50)"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="12" r="3"/><circle cx="12" cy="12" r="3"/><circle cx="18" cy="12" r="3"/></svg></div>
+          <h3 data-i="f1_t">KPI colorés en un coup d'œil</h3><p data-i="f1_p">Chaque KPI passe au vert, à l'orange ou au rouge selon vos propres seuils, dans le panneau et dans le tableau Ads Manager.</p>
+          <ul><li>CPA</li><li>ROAS</li><li>CTR</li><li>CPC</li><li>CPM</li><li data-i="freq">Fréquence</li><li>Hook rate</li><li>Hold rate</li></ul></div>
+        <div class="feat" style="--c:var(--orange);--c-50:var(--orange-50)"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h9"/></svg></div>
+          <h3 data-i="f2_t">Les 5 réponses qui comptent</h3><p data-i="f2_p">Quelles campagnes performent, quels ensembles optimiser, quelles publicités perdent de l'argent, lesquelles analyser, et où le budget est gaspillé.</p></div>
+        <div class="feat" style="--c:#0E7A3A;--c-50:#E7F7EE"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8l8 8M16 8l-8 8"/></svg></div>
+          <h3 data-i="f3_t">Export Excel complet</h3><p data-i="f3_p">Un fichier .xlsx avec vos campagnes, ensembles et publicités, et vos statistiques ventilées, prêt à partager.</p>
+          <ul><li data-i="placement">Placement</li><li data-i="age">Âge</li><li data-i="gender">Genre</li><li data-i="text">Texte</li><li data-i="title">Titre</li><li data-i="description">Description</li></ul></div>
+        <div class="feat" style="--c:var(--blue);--c-50:var(--blue-50)"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l1.8 4.6L18.5 9l-4.7 1.4L12 15l-1.8-4.6L5.5 9l4.7-1.4z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg></div>
+          <h3 data-i="f4_t">Campagnes proposées par vos meilleurs KPI</h3><p data-i="f4_p">L'extension repère vos meilleurs âges, genres et placements et votre meilleure annonce, prépare la campagne ; vous modifiez tout, puis vous la créez sur Meta et la publiez quand vous voulez.</p></div>
+        <div class="feat" style="--c:#475467;--c-50:#F2F4F7"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/></svg></div>
+          <h3 data-i="f5_t">Rien ne change sans votre clic</h3><p data-i="f5_p">Le tableau de bord est en lecture seule. Une campagne proposée est toujours créée en pause : elle ne dépense rien tant que vous ne cliquez pas sur « Publier ».</p></div>
+        <div class="feat" style="--c:#7A5AF8;--c-50:#F4F3FF"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/></svg></div>
+          <h3 data-i="f6_t">Français et anglais</h3><p data-i="f6_p">L'extension et votre espace s'affichent dans votre langue, avec les formats de nombres et de devises de votre compte.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="s" id="how">
+    <div class="wrap">
+      <div class="sh"><div class="kicker" data-i="how_kicker">Comment ça marche</div><h2 data-i="how_title">Prêt en 3 minutes</h2></div>
+      <div class="steps">
+        <div class="step"><h3 data-i="s1_t">Créez votre compte</h3><p data-i="s1_p">Avec Google ou avec votre email. Votre profil affiche ensuite vos analyses, vos exports et vos campagnes.</p></div>
+        <div class="step"><h3 data-i="s2_t">Installez et connectez l'extension</h3><p data-i="s2_p">Téléchargez-la, ajoutez-la à Chrome, puis cliquez sur « Connecter l'extension » dans votre profil.</p></div>
+        <div class="step"><h3 data-i-html="s3_t">Ouvrez Ads Manager et cliquez sur KPI</h3><p data-i-html="s3_p">Ou appuyez sur <span class="kbd">Alt</span> + <span class="kbd">K</span>. Connectez Meta Ads dans votre profil pour l'export par âge, genre, placement et les campagnes proposées.</p></div>
+      </div>
+      <div class="install" id="install">
+        <div><b data-i="inst_t">Installer l'extension (1 minute)</b>
+          <ol>
+            <li data-i-html="inst_1">Téléchargez le fichier <code>.zip</code> et décompressez-le dans un dossier que vous gardez.</li>
+            <li data-i-html="inst_2">Ouvrez <code>chrome://extensions</code> et activez le <b>Mode développeur</b> (en haut à droite).</li>
+            <li data-i-html="inst_3">Cliquez sur <b>Charger l'extension non empaquetée</b> et choisissez le dossier décompressé.</li>
+            <li data-i-html="inst_4">Revenez sur votre profil et cliquez sur <b>Connecter l'extension</b>.</li>
+          </ol></div>
+        <a class="btn pri lg" href="download.php"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4v11m0 0l-4-4m4 4l4-4M5 20h14"/></svg><span data-i="download">Télécharger l'extension</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="s alt" id="privacy">
+    <div class="wrap">
+      <div class="sh"><div class="kicker" data-i="priv_kicker">Vos données</div><h2 data-i="priv_title">Clair et sous votre contrôle</h2><p data-i="priv_sub">Voici exactement ce que l'extension lit, ce qu'elle partage, et ce qu'elle ne touche jamais.</p></div>
+      <div class="priv">
+        <div class="pv" style="--c:var(--blue)"><h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span data-i="pv1_t">Ce que l'extension lit</span></h3>
+          <ul><li data-i="pv1_1">Le tableau Ads Manager affiché à l'écran (campagnes, ensembles, publicités).</li><li data-i="pv1_2">Si vous connectez Meta Ads : vos statistiques par âge, genre et placement, et les textes de vos annonces.</li></ul></div>
+        <div class="pv" style="--c:var(--orange)"><h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v7a1 1 0 001 1h14a1 1 0 001-1v-7M16 6l-4-4-4 4M12 2v13"/></svg><span data-i="pv2_t">Ce qui est partagé</span></h3>
+          <ul><li data-i="pv2_1">Le résumé de vos analyses (KPI par campagne, ensemble ou publicité), envoyé à votre compte pour votre profil.</li><li data-i="pv2_2">Ces données servent aussi, de façon agrégée, à améliorer l'extension.</li><li data-i="pv2_3">Désactivable à tout moment dans votre profil, et supprimable en un clic.</li></ul></div>
+        <div class="pv" style="--c:var(--green)"><h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg><span data-i="pv3_t">Ce qui ne l'est jamais</span></h3>
+          <ul><li data-i="pv3_1">Votre mot de passe Facebook, vos moyens de paiement, les données de vos clients.</li><li data-i="pv3_2">Votre accès Meta est chiffré sur notre serveur et peut être retiré à tout moment.</li><li data-i="pv3_3">Vos données ne sont ni vendues ni louées.</li></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="s" id="faq">
+    <div class="wrap">
+      <div class="sh"><div class="kicker">FAQ</div><h2 data-i="faq_title">Questions fréquentes</h2></div>
+      <div class="faq">
+        <details><summary data-i="q1">Pourquoi faut-il un compte ?</summary><p data-i="a1">Le compte relie l'extension à votre profil : vos analyses, exports et campagnes y sont visibles, et c'est lui qui donne accès à la connexion Meta Ads (ventilations, textes, création de campagnes).</p></details>
+        <details><summary data-i="q2">L'extension peut-elle modifier mes campagnes ?</summary><p data-i="a2">Non, le tableau de bord est en lecture seule. La seule écriture possible est la création d'une campagne que vous avez relue et validée : elle est créée en pause, et ne démarre que si vous cliquez sur « Publier ».</p></details>
+        <details><summary data-i="q3">Comment sont choisis les âges, genres et placements proposés ?</summary><p data-i="a3">À partir de vos statistiques sur la période choisie : les segments dont le coût par achat est dans votre objectif (ou dont le ROAS est le meilleur) sont retenus, ceux qui dépensent sans vendre sont écartés. Chaque choix est expliqué et modifiable avant la création.</p></details>
+        <details><summary data-i="q4">Pourquoi connecter Meta Ads en plus de l'extension ?</summary><p data-i="a4">Le tableau Ads Manager ne contient pas les ventilations âge / genre / placement ni les textes complets des annonces. La connexion Meta (officielle, via Facebook) permet de les récupérer et de créer les campagnes proposées.</p></details>
+        <details><summary data-i="q5">Puis-je arrêter le partage de mes statistiques ?</summary><p data-i="a5">Oui, à tout moment dans votre profil, rubrique « Données et confidentialité ». Vous pouvez aussi supprimer les statistiques déjà partagées, ou votre compte entier.</p></details>
+      </div>
+      <div class="band" style="margin-top:48px">
+        <div><h2 data-i="band_t">Prêt à voir vos KPI en couleur ?</h2><p data-i="band_p">Créez votre compte, installez l'extension, et ouvrez Ads Manager.</p></div>
+        <a class="btn sec lg" href="#signup" data-auth-cta><span data-i="signup_cta">Créer mon compte gratuit</span></a>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ============================================================ CONNEXION -->
+<div class="view" id="v-auth" hidden>
+  <div class="auth">
+    <h2 id="authTitle" data-i="auth_title">Bienvenue</h2>
+    <p class="sub" id="authSub" data-i="auth_sub">Connectez-vous pour utiliser l'extension Stats Meta KPIs.</p>
+    <div class="callout info" id="extHint" hidden style="margin-bottom:16px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg><span data-i="ext_hint">Après la connexion, l'extension sera reliée automatiquement à votre compte.</span></div>
+    <div class="tabs" id="authTabs"><button data-tab="login" data-i="login">Se connecter</button><button data-tab="signup" data-i="signup_tab">Créer un compte</button></div>
+    <div id="gBlock" hidden><div class="gwrap" id="gBtn"></div><div class="or" data-i="or">ou</div></div>
+
+    <form id="loginForm" novalidate>
+      <div class="f"><label for="lEmail" data-i="email">Email</label><input id="lEmail" name="email" type="email" autocomplete="email" required></div>
+      <div class="f"><div class="row"><label for="lPass" data-i="password">Mot de passe</label><button type="button" class="linkbtn" id="forgotBtn" data-i="forgot">Mot de passe oublié ?</button></div><input id="lPass" name="password" type="password" autocomplete="current-password" required></div>
+      <button class="btn pri lg full" type="submit" data-i="login">Se connecter</button>
+      <p class="err" role="alert"></p>
+    </form>
+
+    <form id="signupForm" novalidate hidden>
+      <div class="f"><label for="sName" data-i="name">Nom</label><input id="sName" name="name" autocomplete="name" maxlength="60" required></div>
+      <div class="f"><label for="sEmail" data-i="email">Email</label><input id="sEmail" name="email" type="email" autocomplete="email" required></div>
+      <div class="f"><label for="sPass" data-i="password">Mot de passe</label><input id="sPass" name="password" type="password" autocomplete="new-password" minlength="8" required><small data-i="pass_hint">8 caractères minimum.</small></div>
+      <button class="btn pri lg full" type="submit" data-i="signup_tab">Créer un compte</button>
+      <p class="err" role="alert"></p>
+    </form>
+
+    <form id="forgotForm" novalidate hidden>
+      <p style="margin:0 0 12px;color:var(--ink-2);font-size:14.5px" data-i="forgot_p">Indiquez votre email : nous vous envoyons un lien pour choisir un nouveau mot de passe.</p>
+      <div class="f"><label for="fEmail" data-i="email">Email</label><input id="fEmail" name="email" type="email" autocomplete="email" required></div>
+      <button class="btn pri lg full" type="submit" data-i="send_link">Envoyer le lien</button>
+      <p class="err" role="alert"></p>
+      <p style="text-align:center;margin:12px 0 0"><button type="button" class="linkbtn" data-back data-i="back_login">Retour à la connexion</button></p>
+    </form>
+
+    <form id="resetForm" novalidate hidden>
+      <div class="f"><label for="rPass" data-i="new_password">Nouveau mot de passe</label><input id="rPass" name="password" type="password" autocomplete="new-password" minlength="8" required><small data-i="pass_hint">8 caractères minimum.</small></div>
+      <button class="btn pri lg full" type="submit" data-i="save_password">Enregistrer le mot de passe</button>
+      <p class="err" role="alert"></p>
+    </form>
+
+    <p class="note" id="shareNote"><span data-i="share_note">En continuant, vous acceptez que l'extension partage avec Stats Meta KPIs les statistiques qu'elle lit dans Ads Manager (KPI, ventilations, textes d'annonces) : elles alimentent votre profil et nous aident à améliorer l'extension. Vous pouvez désactiver ce partage à tout moment dans votre profil.</span> <a href="./#privacy" data-i="learn_more">En savoir plus</a></p>
+  </div>
+</div>
+
+<!-- ============================================================ PROFIL -->
+<div class="view" id="v-profile" hidden>
+  <div class="loading" id="pLoading"><div class="spin"></div><span data-i="loading">Chargement…</span></div>
+  <div id="pBody" hidden>
+    <div class="phero"><div class="wrap">
+      <span class="av" id="pAv">?</span>
+      <div style="min-width:0">
+        <h1 id="pName"></h1>
+        <div class="em" id="pEmail"></div>
+        <div class="chips" id="pChips"></div>
+      </div>
+      <div class="act">
+        <button class="btn sec" id="editBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg><span data-i="edit">Modifier</span></button>
+        <button class="btn sec" id="logoutBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/></svg><span data-i="logout">Se déconnecter</span></button>
+      </div>
+    </div></div>
+    <div class="wrap">
+      <div class="tiles" id="tiles"></div>
+      <div id="metaFlash"></div>
+
+      <div class="card" id="extCard">
+        <div class="ch"><div><h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1h5"/></svg><span data-i="ext_card_t">Extension Chrome</span></h2><p class="cs" data-i="ext_card_p">L'extension doit être connectée à votre compte pour fonctionner dans Ads Manager.</p></div>
+          <a class="btn sec" href="download.php"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4v11m0 0l-4-4m4 4l4-4M5 20h14"/></svg><span data-i="download">Télécharger l'extension</span></a></div>
+        <div id="extState"></div>
+        <div id="tokList" style="margin-top:14px"></div>
+      </div>
+
+      <div class="card">
+        <div class="ch"><div><h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V5M4 19h16M8 15v-4M12 15V8M16 15v-6"/></svg><span data-i="stats_t">Mes statistiques</span></h2><p class="cs" data-i="stats_p">Les dernières analyses envoyées par l'extension, par compte publicitaire.</p></div></div>
+        <div id="scans"></div>
+      </div>
+
+      <div class="card">
+        <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l1.8 4.6L18.5 9l-4.7 1.4L12 15l-1.8-4.6L5.5 9l4.7-1.4z"/></svg><span data-i="camp_t">Campagnes créées avec l'extension</span></h2>
+        <p class="cs" data-i="camp_p">Proposées à partir de vos meilleurs KPI, créées en pause. Publiez-les ici ou dans Ads Manager.</p>
+        <div id="props"></div>
+      </div>
+
+      <div class="two">
+        <div class="card" id="metaCard">
+          <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 15c0-4 2.2-8 5-8 3.5 0 5.5 10 9 10 2 0 4-2 4-5s-2-5-4-5c-3.5 0-5.5 10-9 10-2.8 0-5-1.5-5-2z"/></svg><span>Meta Ads</span></h2>
+          <p class="cs" data-i="meta_p">Nécessaire pour l'export par âge, genre et placement, les textes des annonces et la création de campagnes.</p>
+          <div id="metaState"></div>
+        </div>
+        <div class="card">
+          <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/></svg><span data-i="data_t">Données et confidentialité</span></h2>
+          <p class="cs" data-i="data_p">Le partage alimente « Mes statistiques » et nous aide à améliorer l'extension (de façon agrégée).</p>
+          <label class="sw"><input type="checkbox" id="shareSw"><span class="tr"></span><span data-i="share_label">Partager mes statistiques avec Stats Meta KPIs</span></label>
+          <p style="font-size:13px;color:var(--muted);margin:10px 0 0" id="shareDesc"></p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
+            <button class="btn sec sm" id="delShared" data-i="del_shared">Supprimer mes statistiques partagées</button>
+            <button class="btn danger sm" id="delAccount" data-i="del_account">Supprimer mon compte</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span data-i="act_t">Activité récente</span></h2>
+        <ul class="act-list" id="actList"></ul>
+      </div>
+    </div>
+  </div>
+</div>
+</main>
+
+<footer><div class="wrap"><span>© <span id="yr"></span> Stats Meta KPIs · <a href="../">dehini.com</a></span><span data-i="foot">Outil indépendant, non affilié à Meta Platforms.</span></div></footer>
+
+<dialog id="editDlg"><form method="dialog" id="editForm">
+  <h3 data-i="edit_t">Modifier mon profil</h3>
+  <div class="f"><label for="eName" data-i="name">Nom</label><input id="eName" name="name" maxlength="60" required></div>
+  <div class="f"><label for="eCompany" data-i="company">Entreprise / boutique</label><input id="eCompany" name="company" maxlength="80"></div>
+  <div class="f"><label for="eLang" data-i="language">Langue</label><select id="eLang" name="lang"><option value="fr">Français</option><option value="en">English</option></select></div>
+  <p class="err" role="alert"></p>
+  <div class="dlg-act"><button class="btn ghost" value="cancel" formnovalidate data-i="cancel">Annuler</button><button class="btn pri" value="ok" data-i="save">Enregistrer</button></div>
+</form></dialog>
+
+<dialog id="delDlg"><form method="dialog" id="delForm">
+  <h3 data-i="del_t">Supprimer mon compte</h3>
+  <p style="margin:0 0 12px;color:var(--ink-2)" data-i="del_p">Votre compte, vos statistiques partagées, la connexion Meta et l'historique des campagnes seront supprimés. Les campagnes déjà créées sur Meta restent sur votre compte publicitaire.</p>
+  <div class="f" id="delPassF"><label for="dPass" data-i="password">Mot de passe</label><input id="dPass" name="password" type="password" autocomplete="current-password"></div>
+  <p class="err" role="alert"></p>
+  <div class="dlg-act"><button class="btn ghost" value="cancel" formnovalidate data-i="cancel">Annuler</button><button class="btn danger" value="ok" data-i="del_confirm">Supprimer définitivement</button></div>
+</form></dialog>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+"use strict";
+/* =========================================================== textes */
+const I18N = {
+fr: {
+  nav_features:"Fonctionnalités", nav_how:"Comment ça marche", nav_privacy:"Vos données", nav_faq:"FAQ",
+  login:"Se connecter", signup_cta_short:"Créer un compte", signup_tab:"Créer un compte", signup_cta:"Créer mon compte gratuit",
+  eyebrow:"Extension Chrome pour Meta Ads Manager",
+  hero_title:"Vos KPI Meta Ads, <em>en couleur</em>, directement dans Ads Manager.",
+  hero_lead:"Stats Meta KPIs colore chaque KPI de votre tableau (vert, orange, rouge), exporte vos statistiques par âge, genre et placement en Excel avec les textes de vos annonces, et vous propose une campagne prête à publier à partir de vos meilleurs résultats.",
+  download:"Télécharger l'extension", fine1:"Gratuit", fine2:"Français et anglais", fine3:"Chrome, Edge, Brave", fine4:"Campagnes toujours créées en pause",
+  mock_sub:"Données de cette vue Ads Manager", lv_campaigns:"Campagnes", lv_adsets:"Ensembles", lv_ads:"Publicités",
+  v_win:"Gagnantes", v_opt:"À optimiser", v_lose:"Perdantes", v_ins:"Données insuffisantes", v_win1:"Gagnante", v_opt1:"À optimiser", v_lose1:"Perdante",
+  k_spend:"Dépense", k_ctr:"CTR lien", st_good:"Bon", st_watch:"À surveiller", st_bad:"À analyser", t_verdict:"Verdict", t_name:"Nom",
+  feat_kicker:"Fonctionnalités", feat_title:"Tout ce qu'il faut pour décider vite, sans quitter Ads Manager",
+  feat_sub:"L'extension lit le tableau que vous avez déjà à l'écran. Connectez Meta Ads pour aller plus loin : ventilations, textes des annonces et création de campagnes.",
+  f1_t:"KPI colorés en un coup d'œil", f1_p:"Chaque KPI passe au vert, à l'orange ou au rouge selon vos propres seuils, dans le panneau et dans le tableau Ads Manager.", freq:"Fréquence",
+  f2_t:"Les 5 réponses qui comptent", f2_p:"Quelles campagnes performent, quels ensembles optimiser, quelles publicités perdent de l'argent, lesquelles analyser, et où le budget est gaspillé.",
+  f3_t:"Export Excel complet", f3_p:"Un fichier .xlsx avec vos campagnes, ensembles et publicités, et vos statistiques ventilées, prêt à partager.",
+  placement:"Placement", age:"Âge", gender:"Genre", text:"Texte", title:"Titre", description:"Description",
+  f4_t:"Campagnes proposées par vos meilleurs KPI", f4_p:"L'extension repère vos meilleurs âges, genres et placements et votre meilleure annonce, prépare la campagne ; vous modifiez tout, puis vous la créez sur Meta et la publiez quand vous voulez.",
+  f5_t:"Rien ne change sans votre clic", f5_p:"Le tableau de bord est en lecture seule. Une campagne proposée est toujours créée en pause : elle ne dépense rien tant que vous ne cliquez pas sur « Publier ».",
+  f6_t:"Français et anglais", f6_p:"L'extension et votre espace s'affichent dans votre langue, avec les formats de nombres et de devises de votre compte.",
+  how_kicker:"Comment ça marche", how_title:"Prêt en 3 minutes",
+  s1_t:"Créez votre compte", s1_p:"Avec Google ou avec votre email. Votre profil affiche ensuite vos analyses, vos exports et vos campagnes.",
+  s2_t:"Installez et connectez l'extension", s2_p:"Téléchargez-la, ajoutez-la à Chrome, puis cliquez sur « Connecter l'extension » dans votre profil.",
+  s3_t:"Ouvrez Ads Manager et cliquez sur KPI", s3_p:"Ou appuyez sur <span class=\"kbd\">Alt</span> + <span class=\"kbd\">K</span>. Connectez Meta Ads dans votre profil pour l'export par âge, genre, placement et les campagnes proposées.",
+  inst_t:"Installer l'extension (1 minute)",
+  inst_1:"Téléchargez le fichier <code>.zip</code> et décompressez-le dans un dossier que vous gardez.",
+  inst_2:"Ouvrez <code>chrome://extensions</code> et activez le <b>Mode développeur</b> (en haut à droite).",
+  inst_3:"Cliquez sur <b>Charger l'extension non empaquetée</b> et choisissez le dossier décompressé.",
+  inst_4:"Revenez sur votre profil et cliquez sur <b>Connecter l'extension</b>.",
+  priv_kicker:"Vos données", priv_title:"Clair et sous votre contrôle", priv_sub:"Voici exactement ce que l'extension lit, ce qu'elle partage, et ce qu'elle ne touche jamais.",
+  pv1_t:"Ce que l'extension lit", pv1_1:"Le tableau Ads Manager affiché à l'écran (campagnes, ensembles, publicités).", pv1_2:"Si vous connectez Meta Ads : vos statistiques par âge, genre et placement, et les textes de vos annonces.",
+  pv2_t:"Ce qui est partagé", pv2_1:"Le résumé de vos analyses (KPI par campagne, ensemble ou publicité), envoyé à votre compte pour votre profil.", pv2_2:"Ces données servent aussi, de façon agrégée, à améliorer l'extension.", pv2_3:"Désactivable à tout moment dans votre profil, et supprimable en un clic.",
+  pv3_t:"Ce qui ne l'est jamais", pv3_1:"Votre mot de passe Facebook, vos moyens de paiement, les données de vos clients.", pv3_2:"Votre accès Meta est chiffré sur notre serveur et peut être retiré à tout moment.", pv3_3:"Vos données ne sont ni vendues ni louées.",
+  faq_title:"Questions fréquentes",
+  q1:"Pourquoi faut-il un compte ?", a1:"Le compte relie l'extension à votre profil : vos analyses, exports et campagnes y sont visibles, et c'est lui qui donne accès à la connexion Meta Ads (ventilations, textes, création de campagnes).",
+  q2:"L'extension peut-elle modifier mes campagnes ?", a2:"Non, le tableau de bord est en lecture seule. La seule écriture possible est la création d'une campagne que vous avez relue et validée : elle est créée en pause, et ne démarre que si vous cliquez sur « Publier ».",
+  q3:"Comment sont choisis les âges, genres et placements proposés ?", a3:"À partir de vos statistiques sur la période choisie : les segments dont le coût par achat est dans votre objectif (ou dont le ROAS est le meilleur) sont retenus, ceux qui dépensent sans vendre sont écartés. Chaque choix est expliqué et modifiable avant la création.",
+  q4:"Pourquoi connecter Meta Ads en plus de l'extension ?", a4:"Le tableau Ads Manager ne contient pas les ventilations âge / genre / placement ni les textes complets des annonces. La connexion Meta (officielle, via Facebook) permet de les récupérer et de créer les campagnes proposées.",
+  q5:"Puis-je arrêter le partage de mes statistiques ?", a5:"Oui, à tout moment dans votre profil, rubrique « Données et confidentialité ». Vous pouvez aussi supprimer les statistiques déjà partagées, ou votre compte entier.",
+  band_t:"Prêt à voir vos KPI en couleur ?", band_p:"Créez votre compte, installez l'extension, et ouvrez Ads Manager.",
+  foot:"Outil indépendant, non affilié à Meta Platforms.",
+  auth_title:"Bienvenue", auth_title_signup:"Créer votre compte", auth_sub:"Connectez-vous pour utiliser l'extension Stats Meta KPIs.", auth_sub_signup:"Gratuit. Nécessaire pour utiliser l'extension.",
+  auth_title_forgot:"Mot de passe oublié", auth_title_reset:"Nouveau mot de passe",
+  ext_hint:"Après la connexion, l'extension sera reliée automatiquement à votre compte.",
+  or:"ou", email:"Email", password:"Mot de passe", forgot:"Mot de passe oublié ?", name:"Nom", pass_hint:"8 caractères minimum.",
+  forgot_p:"Indiquez votre email : nous vous envoyons un lien pour choisir un nouveau mot de passe.", send_link:"Envoyer le lien", back_login:"Retour à la connexion",
+  new_password:"Nouveau mot de passe", save_password:"Enregistrer le mot de passe", forgot_sent:"Si un compte existe pour cette adresse, un email vient d'être envoyé.",
+  share_note:"En continuant, vous acceptez que l'extension partage avec Stats Meta KPIs les statistiques qu'elle lit dans Ads Manager (KPI, ventilations, textes d'annonces) : elles alimentent votre profil et nous aident à améliorer l'extension. Vous pouvez désactiver ce partage à tout moment dans votre profil.",
+  learn_more:"En savoir plus", loading:"Chargement…",
+  edit:"Modifier", logout:"Se déconnecter", edit_t:"Modifier mon profil", company:"Entreprise / boutique", language:"Langue", cancel:"Annuler", save:"Enregistrer",
+  ext_card_t:"Extension Chrome", ext_card_p:"L'extension doit être connectée à votre compte pour fonctionner dans Ads Manager.",
+  stats_t:"Mes statistiques", stats_p:"Les dernières analyses envoyées par l'extension, par compte publicitaire.",
+  camp_t:"Campagnes créées avec l'extension", camp_p:"Proposées à partir de vos meilleurs KPI, créées en pause. Publiez-les ici ou dans Ads Manager.",
+  meta_p:"Nécessaire pour l'export par âge, genre et placement, les textes des annonces et la création de campagnes.",
+  data_t:"Données et confidentialité", data_p:"Le partage alimente « Mes statistiques » et nous aide à améliorer l'extension (de façon agrégée).",
+  share_label:"Partager mes statistiques avec Stats Meta KPIs", share_on_desc:"Activé : après chaque analyse, l'extension envoie le résumé des KPI à votre compte.", share_off_desc:"Désactivé : l'extension n'envoie plus aucune statistique. « Mes statistiques » ne se met plus à jour.",
+  del_shared:"Supprimer mes statistiques partagées", del_account:"Supprimer mon compte", del_t:"Supprimer mon compte",
+  del_p:"Votre compte, vos statistiques partagées, la connexion Meta et l'historique des campagnes seront supprimés. Les campagnes déjà créées sur Meta restent sur votre compte publicitaire.",
+  del_confirm:"Supprimer définitivement", act_t:"Activité récente",
+  tile_ext:"Extension", tile_meta:"Meta Ads", tile_share:"Partage", tile_activity:"Activité",
+  connected:"Connectée", not_connected:"Non connectée", meta_connected:"Connecté", meta_not:"Non connecté", on:"Activé", off:"Désactivé",
+  last_used:"Dernière utilisation {t}", never:"jamais", browsers:"{n} navigateur(s)", connect_ext:"Connecter l'extension", connect_meta:"Connecter Meta Ads",
+  activity_line:"{s} analyses · {e} exports · {c} campagnes",
+  ext_not_found:"Extension non détectée dans ce navigateur. Installez-la, puis rechargez cette page.",
+  ext_found_other:"L'extension est installée mais pas encore reliée à ce compte.", ext_found_ok:"L'extension de ce navigateur est connectée à votre compte.",
+  ext_found_otheracc:"L'extension de ce navigateur est connectée à un autre compte ({e}).", reconnect:"Relier à ce compte",
+  open_am:"Ouvrir Ads Manager", reload:"Recharger la page", tok_t:"Navigateurs connectés", revoke:"Déconnecter", tok_none:"Aucun navigateur connecté pour l'instant.",
+  ext_connected_toast:"Extension connectée ✓ Vous pouvez retourner sur Ads Manager.", ext_connect_fail:"L'extension n'a pas répondu. Rechargez la page et réessayez.",
+  no_scans_t:"Aucune analyse pour l'instant", no_scans:"Ouvrez Ads Manager, cliquez sur KPI : vos chiffres apparaîtront ici.", no_scans_off:"Le partage est désactivé : activez-le pour voir vos analyses ici.",
+  account:"Compte publicitaire", period:"Période", scanned:"analysé {t}", rows:"{n} lignes",
+  k_purchases:"Achats", k_cpa:"CPA", k_roas:"ROAS", k_cpm:"CPM", best:"Meilleurs résultats", worst:"Pertes à couper", none_win:"Aucun gagnant sur cette période.", none_lose:"Aucune perte : bravo.",
+  no_props_t:"Aucune campagne créée", no_props:"Dans Ads Manager, ouvrez l'extension et cliquez sur « Proposer une campagne ».",
+  st_paused:"En pause", st_active:"Active", st_failed:"Échec", st_creating:"Création…", per_day:"/ jour",
+  publish:"Publier", pause:"Mettre en pause", open:"Ouvrir dans Ads Manager", publish_confirm:"Publier « {n} » ? La campagne commencera à diffuser et à dépenser jusqu'à {b} par jour.",
+  published:"Campagne publiée ✓", paused_ok:"Campagne mise en pause",
+  meta_unconfigured:"La connexion Meta Ads n'est pas encore activée sur ce site (l'administrateur doit configurer l'application Meta).",
+  meta_off:"Non connecté. Connectez votre compte Facebook pour donner à l'extension l'accès à vos statistiques publicitaires (lecture) et à la création de campagnes.",
+  meta_conn_as:"Connecté en tant que", meta_expires:"Accès valable jusqu'au", meta_accounts:"Comptes publicitaires", disconnect:"Déconnecter", renew:"Renouveler l'accès",
+  meta_ok:"Meta Ads est connecté ✓", meta_denied:"Connexion Meta annulée.", meta_error:"La connexion Meta a échoué. Réessayez.", meta_soon:"L'accès Meta expire bientôt : renouvelez-le.",
+  confirm_meta_off:"Déconnecter Meta Ads ? L'export par âge, genre, placement et la création de campagnes ne fonctionneront plus.",
+  confirm_del_shared:"Supprimer toutes vos statistiques partagées ? Cette action est définitive.", done:"C'est fait ✓", saved:"Enregistré ✓",
+  ago_now:"à l'instant", ago_min:"il y a {n} min", ago_h:"il y a {n} h", ago_d:"il y a {n} j",
+  member_since:"Membre depuis {d}", via_google:"Google", via_email:"Email",
+  a_signup:"Compte créé", a_ext_connect:"Extension connectée", a_meta_connect:"Meta Ads connecté", a_export:"Export Excel", a_campaign_create:"Campagne créée (en pause)", a_campaign_publish:"Campagne publiée", a_campaign_pause:"Campagne mise en pause",
+  no_activity:"Aucune activité pour l'instant.",
+  lv_campaign:"Campagnes", lv_adset:"Ensembles", lv_ad:"Publicités",
+  err_generic:"Une erreur est survenue. Réessayez.", err_bad_login:"Email ou mot de passe incorrect.", err_use_google:"Ce compte a été créé avec Google : utilisez « Continuer avec Google ».",
+  err_email_taken:"Un compte existe déjà avec cet email : connectez-vous.", err_bad_email:"Adresse email invalide.", err_weak_pass:"Mot de passe trop court (8 caractères minimum).",
+  err_bad_name:"Indiquez votre nom.", err_rate:"Trop d'essais. Patientez quelques minutes.", err_google_bad:"La connexion Google a échoué. Réessayez.", err_bad_token:"Ce lien a expiré. Redemandez un email.",
+  err_auth:"Votre session a expiré : reconnectez-vous.", err_network:"Pas de connexion au serveur.", err_meta_error:"Meta a refusé l'opération : {m}", err_meta_expired:"L'accès Meta a expiré : reconnectez Meta Ads.",
+},
+en: {
+  nav_features:"Features", nav_how:"How it works", nav_privacy:"Your data", nav_faq:"FAQ",
+  login:"Sign in", signup_cta_short:"Create account", signup_tab:"Create account", signup_cta:"Create my free account",
+  eyebrow:"Chrome extension for Meta Ads Manager",
+  hero_title:"Your Meta Ads KPIs, <em>in colour</em>, right inside Ads Manager.",
+  hero_lead:"Stats Meta KPIs colours every KPI in your table (green, orange, red), exports your stats by age, gender and placement to Excel together with your ad copy, and suggests a ready-to-publish campaign built from your best results.",
+  download:"Download the extension", fine1:"Free", fine2:"French and English", fine3:"Chrome, Edge, Brave", fine4:"Campaigns always created paused",
+  mock_sub:"Data from this Ads Manager view", lv_campaigns:"Campaigns", lv_adsets:"Ad sets", lv_ads:"Ads",
+  v_win:"Winning", v_opt:"Optimize", v_lose:"Losing", v_ins:"Insufficient data", v_win1:"Winning", v_opt1:"Optimize", v_lose1:"Losing",
+  k_spend:"Spend", k_ctr:"Link CTR", st_good:"Good", st_watch:"Monitor", st_bad:"Investigate", t_verdict:"Verdict", t_name:"Name",
+  feat_kicker:"Features", feat_title:"Everything you need to decide fast, without leaving Ads Manager",
+  feat_sub:"The extension reads the table already on your screen. Connect Meta Ads to go further: breakdowns, ad copy and campaign creation.",
+  f1_t:"Colour-coded KPIs at a glance", f1_p:"Every KPI turns green, orange or red against your own thresholds, in the panel and in the Ads Manager table.", freq:"Frequency",
+  f2_t:"The 5 answers that matter", f2_p:"Which campaigns perform, which ad sets to optimize, which ads lose money, which deserve a closer look, and where budget is wasted.",
+  f3_t:"Complete Excel export", f3_p:"One .xlsx file with your campaigns, ad sets and ads plus broken-down stats, ready to share.",
+  placement:"Placement", age:"Age", gender:"Gender", text:"Text", title:"Headline", description:"Description",
+  f4_t:"Campaigns suggested from your best KPIs", f4_p:"The extension finds your best ages, genders and placements and your best ad, drafts the campaign; you edit everything, create it on Meta and publish whenever you want.",
+  f5_t:"Nothing changes without your click", f5_p:"The dashboard is read-only. A suggested campaign is always created paused: it spends nothing until you click “Publish”.",
+  f6_t:"French and English", f6_p:"The extension and your space speak your language, with your account's number and currency formats.",
+  how_kicker:"How it works", how_title:"Ready in 3 minutes",
+  s1_t:"Create your account", s1_p:"With Google or your email. Your profile then shows your scans, exports and campaigns.",
+  s2_t:"Install and connect the extension", s2_p:"Download it, add it to Chrome, then click “Connect the extension” in your profile.",
+  s3_t:"Open Ads Manager and click KPI", s3_p:"Or press <span class=\"kbd\">Alt</span> + <span class=\"kbd\">K</span>. Connect Meta Ads in your profile for age, gender and placement exports and suggested campaigns.",
+  inst_t:"Install the extension (1 minute)",
+  inst_1:"Download the <code>.zip</code> file and unzip it into a folder you will keep.",
+  inst_2:"Open <code>chrome://extensions</code> and switch on <b>Developer mode</b> (top right).",
+  inst_3:"Click <b>Load unpacked</b> and select the unzipped folder.",
+  inst_4:"Come back to your profile and click <b>Connect the extension</b>.",
+  priv_kicker:"Your data", priv_title:"Clear and under your control", priv_sub:"Here is exactly what the extension reads, what it shares, and what it never touches.",
+  pv1_t:"What the extension reads", pv1_1:"The Ads Manager table on your screen (campaigns, ad sets, ads).", pv1_2:"If you connect Meta Ads: your stats by age, gender and placement, and your ad copy.",
+  pv2_t:"What is shared", pv2_1:"A summary of your scans (KPIs per campaign, ad set or ad), sent to your account for your profile.", pv2_2:"This data is also used, in aggregate, to improve the extension.", pv2_3:"You can turn this off anytime in your profile, and delete it in one click.",
+  pv3_t:"What never is", pv3_1:"Your Facebook password, your payment methods, your customers' data.", pv3_2:"Your Meta access is encrypted on our server and can be removed at any time.", pv3_3:"Your data is never sold or rented.",
+  faq_title:"Frequently asked questions",
+  q1:"Why do I need an account?", a1:"The account links the extension to your profile: your scans, exports and campaigns show up there, and it unlocks the Meta Ads connection (breakdowns, ad copy, campaign creation).",
+  q2:"Can the extension change my campaigns?", a2:"No, the dashboard is read-only. The only write is creating a campaign you reviewed and approved: it is created paused and only starts when you click “Publish”.",
+  q3:"How are the suggested ages, genders and placements chosen?", a3:"From your stats over the selected period: segments whose cost per purchase is on target (or with the best ROAS) are kept, those spending without selling are dropped. Every choice is explained and editable before creation.",
+  q4:"Why connect Meta Ads on top of the extension?", a4:"The Ads Manager table doesn't include age / gender / placement breakdowns or full ad copy. The official Meta connection (through Facebook) retrieves them and creates the suggested campaigns.",
+  q5:"Can I stop sharing my stats?", a5:"Yes, anytime in your profile under “Data & privacy”. You can also delete stats already shared, or your whole account.",
+  band_t:"Ready to see your KPIs in colour?", band_p:"Create your account, install the extension, and open Ads Manager.",
+  foot:"Independent tool, not affiliated with Meta Platforms.",
+  auth_title:"Welcome back", auth_title_signup:"Create your account", auth_sub:"Sign in to use the Stats Meta KPIs extension.", auth_sub_signup:"Free. Required to use the extension.",
+  auth_title_forgot:"Forgot password", auth_title_reset:"New password",
+  ext_hint:"Once you're signed in, the extension will be linked to your account automatically.",
+  or:"or", email:"Email", password:"Password", forgot:"Forgot password?", name:"Name", pass_hint:"At least 8 characters.",
+  forgot_p:"Enter your email: we'll send you a link to choose a new password.", send_link:"Send the link", back_login:"Back to sign in",
+  new_password:"New password", save_password:"Save password", forgot_sent:"If an account exists for this address, an email is on its way.",
+  share_note:"By continuing, you agree that the extension shares with Stats Meta KPIs the statistics it reads in Ads Manager (KPIs, breakdowns, ad copy): they power your profile and help us improve the extension. You can turn sharing off anytime in your profile.",
+  learn_more:"Learn more", loading:"Loading…",
+  edit:"Edit", logout:"Sign out", edit_t:"Edit my profile", company:"Company / store", language:"Language", cancel:"Cancel", save:"Save",
+  ext_card_t:"Chrome extension", ext_card_p:"The extension must be connected to your account to work in Ads Manager.",
+  stats_t:"My stats", stats_p:"The latest scans sent by the extension, per ad account.",
+  camp_t:"Campaigns created with the extension", camp_p:"Suggested from your best KPIs and created paused. Publish them here or in Ads Manager.",
+  meta_p:"Required for age, gender and placement exports, ad copy and campaign creation.",
+  data_t:"Data & privacy", data_p:"Sharing powers “My stats” and helps us improve the extension (in aggregate).",
+  share_label:"Share my stats with Stats Meta KPIs", share_on_desc:"On: after each scan, the extension sends a KPI summary to your account.", share_off_desc:"Off: the extension sends no stats at all. “My stats” no longer updates.",
+  del_shared:"Delete my shared stats", del_account:"Delete my account", del_t:"Delete my account",
+  del_p:"Your account, shared stats, Meta connection and campaign history will be deleted. Campaigns already created on Meta stay in your ad account.",
+  del_confirm:"Delete permanently", act_t:"Recent activity",
+  tile_ext:"Extension", tile_meta:"Meta Ads", tile_share:"Sharing", tile_activity:"Activity",
+  connected:"Connected", not_connected:"Not connected", meta_connected:"Connected", meta_not:"Not connected", on:"On", off:"Off",
+  last_used:"Last used {t}", never:"never", browsers:"{n} browser(s)", connect_ext:"Connect the extension", connect_meta:"Connect Meta Ads",
+  activity_line:"{s} scans · {e} exports · {c} campaigns",
+  ext_not_found:"Extension not detected in this browser. Install it, then reload this page.",
+  ext_found_other:"The extension is installed but not linked to this account yet.", ext_found_ok:"This browser's extension is connected to your account.",
+  ext_found_otheracc:"This browser's extension is connected to another account ({e}).", reconnect:"Link to this account",
+  open_am:"Open Ads Manager", reload:"Reload page", tok_t:"Connected browsers", revoke:"Disconnect", tok_none:"No connected browser yet.",
+  ext_connected_toast:"Extension connected ✓ You can go back to Ads Manager.", ext_connect_fail:"The extension didn't answer. Reload the page and try again.",
+  no_scans_t:"No scan yet", no_scans:"Open Ads Manager and click KPI: your numbers will show up here.", no_scans_off:"Sharing is off: turn it on to see your scans here.",
+  account:"Ad account", period:"Period", scanned:"scanned {t}", rows:"{n} rows",
+  k_purchases:"Purchases", k_cpa:"CPA", k_roas:"ROAS", k_cpm:"CPM", best:"Best results", worst:"Losses to cut", none_win:"No winner in this period.", none_lose:"No losses: well done.",
+  no_props_t:"No campaign created", no_props:"In Ads Manager, open the extension and click “Suggest a campaign”.",
+  st_paused:"Paused", st_active:"Active", st_failed:"Failed", st_creating:"Creating…", per_day:"/ day",
+  publish:"Publish", pause:"Pause", open:"Open in Ads Manager", publish_confirm:"Publish “{n}”? The campaign will start delivering and spending up to {b} per day.",
+  published:"Campaign published ✓", paused_ok:"Campaign paused",
+  meta_unconfigured:"The Meta Ads connection is not enabled on this site yet (the administrator needs to set up the Meta app).",
+  meta_off:"Not connected. Connect your Facebook account to give the extension access to your ad stats (read) and campaign creation.",
+  meta_conn_as:"Connected as", meta_expires:"Access valid until", meta_accounts:"Ad accounts", disconnect:"Disconnect", renew:"Renew access",
+  meta_ok:"Meta Ads is connected ✓", meta_denied:"Meta connection cancelled.", meta_error:"The Meta connection failed. Please try again.", meta_soon:"Meta access expires soon: renew it.",
+  confirm_meta_off:"Disconnect Meta Ads? Age, gender, placement exports and campaign creation will stop working.",
+  confirm_del_shared:"Delete all your shared stats? This cannot be undone.", done:"Done ✓", saved:"Saved ✓",
+  ago_now:"just now", ago_min:"{n} min ago", ago_h:"{n} h ago", ago_d:"{n} d ago",
+  member_since:"Member since {d}", via_google:"Google", via_email:"Email",
+  a_signup:"Account created", a_ext_connect:"Extension connected", a_meta_connect:"Meta Ads connected", a_export:"Excel export", a_campaign_create:"Campaign created (paused)", a_campaign_publish:"Campaign published", a_campaign_pause:"Campaign paused",
+  no_activity:"No activity yet.",
+  lv_campaign:"Campaigns", lv_adset:"Ad sets", lv_ad:"Ads",
+  err_generic:"Something went wrong. Please try again.", err_bad_login:"Wrong email or password.", err_use_google:"This account was created with Google: use “Continue with Google”.",
+  err_email_taken:"An account already exists with this email: sign in.", err_bad_email:"Invalid email address.", err_weak_pass:"Password too short (at least 8 characters).",
+  err_bad_name:"Please enter your name.", err_rate:"Too many attempts. Wait a few minutes.", err_google_bad:"Google sign-in failed. Please try again.", err_bad_token:"This link has expired. Request a new email.",
+  err_auth:"Your session expired: sign in again.", err_network:"Can't reach the server.", err_meta_error:"Meta refused the operation: {m}", err_meta_expired:"Meta access expired: reconnect Meta Ads.",
+}};
+
+/* =========================================================== état */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const qs = new URLSearchParams(location.search);
+const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+let lang = ["fr", "en"].includes(qs.get("lang")) ? qs.get("lang") : (store.get("smk.lang") || ((navigator.language || "fr").toLowerCase().startsWith("fr") ? "fr" : "en"));
+let user = null, csrf = null, CFG = { google: null, meta: false }, PROFILE = null;
+const WANT_EXT = qs.get("connect") === "extension" || store.get("smk.wantExt") === "1";
+if (qs.get("connect") === "extension") store.set("smk.wantExt", "1");
+const RESET = qs.get("reset");
+const META_FLASH = qs.get("meta");
+
+const t = (k, v) => { let s = (I18N[lang] && I18N[lang][k]) ?? I18N.fr[k] ?? k; if (v) for (const [a, b] of Object.entries(v)) s = s.split("{" + a + "}").join(b); return s; };
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+function applyLang() {
+  document.documentElement.lang = lang;
+  $$("[data-i]").forEach(e => { e.textContent = t(e.dataset.i); });
+  $$("[data-i-html]").forEach(e => { e.innerHTML = t(e.dataset.iHtml); });
+  $$(".lang button").forEach(b => b.classList.toggle("on", b.dataset.lang === lang));
+  document.title = lang === "fr" ? "Stats Meta KPIs — vos KPI Meta Ads en couleur, export Excel et campagnes prêtes à publier" : "Stats Meta KPIs — your Meta Ads KPIs in colour, Excel export and ready-to-publish campaigns";
+  $("#yr").textContent = new Date().getFullYear();
+}
+function toast(msg, ms = 3200) { const el = $("#toast"); el.textContent = msg; el.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove("on"), ms); }
+function errText(d) { const k = "err_" + (d && d.error || "generic"); return I18N[lang][k] ? t(k, { m: (d && d.message) || "" }) : t("err_generic"); }
+
+async function api(action, body) {
+  const opt = { method: body ? "POST" : "GET", credentials: "same-origin", headers: {} };
+  if (body) { opt.headers["Content-Type"] = "application/json"; opt.headers["X-Requested-With"] = "metakpis"; if (csrf) opt.headers["X-CSRF"] = csrf; opt.body = JSON.stringify(body); }
+  let r;
+  try { r = await fetch("api.php?action=" + action, opt); } catch (e) { throw { error: "network" }; }
+  let d = null;
+  try { d = await r.json(); } catch (e) { d = { error: "generic" }; }
+  if (!r.ok || d.error) throw d;
+  return d;
+}
+
+/* ---------------------------------------------- formats */
+const NF = (min, max) => new Intl.NumberFormat(lang === "fr" ? "fr-FR" : "en-US", { minimumFractionDigits: min, maximumFractionDigits: max });
+const fmt = {
+  money: (v, cur) => v == null || !isFinite(v) ? "—" : (cur && /^[$£€¥₹]$/.test(cur) && lang === "en" ? cur + NF(2, 2).format(v) : NF(2, 2).format(v) + (cur ? " " + cur : "")),
+  int: v => v == null || !isFinite(v) ? "—" : NF(0, 0).format(Math.round(v)),
+  x2: v => v == null || !isFinite(v) ? "—" : NF(2, 2).format(v),
+  pct: v => v == null || !isFinite(v) ? "—" : NF(2, 2).format(v) + " %",
+  date: s => { const d = typeof s === "number" ? new Date(s * 1000) : new Date(s + "T12:00:00"); return d.toLocaleDateString(lang === "fr" ? "fr-FR" : "en-US", { day: "numeric", month: "short", year: "numeric" }); },
+  ago: ts => { if (!ts) return t("never"); const s = Date.now() / 1000 - ts; if (s < 90) return t("ago_now"); if (s < 3600) return t("ago_min", { n: Math.round(s / 60) }); if (s < 86400) return t("ago_h", { n: Math.round(s / 3600) }); return t("ago_d", { n: Math.round(s / 86400) }); },
+};
+
+/* =========================================================== extension (pont) */
+const EXT = { present: !!document.documentElement.getAttribute("data-smk-ext"), version: document.documentElement.getAttribute("data-smk-ext") || "", connected: false, email: "", waiters: [] };
+window.addEventListener("message", e => {
+  if (e.source !== window || e.origin !== location.origin || !e.data || e.data.smk !== "ext") return;
+  const d = e.data;
+  EXT.present = true;
+  if (d.version) EXT.version = d.version;
+  if (d.type === "status" || d.type === "ready") { EXT.connected = !!d.connected; EXT.email = d.email || ""; }
+  if (d.type === "connected") { EXT.connected = true; EXT.email = d.email || ""; }
+  if (d.type === "disconnected") { EXT.connected = false; EXT.email = ""; }
+  EXT.waiters.splice(0).forEach(f => f(d));
+  if (PROFILE) renderExt();
+});
+function extSend(msg, wait = 2500) {
+  return new Promise(res => {
+    const timer = setTimeout(() => res(null), wait);
+    EXT.waiters.push(d => { if (d.type !== "ready") { clearTimeout(timer); res(d); } });
+    window.postMessage(Object.assign({ smk: "page" }, msg), location.origin);
+  });
+}
+let connecting = false;
+async function connectExtension() {
+  if (connecting) return false;
+  connecting = true;
+  try { return await doConnectExtension(); } finally { connecting = false; }
+}
+async function doConnectExtension() {
+  const browser = /Edg\//.test(navigator.userAgent) ? "Edge" : /Brave/.test(navigator.userAgent) ? "Brave" : "Chrome";
+  const d = await api("ext_token", { label: browser + " · " + (navigator.platform || "") });
+  const r = await extSend({ type: "connect", token: d.token, user: { name: user.name, email: user.email } }, 4000);
+  if (!r || r.type !== "connected") { toast(t("ext_connect_fail"), 5000); return false; }
+  store.set("smk.wantExt", "");
+  toast(t("ext_connected_toast"), 5000);
+  await loadProfile();
+  return true;
+}
+
+/* =========================================================== vues */
+function show(view) {
+  for (const v of ["home", "auth", "profile"]) $("#v-" + v).hidden = v !== view;
+  $("#nav").classList.remove("open");
+}
+function route() {
+  const h = location.hash.replace(/^#/, "");
+  if (RESET && !user) { showAuth("reset"); return; }
+  if (h === "login" || h === "signup") { if (user) { location.hash = "profile"; return; } showAuth(h); return; }
+  if (h === "profile") { if (!user) { location.hash = "login"; return; } show("profile"); window.scrollTo(0, 0); loadProfile(); return; }
+  show("home");
+  if (h) { const el = document.getElementById(h); if (el) setTimeout(() => el.scrollIntoView(), 0); } else window.scrollTo(0, 0);
+}
+function showAuth(pane) {
+  show("auth");
+  window.scrollTo(0, 0);
+  $("#extHint").hidden = !WANT_EXT;
+  const titles = { login: ["auth_title", "auth_sub"], signup: ["auth_title_signup", "auth_sub_signup"], forgot: ["auth_title_forgot", ""], reset: ["auth_title_reset", ""] };
+  $("#authTitle").textContent = t(titles[pane][0]);
+  $("#authSub").textContent = titles[pane][1] ? t(titles[pane][1]) : "";
+  $("#authSub").hidden = !titles[pane][1];
+  $("#authTabs").hidden = !["login", "signup"].includes(pane);
+  $$("#authTabs button").forEach(b => b.classList.toggle("on", b.dataset.tab === pane));
+  $("#loginForm").hidden = pane !== "login";
+  $("#signupForm").hidden = pane !== "signup";
+  $("#forgotForm").hidden = pane !== "forgot";
+  $("#resetForm").hidden = pane !== "reset";
+  $("#shareNote").hidden = !["login", "signup"].includes(pane);
+  $$(".auth .err").forEach(e => { e.textContent = ""; e.className = "err"; });
+  renderGoogle(pane);
+}
+$$("#authTabs button").forEach(b => b.addEventListener("click", () => { location.hash = b.dataset.tab; }));
+$("#forgotBtn").addEventListener("click", () => { showAuth("forgot"); $("#fEmail").value = $("#lEmail").value; });
+$$("[data-back]").forEach(b => b.addEventListener("click", () => showAuth("login")));
+
+/* ---------------------------------------------- Google */
+let gisLoading = null, gisReady = false;
+function loadGis() {
+  if (window.google && google.accounts && google.accounts.id) return Promise.resolve();
+  if (!gisLoading) gisLoading = new Promise((ok, ko) => {
+    const sc = document.createElement("script");
+    sc.src = "https://accounts.google.com/gsi/client"; sc.async = true;
+    sc.onload = ok; sc.onerror = () => { gisLoading = null; ko(new Error("gsi")); };
+    document.head.append(sc);
+  });
+  return gisLoading;
+}
+async function renderGoogle(pane) {
+  const blk = $("#gBlock");
+  blk.hidden = !CFG.google || !["login", "signup"].includes(pane);
+  if (blk.hidden) return;
+  try { await loadGis(); } catch (e) { blk.hidden = true; return; }
+  if (!gisReady) { google.accounts.id.initialize({ client_id: CFG.google, callback: onGoogle, ux_mode: "popup", auto_select: false, cancel_on_tap_outside: true }); gisReady = true; }
+  const box = $("#gBtn");
+  box.replaceChildren();
+  google.accounts.id.renderButton(box, { type: "standard", theme: "outline", size: "large", shape: "pill", logo_alignment: "center", locale: lang, text: pane === "signup" ? "signup_with" : "continue_with", width: Math.min(380, Math.max(240, box.getBoundingClientRect().width || 320)) });
+}
+async function onGoogle(resp) {
+  const form = $$(".auth form").find(f => !f.hidden);
+  const err = form && $(".err", form);
+  try { signedIn(await api("google", { credential: resp.credential, lang })); }
+  catch (d) { if (err) err.textContent = errText(d); }
+}
+
+/* ---------------------------------------------- formulaires */
+function bindForm(id, action, build, after) {
+  const f = $(id);
+  f.addEventListener("submit", async e => {
+    e.preventDefault();
+    const err = $(".err", f), btn = $("button[type=submit]", f);
+    err.textContent = ""; err.className = "err";
+    btn.disabled = true;
+    try { const d = await api(action, build(f)); after(d, f); }
+    catch (d) { err.textContent = errText(d); }
+    btn.disabled = false;
+  });
+}
+const val = (f, n) => f.elements.namedItem(n).value.trim();
+bindForm("#loginForm", "login", f => ({ email: val(f, "email"), password: f.elements.namedItem("password").value }), d => signedIn(d));
+bindForm("#signupForm", "signup", f => ({ name: val(f, "name"), email: val(f, "email"), password: f.elements.namedItem("password").value, lang }), d => signedIn(d));
+bindForm("#forgotForm", "forgot", f => ({ email: val(f, "email"), lang }), (d, f) => { const e = $(".err", f); e.className = "okmsg"; e.textContent = t("forgot_sent"); });
+bindForm("#resetForm", "reset", f => ({ token: RESET, password: f.elements.namedItem("password").value }), d => { history.replaceState(null, "", location.pathname + "?lang=" + lang + "#profile"); signedIn(d); });
+
+function signedIn(d) {
+  user = d.user; csrf = d.csrf;
+  if (user && user.lang && !qs.get("lang") && !store.get("smk.lang")) { lang = user.lang; applyLang(); }
+  renderTop();
+  // Already on #profile: no hashchange will fire, so route by hand (otherwise the hashchange does it, once).
+  if (location.hash === "#profile") route(); else location.hash = "profile";
+}
+function renderTop() {
+  $("#loginTop").hidden = $("#signupTop").hidden = !!user;
+  $("#meTop").hidden = !user;
+  $$("[data-auth-cta]").forEach(a => a.setAttribute("href", user ? "#profile" : "#signup"));
+  if (user) { $("#meAv").textContent = (user.name || "?").trim().charAt(0).toUpperCase(); $("#meName").textContent = user.name; }
+}
+$("#meTop").addEventListener("click", () => { location.hash = "profile"; });
+$("#burger").addEventListener("click", () => $("#nav").classList.toggle("open"));
+$$(".lang button").forEach(b => b.addEventListener("click", async () => {
+  lang = b.dataset.lang; store.set("smk.lang", lang); applyLang();
+  if (!$("#v-auth").hidden) { const p = ["login", "signup", "forgot", "reset"].find(x => !$("#" + x + "Form").hidden) || "login"; showAuth(p); }
+  if (PROFILE && !$("#v-profile").hidden) renderProfile();
+  if (user) { try { const d = await api("prefs", { lang }); user = d.user; } catch (e) {} }
+}));
+
+/* =========================================================== profil */
+async function loadProfile() {
+  if (!PROFILE) { $("#pLoading").hidden = false; $("#pBody").hidden = true; }
+  try { PROFILE = await api("profile"); }
+  catch (d) { if (d && d.error === "auth") { user = null; csrf = null; renderTop(); location.hash = "login"; return; } toast(errText(d)); return; }
+  user = PROFILE.user;
+  $("#pLoading").hidden = true; $("#pBody").hidden = false;
+  renderProfile();
+  if (WANT_EXT && store.get("smk.wantExt") === "1") {
+    if (!EXT.present) await extSend({ type: "status" }, 1200);
+    if (EXT.present && !(EXT.connected && EXT.email === user.email)) connectExtension();
+  }
+}
+const SVG = {
+  google: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12a8 8 0 11-2.3-5.6M20 5v4h-4"/></svg>',
+  mail: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>',
+  cal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
+  shop: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9l1-5h14l1 5M4 9h16v11H4zM9 20v-6h6v6"/></svg>',
+  info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>',
+  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l5 5L20 7"/></svg>',
+  warn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l9 16H3zM12 10v4M12 17h.01"/></svg>',
+};
+function renderProfile() {
+  const P = PROFILE, u = P.user;
+  $("#pAv").textContent = (u.name || "?").trim().charAt(0).toUpperCase();
+  $("#pName").textContent = u.name;
+  $("#pEmail").textContent = u.email;
+  $("#pChips").innerHTML = [
+    `<span class="chip">${u.google ? SVG.google : SVG.mail}${esc(u.google ? t("via_google") : t("via_email"))}</span>`,
+    `<span class="chip">${SVG.cal}${esc(t("member_since", { d: fmt.date(u.created) }))}</span>`,
+    u.company ? `<span class="chip">${SVG.shop}${esc(u.company)}</span>` : "",
+    `<span class="chip">${u.lang === "en" ? "English" : "Français"}</span>`,
+  ].join("");
+  const lastTok = P.tokens[0];
+  const metaC = P.meta.connected;
+  const tile = (c, l, v, d, btn) => `<div class="tile" style="--c:${c}"><div class="l">${esc(l)}</div><div class="v"><i></i>${esc(v)}</div><div class="d">${d}</div>${btn || ""}</div>`;
+  $("#tiles").innerHTML = [
+    tile(P.tokens.length ? "var(--green)" : "var(--red)", t("tile_ext"), P.tokens.length ? t("connected") : t("not_connected"),
+      P.tokens.length ? esc(t("browsers", { n: P.tokens.length })) + " · " + esc(t("last_used", { t: fmt.ago(lastTok.last_used) })) : "",
+      P.tokens.length ? "" : `<button class="btn pri sm" data-do="connectExt">${esc(t("connect_ext"))}</button>`),
+    tile(metaC ? "var(--green)" : (P.meta.ready ? "var(--orange)" : "var(--gray)"), t("tile_meta"), metaC ? t("meta_connected") : t("meta_not"),
+      metaC ? esc(P.meta.name) : "", !metaC && P.meta.ready ? `<a class="btn pri sm" href="meta.php?start=1">${esc(t("connect_meta"))}</a>` : ""),
+    tile(u.share ? "var(--green)" : "var(--gray)", t("tile_share"), u.share ? t("on") : t("off"), esc(u.share ? t("share_on_desc") : t("share_off_desc"))),
+    tile("var(--blue)", t("tile_activity"), fmt.int(P.stats.scans) + " · " + fmt.int(P.stats.exports) + " · " + fmt.int(P.stats.proposals), esc(t("activity_line", { s: P.stats.scans, e: P.stats.exports, c: P.stats.proposals }))),
+  ].join("");
+  // retour de Facebook
+  const fl = { ok: ["ok", "meta_ok"], denied: ["warn", "meta_denied"], error: ["warn", "meta_error"], unconfigured: ["warn", "meta_unconfigured"] }[META_FLASH];
+  $("#metaFlash").innerHTML = fl ? `<div class="callout ${fl[0]}" style="margin-top:18px">${fl[0] === "ok" ? SVG.check : SVG.warn}<span>${esc(t(fl[1]))}</span></div>` : "";
+  renderExt(); renderScans(); renderProps(); renderMeta();
+  $("#shareSw").checked = !!u.share;
+  $("#shareDesc").textContent = u.share ? t("share_on_desc") : t("share_off_desc");
+  const act = P.activity || [];
+  const detail = a => a.kind !== "export" ? a.detail : a.detail.replace(/\b(age|gender|placement|copy|account|campaign|adset|ad)\b/g, w => ({ age: t("age"), gender: t("gender"), placement: t("placement"), copy: t("text"), account: t("account"), campaign: t("lv_campaign"), adset: t("lv_adset"), ad: t("lv_ad") }[w])).replace(/,/g, ", ");
+  $("#actList").innerHTML = act.length ? act.map(a => `<li><span>${esc(t("a_" + a.kind))}${a.detail ? ` · <span style="color:var(--muted)">${esc(detail(a))}</span>` : ""}</span><time>${esc(fmt.ago(+a.created))}</time></li>`).join("") : `<li><span style="color:var(--muted)">${esc(t("no_activity"))}</span></li>`;
+}
+function renderExt() {
+  if (!PROFILE) return;
+  const box = $("#extState");
+  let h;
+  if (!EXT.present) h = `<div class="callout warn">${SVG.warn}<div>${esc(t("ext_not_found"))}<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap"><a class="btn pri sm" href="download.php">${esc(t("download"))}</a><button class="btn sec sm" onclick="location.reload()">${esc(t("reload"))}</button></div></div></div>`;
+  else if (EXT.connected && EXT.email === user.email) h = `<div class="callout ok">${SVG.check}<div><b>${esc(t("ext_found_ok"))}</b><div style="margin-top:8px"><a class="btn green sm" href="https://adsmanager.facebook.com/adsmanager/manage/campaigns" target="_blank" rel="noopener">${esc(t("open_am"))}</a></div></div></div>`;
+  else if (EXT.connected) h = `<div class="callout warn">${SVG.warn}<div>${esc(t("ext_found_otheracc", { e: EXT.email }))}<div style="margin-top:8px"><button class="btn pri sm" data-do="connectExt">${esc(t("reconnect"))}</button></div></div></div>`;
+  else h = `<div class="callout info">${SVG.info}<div>${esc(t("ext_found_other"))}<div style="margin-top:8px"><button class="btn pri sm" data-do="connectExt">${esc(t("connect_ext"))}</button></div></div></div>`;
+  box.innerHTML = h;
+  const toks = PROFILE.tokens;
+  $("#tokList").innerHTML = `<h3 style="font-size:14px;margin:0 0 8px;color:var(--ink-2)">${esc(t("tok_t"))}</h3>` + (toks.length ? `<div class="list">${toks.map(k => `<div class="item"><div class="t"><b>${esc(k.label || "Chrome")}</b><small>${esc(t("last_used", { t: fmt.ago(k.last_used) }))}${k.version ? " · v" + esc(k.version) : ""}</small></div><button class="btn sec sm" data-do="revoke" data-id="${k.id}">${esc(t("revoke"))}</button></div>`).join("")}</div>` : `<p style="color:var(--muted);margin:0;font-size:14px">${esc(t("tok_none"))}</p>`);
+}
+const LV_ORDER = ["campaign", "adset", "ad"];
+const scanLevelSel = {};
+function renderScans() {
+  const P = PROFILE, box = $("#scans");
+  if (!P.scans.length) { box.innerHTML = `<div class="empty"><b>${esc(t("no_scans_t"))}</b>${esc(P.user.share ? t("no_scans") : t("no_scans_off"))}</div>`; return; }
+  const byAct = {};
+  P.scans.forEach(s => { (byAct[s.act || "-"] = byAct[s.act || "-"] || {})[s.level] = s; });
+  const names = {}; (P.accounts || []).forEach(a => { names[a.act] = a.name; });
+  box.innerHTML = Object.keys(byAct).map(act => {
+    const L = byAct[act];
+    const lv = scanLevelSel[act] && L[scanLevelSel[act]] ? scanLevelSel[act] : LV_ORDER.find(l => L[l]);
+    const s = L[lv], T = s.totals || {}, C = s.counts || {}, cur = s.currency;
+    const total = (C.win || 0) + (C.opt || 0) + (C.lose || 0) + (C.ins || 0) || 1;
+    const bar = [["win", "var(--green)"], ["opt", "var(--orange)"], ["lose", "var(--red)"], ["ins", "var(--gray)"]];
+    const tabs = LV_ORDER.filter(l => L[l]).map(l => `<button class="${l === lv ? "on" : ""}" data-do="lvl" data-act="${esc(act)}" data-lv="${l}">${esc(t("lv_" + l))}</button>`).join("");
+    const bk = (label, v, c) => `<div class="bk" style="--c:${c || "var(--line)"}"><small>${esc(label)}</small><b class="${v === "—" ? "g" : ""}">${esc(v)}</b></div>`;
+    const li = (r, right) => `<li><span title="${esc(r.name)}">${esc(r.name)}</span><b>${right}</b></li>`;
+    return `<div class="acc">
+      <div class="acc-h"><div><h3>${esc(names[act] || (act !== "-" ? t("account") + " " + act : t("account")))}</h3><small>${act !== "-" ? "act_" + esc(act) + " · " : ""}${esc(t("period"))} ${esc(s.since ? fmt.date(s.since) + " → " + fmt.date(s.until) : "—")} · ${esc(t("scanned", { t: fmt.ago(s.created) }))} · ${esc(t("rows", { n: s.rows }))}</small></div><div class="lvls">${tabs}</div></div>
+      <div class="big">${bk(t("k_spend"), fmt.money(T.spend, cur), "#475467")}${bk(t("k_purchases"), fmt.int(T.purchases))}${bk(t("k_cpa"), fmt.money(T.cpa, cur))}${bk(t("k_roas"), fmt.x2(T.roas), T.roas >= 3 ? "var(--green)" : T.roas >= 2 ? "var(--orange)" : T.roas != null ? "var(--red)" : "")}${bk(t("k_ctr"), fmt.pct(T.ctrLink), T.ctrLink >= 2 ? "var(--green)" : T.ctrLink >= 1 ? "var(--orange)" : T.ctrLink != null ? "var(--red)" : "")}${bk(t("k_cpm"), fmt.money(T.cpm, cur))}</div>
+      <div class="vbar">${bar.map(([k, c]) => `<i style="width:${((C[k] || 0) / total) * 100}%;background:${c}"></i>`).join("")}</div>
+      <div class="vleg">${bar.map(([k, c]) => `<span style="--c:${c}"><b>${C[k] || 0}</b> ${esc(t("v_" + k))}</span>`).join("")}</div>
+      <div class="bw">
+        <div style="--c:var(--green)"><h4>${esc(t("best"))}</h4>${s.best && s.best.length ? `<ul>${s.best.map(r => li(r, r.roas != null ? fmt.x2(r.roas) + "×" : fmt.money(r.cpa, cur))).join("")}</ul>` : `<p style="margin:0;color:var(--muted);font-size:13.5px">${esc(t("none_win"))}</p>`}</div>
+        <div style="--c:var(--red)"><h4>${esc(t("worst"))}</h4>${s.worst && s.worst.length ? `<ul>${s.worst.map(r => li(r, fmt.money(r.spend, cur))).join("")}</ul>` : `<p style="margin:0;color:var(--muted);font-size:13.5px">${esc(t("none_lose"))}</p>`}</div>
+      </div>
+    </div>`;
+  }).join("");
+}
+function renderProps() {
+  const box = $("#props"), L = PROFILE.proposals;
+  if (!L.length) { box.innerHTML = `<div class="empty"><b>${esc(t("no_props_t"))}</b>${esc(t("no_props"))}</div>`; return; }
+  const st = { paused: ["var(--orange)", "st_paused"], active: ["var(--green)", "st_active"], failed: ["var(--red)", "st_failed"], creating: ["var(--gray)", "st_creating"] };
+  box.innerHTML = `<div class="list">${L.map(p => {
+    const s = st[p.status] || st.creating, S = p.summary || {};
+    const aud = [S.age_min && S.age_max ? (S.age_range ? S.age_range.join("–") : S.age_min + "–" + S.age_max) + (lang === "fr" ? " ans" : " y/o") : "", S.genders && S.genders.length === 1 ? (S.genders[0] === 1 ? (lang === "fr" ? "Hommes" : "Men") : (lang === "fr" ? "Femmes" : "Women")) : "", S.placements === "auto" ? "Advantage+ placements" : (Array.isArray(S.placements) ? S.placements.length + " placements" : "")].filter(Boolean).join(" · ");
+    return `<div class="item"><div class="t"><b>${esc(p.name)}</b><small>${esc(fmt.date(p.created))} · ${esc(fmt.money(p.budget, p.currency))} ${esc(t("per_day"))}${aud ? " · " + esc(aud) : ""}</small>${p.error ? `<small style="display:block;color:var(--red)">${esc(p.error)}</small>` : ""}</div>
+      <span class="pill" style="--c:${s[0]}">${esc(t(s[1]))}</span>
+      ${p.url ? `<a class="btn sec sm" href="${esc(p.url)}" target="_blank" rel="noopener">${esc(t("open"))}</a>` : ""}
+      ${p.status === "paused" ? `<button class="btn green sm" data-do="publish" data-id="${p.id}">${esc(t("publish"))}</button>` : ""}
+      ${p.status === "active" ? `<button class="btn sec sm" data-do="pause" data-id="${p.id}">${esc(t("pause"))}</button>` : ""}</div>`;
+  }).join("")}</div>`;
+}
+function renderMeta() {
+  const M = PROFILE.meta, box = $("#metaState");
+  if (!M.ready) { box.innerHTML = `<div class="callout warn">${SVG.warn}<span>${esc(t("meta_unconfigured"))}</span></div>`; return; }
+  if (!M.connected) { box.innerHTML = `<div class="callout info">${SVG.info}<span>${esc(t("meta_off"))}</span></div><a class="btn pri" style="margin-top:14px" href="meta.php?start=1">${esc(t("connect_meta"))}</a>`; return; }
+  const soon = M.expires && M.expires * 1000 - Date.now() < 7 * 86400000;
+  const accs = (PROFILE.accounts || []).slice(0, 8);
+  box.innerHTML = `<dl class="kv"><dt>${esc(t("meta_conn_as"))}</dt><dd>${esc(M.name)}</dd>${M.expires ? `<dt>${esc(t("meta_expires"))}</dt><dd>${esc(fmt.date(M.expires))}</dd>` : ""}${accs.length ? `<dt>${esc(t("meta_accounts"))}</dt><dd>${accs.map(a => esc(a.name || a.act) + ` <span style="color:var(--muted);font-weight:500">(${esc(a.currency)})</span>`).join("<br>")}</dd>` : ""}</dl>
+    ${soon ? `<div class="callout warn" style="margin-top:12px">${SVG.warn}<span>${esc(t("meta_soon"))}</span></div>` : ""}
+    <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><a class="btn sec sm" href="meta.php?start=1">${esc(t("renew"))}</a><button class="btn danger sm" data-do="metaOff">${esc(t("disconnect"))}</button></div>`;
+}
+
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-do]");
+  if (!b) return;
+  const what = b.dataset.do;
+  try {
+    if (what === "connectExt") { b.disabled = true; if (!EXT.present) await extSend({ type: "status" }, 1200); if (!EXT.present) { renderExt(); b.disabled = false; $("#extCard").scrollIntoView({ behavior: "smooth" }); return; } await connectExtension(); b.disabled = false; }
+    if (what === "revoke") { await api("ext_revoke", { id: +b.dataset.id }); await loadProfile(); }
+    if (what === "lvl") { scanLevelSel[b.dataset.act] = b.dataset.lv; renderScans(); }
+    if (what === "metaOff") { if (!confirm(t("confirm_meta_off"))) return; await api("meta_disconnect", {}); toast(t("done")); await loadProfile(); }
+    if (what === "publish" || what === "pause") {
+      const p = PROFILE.proposals.find(x => x.id === +b.dataset.id);
+      if (what === "publish" && !confirm(t("publish_confirm", { n: p.name, b: fmt.money(p.budget, p.currency) }))) return;
+      b.disabled = true;
+      await api("proposal_status", { id: p.id, status: what === "publish" ? "active" : "paused" });
+      toast(t(what === "publish" ? "published" : "paused_ok"));
+      await loadProfile();
+    }
+  } catch (d) { b.disabled = false; toast(errText(d), 6000); }
+});
+$("#shareSw").addEventListener("change", async e => {
+  try { const d = await api("prefs", { share: e.target.checked }); PROFILE.user = user = d.user; renderProfile(); toast(t("saved")); }
+  catch (d) { e.target.checked = !e.target.checked; toast(errText(d)); }
+});
+$("#delShared").addEventListener("click", async () => {
+  if (!confirm(t("confirm_del_shared"))) return;
+  try { await api("delete_shared", {}); toast(t("done")); await loadProfile(); } catch (d) { toast(errText(d)); }
+});
+$("#logoutBtn").addEventListener("click", async () => {
+  try { await api("logout", {}); } catch (e) {}
+  user = null; csrf = null; PROFILE = null; renderTop(); location.hash = "";
+});
+$("#editBtn").addEventListener("click", () => {
+  const f = $("#editForm");
+  f.elements.namedItem("name").value = user.name; f.elements.namedItem("company").value = user.company || ""; f.elements.namedItem("lang").value = user.lang;
+  $(".err", f).textContent = "";
+  $("#editDlg").showModal();
+});
+$("#editForm").addEventListener("submit", async e => {
+  if (e.submitter && e.submitter.value === "cancel") return;
+  e.preventDefault();
+  const f = e.target;
+  try {
+    const d = await api("prefs", { name: val(f, "name"), company: val(f, "company"), lang: f.elements.namedItem("lang").value });
+    user = PROFILE.user = d.user;
+    if (user.lang !== lang) { lang = user.lang; store.set("smk.lang", lang); applyLang(); }
+    $("#editDlg").close(); renderTop(); renderProfile(); toast(t("saved"));
+  } catch (d) { $(".err", f).textContent = errText(d); }
+});
+$("#delAccount").addEventListener("click", () => {
+  $("#delPassF").hidden = !user.has_pass;
+  $(".err", $("#delForm")).textContent = "";
+  $("#delDlg").showModal();
+});
+$("#delForm").addEventListener("submit", async e => {
+  if (e.submitter && e.submitter.value === "cancel") return;
+  e.preventDefault();
+  try {
+    await api("delete_account", user.has_pass ? { password: $("#dPass").value } : { confirm: true });
+    if (EXT.present && EXT.email === user.email) extSend({ type: "disconnect" }, 800);
+    $("#delDlg").close(); user = null; csrf = null; PROFILE = null; renderTop(); location.hash = ""; toast(t("done"));
+  } catch (d) { $(".err", e.target).textContent = errText(d); }
+});
+
+/* =========================================================== démarrage */
+window.addEventListener("hashchange", route);
+applyLang();
+(async () => {
+  try { const d = await api("me"); user = d.user; csrf = d.csrf; CFG = d.config || CFG; } catch (e) {}
+  if (user && user.lang && !qs.get("lang") && !store.get("smk.lang")) { lang = user.lang; applyLang(); }
+  renderTop();
+  let target = null;
+  if (WANT_EXT && !user && !location.hash) target = "login";
+  if (WANT_EXT && user && location.hash !== "#profile") target = "profile";
+  if (target) location.hash = target; // the hashchange routes, once
+  else route();
+  window.postMessage({ smk: "page", type: "status" }, location.origin);
+})();
+</script>
+</body>
+</html>

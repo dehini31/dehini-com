@@ -1,0 +1,20 @@
+Options -Indexes
+
+# Seuls les pages, l'API, la connexion Meta, le téléchargement et les fichiers statiques sont accessibles.
+<FilesMatch "^(config\.php|config\.example\.php|\.user\.ini)$">
+  Require all denied
+</FilesMatch>
+
+# Certains hébergeurs retirent l'en-tête Authorization avant PHP : on le transmet.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{HTTP:Authorization} .
+  RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+</IfModule>
+
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  <FilesMatch "\.(html|json)$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+</IfModule>

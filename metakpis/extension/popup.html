@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+body{margin:0;width:300px;font:13px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:#101828;background:#fff}
+.hd{background:#0B1B33;color:#fff;padding:12px 14px;display:flex;align-items:center;gap:9px}
+.hd b{font-size:14px}.dots{display:flex;gap:3px}.dots i{width:8px;height:8px;border-radius:50%;display:block}
+.bd{padding:14px}
+.st{display:flex;align-items:center;gap:8px;font-weight:700;margin-bottom:4px}
+.st i{width:9px;height:9px;border-radius:50%;background:#9CA3AF}
+.st.on i{background:#16A34A}.st.off i{background:#DC2626}
+.who{color:#475467;margin:0 0 12px;word-break:break-all}
+.b{display:block;width:100%;text-align:center;border-radius:9px;padding:9px;margin-top:8px;font:inherit;font-weight:700;cursor:pointer;border:1px solid #D0D5DD;background:#fff;color:#101828;text-decoration:none}
+.b.pri{background:#0B1B33;border-color:#0B1B33;color:#fff}
+.b.lnk{border:0;background:none;color:#667085;font-weight:500;font-size:12px;padding:6px}
+.ft{font-size:11px;color:#98A2B3;text-align:center;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="hd"><span class="dots"><i style="background:#16A34A"></i><i style="background:#F59E0B"></i><i style="background:#DC2626"></i></span><b>Stats Meta KPIs</b></div>
+<div class="bd">
+  <div class="st" id="st"><i></i><span id="stTxt"></span></div>
+  <p class="who" id="who"></p>
+  <div id="acts"></div>
+  <div class="ft" id="ft"></div>
+</div>
+<script src="popup.js"></script>
+</body>
+</html>
