@@ -274,17 +274,19 @@ automatiquement (même origine `https://dehini.com`). Sinon, le coller dans `met
 ### 2. App Meta (export âge / genre / placement, textes, campagnes)
 
 Le tableau de bord marche sans elle ; l'export détaillé et les campagnes proposées passent par l'API Marketing
-officielle de Meta. Étapes rappelées dans `metakpis/admin.html` → Réglages :
+officielle de Meta. **Par défaut, Stats Meta KPIs reprend l'app Meta d'ecom.dehini.com** : son ID et sa clé secrète
+sont lus dans `~/ecom/.env` (`META_APP_ID`, `META_APP_SECRET`), sur le même compte cPanel. Rien n'est recopié : si
+la clé change dans ecom, `/metakpis` suit. Une seule étape est nécessaire, dans cette même app, sur
+[developers.facebook.com/apps](https://developers.facebook.com/apps) :
 
-1. Sur [developers.facebook.com/apps](https://developers.facebook.com/apps), créer une app de type **Entreprise**
-   avec **Facebook Login for Business** et **Marketing API**.
-2. URI de redirection OAuth valide : `https://dehini.com/metakpis/meta.php`. Domaine de l'app : `dehini.com`.
-   Politique de confidentialité : `https://dehini.com/metakpis/#privacy`.
-3. Coller l'ID de l'app et sa clé secrète dans l'admin (la clé n'est jamais renvoyée au navigateur). Si Facebook
-   Login for Business demande une « configuration », en créer une avec `ads_read` et `ads_management` et coller son ID.
-4. Tant que Meta n'a pas validé l'app (App Review de `ads_read` et `ads_management` + vérification de l'entreprise),
-   seuls les administrateurs, développeurs et testeurs de l'app peuvent connecter leur compte : ajouter les
-   premiers utilisateurs comme testeurs dans l'app.
+1. **Facebook Login → Paramètres → URI de redirection OAuth valides** : ajouter
+   `https://dehini.com/metakpis/meta.php` (en gardant celle d'ecom, `https://ecom.dehini.com/publicites/callback`).
+2. **Paramètres → Général → Domaines de l'app** : `dehini.com` doit y figurer (en plus de `ecom.dehini.com`).
+
+`metakpis/admin.html` → Réglages indique quelle app est utilisée. Saisir un autre ID et une autre clé dans l'admin
+remplace l'app d'ecom ; vider les deux champs revient à celle d'ecom. Les autorisations demandées (`ads_read`,
+`ads_management`) font partie de celles qu'ecom demande déjà : si l'app est validée par Meta pour ecom, elle l'est
+aussi pour `/metakpis`. Sinon, seuls ses administrateurs, développeurs et testeurs peuvent se connecter.
 
 Chaque utilisateur clique ensuite sur « Connecter Meta Ads » dans son profil. L'accès dure environ 60 jours ; le
 profil prévient quand il faut le renouveler.

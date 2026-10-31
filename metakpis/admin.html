@@ -83,13 +83,13 @@ code{background:#F2F4F7;padding:1px 6px;border-radius:5px;font-size:12.5px}
     <div class="card">
       <h2>App Meta (export âge / genre / placement, textes, création de campagnes)</h2>
       <ol class="steps">
-        <li>Sur <a href="https://developers.facebook.com/apps" target="_blank" rel="noopener">developers.facebook.com/apps</a>, créer une app de type <b>Entreprise</b> et ajouter les produits <b>Facebook Login for Business</b> et <b>Marketing API</b>.</li>
-        <li>Dans Facebook Login → Paramètres, ajouter l'URI de redirection OAuth valide : <code id="redir"></code></li>
+        <li><b>Par défaut, l'app Meta d'ecom.dehini.com est reprise</b> (ID et clé secrète lus dans <code>~/ecom/.env</code>) : il suffit alors de faire l'étape 2 dans cette même app, sur <a href="https://developers.facebook.com/apps" target="_blank" rel="noopener">developers.facebook.com/apps</a>. Sinon, créer une app de type <b>Entreprise</b> avec <b>Facebook Login</b> et <b>Marketing API</b>.</li>
+        <li>Dans Facebook Login → Paramètres, ajouter l'URI de redirection OAuth valide : <code id="redir"></code> (à côté de celle d'ecom, <code>https://ecom.dehini.com/publicites/callback</code>, à garder).</li>
         <li>Dans Paramètres → Général : domaine de l'app <code>dehini.com</code>, URL de la politique de confidentialité <code id="privUrl"></code>.</li>
         <li>Coller ici l'<b>ID de l'app</b> et la <b>clé secrète</b> (Paramètres → Général). Si Facebook Login for Business demande une configuration, créer une configuration avec les autorisations <code>ads_read</code> et <code>ads_management</code> et coller son ID.</li>
         <li>Tant que l'app n'est pas validée par Meta (« App Review » pour <code>ads_read</code> et <code>ads_management</code>, avec vérification de l'entreprise), seuls les administrateurs, développeurs et testeurs de l'app peuvent connecter leur compte.</li>
       </ol>
-      <div class="f"><label for="mApp">ID de l'app Meta</label><input id="mApp" inputmode="numeric"></div>
+      <div class="f"><label for="mApp">ID de l'app Meta</label><input id="mApp" inputmode="numeric" placeholder="vide = app Meta d'ecom.dehini.com"><small id="mAppState"></small></div>
       <div class="f"><label for="mSec">Clé secrète de l'app</label><input id="mSec" type="password" autocomplete="off" placeholder="laisser vide pour garder la clé enregistrée"><small id="mSecState"></small></div>
       <div class="f"><label for="mCfg">ID de configuration (Facebook Login for Business, facultatif)</label><input id="mCfg" inputmode="numeric"></div>
       <div class="f"><label for="mVer">Version de l'API Graph</label><input id="mVer" placeholder="v24.0"><small>Laisser vide pour la version par défaut.</small></div>
@@ -146,7 +146,12 @@ async function loadSettings() {
   $("#gId").value = s.google_client_id;
   $("#gEff").textContent = s.google_client_id ? "" : (s.google_effective ? "Vide : l'ID du défi Impact est utilisé (" + s.google_effective + ")." : "Vide : le bouton Google n'apparaît pas. Même procédure que pour le défi Impact (origine autorisée https://dehini.com).");
   $("#mApp").value = s.meta_app_id;
-  $("#mSecState").textContent = s.meta_secret_set ? "Une clé secrète est enregistrée." : "Aucune clé secrète enregistrée.";
+  $("#mAppState").textContent = s.meta_source === "ecom" ? "Vide : l'app Meta d'ecom.dehini.com est utilisée (ID " + s.meta_effective + ", lue dans ~/ecom/.env)."
+    : s.meta_source === "config" ? "Défini dans metakpis/config.php (ID " + s.meta_effective + ")."
+    : s.meta_source === "admin" ? "" : "Aucune app Meta : remplir ce champ, ou installer ecom.dehini.com dans ~/ecom avec META_APP_ID dans son .env.";
+  $("#mSecState").textContent = s.meta_secret_set ? "Une clé secrète est enregistrée ici."
+    : s.meta_source === "ecom" ? (s.meta_effective_secret ? "Vide : la clé secrète d'ecom.dehini.com est utilisée." : "META_APP_SECRET manque dans ~/ecom/.env.")
+    : "Aucune clé secrète enregistrée.";
   $("#mCfg").value = s.meta_config_id;
   $("#mVer").value = s.graph_version;
   $("#redir").textContent = s.redirect_uri;

@@ -51,15 +51,61 @@ final class GraphError extends RuntimeException
     }
 }
 
+/**
+ * Variables Meta d'ecom.dehini.com, lues dans son fichier .env (même compte cPanel, ~/ecom/.env).
+ * Seules META_APP_ID et META_APP_SECRET sont lues ; le reste du fichier est ignoré.
+ */
+function ecom_meta_env(): array
+{
+    static $env = null;
+    if ($env !== null) return $env;
+    $env = [];
+    $f = (string) METAKPIS_ECOM_ENV;
+    if ($f === '' || !is_file($f) || !is_readable($f)) return $env;
+    foreach ((array) @file($f, FILE_IGNORE_NEW_LINES) as $line) {
+        if (!preg_match('/^\s*(?:export\s+)?(META_APP_ID|META_APP_SECRET)\s*=\s*(.*)$/', (string) $line, $m)) continue;
+        $v = trim($m[2]);
+        if ($v !== '' && ($v[0] === '"' || $v[0] === "'")) {
+            $q = $v[0];
+            $end = strpos($v, $q, 1);
+            $v = $end === false ? substr($v, 1) : substr($v, 1, $end - 1);
+        } else {
+            $v = trim((string) preg_replace('/\s+#.*$/', '', $v));
+        }
+        $env[$m[1]] = $v;
+    }
+    return $env;
+}
+
+/** D'où vient l'app Meta : « admin », « config », « ecom » ou « » (aucune). */
+function meta_app_source(): string
+{
+    if (trim(setting('meta_app_id')) !== '') return 'admin';
+    if (defined('METAKPIS_META_APP_ID') && (string) METAKPIS_META_APP_ID !== '') return 'config';
+    return (ecom_meta_env()['META_APP_ID'] ?? '') !== '' ? 'ecom' : '';
+}
+
+/**
+ * App Meta : réglage de l'admin, sinon config.php, sinon celle d'ecom.dehini.com.
+ * L'ID et la clé secrète viennent toujours de la même source (jamais l'ID de l'une avec la clé de l'autre).
+ */
 function meta_app_id(): string
 {
-    $v = trim(setting('meta_app_id'));
-    return $v !== '' ? $v : (defined('METAKPIS_META_APP_ID') ? (string) METAKPIS_META_APP_ID : '');
+    switch (meta_app_source()) {
+        case 'admin': return trim(setting('meta_app_id'));
+        case 'config': return (string) METAKPIS_META_APP_ID;
+        case 'ecom': return (string) ecom_meta_env()['META_APP_ID'];
+    }
+    return '';
 }
 function meta_app_secret(): string
 {
-    $v = trim(setting('meta_app_secret'));
-    return $v !== '' ? $v : (defined('METAKPIS_META_APP_SECRET') ? (string) METAKPIS_META_APP_SECRET : '');
+    switch (meta_app_source()) {
+        case 'admin': return trim(setting('meta_app_secret'));
+        case 'config': return defined('METAKPIS_META_APP_SECRET') ? (string) METAKPIS_META_APP_SECRET : '';
+        case 'ecom': return (string) (ecom_meta_env()['META_APP_SECRET'] ?? '');
+    }
+    return '';
 }
 function meta_config_id(): string
 {
@@ -328,14 +374,35 @@ function creative_texts(array $cr): array
     return $t;
 }
 
-/** Détails de plusieurs publicités (par lots de 50 identifiants). */
+/**
+ * Détails de plusieurs publicités. Le paramètre « ids » (plusieurs objets en un appel) n'est plus accepté
+ * par Meta depuis la v26 : on passe par des requêtes groupées (batch, 50 par appel), et si Meta refusait
+ * le batch, par des lectures une à une des publicités qui ont le plus dépensé.
+ */
 function ads_details(array $ids, string $token): array
 {
+    $fields = 'name,effective_status,campaign{name,objective},adset{name},creative{' . CREATIVE_FIELDS . '}';
+    $ids = array_values(array_unique(array_filter(array_map('strval', $ids), function ($id) { return preg_match('/^\d+$/', $id) === 1; })));
     $out = [];
-    foreach (array_chunk(array_values(array_unique($ids)), 50) as $chunk) {
-        $d = graph('GET', '', ['ids' => implode(',', $chunk), 'fields' => 'name,effective_status,campaign{name,objective},adset{name},creative{' . CREATIVE_FIELDS . '}'], $token);
-        foreach ($d as $id => $ad) {
-            if (is_array($ad)) $out[(string) $id] = $ad;
+    try {
+        foreach (array_chunk($ids, 50) as $chunk) {
+            $batch = array_map(function ($id) use ($fields) {
+                return ['method' => 'GET', 'relative_url' => $id . '?fields=' . rawurlencode($fields)];
+            }, $chunk);
+            $res = graph('POST', '', ['batch' => $batch, 'include_headers' => false], $token);
+            foreach ($chunk as $i => $id) {
+                $r = $res[$i] ?? null;
+                if (!is_array($r) || (int) ($r['code'] ?? 0) !== 200) continue;
+                $ad = json_decode((string) ($r['body'] ?? ''), true);
+                if (is_array($ad) && !isset($ad['error'])) $out[$id] = $ad;
+            }
+        }
+    } catch (GraphError $e) {
+        $code = (int) ($e->err['code'] ?? 0);
+        if (in_array($code, [4, 17, 32, 190, 613, 80000, 80004], true)) throw $e; // jeton ou limite : inutile d'insister
+        foreach (array_slice($ids, 0, 40) as $id) {
+            if (isset($out[$id])) continue;
+            $out[$id] = graph('GET', $id, ['fields' => $fields], $token);
         }
     }
     return $out;

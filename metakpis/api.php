@@ -628,6 +628,7 @@ switch ($action) {
         $tok = meta_token($uid);
         @set_time_limit(180);
         $res = [];
+        $warnings = [];
         try {
             $acc = account_info($uid, $act, $tok);
             $bd = ['age' => 'age', 'gender' => 'gender', 'placement' => 'publisher_platform,platform_position'];
@@ -639,7 +640,14 @@ switch ($action) {
                 // Textes : les publicités qui ont dépensé sur la période, avec leurs KPI.
                 $ads = array_values(array_filter(insights($act, $tok, 'ad', $since, $until, '', 2000), function ($r) { return $r['spend'] > 0 || $r['impressions'] > 0; }));
                 $ads = array_slice($ads, 0, 300);
-                $det = ads_details(array_column($ads, 'ad_id'), $tok);
+                // Les KPI des publicités sont déjà là : si Meta refuse la lecture des textes, l'export continue sans eux.
+                $det = [];
+                try {
+                    $det = ads_details(array_column($ads, 'ad_id'), $tok);
+                } catch (GraphError $e) {
+                    if (in_array((int) ($e->err['code'] ?? 0), [4, 17, 32, 190, 613, 80000, 80004], true)) throw $e;
+                    $warnings[] = 'copy: ' . $e->userMessage();
+                }
                 foreach ($ads as &$r) {
                     $d = $det[$r['ad_id']] ?? [];
                     $tx = creative_texts(is_array($d['creative'] ?? null) ? $d['creative'] : []);
@@ -655,7 +663,7 @@ switch ($action) {
             graph_fail($e, $uid);
         }
         log_activity($uid, 'export', $act, implode(',', $parts) . ' · ' . $level . ' · ' . $since . ' → ' . $until);
-        ok(['account' => $acc, 'since' => $since, 'until' => $until, 'level' => $level, 'parts' => $res]);
+        ok(['account' => $acc, 'since' => $since, 'until' => $until, 'level' => $level, 'parts' => $res, 'warnings' => $warnings]);
         break;
     }
 
@@ -858,7 +866,8 @@ switch ($action) {
     case 'adm_settings': {
         require_admin();
         ok(['google_client_id' => setting('google_client_id'), 'google_effective' => google_client_id(),
-            'meta_app_id' => meta_app_id(), 'meta_secret_set' => meta_app_secret() !== '', 'meta_config_id' => meta_config_id(),
+            'meta_app_id' => trim(setting('meta_app_id')), 'meta_effective' => meta_app_id(), 'meta_source' => meta_app_source(),
+            'meta_secret_set' => trim(setting('meta_app_secret')) !== '', 'meta_effective_secret' => meta_app_secret() !== '', 'meta_config_id' => meta_config_id(),
             'graph_version' => graph_ver(), 'redirect_uri' => meta_redirect_uri(), 'site' => site_url()]);
         break;
     }

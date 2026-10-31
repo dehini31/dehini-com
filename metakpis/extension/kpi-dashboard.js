@@ -139,7 +139,7 @@
       ex_level: 'Ventiler par', lvl_account: 'Compte entier', lvl_campaign: 'Campagne', lvl_adset: 'Ensemble de publicités', lvl_ad: 'Publicité', ex_period: 'Période',
       ex_meta_off: 'Connectez Meta Ads dans votre profil pour exporter les placements, âges, genres et textes des annonces.', connect_meta: 'Connecter Meta Ads',
       ex_meta_unconf: 'La connexion Meta Ads n\'est pas encore activée sur dehini.com.', ex_no_act: 'Ouvrez un compte publicitaire dans Ads Manager (paramètre act= dans l\'adresse).',
-      ex_go: 'Télécharger le fichier Excel', ex_fetch: 'Récupération des statistiques Meta…', ex_done: 'Fichier téléchargé ✓ ({n} feuilles)', ex_nothing: 'Cochez au moins une donnée à exporter.',
+      ex_go: 'Télécharger le fichier Excel', ex_fetch: 'Récupération des statistiques Meta…', ex_done: 'Fichier téléchargé ✓ ({n} feuilles)', ex_copy_warn: 'textes des annonces non lus ({m})', ex_nothing: 'Cochez au moins une donnée à exporter.',
       sh_summary: 'Résumé', sh_campaign: 'Campagnes', sh_adset: 'Ensembles', sh_ad: 'Publicités', sh_placement: 'Placements', sh_age: 'Âge', sh_gender: 'Genre', sh_copy: 'Textes des annonces',
       x_campaign: 'Campagne', x_adset: 'Ensemble de publicités', x_ad: 'Publicité', x_platform: 'Plateforme', x_position: 'Position', x_age: 'Âge', x_gender: 'Genre',
       x_spend: 'Dépense', x_impr: 'Impressions', x_reach: 'Couverture', x_freq: 'Fréquence', x_clicks: 'Clics (tous)', x_linkclicks: 'Clics sur le lien', x_ctrlink: 'CTR lien (%)', x_cpclink: 'CPC lien',
@@ -248,7 +248,7 @@
       ex_level: 'Break down by', lvl_account: 'Whole account', lvl_campaign: 'Campaign', lvl_adset: 'Ad set', lvl_ad: 'Ad', ex_period: 'Period',
       ex_meta_off: 'Connect Meta Ads in your profile to export placements, ages, genders and ad copy.', connect_meta: 'Connect Meta Ads',
       ex_meta_unconf: 'The Meta Ads connection is not enabled on dehini.com yet.', ex_no_act: 'Open an ad account in Ads Manager (act= in the address).',
-      ex_go: 'Download the Excel file', ex_fetch: 'Fetching Meta stats…', ex_done: 'File downloaded ✓ ({n} sheets)', ex_nothing: 'Tick at least one item to export.',
+      ex_go: 'Download the Excel file', ex_fetch: 'Fetching Meta stats…', ex_done: 'File downloaded ✓ ({n} sheets)', ex_copy_warn: 'ad copy could not be read ({m})', ex_nothing: 'Tick at least one item to export.',
       sh_summary: 'Summary', sh_campaign: 'Campaigns', sh_adset: 'Ad sets', sh_ad: 'Ads', sh_placement: 'Placements', sh_age: 'Age', sh_gender: 'Gender', sh_copy: 'Ad copy',
       x_campaign: 'Campaign', x_adset: 'Ad set', x_ad: 'Ad', x_platform: 'Platform', x_position: 'Position', x_age: 'Age', x_gender: 'Gender',
       x_spend: 'Spend', x_impr: 'Impressions', x_reach: 'Reach', x_freq: 'Frequency', x_clicks: 'Clicks (all)', x_linkclicks: 'Link clicks', x_ctrlink: 'Link CTR (%)', x_cpclink: 'Link CPC',
@@ -1510,7 +1510,8 @@ tr:hover td{filter:brightness(.985)}
       const r = meta ? { since: meta.since, until: meta.until } : (D0 && D0.date.since ? { since: D0.date.since, until: D0.date.until } : apiRange());
       const fname = `stats-meta-kpis${actId() ? '_act-' + actId() : ''}_${r.since}_${r.until}.xlsx`;
       window.__smkXlsx.download(sheets, fname);
-      EX.msg = t('ex_done', { n: sheets.length });
+      const warn = meta && Array.isArray(meta.warnings) && meta.warnings.length ? ' — ' + t('ex_copy_warn', { m: meta.warnings.map(w => String(w).replace(/^copy: /, '')).join(' · ') }) : '';
+      EX.msg = t('ex_done', { n: sheets.length }) + warn;
     } catch (e) {
       EX.err = (e && e.message) || t('err_generic'); EX.msg = '';
     }
