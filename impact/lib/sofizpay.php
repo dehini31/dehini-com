@@ -156,7 +156,7 @@ function donation_confirm(array $don): string
 /** Remerciement au donateur et avis à l'adresse de notification. */
 function donation_mails(array $don): void
 {
-    try {
+    if ($don['email'] !== '') try {
         [$subj, $html, $text] = compose_thanks($don);
         send_mail((string) $don['email'], $subj, $html, $text);
     } catch (Throwable $e) {

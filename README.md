@@ -109,8 +109,9 @@ déduit du fuseau horaire du navigateur (jamais de l'adresse IP).
 - `impact/index.html` — la page (vitrine + défi + résultat + impact mondial + compte), en arabe,
   français et anglais.
 - `impact/admin.html` — l'administration du défi, avec **le même mot de passe que `/admin`**
-  (lien « Défi Impact » en bas du menu de `/admin`) : ajouter, modifier, masquer ou supprimer les
-  questions (avec leurs chiffres), modérer les récits, régler les soutiens et la connexion Google.
+  (lien « Défi Impact » en bas du menu de `/admin`) : statistiques (dont qui est en ligne en ce
+  moment), questions (ajouter, modifier, masquer, supprimer), récits, soutiens et connexion
+  Google.
 - `impact/questions.json` — les 1000 questions de départ (340 personnelles, 330 sociales, 330
   professionnelles) dans les trois langues. Elles sont copiées dans la base au premier passage ;
   ensuite **c'est l'admin qui fait foi** et modifier ce fichier n'a plus d'effet (il sert
@@ -235,6 +236,30 @@ Onglet « Soutiens » de `https://dehini.com/impact/admin.html` :
 
 Montants acceptés : de 100 à 200 000 DA. Seul le prénom (et l'initiale du nom) des donateurs qui
 l'ont accepté apparaît sur le mur des soutiens ; jamais les montants.
+
+### 8. Statistiques
+
+Onglet « Statistiques » de `https://dehini.com/impact/admin.html`, ouvert en premier à la
+connexion :
+
+- **En ligne maintenant** — combien de personnes sont sur le site à l'instant (avec ou sans
+  compte), et sur quelle page (défi, impact mondial, messages…). Se rafraîchit toute seule
+  toutes les 20 secondes tant que l'onglet est ouvert. La page envoie un petit signal toutes les
+  45 secondes tant qu'elle est visible dans le navigateur du visiteur ; au-delà de 150 secondes
+  sans signal, la personne n'est plus comptée comme en ligne.
+- **Comptes et participation** — comptes créés, adresses confirmées, connexions Google,
+  participants, réponses (total, aujourd'hui, cette semaine).
+- **Récits, réactions, messages et soutiens** — récits par statut, « j'aime » / « je n'aime
+  pas », conversations et messages échangés, soutiens payés et montant collecté.
+- **14 derniers jours** — un petit graphique des comptes créés et des réponses données, jour par
+  jour.
+- **Pays** — les 10 pays les plus représentés (déduits du fuseau horaire, comme pour l'impact
+  mondial).
+- **Les trois univers** — questions et réponses par univers (personnel, social, professionnel),
+  avec le pourcentage de réponses positives.
+- **Questions les plus répondues, les plus positives et les plus difficiles** — un aperçu rapide
+  sans avoir à ouvrir l'onglet « Questions » (le classement positif/difficile demande au moins
+  8 réponses pour être significatif).
 
 ## Stats Meta KPIs (`/metakpis/`)
 
@@ -369,6 +394,9 @@ pas mis à jour automatiquement après coup.
 - Soutiens par carte : les données de carte ne passent jamais par le site (page de paiement SATIM) ;
   un paiement n'est compté qu'après vérification serveur auprès de SofizPay (statut, montant et
   compte destinataire), jamais sur la seule foi du retour navigateur ou de la notification.
+- « En ligne maintenant » (admin) : seul le nombre de personnes et la page qu'elles consultent
+  sont gardés, pendant 150 secondes au plus (nettoyé automatiquement après une heure) ; rien de
+  plus n'est retenu sur ce signal.
 - Stats Meta KPIs : mots de passe hachés, sessions à jeton aléatoire + anti-CSRF, jetons de l'extension stockés
   hachés (un par navigateur, révocables depuis le profil), limites d'essais. L'accès Meta est chiffré
   (AES-256-GCM, clé `secret.key` hors `public_html`) et chaque appel à Meta est signé (`appsecret_proof`). La page

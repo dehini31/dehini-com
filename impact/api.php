@@ -25,10 +25,12 @@
  *   POST react {id,v:1|-1|0,device} | report {id}
  *   GET  inbox | thread ?id=|?sid=   conversations privées (auteur du récit <-> un lecteur)
  *   POST msg_send {tid|sid,body} | thread_block {tid,on}
- *   POST support_start {amount,name,email,phone,message,public,lang}  -> URL de paiement SofizPay
- *        (retour et notification de paiement : support.php)
+ *   POST support_start {amount,message,public,lang}  -> URL de paiement SofizPay (nom/email du
+ *        compte connecté, ou valeurs neutres sans compte ; retour et notification : support.php)
+ *   POST ping      {device,view}  signal de présence (admin : qui est en ligne en ce moment)
  *   GET|POST unsub ?type=daily|digest|msg|all&token=   page de désabonnement
- *   mod_* : administration (récits, questions, soutiens, réglages), réservée à la session de /admin
+ *   mod_* : administration (statistiques, récits, questions, soutiens, réglages), réservée à la
+ *           session de /admin
  */
 declare(strict_types=1);
 
@@ -1007,6 +1009,22 @@ switch ($action) {
         break;
     }
 
+    case 'ping': {
+        // Signal de présence : la page l'envoie toutes les ~45 s tant qu'elle est visible,
+        // pour que l'admin sache combien de personnes sont sur le site en ce moment.
+        if (!$isPost) fail('generic', 405);
+        $u = user_for_write();
+        $device = $b['device'] ?? '';
+        if (!$u && !valid_device($device)) fail('generic');
+        rate('ping', 50, 1800);
+        $pid = $u ? 'u' . $u['id'] : 'd' . $device;
+        $view = is_string($b['view'] ?? null) ? substr($b['view'], 0, 20) : '';
+        $pdo->prepare('INSERT OR REPLACE INTO presence (pid, seen, view) VALUES (?, ?, ?)')->execute([$pid, time(), $view]);
+        if (random_int(1, 50) === 1) $pdo->prepare('DELETE FROM presence WHERE seen < ?')->execute([time() - 3600]);
+        ok();
+        break;
+    }
+
     /* ------------------------------------------ conversations privées */
 
     case 'inbox': {
@@ -1106,20 +1124,20 @@ switch ($action) {
         rate('support', 10, 3600);
         $amount = (int) ($b['amount'] ?? 0);
         if ($amount < DON_MIN || $amount > DON_MAX) fail('bad_amount');
-        $name = str_clean((string) ($b['name'] ?? ''), 60);
-        if ($name === '') fail('bad_name');
-        $email = strtolower(trim((string) ($b['email'] ?? '')));
-        if (strlen($email) > 190 || !filter_var($email, FILTER_VALIDATE_EMAIL)) fail('bad_email');
-        $phone = sofiz_phone((string) ($b['phone'] ?? ''));
-        if (strlen($phone) < 10 || strlen($phone) > 16) fail('bad_phone');
+        // Rien n'est demandé au donateur : le compte connecté fournit nom et email s'il existe,
+        // sinon des valeurs neutres (la passerelle exige nom, email et téléphone).
+        $name = $u ? str_clean((string) $u['name'], 60) : '';
+        $email = $u ? (string) $u['email'] : '';
+        $phone = '+213000000000';
         $lang = impact_lang($b['lang'] ?? 'fr');
         $ref = token(12);
         $pdo->prepare('INSERT INTO donations (ref, amount, name, email, phone, message, public, lang, uid, created) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
             ->execute([$ref, $amount, $name, $email, $phone, str_clean((string) ($b['message'] ?? ''), 300),
-                empty($b['public']) ? 0 : 1, $lang, $u ? $u['id'] : null, time()]);
+                $u && !empty($b['public']) ? 1 : 0, $lang, $u ? $u['id'] : null, time()]);
         $id = (int) $pdo->lastInsertId();
         $res = sofiz_create([
-            'amount' => $amount, 'name' => $name, 'phone' => $phone, 'email' => $email, 'lang' => $lang,
+            'amount' => $amount, 'name' => $name !== '' ? $name : 'Soutien anonyme', 'phone' => $phone,
+            'email' => $email !== '' ? $email : mail_from(), 'lang' => $lang,
             'return_url'  => site_url() . 'support.php?r=' . $ref,
             'webhook_url' => site_url() . 'support.php?hook=1',
             'reference'   => 'DON-' . $id,
@@ -1333,6 +1351,116 @@ switch ($action) {
         donation_confirm($d);
         $s->execute([(int) $d['id']]);
         ok(['item' => donation_view($s->fetch())]);
+        break;
+    }
+
+    case 'mod_stats': {
+        require_admin();
+        $now = time();
+        $onlineSince = $now - ONLINE_WINDOW;
+
+        $online = ['total' => 0, 'accounts' => 0, 'visitors' => 0, 'views' => []];
+        foreach ($pdo->query("SELECT pid, view FROM presence WHERE seen > $onlineSince") as $r) {
+            $online['total']++;
+            $online[strncmp((string) $r['pid'], 'u', 1) === 0 ? 'accounts' : 'visitors']++;
+            $v = (string) $r['view'] !== '' ? (string) $r['view'] : 'autre';
+            $online['views'][$v] = ($online['views'][$v] ?? 0) + 1;
+        }
+        arsort($online['views']);
+
+        $accounts = [
+            'total'    => (int) $pdo->query('SELECT COUNT(*) FROM users')->fetchColumn(),
+            'verified' => (int) $pdo->query('SELECT COUNT(*) FROM users WHERE verified = 1')->fetchColumn(),
+            'google'   => (int) $pdo->query('SELECT COUNT(*) FROM users WHERE google_sub IS NOT NULL')->fetchColumn(),
+            'daily'    => (int) $pdo->query('SELECT COUNT(*) FROM users WHERE opt_daily = 1')->fetchColumn(),
+            'digest'   => (int) $pdo->query('SELECT COUNT(*) FROM users WHERE opt_digest = 1')->fetchColumn(),
+        ];
+
+        $answersTotal = (int) $pdo->query('SELECT COUNT(*) FROM answers')->fetchColumn();
+        $participants = (int) $pdo->query('SELECT COUNT(DISTINCT pid) FROM answers')->fetchColumn();
+        $today = $now - $now % 86400;
+        $engagement = [
+            'participants'  => $participants,
+            'answers'       => $answersTotal,
+            'answers_today' => (int) $pdo->query("SELECT COUNT(*) FROM answers WHERE t / 1000 >= $today")->fetchColumn(),
+            'answers_week'  => (int) $pdo->query('SELECT COUNT(*) FROM answers WHERE t / 1000 >= ' . ($now - 7 * 86400))->fetchColumn(),
+        ];
+
+        $cats = [];
+        foreach (IMPACT_CATS as $c) $cats[$c] = ['questions' => 0, 'active' => 0, 'answers' => 0, 'pos' => 0];
+        foreach ($pdo->query('SELECT cat, active, COUNT(*) AS n FROM questions GROUP BY cat, active') as $r) {
+            if (!isset($cats[$r['cat']])) continue;
+            $cats[$r['cat']]['questions'] += (int) $r['n'];
+            if ($r['active']) $cats[$r['cat']]['active'] += (int) $r['n'];
+        }
+        foreach ($pdo->query('SELECT q.cat AS cat, COUNT(*) AS n, SUM(a.v = 1) AS pos FROM answers a JOIN questions q ON q.id = a.qid GROUP BY q.cat') as $r) {
+            if (!isset($cats[$r['cat']])) continue;
+            $cats[$r['cat']]['answers'] = (int) $r['n'];
+            $cats[$r['cat']]['pos'] = (int) $r['pos'];
+        }
+
+        $stories = ['published' => 0, 'pending' => 0, 'hidden' => 0, 'private' => 0, 'likes' => 0, 'dislikes' => 0, 'reports' => 0];
+        foreach ($pdo->query('SELECT status, COUNT(*) AS n, SUM(likes) AS l, SUM(dislikes) AS d, SUM(reports) AS r FROM stories GROUP BY status') as $r) {
+            if (isset($stories[$r['status']])) $stories[$r['status']] = (int) $r['n'];
+            $stories['likes'] += (int) $r['l'];
+            $stories['dislikes'] += (int) $r['d'];
+            $stories['reports'] += (int) $r['r'];
+        }
+
+        $messages = [
+            'threads'  => (int) $pdo->query('SELECT COUNT(*) FROM threads')->fetchColumn(),
+            'blocked'  => (int) $pdo->query('SELECT COUNT(*) FROM threads WHERE blocked != 0')->fetchColumn(),
+            'messages' => (int) $pdo->query('SELECT COUNT(*) FROM messages')->fetchColumn(),
+            'today'    => (int) $pdo->query("SELECT COUNT(*) FROM messages WHERE created >= $today")->fetchColumn(),
+        ];
+
+        $countries = [];
+        foreach ($pdo->query("SELECT cc, COUNT(*) AS n FROM people WHERE cc != '' GROUP BY cc ORDER BY n DESC LIMIT 10") as $r) {
+            $countries[] = [(string) $r['cc'], (int) $r['n']];
+        }
+        $countriesTotal = (int) $pdo->query("SELECT COUNT(DISTINCT cc) FROM people WHERE cc != ''")->fetchColumn();
+
+        $donations = ['paid' => 0, 'pending' => 0, 'failed' => 0, 'sum' => 0];
+        foreach ($pdo->query('SELECT status, COUNT(*) AS n, SUM(amount) AS s FROM donations GROUP BY status') as $r) {
+            if (isset($donations[$r['status']])) $donations[$r['status']] = (int) $r['n'];
+            if ($r['status'] === 'paid') $donations['sum'] = (int) $r['s'];
+        }
+
+        // Tendance des 14 derniers jours : nouveaux comptes et réponses, un point par jour.
+        $days = [];
+        for ($i = 13; $i >= 0; $i--) $days[] = gmdate('Y-m-d', $today - $i * 86400);
+        $signupsByDay = array_fill_keys($days, 0);
+        $answersByDay = array_fill_keys($days, 0);
+        $since14 = $today - 13 * 86400;
+        foreach ($pdo->query("SELECT strftime('%Y-%m-%d', created, 'unixepoch') AS d, COUNT(*) AS n FROM users WHERE created >= $since14 GROUP BY d") as $r) {
+            if (isset($signupsByDay[$r['d']])) $signupsByDay[$r['d']] = (int) $r['n'];
+        }
+        foreach ($pdo->query("SELECT strftime('%Y-%m-%d', t / 1000, 'unixepoch') AS d, COUNT(*) AS n FROM answers WHERE t / 1000 >= $since14 GROUP BY d") as $r) {
+            if (isset($answersByDay[$r['d']])) $answersByDay[$r['d']] = (int) $r['n'];
+        }
+
+        // Questions les plus répondues, les plus positives et les plus négatives (5 chacune, 8 réponses mini pour les classements).
+        $qs = questions();
+        $top = ['answered' => [], 'positive' => [], 'negative' => []];
+        $rows = [];
+        foreach ($pdo->query('SELECT qid, COUNT(*) AS n, SUM(v = 1) AS pos, SUM(v = -1) AS neg FROM answers GROUP BY qid') as $r) {
+            if (!isset($qs[(int) $r['qid']])) continue;
+            $rows[] = ['id' => (int) $r['qid'], 'n' => (int) $r['n'], 'pos' => (int) $r['pos'], 'neg' => (int) $r['neg']];
+        }
+        usort($rows, function ($a, $b) { return $b['n'] <=> $a['n']; });
+        foreach (array_slice($rows, 0, 5) as $r) $top['answered'][] = ['id' => $r['id'], 'q' => qtext($qs[$r['id']], 'fr'), 'n' => $r['n']];
+        $ranked = array_filter($rows, function ($r) { return $r['n'] >= 8; });
+        usort($ranked, function ($a, $b) { return ($b['pos'] / $b['n']) <=> ($a['pos'] / $a['n']); });
+        foreach (array_slice($ranked, 0, 5) as $r) $top['positive'][] = ['id' => $r['id'], 'q' => qtext($qs[$r['id']], 'fr'), 'n' => $r['n'], 'pct' => (int) round($r['pos'] / $r['n'] * 100)];
+        usort($ranked, function ($a, $b) { return ($b['neg'] / $b['n']) <=> ($a['neg'] / $a['n']); });
+        foreach (array_slice($ranked, 0, 5) as $r) $top['negative'][] = ['id' => $r['id'], 'q' => qtext($qs[$r['id']], 'fr'), 'n' => $r['n'], 'pct' => (int) round($r['neg'] / $r['n'] * 100)];
+
+        ok([
+            'online' => $online, 'accounts' => $accounts, 'engagement' => $engagement, 'cats' => $cats,
+            'stories' => $stories, 'messages' => $messages, 'countries' => $countries, 'countries_total' => $countriesTotal,
+            'donations' => $donations, 'trend' => ['days' => $days, 'signups' => array_values($signupsByDay), 'answers' => array_values($answersByDay)],
+            'top' => $top,
+        ]);
         break;
     }
 
