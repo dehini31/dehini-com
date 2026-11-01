@@ -7,8 +7,14 @@
 /admin/config.php
 /impact/config.php
 /metakpis/config.php
+/swanbida/config.php
 
 # Images envoyées depuis /admin.
 /uploads/*
 !/uploads/.gitkeep
 !/uploads/.htaccess
+
+# Photos et vidéos envoyées depuis l'admin de SWANBIDA.
+/swanbida/media/*
+!/swanbida/media/.gitkeep
+!/swanbida/media/.htaccess

@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /swanbida/admin/
+Disallow: /swanbida/api.php
+Disallow: /swanbida/commande/
+Disallow: /swanbida/ar/commande/
+
+Sitemap: https://dehini.com/swanbida/sitemap.xml
