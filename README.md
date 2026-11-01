@@ -23,6 +23,11 @@ Site personnel de Mohammed Dehini.
   présentation, connexion (Google ou email), profil détaillé, et l'extension Chrome qui affiche les KPI Meta Ads
   en couleur dans Ads Manager, exporte en Excel (placement, âge, genre, textes des annonces) et propose des
   campagnes à partir des meilleurs KPI. Voir la section « Stats Meta KPIs » plus bas.
+- `swanbida/` — **SWANBIDA** (`https://dehini.com/swanbida/`), boutique en ligne de linge de bain, français /
+  arabe (RTL) : catalogue, fiche produit avec commande en paiement à la livraison, administration (commandes,
+  produits, stock, contenus, livraison, statistiques), Meta Pixel + Conversions API et référencement. Voir la section
+  « SWANBIDA » plus bas.
+- `robots.txt` — robots du domaine (déclare le sitemap de SWANBIDA ; Google ne lit que celui de la racine).
 
 ## Installation (serveur dzSecurity, compte cPanel `dehini91`)
 
@@ -40,6 +45,8 @@ cp -rf dehini-com/img ~/public_html/
 cp -rf dehini-com/elbahiferti ~/public_html/
 cp -rf dehini-com/impact ~/public_html/
 cp -rf dehini-com/metakpis ~/public_html/
+cp -rf dehini-com/swanbida ~/public_html/
+cp -f dehini-com/robots.txt ~/public_html/robots.txt
 ```
 
 ### 2. Créer le mot de passe de l'admin
@@ -69,12 +76,13 @@ depuis `/admin`, jamais depuis ce dépôt.
 Dans **cPanel → Tâches Cron**, toutes les 5 minutes :
 
 ```bash
-cd ~/dehini-com && git pull -q && cp -f index.html ~/public_html/index.html && cp -f admin/index.html admin/api.php admin/.htaccess admin/.user.ini ~/public_html/admin/ && cp -f uploads/.htaccess ~/public_html/uploads/.htaccess && cp -rf img ~/public_html/ && cp -rf elbahiferti ~/public_html/ && cp -rf impact ~/public_html/ && cp -rf metakpis ~/public_html/
+cd ~/dehini-com && git pull -q && cp -f index.html ~/public_html/index.html && cp -f admin/index.html admin/api.php admin/.htaccess admin/.user.ini ~/public_html/admin/ && cp -f uploads/.htaccess ~/public_html/uploads/.htaccess && cp -rf img ~/public_html/ && cp -rf elbahiferti ~/public_html/ && cp -rf impact ~/public_html/ && cp -rf metakpis ~/public_html/ && cp -rf swanbida ~/public_html/ && cp -f robots.txt ~/public_html/robots.txt
 ```
 
 Cette commande ne touche jamais `data.json`, `admin/config.php`, `impact/config.php`,
-`metakpis/config.php`, les bases du défi Impact et de Stats Meta KPIs ni les images envoyées dans
-`uploads/` : seul le code (`index.html`, `admin/*.php`, `elbahiferti/`, `impact/`, `metakpis/`) est mis à jour.
+`metakpis/config.php`, `swanbida/config.php`, les bases du défi Impact, de Stats Meta KPIs et de SWANBIDA, ni les
+images envoyées dans `uploads/` et `swanbida/media/` : seul le code (`index.html`, `admin/*.php`, `elbahiferti/`,
+`impact/`, `metakpis/`, `swanbida/`) est mis à jour.
 
 ## Défi Impact (`/impact/`)
 
@@ -334,6 +342,178 @@ confidentialité `https://dehini.com/metakpis/#privacy`, justification des autor
 compte et réglages) et accès à `dehini.com` (compte et statistiques). L'ID de l'extension change avec le Store : le
 lien « Connecter l'extension » n'en dépend pas.
 
+## SWANBIDA (`/swanbida/`)
+
+Boutique de la marque SWANBIDA 🦢 — *L'élégance dans chaque détail* — en français (`/swanbida/`) et en arabe
+(`/swanbida/ar/`, de droite à gauche), pensée d'abord pour le téléphone (trafic Facebook / Instagram). PHP + SQLite,
+sans dépendance ni étape de construction, comme le reste du site.
+
+| Adresse | Page |
+| --- | --- |
+| `/swanbida/` | Accueil : présentation, pack phare, offre spéciale, collections, emballage, avantages, guides |
+| `/swanbida/boutique`, `/swanbida/boutique/<collection>` | Catalogue, collections, tri, « en stock uniquement » |
+| `/swanbida/produit/<produit>` | Fiche produit : galerie photos / vidéos (glisser, zoom plein écran), offres, formulaire de commande |
+| `/swanbida/notre-histoire`, `/livraison`, `/contact`, `/confidentialite` | Pages de la marque |
+| `/swanbida/guides`, `/swanbida/guides/<guide>` | Guides (3 livrés : choisir ses serviettes, idées cadeaux, entretien) |
+| `/swanbida/suivi` | Suivi de commande (numéro + téléphone) |
+| `/swanbida/commande/<n°>?k=…` | Remerciement puis suivi (lien privé) |
+| `/swanbida/admin/` | Administration |
+| `/swanbida/sitemap.xml`, `/swanbida/robots.txt` | Référencement |
+
+Chaque page existe en arabe sous `/swanbida/ar/…`.
+
+- `swanbida/index.php` — toutes les pages (rendu serveur : titres, descriptions, canonical, hreflang fr-DZ / ar-DZ,
+  Open Graph, données structurées Schema.org Organization, WebSite, Product, BreadcrumbList, Article).
+- `swanbida/api.php` — commande, wilayas / communes, événements de navigation. `swanbida/admin/` — administration.
+- `swanbida/cron.php` — renvoi des événements Meta, sauvegarde quotidienne, purge des données techniques.
+- `swanbida/lib/` (code), `swanbida/templates/` (gabarits) — bloqués en accès direct.
+- `swanbida/assets/` — style, script, logo, icônes et **visuels provisoires** (illustrations du pack, à remplacer par
+  les vraies photos depuis l'admin). `swanbida/media/` — photos et vidéos envoyées depuis l'admin (hors Git).
+- La base SQLite est créée toute seule **hors de `public_html`** : `~/swanbida-data/swanbida.sqlite`, avec
+  `secret.key` (chiffre le jeton Meta et celui du bot Telegram) et `backups/`. Ne jamais les mettre dans Git.
+
+Hébergement : PHP 7.4 ou plus récent avec `pdo_sqlite`, `gd` (avec WebP), `openssl`, `mbstring` ; `curl`, `intl`,
+`zip` et `exif` sont utilisés s'ils sont présents. HTTPS est imposé par `swanbida/.htaccess`.
+
+### 1. Première mise en route
+
+1. Déployer (commandes de l'« Installation » plus haut) puis ouvrir `https://dehini.com/swanbida/` : la base, le
+   produit **SWANBIDA – Pack Serviette Blanc** (7 750 DA ; 2 packs 13 500 DA au lieu de 15 500 DA ; stock de départ
+   100), les deux collections, les trois guides et les 58 wilayas avec leurs 1 541 communes se créent tout seuls.
+2. Se connecter sur `https://dehini.com/swanbida/admin/` **avec le mot de passe de `/admin`** (propriétaire, champ
+   email vide). Lien « 🦢 SWANBIDA » aussi en bas du menu de `/admin`.
+3. **Contenus → Général** : WhatsApp, téléphone, email, Facebook, Instagram, TikTok (tant qu'ils sont vides, les
+   boutons correspondants n'apparaissent pas).
+4. **Produits → Pack Serviette Blanc → Photos** : remplacer les illustrations provisoires par les vraies photos
+   (JPG / PNG / WebP ; converties automatiquement en WebP 480 / 960 / 1600 px, métadonnées retirées) et renseigner
+   les textes alternatifs FR / AR. Vidéos MP4 (60 Mo max) ou liens YouTube possibles. Vérifier le stock réel.
+5. **Livraison** : frais par wilaya (0 = gratuit, valeur par défaut) ; « Appliquer à toutes les wilayas » pour un
+   tarif unique. La livraison au bureau du transporteur (stop desk) s'active dans **Réglages**.
+6. **Meta & suivi** puis **Réglages** (notifications) : voir ci-dessous.
+7. **cPanel → Tâches Cron**, toutes les 10 minutes :
+
+```bash
+/usr/local/bin/php ~/public_html/swanbida/cron.php > /dev/null 2>&1
+```
+
+Si l'envoi de photos échoue avec « Fichier trop lourd », relever `upload_max_filesize` / `post_max_size` dans
+**cPanel → MultiPHP INI Editor** (`swanbida/admin/.user.ini` demande 64 Mo).
+
+### 2. Commandes (paiement à la livraison)
+
+Le formulaire est directement sur la fiche produit : offre (1 ou 2 packs, offres modifiables dans l'admin), nom et
+prénom, téléphone, wilaya, commune (liste selon la wilaya, ou saisie libre « Autre commune »), adresse, remarque
+facultative. Le montant (offre + frais de la wilaya) est **recalculé par le serveur**, jamais pris du navigateur.
+Chaque commande reçoit un numéro unique lisible au téléphone (`SW-7K4M2Q`) et un lien de suivi privé.
+
+- Validation côté serveur de chaque champ (numéros algériens 05 / 06 / 07, +213, chiffres arabes acceptés).
+- Anti-doublons : double clic ou retour arrière → même commande (pas de second Lead) ; même téléphone et même produit
+  dans les 24 h → commande acceptée mais marquée « doublon possible ». Champ piège anti-robots et limites par
+  connexion (8 commandes / heure, réglable) et par téléphone.
+- Stock décompté à la commande, rendu si la commande est annulée ou retournée ; rupture → formulaire remplacé par
+  un bouton WhatsApp (ou commandes acceptées si « accepter en rupture » est coché). Alerte stock bas par email /
+  Telegram.
+- Sans JavaScript, le formulaire fonctionne quand même (envoi classique).
+
+**Administration → Commandes** : onglets par statut (nouvelle, confirmée, en préparation, expédiée, livrée,
+annulée, retournée) avec compteurs, recherche (n°, nom, téléphone, commune, n° de suivi), filtres (wilaya, dates,
+source, doublons, campagne / publicité depuis le tableau de bord), changement de statut groupé, export Excel / CSV
+(séparateur « ; », UTF-8). Fiche commande : boutons Appeler et WhatsApp (message de confirmation pré-rempli,
+modifiable dans Réglages), modification du client, de l'adresse, de l'offre, des frais, du transporteur et du n° de
+suivi (affichés au client sur sa page de suivi), notes internes, historique complet, origine publicitaire et
+événements Meta envoyés.
+
+**Notifications** de chaque nouvelle commande : email (jusqu'à 5 adresses, via le compte SMTP du défi Impact si
+`swanbida/config.php` n'en définit pas d'autre), **Telegram** (créer un bot avec @BotFather, coller son jeton et
+l'identifiant du chat dans Réglages → « Enregistrer et tester »), et dans l'admin ouverte : signal sonore,
+notification du navigateur (« Activer les alertes ») et compteur des commandes à confirmer.
+
+**Équipe** (Réglages) : comptes email + mot de passe avec deux rôles — *Gestion* (commandes, produits, contenus,
+livraison, statistiques) et *Confirmation* (commandes uniquement, idéal pour les appels de confirmation). Le
+propriétaire seul accède à Meta, aux réglages, à l'équipe et aux sauvegardes.
+
+**Tableau de bord** : commandes, montants demandés / confirmés / encaissés, taux de confirmation, de livraison,
+d'annulation et de retour, graphique par jour, tunnel (visites → vues produit → ajouts → débuts de commande →
+commandes → confirmées → livrées), performances par **campagne, publicité, source et wilaya**, santé du suivi Meta.
+
+### 3. Meta Pixel et Conversions API
+
+Dans **Meta & suivi** : ID du pixel (jeu de données), jeton d'accès Conversions API (Gestionnaire d'événements →
+Paramètres → « Générer un jeton d'accès » ; stocké chiffré, jamais renvoyé au navigateur) et, pour les essais, le
+« code de test » de l'onglet *Tester les événements* (« Envoyer un événement test » vérifie la connexion ; **vider le
+code de test ensuite**, sinon les événements restent en mode test). La balise `facebook-domain-verification` se
+colle au même endroit.
+
+| Événement | Quand | Envoyé par |
+| --- | --- | --- |
+| PageView | chaque page | navigateur + serveur, même `event_id` |
+| ViewContent | fiche produit | navigateur + serveur |
+| AddToCart | choix d'une offre ou clic « Commander » | navigateur + serveur |
+| InitiateCheckout | première saisie dans le formulaire | navigateur + serveur |
+| Contact | clic WhatsApp / téléphone | navigateur + serveur |
+| **Lead** | **demande de commande enregistrée** | navigateur + serveur, `event_id` = `lead.<n°>`, une seule fois |
+| **Purchase** | **commande confirmée par l'équipe** (statut « confirmée » ou plus loin) | **serveur uniquement**, une seule fois, `event_id` = `purchase.<n°>` |
+| OrderDelivered | commande livrée | serveur uniquement (`delivered.<n°>`) |
+
+- **Déduplication** : chaque événement part avec un identifiant unique, identique côté navigateur et côté serveur.
+- **Purchase n'est jamais envoyé par le navigateur** : la page de remerciement n'envoie aucune conversion, l'ouvrir
+  ou la rafraîchir ne change rien. Le statut commercial qui déclenche Purchase est la **confirmation** (le client a
+  confirmé au téléphone) : c'est le signal le plus fiable qui arrive assez vite pour optimiser les campagnes. Le
+  réglage « Quand envoyer Purchase » permet de choisir la **livraison** à la place (un événement `OrderConfirmed`
+  marque alors la confirmation). Les livraisons sont toujours suivies à part (`OrderDelivered`, utilisable comme
+  conversion personnalisée). Une commande annulée après confirmation reste comptée par Meta (Meta ne permet pas
+  d'annuler un événement) : l'historique de la commande le signale.
+- **Données envoyées côté serveur** : IP et navigateur du client, cookies `_fbp` / `_fbc` (reconstruit depuis le
+  `fbclid` de la publicité), identifiant visiteur, et — hachés en SHA-256 — téléphone (+213), prénom, nom, commune,
+  wilaya, pays. L'adresse n'est jamais envoyée. Valeur, devise DZD, `content_ids` (SKU), quantités et `order_id`.
+- Les événements de commande passent par une file d'attente : envoyés juste après la réponse au client, renvoyés
+  par le cron en cas d'échec (6 essais), journal consultable et « Réessayer » dans **Meta & suivi**.
+- **Attribution** : coller dans Ads Manager (Publicité → Paramètres d'URL) la chaîne affichée dans **Meta & suivi** :
+
+```text
+utm_source=facebook&utm_medium=paid&utm_campaign={{campaign.name}}&utm_term={{adset.name}}&utm_content={{ad.name}}&campaign_id={{campaign.id}}&adset_id={{adset.id}}&ad_id={{ad.id}}&placement={{placement}}&site_source_name={{site_source_name}}
+```
+
+  Chaque commande garde alors (dernier clic, 30 jours) campagne, ensemble, publicité, placement, UTM, `fbclid`,
+  page d'arrivée, valeur et numéro de commande ; le tableau de bord les regroupe par campagne et par publicité.
+
+### 4. Référencement (Google)
+
+Titres et descriptions uniques par page et par langue (modifiables : Contenus → Référencement, et chaque produit,
+collection et guide), adresses courtes, `canonical`, `hreflang` fr-DZ / ar-DZ / x-default, textes alternatifs des
+images, données structurées (Organization, WebSite, Product avec prix DZD, disponibilité, livraison et politique
+d'échange, BreadcrumbList, ItemList, Article), `sitemap.xml` avec les versions des deux langues, et `robots.txt` à la
+racine du domaine (livré dans ce dépôt) qui déclare le sitemap.
+
+**Google Search Console** : ajouter une propriété « préfixe d'URL » `https://dehini.com/swanbida/`, choisir la
+validation par balise HTML, coller la balise dans **Réglages → Google Search Console**, valider, puis déclarer le
+sitemap `https://dehini.com/swanbida/sitemap.xml`. (Si le domaine `dehini.com` est déjà validé, déclarer seulement
+le sitemap.)
+
+### 5. Sauvegardes
+
+Le cron fait chaque jour une copie compressée de la base dans `~/swanbida-data/backups/` (30 jours conservés).
+**Réglages → Sauvegardes** : « Sauvegarder maintenant », télécharger la base ou une archive base + photos. Pour
+restaurer : remettre `swanbida.sqlite` dans `~/swanbida-data/` (et `media/` dans `~/public_html/swanbida/media/`).
+
+### 6. Ajouter des produits, collections et guides
+
+**Produits → + Nouveau produit** : textes FR / AR, offres et prix, photos, vidéos, contenu, caractéristiques,
+emballage, stock, collections, référencement. « Brouillon » le cache aux visiteurs (aperçu possible quand on est
+connecté à l'admin). **Collections** et **Guides** fonctionnent de la même façon ; un guide apparaît dans une langue
+dès que son titre et son texte y sont écrits.
+
+### 7. Wilayas
+
+La liste livrée est celle des **58 wilayas** et de leurs communes, utilisée par les sociétés de livraison. Le
+nouveau découpage (69 wilayas) entre en vigueur progressivement : **Livraison → Ajouter une wilaya** permet
+d'ajouter les wilayas 59 à 69 et leurs communes le moment venu, sans toucher au code.
+
+### 8. Tests
+
+`tests/swanbida/` contient un faux hébergement et une batterie de tests dans un vrai navigateur : voir
+`tests/swanbida/README.md`. Rien de ce dossier n'est copié sur le serveur.
+
 ## Utiliser l'admin
 
 1. Ouvrir `https://dehini.com/admin/`.
@@ -402,3 +582,9 @@ pas mis à jour automatiquement après coup.
   (AES-256-GCM, clé `secret.key` hors `public_html`) et chaque appel à Meta est signé (`appsecret_proof`). La page
   Ads Manager ne voit jamais le jeton du compte : seul le service worker de l'extension parle au serveur, pour une
   liste fermée d'actions. `metakpis/config.php` et `metakpis/lib/` sont bloqués en accès direct.
+- SWANBIDA : administration à sessions (cookie `HttpOnly`, `Secure`, `SameSite=Strict`, expiration après 4 h
+  d'inactivité et 12 h au plus), anti-CSRF sur chaque écriture, rôles, limites d'essais de connexion, mots de passe
+  hachés ; validation serveur de toutes les commandes ; politique de sécurité du contenu (CSP) avec nonce sur les
+  pages publiques ; jeton Conversions API et jeton Telegram chiffrés (AES-256-GCM, clé hors `public_html`) ;
+  `lib/`, `templates/`, `config.php`, `cron.php` bloqués en accès direct ; aucun script exécutable dans `media/` ;
+  IP et navigateur des commandes effacés au bout de 45 jours ; exports CSV protégés contre les formules Excel.
