@@ -89,7 +89,10 @@ function site_origin(): string
     }
     if (PHP_SAPI === 'cli') return 'https://dehini.com';
     $host = preg_replace('/[^A-Za-z0-9.\-:\[\]]/', '', (string) ($_SERVER['HTTP_HOST'] ?? 'dehini.com')) ?: 'dehini.com';
-    return (is_https() ? 'https' : 'http') . '://' . $host;
+    // Le site public est toujours annoncé en https:// (canonical, sitemap, Meta), même si le proxy de
+    // l'hébergeur ne transmet pas l'information HTTPS au serveur. Seul un test local reste en http.
+    $local = (bool) preg_match('/^(localhost|127\.|\[::1\]|0\.0\.0\.0)/', $host);
+    return ($local && !is_https() ? 'http' : 'https') . '://' . $host;
 }
 
 /** URL publique absolue d'un chemin relatif à la boutique (« produit/x », « assets/… »). */

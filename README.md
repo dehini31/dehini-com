@@ -373,7 +373,9 @@ Chaque page existe en arabe sous `/swanbida/ar/…`.
   `secret.key` (chiffre le jeton Meta et celui du bot Telegram) et `backups/`. Ne jamais les mettre dans Git.
 
 Hébergement : PHP 7.4 ou plus récent avec `pdo_sqlite`, `gd` (avec WebP), `openssl`, `mbstring` ; `curl`, `intl`,
-`zip` et `exif` sont utilisés s'ils sont présents. HTTPS est imposé par `swanbida/.htaccess`.
+`zip` et `exif` sont utilisés s'ils sont présents. Les adresses canoniques, le sitemap et les événements Meta sont
+toujours en `https://` ; pour rediriger aussi les visites en `http://`, activer « Force HTTPS Redirect » dans
+**cPanel → Domaines** (une redirection dans `.htaccess` tournerait en boucle derrière le proxy de l'hébergeur).
 
 ### 1. Première mise en route
 

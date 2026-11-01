@@ -11,11 +11,9 @@ AddDefaultCharset UTF-8
 <IfModule mod_rewrite.c>
   RewriteEngine On
 
-  # Toujours en HTTPS (y compris derrière un proxy ou Cloudflare).
-  RewriteCond %{HTTPS} off
-  RewriteCond %{HTTP:X-Forwarded-Proto} !https
-  RewriteCond %{HTTP_HOST} !^(localhost|127\.0\.0\.1)(:\d+)?$
-  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+  # Pas de redirection HTTP → HTTPS ici : derrière le proxy de l'hébergeur, le serveur ne voit pas
+  # toujours que la visite est en HTTPS et la redirection tournerait en boucle. Pour l'imposer, activer
+  # « Force HTTPS Redirect » dans cPanel → Domaines. Les adresses canoniques pointent toujours vers https://.
 
   # Dossiers internes.
   RewriteRule ^(lib|templates)(/|$) - [F,L]
