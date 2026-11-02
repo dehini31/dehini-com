@@ -107,12 +107,12 @@ function icon(string $name, string $cls = 'ico'): string
 /** Logo SWANBIDA (cygne + nom). */
 function logo_svg(string $cls = 'logo'): string
 {
-    return '<svg class="' . e($cls) . '" viewBox="0 0 214 40" role="img" aria-label="SWANBIDA">'
+    return '<svg class="' . e($cls) . '" viewBox="0 0 214 40" role="img" aria-label="SWANBIDA" direction="ltr">'
         . '<g class="logo-swan" transform="translate(-7 -4.5) scale(.5)">'
         . '<path d="M30 66 C 32 82, 68 86, 90 52 C 80 60, 66 60, 57 55 C 48 50, 38 54, 30 66 Z"/>'
         . '<path class="logo-neck" d="M33 64 C 25 54, 27 42, 38 34 C 46 28, 48 21, 42 16.5 C 37 13, 31 15.5, 30 21"/>'
         . '<path d="M30.5 19 L 22 25.5 L 31.5 24.5 Z"/></g>'
-        . '<text x="46" y="28.5" class="logo-word">SWANBIDA</text></svg>';
+        . '<text x="46" y="28.5" class="logo-word" direction="ltr" text-anchor="start">SWANBIDA</text></svg>';
 }
 
 function whatsapp_number(): string

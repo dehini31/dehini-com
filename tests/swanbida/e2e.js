@@ -57,6 +57,29 @@ async function order(browser, lang) {
   check(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), 'aucun défilement horizontal');
   await page.screenshot({ path: path.join(SHOTS, `product-${lang}-top.png`) });
 
+  // Logo : « SWANBIDA » à droite du cygne, sans chevaucher le bouton de langue (même en arabe).
+  const logo = await page.evaluate(() => {
+    const svg = document.querySelector('.site-header .logo'), t = svg.querySelector('text').getBoundingClientRect();
+    const sw = svg.querySelector('.logo-swan').getBoundingClientRect(), l = document.querySelector('.lang-switch').getBoundingClientRect();
+    return { afterSwan: t.left >= sw.right - 2, clear: t.right <= l.left || t.left >= l.right };
+  });
+  check(logo.afterSwan && logo.clear, 'logo : nom écrit après le cygne, sans chevauchement');
+
+  // Galerie : chaque miniature affiche la bonne photo, puis glissement au doigt.
+  const total = await page.$$eval('.g-thumb', t => t.length);
+  const count = async () => (await page.textContent('[data-count]')).trim();
+  const seen = [];
+  for (const i of [1, 2, 0, total - 1, 1]) {
+    await page.click(`.g-thumb[data-go="${i}"]`);
+    await sleep(800);
+    seen.push(await count());
+  }
+  const want = [2, 3, 1, total, 2].map(n => `${n} / ${total}`);
+  check(JSON.stringify(seen) === JSON.stringify(want), `galerie : miniatures → ${seen.join(', ')}`);
+  await page.evaluate(() => { const t = document.querySelector('[data-track]'); t.scrollBy({ left: (getComputedStyle(t).direction === 'rtl' ? -1 : 1) * t.clientWidth, behavior: 'instant' }); });
+  await sleep(500);
+  check((await count()) === `3 / ${total}`, 'galerie : glisser passe à la photo suivante');
+
   // Barre « Commander » collante après défilement.
   await page.evaluate(() => window.scrollTo(0, 2600));
   await sleep(500);
@@ -119,6 +142,19 @@ async function admin(browser, ref) {
   console.log('\n▶ Administration (mobile) : confirmation de ' + ref);
   const { ctx, page, errors } = await newPage(browser);
   await page.goto(BASE + '/admin/', { waitUntil: 'networkidle' });
+  check(await page.isHidden('.login label:has(input[inputmode=email])'), 'connexion : champ Email masqué par défaut (propriétaire)');
+  // Compte d'équipe : un texte sans @ (pré-rempli par le navigateur) est signalé, sans blocage du navigateur.
+  await page.click('.login a:has-text("Membre de l")');
+  await page.fill('input[inputmode=email]', 'dehini.com');
+  await page.fill('input[type=password]', 'test-owner-pass');
+  await page.click('button[type=submit]');
+  check((await page.textContent('.err')).includes('email'), 'mode équipe : « dehini.com » refusé avec un message clair');
+  await page.click('.login a:has-text("propriétaire")');
+  check(await page.isHidden('.login label:has(input[inputmode=email])'), 'retour au mode propriétaire');
+  // Côté serveur : un « email » sans @ envoyé avec le mot de passe du propriétaire ouvre quand même la session.
+  const srv = await page.evaluate(() => fetch('api.php?action=login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'dehini.com', password: 'test-owner-pass' }) }).then(r => r.json()));
+  check(srv.ok && srv.user && srv.user.role === 'owner', 'serveur : « dehini.com » + mot de passe /admin → propriétaire');
+  await page.evaluate(() => fetch('api.php?action=logout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }));
   await page.fill('input[type=password]', 'mauvais');
   await page.click('button[type=submit]');
   await page.waitForSelector('.err:not(:empty)');
@@ -161,7 +197,27 @@ async function admin(browser, ref) {
     await sleep(900);
     await p.screenshot({ path: path.join(SHOTS, n + '.png'), fullPage: true });
   }
+  // Compte d'équipe « Confirmation » créé par le propriétaire, puis connexion avec son email.
+  const created = await p.evaluate(async () => {
+    const s = await fetch('api.php?action=session').then(r => r.json());
+    return fetch('api.php?action=team_save', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF': s.csrf },
+      body: JSON.stringify({ email: 'agent@example.com', name: 'Agent Test', role: 'agent', password: 'agent-pass-123' }) }).then(r => r.json());
+  });
+  check(created.ok, 'propriétaire : création d\'un compte « Confirmation »');
   await d.close();
+  const a = await browser.newContext({ ...devices['iPhone 13'] });
+  const ap = await a.newPage();
+  await ap.goto(BASE + '/admin/', { waitUntil: 'networkidle' });
+  await ap.click('.login a:has-text("Membre de l")');
+  await ap.fill('input[inputmode=email]', 'agent@example.com');
+  await ap.fill('input[type=password]', 'agent-pass-123');
+  await ap.click('button[type=submit]');
+  await ap.waitForSelector('.orow');
+  const nav = await ap.$$eval('.nav a', as => as.map(x => x.textContent));
+  check(nav.some(t => t.startsWith('Commandes')) && !nav.some(t => /Meta|Réglages|Produits/.test(t)), 'équipe : connexion par email, accès limité aux commandes');
+  const denied = await ap.evaluate(() => fetch('api.php?action=meta').then(r => r.status));
+  check(denied === 403, 'équipe : Meta & réglages refusés par le serveur (403)');
+  await a.close();
 }
 
 (async () => {
