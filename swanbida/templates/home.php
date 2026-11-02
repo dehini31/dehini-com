@@ -40,49 +40,13 @@ $packImgs = $fp ? $fp['images'] : [];
   </div>
 </section>
 
-<?php if ($fp): $t1 = $fp['tiers'][0]; ?>
-<section class="section featured">
-  <div class="wrap featured-grid">
-    <div class="featured-media reveal">
-      <div class="mosaic">
-        <?php foreach (array_slice($packImgs, 1, 3) as $i => $im): ?>
-        <a href="<?= e($fUrl) ?>" class="mosaic-<?= $i ?>" tabindex="-1" aria-hidden="true"><?= picture($im, ['sizes' => '(min-width: 960px) 25vw, 50vw']) ?></a>
-        <?php endforeach; ?>
-      </div>
-    </div>
-    <div class="featured-copy">
-      <p class="eyebrow reveal"><?= e(t('featured_title')) ?></p>
-      <h2 class="h2 reveal"><a href="<?= e($fUrl) ?>"><?= e(tr($fp['name'], $lang)) ?></a></h2>
-      <p class="reveal"><?= e(tr($fp['short'], $lang)) ?></p>
-      <h3 class="h-small reveal"><?= e(t('pack_contains')) ?></h3>
-      <ul class="contents-list reveal">
-        <?php foreach ($fp['contents'] as $c): ?><li><?= icon('check') ?><span><?= e(tr($c, $lang)) ?></span></li><?php endforeach; ?>
-      </ul>
-      <div class="featured-buy reveal">
-        <?= price_html($t1['price'], $t1['compare'], 'price-lg') ?>
-        <a class="btn btn-primary btn-lg" href="<?= e($fUrl) ?>#commander" data-cta="featured"><?= e(t('order_now_long')) ?></a>
-      </div>
-    </div>
-  </div>
-</section>
-<?php endif; ?>
+<?php if ($fp) { $fLink = $fUrl; $fCta = $fUrl . '#commander'; $fEyebrow = t('featured_title'); require __DIR__ . '/_feature.php'; } ?>
 
-<?php if ($fTier2): ?>
-<section class="offer-band">
-  <div class="wrap offer-in reveal">
-    <div>
-      <p class="eyebrow eyebrow-light"><?= e(t('special_offer')) ?></p>
-      <h2 class="h2"><?= e(tr($home['offer_title'] ?? [], $lang)) ?></h2>
-      <p><?= e(tr($home['offer_text'] ?? [], $lang)) ?></p>
-    </div>
-    <div class="offer-price">
-      <span class="offer-big"><?= e(money($fTier2['price'], $lang)) ?></span>
-      <s><?= e(money($fTier2['compare'], $lang)) ?></s>
-      <a class="btn btn-light btn-lg" href="<?= e($fUrl) ?>?offre=<?= (int) $fTier2['qty'] ?>#commander" data-cta="offer"><?= e(t('see_offer')) ?></a>
-    </div>
-  </div>
-</section>
-<?php endif; ?>
+<?php if ($fTier2) {
+    $ob = $fTier2; $obTitle = tr($home['offer_title'] ?? [], $lang); $obText = tr($home['offer_text'] ?? [], $lang);
+    $obHref = $fUrl . '?offre=' . (int) $fTier2['qty'] . '#commander'; $obPick = 0;
+    require __DIR__ . '/_offer_band.php';
+} ?>
 
 <?php if (count($products) > 1): ?>
 <section class="section">
@@ -93,26 +57,10 @@ $packImgs = $fp ? $fp['images'] : [];
 </section>
 <?php endif; ?>
 
-<?php if ($fp && $fp['packaging']): ?>
-<section class="section section-sand">
-  <div class="wrap">
-    <div class="section-head center reveal">
-      <h2 class="h2"><?= e(tr($home['packaging_title'] ?? [], $lang)) ?></h2>
-      <p class="lead"><?= e(tr($home['packaging_text'] ?? [], $lang)) ?></p>
-    </div>
-    <ol class="steps">
-      <?php foreach ($fp['packaging'] as $i => $st): ?>
-      <li class="step reveal" style="--d:<?= $i * 90 ?>ms">
-        <span class="step-ico"><?= icon(['box', 'bag', 'ribbon'][$i] ?? 'sparkle') ?></span>
-        <span class="step-n"><?= $i + 1 ?></span>
-        <h3><?= e(tr($st['title'], $lang)) ?></h3>
-        <p><?= e(tr($st['text'], $lang)) ?></p>
-      </li>
-      <?php endforeach; ?>
-    </ol>
-  </div>
-</section>
-<?php endif; ?>
+<?php if ($fp && $fp['packaging']) {
+    $pk = $fp['packaging']; $pkTitle = tr($home['packaging_title'] ?? [], $lang); $pkText = tr($home['packaging_text'] ?? [], $lang);
+    require __DIR__ . '/_packaging.php';
+} ?>
 
 <?php if ($collections): ?>
 <section class="section">

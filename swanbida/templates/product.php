@@ -14,6 +14,7 @@ $desk = setting('desk_enabled') === '1';
 $allFree = max_shipping_fee() === 0 && (!$desk || (int) db()->query('SELECT COALESCE(MAX(fee_desk),0) FROM wilayas WHERE active = 1')->fetchColumn() === 0);
 $wa = whatsapp_link(t('wa_prefill', ['p' => tr($p['name'], $lang)]));
 $name = tr($p['name'], $lang);
+$base = $tiers[0]; // prix principal affiché : toujours l'offre de base (1 pack)
 $bundle = null;
 foreach ($tiers as $tt) if ($tt['qty'] > 1 && $tt['compare'] > $tt['price']) { $bundle = $tt; break; }
 $home = content('home');
@@ -72,9 +73,9 @@ $testimonials = array_values(array_filter((array) ($home['testimonials'] ?? []),
   <div class="pdp-info">
     <?php if ($p['highlights']): ?><ul class="chips chips-lg"><?php foreach ($p['highlights'] as $hl): ?><li><?= e(tr($hl, $lang)) ?></li><?php endforeach; ?></ul><?php endif; ?>
 
-    <div class="pdp-price" data-price-box>
-      <?= price_html($sel['price'], $sel['compare'], 'price-xl') ?>
-      <?php if ($sel['compare'] > $sel['price']): ?><span class="save-badge" data-save><?= e(t('save', ['x' => money($sel['compare'] - $sel['price'], $lang)])) ?></span><?php else: ?><span class="save-badge" data-save hidden></span><?php endif; ?>
+    <div class="pdp-price">
+      <?= price_html($base['price'], $base['compare'], 'price-xl') ?>
+      <?php if ($base['compare'] > $base['price']): ?><span class="save-badge"><?= e(t('save', ['x' => money($base['compare'] - $base['price'], $lang)])) ?></span><?php endif; ?>
     </div>
     <p class="stock stock-<?= e($state) ?>">
       <?php if ($state === 'out'): ?><?= e(t('out_of_stock')) ?>
@@ -192,8 +193,29 @@ $testimonials = array_values(array_filter((array) ($home['testimonials'] ?? []),
   </div>
 </section>
 
+<?php
+// Blocs repris de l'accueil, identiques : pack (photos, contenu, prix, bouton), offre spéciale, emballage.
+$isFeatured = ($home['featured'] ?? '') === $p['slug'];
+$fp = $p; $fLink = ''; $fCta = '#commander'; $fEyebrow = $isFeatured ? t('featured_title') : '';
+require __DIR__ . '/_feature.php';
+if ($bundle && $state !== 'out') {
+    $ob = $bundle;
+    $obTitle = $isFeatured && tr($home['offer_title'] ?? [], $lang) !== '' ? tr($home['offer_title'], $lang)
+        : tr($bundle['label'], $lang) . ' ' . t('for_price', ['x' => money($bundle['price'], $lang)]) . ' ' . t('instead_of', ['x' => money($bundle['compare'], $lang)]);
+    $obText = $isFeatured ? tr($home['offer_text'] ?? [], $lang) : t('save', ['x' => money($bundle['compare'] - $bundle['price'], $lang)]);
+    $obHref = '?offre=' . (int) $bundle['qty'] . '#commander'; $obPick = (int) $bundle['qty'];
+    require __DIR__ . '/_offer_band.php';
+}
+if ($p['packaging']) {
+    $pk = $p['packaging'];
+    $pkTitle = tr($home['packaging_title'] ?? [], $lang) ?: t('packaging_title');
+    $pkText = tr($home['packaging_text'] ?? [], $lang);
+    require __DIR__ . '/_packaging.php';
+}
+?>
+
 <?php if ($benefits): ?>
-<section class="section section-tight-top benefits-alt">
+<section class="section benefits-alt">
   <div class="wrap">
     <div class="section-head center reveal"><h2 class="h2"><?= e(t('benefits_title')) ?></h2></div>
     <ul class="benefits">
@@ -205,45 +227,15 @@ $testimonials = array_values(array_filter((array) ($home['testimonials'] ?? []),
 </section>
 <?php endif; ?>
 
-<?php if ($p['contents']): ?>
+<?php if ($p['specs']): ?>
 <section class="section section-white">
-  <div class="wrap two-col">
-    <div class="reveal">
-      <h2 class="h2"><?= e(t('contents_title')) ?></h2>
-      <ul class="contents-grid">
-        <?php foreach ($p['contents'] as $i => $c): ?>
-        <li class="reveal" style="--d:<?= $i * 60 ?>ms"><span class="cg-n"><?= $i + 1 ?></span><span><?= e(tr($c, $lang)) ?></span></li>
-        <?php endforeach; ?>
-      </ul>
-    </div>
-    <?php if ($p['specs']): ?>
-    <div class="reveal">
-      <h2 class="h2"><?= e(t('specs_title')) ?></h2>
-      <table class="specs">
-        <tbody>
-        <?php foreach ($p['specs'] as $s): ?><tr><th scope="row"><?= e(tr($s['label'], $lang)) ?></th><td><?= e(tr($s['value'], $lang)) ?></td></tr><?php endforeach; ?>
-        </tbody>
-      </table>
-    </div>
-    <?php endif; ?>
-  </div>
-</section>
-<?php endif; ?>
-
-<?php if ($p['packaging']): ?>
-<section class="section section-sand">
-  <div class="wrap">
-    <div class="section-head center reveal"><h2 class="h2"><?= e(t('packaging_title')) ?></h2></div>
-    <ol class="steps">
-      <?php foreach ($p['packaging'] as $i => $st): ?>
-      <li class="step reveal" style="--d:<?= $i * 90 ?>ms">
-        <span class="step-ico"><?= icon(['box', 'bag', 'ribbon'][$i] ?? 'sparkle') ?></span>
-        <span class="step-n"><?= $i + 1 ?></span>
-        <h3><?= e(tr($st['title'], $lang)) ?></h3>
-        <p><?= e(tr($st['text'], $lang)) ?></p>
-      </li>
-      <?php endforeach; ?>
-    </ol>
+  <div class="wrap narrow reveal">
+    <h2 class="h2"><?= e(t('specs_title')) ?></h2>
+    <table class="specs">
+      <tbody>
+      <?php foreach ($p['specs'] as $s): ?><tr><th scope="row"><?= e(tr($s['label'], $lang)) ?></th><td><?= e(tr($s['value'], $lang)) ?></td></tr><?php endforeach; ?>
+      </tbody>
+    </table>
   </div>
 </section>
 <?php endif; ?>
