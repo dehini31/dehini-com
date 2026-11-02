@@ -125,7 +125,6 @@ function notify_new_order(array $o): void
         'Commande ' . $o['ref'] . ($o['duplicate_of'] ? ' (doublon possible)' : ''),
         'Client : ' . $o['name'] . ' — ' . phone_display($o['phone']),
         'Livraison : ' . $o['commune'] . ', ' . wilaya_label($o['wilaya'], 'fr') . ($o['delivery'] === 'desk' ? ' (bureau)' : ''),
-        'Adresse : ' . $o['address'],
         'Produit : ' . $items,
         'Total : ' . money($o['total'], 'fr') . ($o['shipping'] ? ' (dont livraison ' . money($o['shipping'], 'fr') . ')' : ''),
     ];
@@ -136,7 +135,7 @@ function notify_new_order(array $o): void
 
     $tg = '<b>🦢 Nouvelle commande ' . e($o['ref']) . '</b>' . ($o['duplicate_of'] ? ' ⚠️ doublon possible' : '') . "\n"
         . e($o['name']) . ' — <a href="tel:' . e($o['phone']) . '">' . e(phone_display($o['phone'])) . "</a>\n"
-        . e($o['commune'] . ', ' . wilaya_label($o['wilaya'], 'fr')) . "\n" . e($o['address']) . "\n"
+        . e($o['commune'] . ', ' . wilaya_label($o['wilaya'], 'fr')) . "\n" . ($o['address'] !== '' ? e($o['address']) . "\n" : '')
         . e($items) . "\n<b>" . e(money($o['total'], 'fr')) . '</b>' . ($o['note'] !== '' ? "\n📝 " . e($o['note']) : '')
         . ($src ? "\n📣 " . e(implode(' · ', $src)) : '') . "\n" . '<a href="' . e($url) . '">Ouvrir dans l\'admin</a>';
     [$ok, $err] = telegram_send($tg);

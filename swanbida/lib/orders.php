@@ -125,8 +125,7 @@ function order_create(array $in, array $ctx): array
         $commune = $communeIn;
         $customCommune = true;
     }
-    $address = one_line($in['address'] ?? '', 250);
-    if (mb_strlen($address) < 4) return ['error' => 'err_address', 'field' => 'address'];
+    $address = one_line($in['address'] ?? '', 250); // facultative (plus demandée dans le formulaire)
     $note = str_clean($in['note'] ?? '', 500);
     $delivery = ($in['delivery'] ?? 'home') === 'desk' && setting('desk_enabled') === '1' ? 'desk' : 'home';
 
@@ -181,7 +180,7 @@ function order_create(array $in, array $ctx): array
     ]];
     $now = time();
     $ref = order_new_ref();
-    $lang = in_array($in['lang'] ?? '', SWB_LANGS, true) ? $in['lang'] : 'fr';
+    $lang = in_array($in['lang'] ?? '', SWB_LANGS, true) ? $in['lang'] : SWB_DEFAULT_LANG;
 
     $pdo->exec('BEGIN IMMEDIATE');
     try {
@@ -216,6 +215,9 @@ function order_create(array $in, array $ctx): array
         $pdo->exec('ROLLBACK');
         throw $e;
     }
+    // Le client a fini sa commande : son formulaire commencé n'est plus une commande abandonnée.
+    $pdo->prepare("UPDATE drafts SET status = 'converted', order_id = ?, updated = ? WHERE status <> 'converted' AND (ckey = ? OR (phone = ? AND pid = ?))")
+        ->execute([$oid, $now, (string) $clientKey, $phone, $p['id']]);
     daily_inc('lead');
     return ['order' => order_by_id($oid), 'existing' => false];
 }

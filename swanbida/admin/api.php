@@ -17,6 +17,8 @@ require dirname(__DIR__) . '/lib/view.php';
 require dirname(__DIR__) . '/lib/auth.php';
 require dirname(__DIR__) . '/lib/backup.php';
 require dirname(__DIR__) . '/lib/seed.php';
+require dirname(__DIR__) . '/lib/drafts.php';
+current_lang('fr'); // l'administration est en français
 
 security_headers(true);
 header('X-Robots-Tag: noindex, nofollow');
@@ -208,6 +210,7 @@ try {
             if (strpos($mail, '@') === false) $mail = ''; // texte pré-rempli par le navigateur : connexion du propriétaire
             $r = admin_login($mail, (string) ($b['password'] ?? ''));
             if (isset($r['error'])) fail($r['error'], 401);
+            remember_site_url();
             ok(['user' => public_admin($r['user']), 'csrf' => $r['user']['csrf']]);
         }
         case 'logout': {
@@ -264,6 +267,10 @@ try {
             };
             $capi = [];
             foreach ($q('SELECT name, status, COUNT(*) n FROM capi_events WHERE created >= ? GROUP BY name, status', [$since]) as $r) $capi[] = $r;
+            $ab = $q("SELECT SUM(CASE WHEN status <> 'converted' AND updated <= ? THEN 1 ELSE 0 END) abandoned,
+                    SUM(CASE WHEN recovered = 1 THEN 1 ELSE 0 END) recovered, COALESCE(SUM(CASE WHEN recovered = 1 THEN total END), 0) recovered_v,
+                    SUM(CASE WHEN status = 'converted' AND recovered = 0 THEN 1 ELSE 0 END) self_done
+                    FROM drafts WHERE created >= ?", [time() - abandon_after(), $since])->fetch();
             $low = [];
             foreach (db()->query("SELECT * FROM products WHERE stock IS NOT NULL AND stock <= stock_alert ORDER BY stock") as $r) {
                 $p = product_from_row($r);
@@ -278,6 +285,7 @@ try {
                 'capi' => $capi, 'capi_browser' => ['ok' => $funnel['capi_ok'] ?? 0, 'fail' => $funnel['capi_fail'] ?? 0],
                 'capi_ready' => capi_ready(), 'capi_last_error' => meta_get('capi_last_error') ?? '', 'low_stock' => $low,
                 'notify_last_error' => meta_get('notify_last_error') ?? '', 'purchase_trigger' => setting('purchase_trigger'),
+                'abandoned' => array_map('intval', $ab ?: []),
             ]);
         }
 
@@ -322,7 +330,7 @@ try {
                 'order' => $view, 'phone_display' => phone_display($o['phone']), 'wa' => order_whatsapp_link($o), 'tel' => $o['phone'],
                 'log' => $log->fetchAll(), 'events' => $ev->fetchAll(), 'dup' => $dup,
                 'tiers' => $p ? array_map(fn($t) => ['qty' => $t['qty'], 'price' => $t['price'], 'label' => tr($t['label'], 'fr')], $p['tiers']) : [],
-                'customer_url' => abs_url(($o['lang'] === 'ar' ? 'ar/' : '') . 'commande/' . $o['ref']) . '?k=' . $o['token'],
+                'customer_url' => abs_url(lang_prefix($o['lang']) . 'commande/' . $o['ref']) . '?k=' . $o['token'],
             ]);
         }
         case 'order_status': {
@@ -406,7 +414,87 @@ try {
             $s->execute([$since]);
             $items = array_map(fn($r) => order_row(order_decode($r)), $s->fetchAll());
             ok(['items' => $items, 'max_id' => (int) db()->query('SELECT COALESCE(MAX(id),0) FROM orders')->fetchColumn(),
-                'pending' => (int) db()->query("SELECT COUNT(*) FROM orders WHERE status = 'new'")->fetchColumn()]);
+                'pending' => (int) db()->query("SELECT COUNT(*) FROM orders WHERE status = 'new'")->fetchColumn(),
+                'abandoned' => drafts_todo_count()]);
+        }
+
+        /* ------------------------------------------------------- commandes abandonnées */
+        case 'drafts': {
+            need('orders');
+            $cut = time() - abandon_after();
+            $tabs = [
+                'todo' => ["status = 'open' AND updated <= ?", [$cut]],
+                'live' => ["status = 'open' AND updated > ?", [$cut]],
+                'contacted' => ["status = 'contacted'", []],
+                'converted' => ["status = 'converted'", []],
+                'dismissed' => ["status = 'dismissed'", []],
+            ];
+            $tab = isset($tabs[$_GET['tab'] ?? '']) ? (string) $_GET['tab'] : 'todo';
+            [$w, $a] = $tabs[$tab];
+            $s = trim((string) ($_GET['q'] ?? ''));
+            if ($s !== '') {
+                $digits = preg_replace('/\D/', '', $s) ?? '';
+                $w .= ' AND (name LIKE ?' . (strlen($digits) >= 4 ? ' OR phone LIKE ?' : '') . ')';
+                $a[] = '%' . $s . '%';
+                if (strlen($digits) >= 4) $a[] = '%' . (strpos($digits, '213') === 0 ? substr($digits, 3) : ltrim($digits, '0')) . '%';
+            }
+            $page = max(1, (int) ($_GET['page'] ?? 1));
+            $st = db()->prepare("SELECT COUNT(*) FROM drafts WHERE $w");
+            $st->execute($a);
+            $total = (int) $st->fetchColumn();
+            $st = db()->prepare("SELECT * FROM drafts WHERE $w ORDER BY updated DESC LIMIT 30 OFFSET " . (($page - 1) * 30));
+            $st->execute($a);
+            $items = [];
+            foreach ($st->fetchAll() as $r) {
+                $d = draft_decode($r);
+                $p = $d['pid'] ? product_by_id($d['pid']) : null;
+                $ref = '';
+                if ($d['order_id']) { $o = order_by_id($d['order_id']); $ref = $o ? $o['ref'] : ''; }
+                $items[] = [
+                    'id' => $d['id'], 'status' => $d['status'], 'name' => $d['name'], 'phone' => $d['phone'], 'phone_display' => phone_display($d['phone']),
+                    'wilaya' => $d['wilaya'], 'wilaya_name' => $d['wilaya'] !== '' ? wilaya_label($d['wilaya'], 'fr') : '', 'commune' => $d['commune'],
+                    'note' => $d['note'], 'admin_note' => $d['admin_note'], 'qty' => $d['qty'], 'total' => $d['total'], 'items' => draft_items_text($d, 'fr'),
+                    'lang' => $d['lang'], 'source' => $d['utm_source'], 'campaign' => $d['utm_campaign'], 'contacts' => $d['contacts'],
+                    'contacted_at' => $d['contacted_at'], 'created' => $d['created'], 'updated' => $d['updated'], 'order_id' => $d['order_id'], 'order_ref' => $ref,
+                    'recovered' => $d['recovered'], 'wa' => draft_whatsapp_link($d),
+                    'tiers' => $p ? array_map(fn($t) => ['qty' => $t['qty'], 'price' => $t['price'], 'label' => tr($t['label'], 'fr')], $p['tiers']) : [],
+                ];
+            }
+            $counts = [];
+            foreach ($tabs as $k => [$cw, $ca]) {
+                $st = db()->prepare("SELECT COUNT(*) FROM drafts WHERE $cw");
+                $st->execute($ca);
+                $counts[$k] = (int) $st->fetchColumn();
+            }
+            ok(['items' => $items, 'total' => $total, 'page' => $page, 'pages' => max(1, (int) ceil($total / 30)), 'counts' => $counts,
+                'tab' => $tab, 'minutes' => (int) setting('abandon_minutes')]);
+        }
+        case 'draft_update': {
+            need('orders');
+            $d = draft_by_id((int) ($b['id'] ?? 0));
+            if (!$d) fail('Commande abandonnée introuvable.', 404);
+            if (array_key_exists('admin_note', $b)) {
+                db()->prepare('UPDATE drafts SET admin_note = ? WHERE id = ?')->execute([str_clean($b['admin_note'], 1000), $d['id']]);
+            }
+            $st = (string) ($b['status'] ?? '');
+            if ($st !== '' && $d['status'] !== 'converted') {
+                if (!in_array($st, ['open', 'contacted', 'dismissed'], true)) fail('Statut inconnu.');
+                if ($st === 'contacted') {
+                    db()->prepare("UPDATE drafts SET status = 'contacted', contacts = contacts + 1, contacted_at = ? WHERE id = ?")->execute([time(), $d['id']]);
+                } else {
+                    db()->prepare('UPDATE drafts SET status = ? WHERE id = ?')->execute([$st, $d['id']]);
+                }
+            }
+            ok();
+        }
+        case 'draft_convert': {
+            $u = need('orders');
+            $d = draft_by_id((int) ($b['id'] ?? 0));
+            if (!$d) fail('Commande abandonnée introuvable.', 404);
+            $fields = array_intersect_key((array) ($b['fields'] ?? []), array_flip(['name', 'phone', 'wilaya', 'commune', 'qty', 'note']));
+            $r = draft_convert($d, $fields, actor($u));
+            if (isset($r['error'])) fail($r['error']);
+            ok(['order_id' => $r['order']['id'], 'ref' => $r['order']['ref']]);
         }
 
         /* ---------------------------------------------------------------- catalogue */
@@ -761,7 +849,7 @@ try {
         case 'settings': {
             need('settings');
             $keys = ['notify_emails', 'notify_telegram_chat', 'gsc_verification', 'allow_backorder', 'duplicate_hours', 'desk_enabled', 'return_days',
-                'wa_template_fr', 'wa_template_ar', 'order_rate_ip'];
+                'wa_template_fr', 'wa_template_ar', 'order_rate_ip', 'abandon_minutes', 'notify_abandoned', 'wa_abandon_fr', 'wa_abandon_ar'];
             $out = [];
             foreach ($keys as $k) $out[$k] = setting($k);
             $out['telegram_set'] = secret_setting('notify_telegram_token', 'SWB_TELEGRAM_TOKEN') !== '';
@@ -790,7 +878,9 @@ try {
             setting_set('duplicate_hours', (string) max(0, min(720, (int) ($b['duplicate_hours'] ?? 24))));
             setting_set('return_days', (string) max(1, min(60, (int) ($b['return_days'] ?? 7))));
             setting_set('order_rate_ip', (string) max(1, min(100, (int) ($b['order_rate_ip'] ?? 8))));
-            foreach (['wa_template_fr', 'wa_template_ar'] as $k) if (isset($b[$k])) setting_set($k, str_clean($b[$k], 1000));
+            foreach (['wa_template_fr', 'wa_template_ar', 'wa_abandon_fr', 'wa_abandon_ar'] as $k) if (isset($b[$k])) setting_set($k, str_clean($b[$k], 1000));
+            if (isset($b['abandon_minutes'])) setting_set('abandon_minutes', (string) max(1, min(1440, (int) $b['abandon_minutes'])));
+            setting_set('notify_abandoned', !empty($b['notify_abandoned']) ? '1' : '0');
             meta_set('geo_v', (string) time());
             ok();
         }
