@@ -320,6 +320,17 @@
     $$('input, select, textarea', form).forEach(function (el) {
       el.addEventListener('input', function () { clearErr(el.name); });
     });
+    // Bandeau « Offre spéciale » : sélectionne l'offre puis descend au formulaire.
+    $$('[data-pick]').forEach(function (a) {
+      a.addEventListener('click', function (e) {
+        var r = $('input[name="qty"][value="' + a.getAttribute('data-pick') + '"]', form);
+        if (!r) return;
+        e.preventDefault();
+        r.checked = true;
+        r.dispatchEvent(new Event('change', { bubbles: true }));
+        form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
     // Boutons « Commander » de la page : ajout au panier, puis défilement vers le formulaire.
     $$('a[href="#commander"]').forEach(function (a) {
       a.addEventListener('click', function (e) {

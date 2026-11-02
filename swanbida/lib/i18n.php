@@ -62,6 +62,7 @@ const UI = [
         'wa_prefill' => 'Bonjour SWANBIDA, j\'ai une question sur {p}.', 'wa_order_prefill' => 'Bonjour SWANBIDA, ma commande : {ref}.',
         'home_title_alt' => 'Accueil SWANBIDA', 'breadcrumb' => 'Fil d\'Ariane', 'video_title' => 'Vidéo',
         'secure_note' => 'Commande sécurisée', 'confirm_call' => 'Confirmation par téléphone',
+        'free_delivery' => 'Livraison gratuite', 'for_price' => 'à {x}',
     ],
     'ar' => [
         'skip' => 'انتقل إلى المحتوى',
@@ -122,6 +123,7 @@ const UI = [
         'wa_prefill' => 'مرحباً SWANBIDA، لدي سؤال عن {p}.', 'wa_order_prefill' => 'مرحباً SWANBIDA، طلبي رقم: {ref}.',
         'home_title_alt' => 'الصفحة الرئيسية SWANBIDA', 'breadcrumb' => 'مسار التنقّل', 'video_title' => 'فيديو',
         'secure_note' => 'طلب آمن', 'confirm_call' => 'تأكيد عبر الهاتف',
+        'free_delivery' => 'التوصيل مجاني', 'for_price' => 'بـ {x}',
     ],
 ];
 

@@ -254,6 +254,13 @@ function max_shipping_fee(): int
     return (int) db()->query('SELECT COALESCE(MAX(fee_home), 0) FROM wilayas WHERE active = 1')->fetchColumn();
 }
 
+/** Livraison à domicile gratuite dans toutes les wilayas actives (badge « Livraison gratuite »). */
+function free_delivery(): bool
+{
+    static $v = null;
+    return $v ?? ($v = max_shipping_fee() === 0);
+}
+
 function active_wilaya_count(): int
 {
     return (int) db()->query('SELECT COUNT(*) FROM wilayas WHERE active = 1')->fetchColumn();

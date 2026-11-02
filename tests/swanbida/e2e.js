@@ -79,6 +79,29 @@ async function order(browser, lang) {
   await page.evaluate(() => { const t = document.querySelector('[data-track]'); t.scrollBy({ left: (getComputedStyle(t).direction === 'rtl' ? -1 : 1) * t.clientWidth, behavior: 'instant' }); });
   await sleep(500);
   check((await count()) === `3 / ${total}`, 'galerie : glisser passe à la photo suivante');
+  // Ordre VISUEL du compteur (le texte du DOM peut être juste et l'affichage inversé en arabe).
+  const visualOrder = await page.evaluate(() => {
+    const node = document.querySelector('[data-count]').firstChild, txt = node.textContent, r = document.createRange();
+    r.setStart(node, 0); r.setEnd(node, 1); const first = r.getBoundingClientRect().left;
+    r.setStart(node, txt.length - 1); r.setEnd(node, txt.length); const last = r.getBoundingClientRect().left;
+    return first < last;
+  });
+  check(visualOrder, 'galerie : compteur affiché « 3 / 4 » et non « 4 / 3 » à l\'écran');
+  // Titre au-dessus de la galerie sur mobile, badge « Livraison gratuite » dans le coin de la photo.
+  const layout = await page.evaluate(() => {
+    const t = document.querySelector('.pdp-title').getBoundingClientRect(), g = document.querySelector('.g-main').getBoundingClientRect();
+    const tag = document.querySelector('.g-main .ship-tag');
+    const tr = tag && tag.getBoundingClientRect();
+    return { titleAbove: t.bottom <= g.top + 1, tagIn: !!tr && tr.top >= g.top && tr.top < g.top + 40 && tr.left >= g.left && tr.right <= g.right };
+  });
+  check(layout.titleAbove, 'fiche produit : titre au-dessus de la photo sur mobile');
+  check(layout.tagIn, 'fiche produit : badge « Livraison gratuite » dans le coin de la photo');
+  // Bandeau d'offre : choisit l'offre 2 packs.
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.click('.offer-ribbon');
+  await sleep(700);
+  check(await page.$eval('input[name="qty"][value="2"]', i => i.checked), 'bandeau « Offre spéciale » : sélectionne 2 packs');
+  await page.click('.tier:nth-of-type(1) .tier-box');
 
   // Barre « Commander » collante après défilement.
   await page.evaluate(() => window.scrollTo(0, 2600));
@@ -136,6 +159,23 @@ async function order(browser, lang) {
   check(errors.length === 0, 'aucune erreur JavaScript' + (errors.length ? ' : ' + errors.join(' | ') : ''));
   await ctx.close();
   return body.ref;
+}
+
+async function home(browser, lang) {
+  console.log(`\n▶ Accueil mobile (${lang})`);
+  const { ctx, page, errors } = await newPage(browser, lang === 'ar' ? { locale: 'ar-DZ' } : {});
+  await page.goto(BASE + (lang === 'ar' ? '/ar/' : '/'), { waitUntil: 'networkidle' });
+  const r = await page.evaluate(() => {
+    const h = document.querySelector('.hero-head h1').getBoundingClientRect(), f = document.querySelector('.hero-frame').getBoundingClientRect();
+    const tag = document.querySelector('.hero-visual .ship-tag');
+    return { titleAbove: h.bottom <= f.top + 1, tag: !!tag && getComputedStyle(tag).display !== 'none', cardTag: !!document.querySelector('.card .ship-tag') || !document.querySelector('.card') };
+  });
+  check(r.titleAbove, 'accueil : titre au-dessus du visuel sur mobile');
+  check(r.tag, 'accueil : badge « Livraison gratuite » sur le visuel');
+  check(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), 'accueil : aucun défilement horizontal');
+  await page.screenshot({ path: path.join(SHOTS, `home-${lang}-top.png`) });
+  check(errors.length === 0, 'accueil : aucune erreur JavaScript' + (errors.length ? ' : ' + errors.join(' | ') : ''));
+  await ctx.close();
 }
 
 async function admin(browser, ref) {
@@ -223,6 +263,8 @@ async function admin(browser, ref) {
 (async () => {
   const browser = await chromium.launch();
   try {
+    await home(browser, 'fr');
+    await home(browser, 'ar');
     const refFr = await order(browser, 'fr');
     await order(browser, 'ar');
     await admin(browser, refFr);
