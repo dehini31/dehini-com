@@ -1,9 +1,14 @@
 User-agent: *
 Allow: /
 Disallow: /admin/
+Disallow: /impact/admin.html
+Disallow: /impact/support.php
+Disallow: /impact/page.php
 Disallow: /swanbida/admin/
 Disallow: /swanbida/api.php
 Disallow: /swanbida/commande/
 Disallow: /swanbida/ar/commande/
 
+Sitemap: https://dehini.com/sitemap.xml
+Sitemap: https://dehini.com/impact/sitemap.xml
 Sitemap: https://dehini.com/swanbida/sitemap.xml

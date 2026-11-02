@@ -29,8 +29,8 @@
  *        compte connecté, ou valeurs neutres sans compte ; retour et notification : support.php)
  *   POST ping      {device,view}  signal de présence (admin : qui est en ligne en ce moment)
  *   GET|POST unsub ?type=daily|digest|msg|all&token=   page de désabonnement
- *   mod_* : administration (statistiques, récits, questions, soutiens, réglages), réservée à la
- *           session de /admin
+ *   mod_* : administration (statistiques, inscrits, récits, questions, soutiens, réglages), réservée
+ *           à la session de /admin
  */
 declare(strict_types=1);
 
@@ -214,6 +214,20 @@ function user_row(int $uid): array
     $s = db()->prepare('SELECT * FROM users WHERE id = ?');
     $s->execute([$uid]);
     return $s->fetch() ?: [];
+}
+
+/** Supprime un compte et tout ce qui lui appartient (par la personne elle-même ou depuis l'admin). */
+function delete_user(int $uid): void
+{
+    $pdo = db();
+    $pid = 'u' . $uid;
+    drop_reactions($pid);
+    $pdo->prepare('DELETE FROM answers WHERE pid = ?')->execute([$pid]);
+    $pdo->prepare('DELETE FROM people WHERE pid = ?')->execute([$pid]);
+    $pdo->prepare('DELETE FROM presence WHERE pid = ?')->execute([$pid]);
+    $pdo->prepare('UPDATE donations SET uid = NULL WHERE uid = ?')->execute([$uid]);
+    // sessions, récits, conversations et messages : ON DELETE CASCADE
+    $pdo->prepare('DELETE FROM users WHERE id = ?')->execute([$uid]);
 }
 
 /* ------------------------------------------------------------ réponses */
@@ -514,6 +528,69 @@ function settings_view(): array
         'sofiz_ready' => sofiz_active(), 'webhook' => site_url() . 'support.php?hook=1',
         'methods' => support_methods(),
     ];
+}
+
+/* -------------------------------------------- inscrits (admin) */
+
+const USER_FILTERS = [
+    'all'        => '1',
+    'verified'   => 'u.verified = 1',
+    'unverified' => 'u.verified = 0',
+    'google'     => 'u.google_sub IS NOT NULL',
+    'daily'      => 'u.verified = 1 AND u.opt_daily = 1',
+    'nomail'     => 'u.opt_daily = 0 AND u.opt_digest = 0 AND u.opt_msg = 0',
+];
+
+/** Clause WHERE et paramètres pour la liste des inscrits (filtre + recherche nom/email). */
+function users_where(string $filter, string $q): array
+{
+    $where = [USER_FILTERS[$filter] ?? '1'];
+    $args = [];
+    $q = trim($q);
+    if ($q !== '') {
+        $like = '%' . strtr(mb_strtolower($q), ['\\' => '\\\\', '%' => '\\%', '_' => '\\_']) . '%';
+        $where[] = "(LOWER(u.email) LIKE ? ESCAPE '\\' OR LOWER(u.name) LIKE ? ESCAPE '\\')";
+        $args[] = $like;
+        $args[] = $like;
+    }
+    return [implode(' AND ', $where), $args];
+}
+
+/** Inscrits avec leur activité : réponses, récits et dernière visite connue. */
+function users_query(string $where, array $args, int $limit, int $offset): array
+{
+    $sql = "SELECT u.id, u.name, u.email, u.lang, u.created, u.verified, u.opt_daily, u.opt_digest, u.opt_msg,
+            u.google_sub IS NOT NULL AS google, u.pass != '' AS has_pass,
+            (SELECT COUNT(*) FROM answers a WHERE a.pid = 'u' || u.id) AS answers,
+            (SELECT COUNT(*) FROM stories s WHERE s.uid = u.id) AS stories,
+            (SELECT MAX(exp) FROM sessions se WHERE se.uid = u.id) AS sexp,
+            (SELECT seen FROM people pe WHERE pe.pid = 'u' || u.id) AS pseen,
+            (SELECT seen FROM presence pr WHERE pr.pid = 'u' || u.id) AS rseen
+        FROM users u WHERE $where ORDER BY u.created DESC, u.id DESC LIMIT $limit OFFSET $offset";
+    $s = db()->prepare($sql);
+    $s->execute($args);
+    $out = [];
+    foreach ($s->fetchAll() as $r) {
+        // Une session est prolongée à chaque visite (au plus une fois par jour) : sa fin moins sa durée = dernière visite.
+        $last = max((int) $r['created'], $r['sexp'] ? (int) $r['sexp'] - SESSION_DAYS * 86400 : 0, (int) $r['pseen'], (int) $r['rseen']);
+        $out[] = [
+            'id' => (int) $r['id'], 'name' => (string) $r['name'], 'email' => (string) $r['email'], 'lang' => (string) $r['lang'],
+            'created' => (int) $r['created'], 'last' => min($last, time()), 'verified' => (bool) $r['verified'],
+            'google' => (bool) $r['google'], 'has_pass' => (bool) $r['has_pass'],
+            'opt_daily' => (bool) $r['opt_daily'], 'opt_digest' => (bool) $r['opt_digest'], 'opt_msg' => (bool) $r['opt_msg'],
+            'answers' => (int) $r['answers'], 'stories' => (int) $r['stories'],
+            'online' => (int) $r['rseen'] > time() - ONLINE_WINDOW,
+        ];
+    }
+    return $out;
+}
+
+/** Cellule CSV sûre pour Excel : pas de formule déclenchée par un nom commençant par « = », « + »… */
+function csv_cell($v): string
+{
+    $v = (string) $v;
+    if ($v !== '' && strpos('=+-@' . "\t\r", $v[0]) !== false) $v = "'" . $v;
+    return '"' . str_replace('"', '""', $v) . '"';
 }
 
 function donation_view(array $d): array
@@ -864,12 +941,7 @@ switch ($action) {
             usleep(350000);
             fail('bad_login', 401);
         }
-        drop_reactions('u' . $u['id']);
-        $pdo->prepare('DELETE FROM answers WHERE pid = ?')->execute(['u' . $u['id']]);
-        $pdo->prepare('DELETE FROM people WHERE pid = ?')->execute(['u' . $u['id']]);
-        $pdo->prepare('UPDATE donations SET uid = NULL WHERE uid = ?')->execute([$u['id']]);
-        // sessions, récits, conversations et messages : ON DELETE CASCADE
-        $pdo->prepare('DELETE FROM users WHERE id = ?')->execute([$u['id']]);
+        delete_user((int) $u['id']);
         setcookie(SID_COOKIE, '', cookie_opts(time() - 3600));
         ok();
         break;
@@ -1351,6 +1423,111 @@ switch ($action) {
         donation_confirm($d);
         $s->execute([(int) $d['id']]);
         ok(['item' => donation_view($s->fetch())]);
+        break;
+    }
+
+    case 'mod_users': {
+        require_admin();
+        $filter = array_key_exists((string) ($_GET['filter'] ?? ''), USER_FILTERS) ? (string) $_GET['filter'] : 'all';
+        [$where, $args] = users_where($filter, (string) ($_GET['q'] ?? ''));
+        $offset = max(0, (int) ($_GET['offset'] ?? 0));
+        $c = $pdo->prepare("SELECT COUNT(*) FROM users u WHERE $where");
+        $c->execute($args);
+        $counts = [];
+        foreach (USER_FILTERS as $k => $cond) $counts[$k] = (int) $pdo->query("SELECT COUNT(*) FROM users u WHERE $cond")->fetchColumn();
+        ok(['items' => users_query($where, $args, 100, $offset), 'total' => (int) $c->fetchColumn(), 'counts' => $counts]);
+        break;
+    }
+
+    case 'mod_users_csv': {
+        require_admin();
+        $filter = array_key_exists((string) ($_GET['filter'] ?? ''), USER_FILTERS) ? (string) $_GET['filter'] : 'all';
+        [$where, $args] = users_where($filter, (string) ($_GET['q'] ?? ''));
+        $rows = users_query($where, $args, 100000, 0);
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="inscrits-defi-impact-' . date('Y-m-d') . '.csv"');
+        $yn = function (bool $b): string { return $b ? 'oui' : 'non'; };
+        $d = function (int $t): string { return $t ? date('Y-m-d H:i', $t) : ''; };
+        // Point-virgule et BOM UTF-8 : s'ouvre directement dans Excel en français, accents compris.
+        echo "\xEF\xBB\xBF" . implode(';', array_map('csv_cell', ['Nom', 'Email', 'Langue', 'Adresse confirmée', 'Google',
+            'Question du jour', 'Impacts positifs', 'Avis de messages', 'Inscription', 'Dernière visite', 'Réponses', 'Récits'])) . "\r\n";
+        foreach ($rows as $r) {
+            echo implode(';', array_map('csv_cell', [$r['name'], $r['email'], $r['lang'], $yn($r['verified']), $yn($r['google']),
+                $yn($r['opt_daily']), $yn($r['opt_digest']), $yn($r['opt_msg']), $d($r['created']), $d($r['last']),
+                $r['answers'], $r['stories']])) . "\r\n";
+        }
+        exit;
+    }
+
+    case 'mod_user_set': {
+        if (!$isPost) fail('generic', 405);
+        require_admin();
+        $u = user_row((int) ($b['id'] ?? 0));
+        if (!$u) fail('Compte introuvable.', 404);
+        $sets = [];
+        $vals = [];
+        if (array_key_exists('email', $b)) {
+            $email = strtolower(trim((string) $b['email']));
+            if (strlen($email) > 190 || !filter_var($email, FILTER_VALIDATE_EMAIL)) fail('Adresse email invalide.');
+            if ($email !== $u['email']) {
+                $s = $pdo->prepare('SELECT 1 FROM users WHERE email = ? AND id != ?');
+                $s->execute([$email, $u['id']]);
+                if ($s->fetchColumn()) fail('Cette adresse est déjà utilisée par un autre compte.', 409);
+                // Nouvelle adresse : elle devra être confirmée (les rappels ne partent qu'aux adresses confirmées).
+                array_push($sets, 'email = ?', 'verified = 0', 'vtoken = ?');
+                array_push($vals, $email, token());
+            }
+        }
+        if (array_key_exists('name', $b)) {
+            $n = str_clean((string) $b['name'], 40);
+            if ($n === '') fail('Le prénom ne peut pas être vide.');
+            $sets[] = 'name = ?';
+            $vals[] = $n;
+        }
+        if (array_key_exists('verified', $b) && !in_array('verified = 0', $sets, true)) {
+            $sets[] = empty($b['verified']) ? 'verified = 0' : 'verified = 1, vtoken = NULL';
+        }
+        foreach (['opt_daily', 'opt_digest', 'opt_msg'] as $k) {
+            if (array_key_exists($k, $b)) { $sets[] = "$k = ?"; $vals[] = empty($b[$k]) ? 0 : 1; }
+        }
+        if ($sets) {
+            $vals[] = $u['id'];
+            $pdo->prepare('UPDATE users SET ' . implode(', ', $sets) . ' WHERE id = ?')->execute($vals);
+        }
+        [$where, $args] = ['u.id = ?', [(int) $u['id']]];
+        ok(['item' => users_query($where, $args, 1, 0)[0]]);
+        break;
+    }
+
+    case 'mod_user_resend': {
+        if (!$isPost) fail('generic', 405);
+        require_admin();
+        $u = user_row((int) ($b['id'] ?? 0));
+        if (!$u) fail('Compte introuvable.', 404);
+        if ($u['verified']) fail('Cette adresse est déjà confirmée.');
+        if (empty($u['vtoken'])) {
+            $u['vtoken'] = token();
+            $pdo->prepare('UPDATE users SET vtoken = ? WHERE id = ?')->execute([$u['vtoken'], $u['id']]);
+        }
+        try {
+            [$subj, $html, $text] = compose_welcome($u);
+            send_mail($u['email'], $subj, $html, $text);
+        } catch (Throwable $e) {
+            error_log('impact admin verify: ' . $e->getMessage());
+            fail("L'email n'a pas pu partir : " . $e->getMessage(), 502);
+        }
+        ok();
+        break;
+    }
+
+    case 'mod_user_delete': {
+        if (!$isPost) fail('generic', 405);
+        require_admin();
+        $u = user_row((int) ($b['id'] ?? 0));
+        if (!$u) fail('Compte introuvable.', 404);
+        delete_user((int) $u['id']);
+        meta_set('stats_cache', '');
+        ok();
         break;
     }
 

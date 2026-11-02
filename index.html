@@ -6,11 +6,24 @@
 <meta name="color-scheme" content="light">
 <title>Mohammed Dehini — Marketing, e-commerce & SaaS</title>
 <meta name="description" content="Mohammed Dehini, Responsable Marketing chez SPA YINVESTI : 8+ ans en marketing, design et e-commerce, fondateur de Rotinia, Dowaya et Swanbida.">
+<meta name="robots" content="index,follow,max-image-preview:large">
+<meta name="author" content="Mohammed Dehini">
+<link rel="canonical" href="https://dehini.com/">
 <meta property="og:title" content="Mohammed Dehini — Marketing, e-commerce & SaaS">
 <meta property="og:description" content="Responsable Marketing chez SPA YINVESTI. Parcours, expérience et projets réalisés.">
-<meta property="og:url" content="https://dehini.com">
-<meta property="og:type" content="website">
+<meta property="og:url" content="https://dehini.com/">
+<meta property="og:type" content="profile">
+<meta property="og:site_name" content="Mohammed Dehini">
+<meta property="og:locale" content="fr_DZ">
 <meta property="og:image" content="https://dehini.com/img/mohammed-portrait.jpg">
+<meta property="profile:first_name" content="Mohammed">
+<meta property="profile:last_name" content="Dehini">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Mohammed Dehini — Marketing, e-commerce & SaaS">
+<meta name="twitter:description" content="Responsable Marketing chez SPA YINVESTI. Parcours, expérience et projets réalisés.">
+<meta name="twitter:image" content="https://dehini.com/img/mohammed-portrait.jpg">
+<!-- Données structurées : qui est Mohammed Dehini (complétées au chargement à partir de data.json). -->
+<script type="application/ld+json" id="ldPerson">{"@context":"https://schema.org","@graph":[{"@type":"Person","@id":"https://dehini.com/#person","name":"Mohammed Dehini","url":"https://dehini.com/","image":"https://dehini.com/img/mohammed-portrait.jpg","jobTitle":"Responsable Marketing","worksFor":{"@type":"Organization","name":"SPA YINVESTI"},"nationality":{"@type":"Country","name":"Algérie"},"knowsAbout":["Marketing digital","E-commerce","Meta Ads","TikTok Ads","Design graphique","Communication","SaaS"],"sameAs":["https://www.linkedin.com/in/mohammed-dehini-14120b108","https://github.com/dehini31"]},{"@type":"WebSite","@id":"https://dehini.com/#website","url":"https://dehini.com/","name":"Mohammed Dehini","inLanguage":"fr","publisher":{"@id":"https://dehini.com/#person"}},{"@type":"ProfilePage","@id":"https://dehini.com/#profile","url":"https://dehini.com/","name":"Mohammed Dehini — Marketing, e-commerce & SaaS","mainEntity":{"@id":"https://dehini.com/#person"},"isPartOf":{"@id":"https://dehini.com/#website"},"inLanguage":"fr"}]}</script>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='16' fill='%230b1020'/><text x='50%25' y='56%25' text-anchor='middle' dominant-baseline='middle' font-family='Arial' font-weight='700' font-size='28' fill='white'>MD</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -358,6 +371,8 @@
   .contact p{color:var(--fg-2);max-width:540px;margin:0 auto 30px}
   .contact .cta{justify-content:center}
   footer{padding:36px 0;color:var(--fg-2);font-size:.86rem}
+  footer a{text-decoration:underline;text-underline-offset:3px}
+  footer a:hover{color:var(--ink-900)}
   footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
 
   #dataWarn{display:none;position:fixed;left:16px;right:16px;bottom:16px;z-index:70;background:#7c1d1d;color:#fff;padding:12px 16px;border-radius:12px;font-size:.85rem;box-shadow:var(--shadow-lg)}
@@ -516,7 +531,7 @@
   </div>
 </section>
 
-<footer><div class="wrap"><span>© <span id="y"></span> Mohammed Dehini — dehini.com</span><span>Photos : Unsplash · Icônes : Lucide</span></div></footer>
+<footer><div class="wrap"><span>© <span id="y"></span> Mohammed Dehini — dehini.com</span><span><a href="/impact/">Défi Impact</a> · <a href="/metakpis/">Stats Meta KPIs</a> · Photos : Unsplash · Icônes : Lucide</span></div></footer>
 
 <script>
 /* ======================================================================
@@ -927,6 +942,21 @@ function bindTilt(els, max) {
 /* ======================================================================
    Construction de la page à partir des données (data.json ou secours)
    ====================================================================== */
+/** Les moteurs lisent ces données après exécution du script : on les aligne sur data.json. */
+function updateStructuredData(data) {
+  const node = document.getElementById("ldPerson");
+  try {
+    const ld = JSON.parse(node.textContent);
+    const person = ld["@graph"][0];
+    if (data.hero.badgeText) person.jobTitle = data.hero.badgeText;
+    if (data.hero.badgeTag) person.worksFor = { "@type": "Organization", name: data.hero.badgeTag };
+    if (data.hero.lead) person.description = String(data.hero.lead).replace(/[*_]/g, "");
+    const profiles = (data.contact.links || []).map(l => l.href || "").filter(h => /^https:\/\//.test(h) && !/wa\.me|api\.whatsapp/.test(h));
+    if (profiles.length) person.sameAs = profiles;
+    node.textContent = JSON.stringify(ld);
+  } catch (e) { /* données structurées facultatives */ }
+}
+
 function render(data) {
   // Hero
   document.getElementById("heroBadge").innerHTML = `<span class="pulse"></span>${esc(data.hero.badgeText)}${data.hero.badgeTag ? ` <span class="tag">${esc(data.hero.badgeTag)}</span>` : ""}`;
@@ -939,7 +969,7 @@ function render(data) {
 
   document.getElementById("heroPortrait").innerHTML = `
     <div class="portrait-card" id="tilt">
-      <img src="${img(data.hero.portraitImg, 900)}" alt="">
+      <img src="${img(data.hero.portraitImg, 900)}" alt="${esc(data.hero.portraitName || "Mohammed Dehini")}">
       <div class="cap"><b>${esc(data.hero.portraitName)}</b><span>${esc(data.hero.portraitSubtitle)}</span></div>
     </div>
     ${(data.hero.badges || []).map((b, i) => `<div class="float f${(i % 3) + 1}"><span class="ic">${ico(b.icon)}</span><div>${esc(b.title)}<small>${esc(b.subtitle)}</small></div></div>`).join("")}`;
@@ -1017,6 +1047,7 @@ function render(data) {
   }).join("");
 
   document.getElementById("y").textContent = new Date().getFullYear();
+  updateStructuredData(data);
 
   drawIcons();
   bindTilt([document.getElementById("tilt")], 10);

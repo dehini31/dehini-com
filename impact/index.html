@@ -23,6 +23,7 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Défi Impact","alternateName":["تحدي الأثر","Impact Challenge"],"url":"https://dehini.com/impact/","description":"1000 questions sur la vie personnelle, sociale et professionnelle : impact négatif, aucun ou positif ? Découvrez votre empreinte et partagez vos expériences positives.","applicationCategory":"LifestyleApplication","operatingSystem":"Web","inLanguage":["fr","ar","en"],"isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"DZD"},"image":"https://dehini.com/impact/assets/og-image.png","author":{"@type":"Person","name":"Mohammed Dehini","url":"https://dehini.com/"}}</script>
 <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -266,6 +267,8 @@
   .story{position:relative;background:#fff;border-radius:var(--r-lg);padding:22px 22px 16px;box-shadow:var(--shadow);animation:pop .5s var(--ease) both}
   @keyframes pop{from{opacity:0;transform:translateY(14px) scale(.98)}}
   .story-q{display:flex;gap:9px;align-items:flex-start;font-size:.86rem;font-weight:700;color:var(--ink-soft);margin-bottom:12px;line-height:1.4}
+  .story-q a{text-decoration:none}
+  .story-q a:hover{text-decoration:underline;color:var(--ink)}
   .story-q .dotp{width:8px;height:8px;border-radius:50%;background:var(--pos);margin-top:6px;flex-shrink:0}
   .story-exp{font-size:1rem;line-height:1.65;color:var(--ink);white-space:pre-line;display:-webkit-box;-webkit-line-clamp:7;-webkit-box-orient:vertical;overflow:hidden}
   .story-exp{position:relative;padding-inline-start:.85em}
@@ -1149,6 +1152,7 @@
       <a href="#monde" data-i18n="nav.world">Impact mondial</a>
       <a href="#resultat" data-i18n="nav.results">Mon résultat</a>
       <a href="#soutenir" data-i18n="nav.support" data-support-link hidden>Soutenir</a>
+      <a href="questions" data-i18n="nav.allq" data-page-link="questions">Toutes les questions</a>
     </div>
     <div class="f-bottom">
       <span><span data-i18n="ft.by">Un projet de</span> <a href="https://dehini.com/" style="color:#fff;font-weight:700">Mohammed Dehini</a> · dehini.com</span>
@@ -1346,6 +1350,8 @@ const T = {
   "nav.wall": ["Le mur", "الجدار", "The wall"],
   "nav.results": ["Mon résultat", "نتيجتي", "My result"],
   "nav.world": ["Impact mondial", "الأثر العالمي", "World impact"],
+  "nav.allq": ["Toutes les questions", "كل الأسئلة", "All questions"],
+  "qd.page": ["Lire la page de cette question", "صفحة هذا السؤال", "Open this question's page"],
   "acc.create": ["Créer un compte", "إنشاء حساب", "Create account"],
 
   "hero.kicker": ["Le défi des expériences positives", "تحدّي التجارب الإيجابية", "The positive experiences challenge"],
@@ -1947,7 +1953,9 @@ function pickLang() {
   }
   return "fr";
 }
+const pageUrl = path => (lang === "fr" ? "" : lang + "/") + path;
 function applyI18n(root = document) {
+  $$("[data-page-link]", root).forEach(a => (a.href = pageUrl(a.dataset.pageLink)));
   $$("[data-i18n]", root).forEach(n => (n.textContent = ti(n.dataset.i18n)));
   $$("[data-i18n-html]", root).forEach(n => (n.innerHTML = ti(n.dataset.i18nHtml)));
   $$("[data-i18n-attr]", root).forEach(n => n.dataset.i18nAttr.split(",").forEach(p => { const [a, k] = p.split(":"); n.setAttribute(a, t(k)); }));
@@ -2085,7 +2093,7 @@ function renderFeed() {
 const initial = s => (s || "").trim().charAt(0) || "·";
 function storyCard(st, showQ) {
   return el("article", { class: "story", dataset: { sid: st.id } },
-    showQ ? el("p", { class: "story-q" }, el("span", { class: "dotp" }), el("span", { text: qText(st.qid) })) : null,
+    showQ ? el("p", { class: "story-q" }, el("span", { class: "dotp" }), el("a", { href: pageUrl("q/" + st.qid), text: qText(st.qid) })) : null,
     el("blockquote", { class: "story-exp", dir: "auto", text: st.exp }),
     el("p", { class: "story-imp" }, el("b", { text: t("story.impact") }), el("span", { dir: "auto", text: st.imp })),
     el("button", { class: "read-more", type: "button", hidden: true, onclick: e => { e.currentTarget.closest(".story").classList.add("open"); e.currentTarget.remove(); } }, t("story.more")),
@@ -2308,7 +2316,8 @@ function openQDlg(id) {
     v !== undefined ? el("p", { class: "qd-mine" }, el("i", { class: KEY[v] }), el("span", { text: t("qd.mine", { a: t("ans." + KEY[v]) }) })) : null,
     el("div", { class: "qd-actions" }, v === undefined
       ? el("button", { class: "btn btn-pos", type: "button", onclick: () => { $("#qDlg").close(); openQuiz("all", id); } }, ic("play"), el("span", { text: t("qd.answer") }))
-      : el("button", { class: "btn btn-ink", type: "button", onclick: () => { $("#qDlg").close(); go("#resultat/" + id); } }, ic("chart-pie"), el("span", { text: t("qd.see") }))),
+      : el("button", { class: "btn btn-ink", type: "button", onclick: () => { $("#qDlg").close(); go("#resultat/" + id); } }, ic("chart-pie"), el("span", { text: t("qd.see") })),
+      el("a", { class: "btn btn-line", href: pageUrl("q/" + id) }, ic("file-text"), el("span", { text: t("qd.page") }))),
     s.stories ? othersBox(q) : null);
   if (!$("#qDlg").open) $("#qDlg").showModal();
   icons();
