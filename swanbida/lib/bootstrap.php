@@ -17,9 +17,21 @@ if (!defined('SWB_SMTP_HOST') && is_file($impactCfg)) {
     try { require_once $impactCfg; } catch (Throwable $e) { /* config Impact illisible : on s'en passe */ }
 }
 
+/**
+ * Dossier des données par défaut, toujours hors de public_html — que la boutique soit un
+ * sous-dossier d'un site plus large (ex. dehini.com/swanbida/, public_html/swanbida/lib/…)
+ * ou la racine de son propre domaine (ex. swanbida.com, public_html/lib/…).
+ */
+function swb_default_data_dir(string $appRoot): string
+{
+    if (basename($appRoot) === 'public_html') return dirname($appRoot) . '/swanbida-data';
+    if (basename(dirname($appRoot)) === 'public_html') return dirname($appRoot, 2) . '/swanbida-data';
+    return dirname($appRoot) . '/swanbida-data'; // disposition non standard (tests locaux…)
+}
+
 $defaults = [
-    'SWB_SITE_URL'       => '',   // ex. https://dehini.com/swanbida/ — déduit de la requête si vide
-    'SWB_DATA_DIR'       => dirname(__DIR__, 3) . '/swanbida-data', // hors public_html
+    'SWB_SITE_URL'       => '',   // ex. https://swanbida.com/ — déduit de la requête si vide, mais recommandé en CLI (cron)
+    'SWB_DATA_DIR'       => swb_default_data_dir(dirname(__DIR__)), // toujours hors public_html
     'SWB_TIMEZONE'       => 'Africa/Algiers',
     'SWB_GRAPH_URL'      => 'https://graph.facebook.com/',  // tests : une fausse API peut la remplacer
     'SWB_TELEGRAM_URL'   => 'https://api.telegram.org/',
