@@ -548,12 +548,16 @@ php -r '$p = bin2hex(random_bytes(6)); echo "Mot de passe administrateur SWANBID
    activer **Force HTTPS Redirect** dans cPanel → Domaines (pas de redirection forcée dans `.htaccess` : comme pour
    `dehini.com`, le serveur peut être derrière un proxy qui ne transmet pas toujours l'information HTTPS, ce qui
    tournerait en boucle).
-5. **Mise à jour automatique**, dans cPanel → Tâches Cron :
+5. **Mise à jour automatique** : ce sont des tâches planifiées, pas des commandes à taper telles quelles. Le plus
+   simple, dans le Terminal (relançable sans créer de doublons), puis `crontab -l` pour vérifier :
 
 ```bash
-*/5 * * * * cd ~/dehini-com && git pull -q && cp -rf swanbida/. ~/public_html/
-*/10 * * * * /usr/local/bin/php ~/public_html/cron.php > /dev/null 2>&1
+(crontab -l 2>/dev/null | grep -v 'dehini-com && git pull' | grep -v 'public_html/cron.php'; echo '*/5 * * * * cd ~/dehini-com && git pull -q && cp -rf swanbida/. ~/public_html/'; echo '*/10 * * * * /usr/local/bin/php ~/public_html/cron.php > /dev/null 2>&1') | crontab -
 ```
+
+   Ou dans cPanel → Tâches Cron → Ajouter : « Une fois toutes les cinq minutes », commande
+   `cd ~/dehini-com && git pull -q && cp -rf swanbida/. ~/public_html/` ; puis Minute `*/10` (autres champs `*`),
+   commande `/usr/local/bin/php ~/public_html/cron.php > /dev/null 2>&1`.
 
 6. Ouvrir `https://swanbida.com/`, se connecter à `https://swanbida.com/admin/` avec le mot de passe de l'étape 3,
    puis reconfigurer **Contenus → Général** (WhatsApp, téléphone, réseaux…), **Meta & suivi** (le pixel peut être le

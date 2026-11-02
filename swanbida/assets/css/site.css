@@ -179,8 +179,8 @@ ul, ol { margin: 0; padding: 0; }
 /* featured */
 .featured-grid { display: grid; gap: 28px; align-items: center; }
 .mosaic { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.mosaic a { display: block; border-radius: var(--radius); overflow: hidden; background: var(--sand); aspect-ratio: 1; }
-.mosaic a:first-child { grid-column: span 2; aspect-ratio: 16 / 10; }
+.mosaic > * { display: block; border-radius: var(--radius); overflow: hidden; background: var(--sand); aspect-ratio: 1; }
+.mosaic > :first-child { grid-column: span 2; aspect-ratio: 16 / 10; }
 .mosaic img { width: 100%; height: 100%; object-fit: cover; transition: transform .8s var(--ease); }
 .mosaic a:hover img { transform: scale(1.04); }
 .featured-copy .h2 a { color: inherit; text-decoration: none; }

@@ -229,23 +229,13 @@
       return +(o.getAttribute(delivery() === 'desk' ? 'data-d' : 'data-h') || 0);
     }
     function refresh() {
-      var sub = tierPrice(), ship = shipping(), tot = sub + (ship || 0), cmp = tierCompare();
+      var sub = tierPrice(), ship = shipping(), tot = sub + (ship || 0);
       $('[data-sum-sub]', form).textContent = money(sub);
       if (ship !== null) $('[data-sum-ship]', form).textContent = ship ? money(ship) : I.shipping_free;
       $('[data-sum-total]', form).textContent = money(tot);
       $('[data-submit-total]', form).textContent = money(tot);
-      var box = $('[data-price-box]');
-      if (box) {
-        $('.price-now', box).textContent = money(sub);
-        var old = $('.price-old', box);
-        if (cmp > sub) {
-          if (!old) { old = doc.createElement('s'); old.className = 'price-old'; $('.price', box).appendChild(old); }
-          old.textContent = money(cmp);
-        } else if (old) old.remove();
-        var sv = $('[data-save]', box);
-        if (sv) { sv.hidden = !(cmp > sub); sv.textContent = fmt(I.save, { x: money(cmp - sub) }); }
-      }
-      var sticky = $('[data-sticky] .price-now'); if (sticky) sticky.textContent = money(sub);
+      // Le prix affiché en haut (et dans la barre collante) reste celui d'un pack : seul le
+      // récapitulatif et le bouton reflètent l'offre choisie.
     }
     tierInputs.forEach(function (i) {
       i.addEventListener('change', function () {

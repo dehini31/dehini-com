@@ -101,6 +101,23 @@ async function order(browser, lang) {
   await page.click('.offer-ribbon');
   await sleep(700);
   check(await page.$eval('input[name="qty"][value="2"]', i => i.checked), 'bandeau « Offre spéciale » : sélectionne 2 packs');
+  const fixed = await page.evaluate(() => ({
+    main: document.querySelector('.pdp-price .price-now').textContent.replace(/\D/g, ''),
+    total: document.querySelector('[data-sum-total]').textContent.replace(/\D/g, ''),
+  }));
+  check(fixed.main === '7750' && fixed.total === '13500', `prix principal fixe (${fixed.main}) quand l'offre 2 packs est choisie (total ${fixed.total})`);
+  // Blocs repris de l'accueil, identiques.
+  const blocks = await page.evaluate(() => ({
+    mosaic: document.querySelectorAll('.featured .mosaic > *').length,
+    contents: document.querySelectorAll('.featured .contents-list li').length,
+    band: !!document.querySelector('.offer-band [data-pick]'),
+    pack: document.querySelectorAll('.section-sand .steps .step').length,
+  }));
+  check(blocks.mosaic >= 1 && blocks.contents === 5 && blocks.band && blocks.pack === 3, `fiche produit : blocs de l'accueil (mosaïque ${blocks.mosaic}, contenu ${blocks.contents}, offre, emballage ${blocks.pack})`);
+  await page.click('.tier:nth-of-type(1) .tier-box');
+  await page.click('.offer-band [data-pick]');
+  await sleep(800);
+  check(await page.$eval('input[name="qty"][value="2"]', i => i.checked), 'grand bandeau « Offre spéciale » : sélectionne 2 packs et remonte au formulaire');
   await page.click('.tier:nth-of-type(1) .tier-box');
 
   // Barre « Commander » collante après défilement.

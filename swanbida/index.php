@@ -177,13 +177,13 @@ function page_product(string $slug): void
             'route' => 'produit/' . $p['slug'], 'body' => 'page-product', 'type' => 'product', 'breadcrumbs' => $crumbs,
             'image' => img_og(product_main_image($p)), 'noindex' => $p['status'] !== 'active', 'preload' => product_main_image($p),
             'schema' => [schema_org(), schema_product($p), schema_breadcrumbs($crumbs)],
-            'og_price' => $tier['price'],
+            'og_price' => $p['tiers'][0]['price'],
             'js' => ['page' => 'product', 'product' => [
                 'id' => $p['id'], 'sku' => $p['sku'] ?: 'P' . $p['id'], 'name' => tr($p['name'], 'fr'), 'state' => $state,
                 'tiers' => array_map(fn($t) => ['qty' => $t['qty'], 'price' => $t['price'], 'compare' => $t['compare']], $p['tiers']),
                 'default' => $tier['qty'], 'stock' => $p['stock'],
             ]],
-            'sticky' => $state !== 'out' ? ['price' => $tier['price'], 'compare' => $tier['compare']] : null,
+            'sticky' => $state !== 'out' ? ['price' => $p['tiers'][0]['price'], 'compare' => $p['tiers'][0]['compare']] : null,
         ],
     ]);
 }
