@@ -55,6 +55,19 @@ define('SWB_ROOT', dirname(__DIR__));
 date_default_timezone_set(SWB_TIMEZONE);
 mb_internal_encoding('UTF-8');
 
+// Migration vers un autre hébergement : si SWB_REDIRECT_TO est définie (config.php), toute
+// visite sur CE déploiement est renvoyée vers le même chemin sur le nouveau domaine, paramètres
+// d'URL compris (utile pour ne perdre aucun clic publicitaire). À activer une fois le nouveau
+// site vérifié en ligne ; retirer cette ligne de config.php ramène l'ancien site tel quel.
+if (defined('SWB_REDIRECT_TO') && SWB_REDIRECT_TO !== '' && PHP_SAPI !== 'cli') {
+    $swbOldBase = rtrim(base_path(), '/');
+    $swbUri = (string) ($_SERVER['REQUEST_URI'] ?? '/');
+    $swbRest = $swbOldBase !== '' && strpos($swbUri, $swbOldBase) === 0 ? substr($swbUri, strlen($swbOldBase)) : $swbUri;
+    header('Location: ' . rtrim(SWB_REDIRECT_TO, '/') . ($swbRest === '' ? '/' : $swbRest), true,
+        in_array($_SERVER['REQUEST_METHOD'] ?? 'GET', ['GET', 'HEAD'], true) ? 301 : 307);
+    exit;
+}
+
 const SWB_LANGS = ['fr', 'ar'];
 const SWB_VERSION = '1.0.0';
 
