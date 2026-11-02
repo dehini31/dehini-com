@@ -733,7 +733,7 @@ try {
             setting_set('purchase_trigger', ($b['purchase_trigger'] ?? '') === 'delivered' ? 'delivered' : 'confirmed');
             $de = (string) ($b['delivered_event'] ?? 'OrderDelivered');
             setting_set('delivered_event', preg_match('/^[A-Za-z][A-Za-z0-9_]{1,39}$/', $de) ? $de : 'OrderDelivered');
-            setting_set('fb_domain_verification', one_line($b['fb_domain_verification'] ?? '', 80));
+            setting_set('fb_domain_verification', one_line(preg_replace('/^.*content="([^"]+)".*$/s', '$1', (string) ($b['fb_domain_verification'] ?? '')) ?? '', 120));
             ok();
         }
         case 'meta_test': {

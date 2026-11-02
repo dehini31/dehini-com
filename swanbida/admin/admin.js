@@ -896,7 +896,7 @@
         h('label', { class: 'f' }, 'Quand envoyer « Purchase » ?', h('span', { class: 'hint' }, 'Confirmation = le client a confirmé au téléphone : signal rapide pour l\'optimisation des publicités. Livraison = vente encaissée, mais signal plus tardif.'), trig),
         checkField(s, 'capi_enabled', 'Activer l\'envoi serveur (Conversions API)'),
         checkField(s, 'capi_browser', 'Doubler aussi PageView, ViewContent, AddToCart, InitiateCheckout et Contact côté serveur'),
-        textField(s, 'fb_domain_verification', 'Vérification du domaine Meta (facebook-domain-verification)', { hint: 'Contenu de la balise meta fournie par Meta Business' }),
+        textField(s, 'fb_domain_verification', 'Vérification du domaine Meta (facebook-domain-verification)', { hint: 'Collez la balise entière fournie par Meta Business, ou seulement son contenu' }),
         h('div', { class: 'row' }, h('button', { class: 'btn btn-p', onclick: function () { api('meta_save', { body: s }).then(function () { toast('Réglages Meta enregistrés'); viewMeta(); }).catch(fail); } }, 'Enregistrer'),
           s.token_set ? h('button', { class: 'btn btn-d', onclick: function () { if (confirm('Supprimer le jeton enregistré ?')) { s.token_clear = true; api('meta_save', { body: s }).then(viewMeta).catch(fail); } } }, 'Supprimer le jeton') : null,
           h('button', { class: 'btn', onclick: function () {
