@@ -204,7 +204,9 @@ try {
         }
         case 'login': {
             if (!$isPost) fail('Méthode', 405);
-            $r = admin_login(mb_strtolower(trim((string) ($b['email'] ?? ''))), (string) ($b['password'] ?? ''));
+            $mail = mb_strtolower(trim((string) ($b['email'] ?? '')));
+            if (strpos($mail, '@') === false) $mail = ''; // texte pré-rempli par le navigateur : connexion du propriétaire
+            $r = admin_login($mail, (string) ($b['password'] ?? ''));
             if (isset($r['error'])) fail($r['error'], 401);
             ok(['user' => public_admin($r['user']), 'csrf' => $r['user']['csrf']]);
         }

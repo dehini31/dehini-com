@@ -134,16 +134,20 @@
     var go = function (i) {
       if (!slides.length) return;
       i = (i + slides.length) % slides.length;
-      var s = slides[i];
-      var left = s.offsetLeft - trackEl.offsetLeft;
-      if (getComputedStyle(trackEl).direction === 'rtl') left = -(trackEl.scrollWidth - trackEl.clientWidth - left);
-      trackEl.scrollTo({ left: left, behavior: 'smooth' });
+      // Écart mesuré à l'écran : juste dans les deux sens d'écriture (en arabe, scrollLeft est négatif).
+      var delta = slides[i].getBoundingClientRect().left - trackEl.getBoundingClientRect().left;
+      trackEl.scrollTo({ left: trackEl.scrollLeft + delta, behavior: 'smooth' });
+      setCur(i);
     };
     var setCur = function (i) {
       cur = i;
       thumbs.forEach(function (t, k) { t.classList.toggle('is-on', k === i); t.setAttribute('aria-selected', k === i ? 'true' : 'false'); });
       if (count) count.textContent = (i + 1) + ' / ' + slides.length;
-      var th = thumbs[i]; if (th && th.parentNode.scrollWidth > th.parentNode.clientWidth) th.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      var th = thumbs[i], tc = th && th.parentNode;
+      if (tc && tc.scrollWidth > tc.clientWidth) {
+        var d = th.getBoundingClientRect().left - tc.getBoundingClientRect().left - (tc.clientWidth - th.offsetWidth) / 2;
+        tc.scrollTo({ left: tc.scrollLeft + d, behavior: 'smooth' });
+      }
       $$('video', gal).forEach(function (v, k) { if (!v.closest('.g-slide').isSameNode(slides[i])) v.pause(); });
     };
     if ('IntersectionObserver' in window) {
@@ -179,7 +183,7 @@
         lb.hidden = false; doc.body.style.overflow = 'hidden';
         var target = lbSlides.filter(function (s) { return +s.getAttribute('data-lb-slide') === i; })[0] || lbSlides[0];
         lbIdx = lbSlides.indexOf(target);
-        requestAnimationFrame(function () { target.scrollIntoView({ block: 'nearest', inline: 'center' }); });
+        requestAnimationFrame(function () { lbTrack.scrollLeft += target.getBoundingClientRect().left - lbTrack.getBoundingClientRect().left; });
         if (lbCount) lbCount.textContent = fmt(I.photo_n, { n: lbIdx + 1, t: lbSlides.length });
         $('[data-lb-close]', lb).focus();
       };

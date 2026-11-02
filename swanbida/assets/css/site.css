@@ -119,11 +119,11 @@ ul, ol { margin: 0; padding: 0; }
 .site-header.is-stuck { border-color: var(--line); box-shadow: 0 8px 24px -20px rgba(31, 36, 33, .35); }
 .header-in { display: grid; grid-template-columns: 44px 1fr auto; align-items: center; gap: 8px; height: var(--header-h); }
 .brand { justify-self: center; color: var(--ink); display: inline-flex; }
-.logo { height: 30px; width: auto; overflow: visible; }
+.logo { height: 30px; width: auto; overflow: visible; direction: ltr; unicode-bidi: isolate; }
 .logo-sm { height: 26px; }
 .logo-swan { fill: var(--green); stroke: var(--green); }
 .logo-neck { fill: none; stroke-width: 6.2; stroke-linecap: round; }
-.logo-word { font-family: "Cormorant Garamond", "Times New Roman", serif; font-size: 25px; font-weight: 600; letter-spacing: 4.4px; fill: var(--ink); }
+.logo-word { direction: ltr; font-family: "Cormorant Garamond", "Times New Roman", serif; font-size: 25px; font-weight: 600; letter-spacing: 4.4px; fill: var(--ink); }
 .logo-light .logo-word { fill: var(--ivory); }
 .logo-light .logo-swan { fill: #cfe0d3; stroke: #cfe0d3; }
 .main-nav { display: none; }

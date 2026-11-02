@@ -88,25 +88,47 @@
   function renderLogin(msg) {
     stopPoll();
     clear(app);
+    // Par défaut : connexion du propriétaire (mot de passe seul). Le champ email n'apparaît que pour
+    // l'équipe, sinon le navigateur y glisse un identifiant enregistré et bloque l'envoi.
+    var team = sessionStorage.getItem('swb_team') === '1';
     var err = h('p', { class: 'err' }, msg || '');
-    var email = h('input', { type: 'email', autocomplete: 'username', placeholder: 'Laisser vide pour le propriétaire' });
+    var email = h('input', { type: 'text', inputmode: 'email', autocomplete: team ? 'username' : 'off', autocapitalize: 'off', spellcheck: 'false', placeholder: 'prenom@exemple.com' });
     var pass = h('input', { type: 'password', autocomplete: 'current-password', required: true });
     var btn = h('button', { class: 'btn btn-p btn-lg', type: 'submit', style: 'width:100%' }, 'Se connecter');
+    var emailRow = h('label', { class: 'f', hidden: !team }, 'Email', email);
+    var hint = h('span', { class: 'hint' });
+    var toggle = h('a', { href: '#', class: 'small', onclick: function (e) { e.preventDefault(); setMode(!team); } });
+    function setMode(t) {
+      team = t;
+      try { sessionStorage.setItem('swb_team', t ? '1' : '0'); } catch (x) { /* navigation privée */ }
+      emailRow.hidden = !t;
+      email.setAttribute('autocomplete', t ? 'username' : 'off');
+      if (!t) email.value = '';
+      hint.textContent = t ? 'Le mot de passe de votre compte d\'équipe' : 'Le même mot de passe que /admin de dehini.com';
+      toggle.textContent = t ? '← Connexion du propriétaire' : 'Membre de l\'équipe ? Se connecter avec un email';
+      err.textContent = msg || '';
+      (t ? email : pass).focus();
+    }
     var f = h('form', {
+      novalidate: true,
       onsubmit: function (e) {
-        e.preventDefault(); btn.disabled = true; err.textContent = '';
-        api('login', { body: { email: email.value, password: pass.value } }).then(function (j) {
+        e.preventDefault(); err.textContent = '';
+        var mail = team ? email.value.trim() : '';
+        if (team && mail.indexOf('@') === -1) { err.textContent = 'Entrez l\'email de votre compte d\'équipe.'; email.focus(); return; }
+        if (!pass.value) { err.textContent = 'Entrez le mot de passe.'; pass.focus(); return; }
+        btn.disabled = true;
+        api('login', { body: { email: mail, password: pass.value } }).then(function (j) {
           state.user = j.user; state.csrf = j.csrf; start();
         }).catch(function (e) { err.textContent = e.message; btn.disabled = false; pass.select(); });
       }
     },
       h('div', { class: 'logo', html: SWAN + 'SWANBIDA' }),
       h('p', null, 'Administration de la boutique'),
-      h('label', { class: 'f' }, 'Email', h('span', { class: 'hint' }, 'Uniquement pour les comptes de l\'équipe'), email),
-      h('label', { class: 'f' }, 'Mot de passe', h('span', { class: 'hint' }, 'Propriétaire : le même mot de passe que /admin de dehini.com'), pass),
-      btn, err);
+      emailRow,
+      h('label', { class: 'f' }, 'Mot de passe', hint, pass),
+      btn, err, h('p', { style: 'margin:14px 0 0' }, toggle));
     app.appendChild(h('div', { class: 'login' }, f));
-    pass.focus();
+    setMode(team);
   }
 
   /* ================================================================ coque */
