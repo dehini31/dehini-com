@@ -14,13 +14,24 @@ $desk = setting('desk_enabled') === '1';
 $allFree = max_shipping_fee() === 0 && (!$desk || (int) db()->query('SELECT COALESCE(MAX(fee_desk),0) FROM wilayas WHERE active = 1')->fetchColumn() === 0);
 $wa = whatsapp_link(t('wa_prefill', ['p' => tr($p['name'], $lang)]));
 $name = tr($p['name'], $lang);
+$bundle = null;
+foreach ($tiers as $tt) if ($tt['qty'] > 1 && $tt['compare'] > $tt['price']) { $bundle = $tt; break; }
+$home = content('home');
+$benefits = (array) ($home['benefits'] ?? []);
+$testimonials = array_values(array_filter((array) ($home['testimonials'] ?? []), fn($x) => tr($x['text'] ?? [], $lang) !== ''));
 ?>
 <div class="wrap"><?= breadcrumbs_html($page['breadcrumbs']) ?></div>
 <?php if ($p['status'] !== 'active'): ?><div class="wrap"><p class="notice">Aperçu administrateur : ce produit est en brouillon, invisible pour les visiteurs.</p></div><?php endif; ?>
 
 <section class="wrap pdp">
+  <div class="pdp-head">
+    <h1 class="pdp-title"><?= e($name) ?></h1>
+    <?php if (tr($p['tagline'], $lang) !== ''): ?><p class="pdp-tagline"><?= e(tr($p['tagline'], $lang)) ?></p><?php endif; ?>
+  </div>
+
   <div class="pdp-gallery" data-gallery>
     <div class="g-main">
+      <?php if ($allFree): ?><span class="ship-tag"><?= icon('truck') ?><?= e(t('free_delivery')) ?></span><?php endif; ?>
       <div class="g-track" data-track tabindex="0" aria-label="<?= e(t('gallery')) ?>">
         <?php foreach ($media as $i => $m): ?>
         <figure class="g-slide" data-slide="<?= $i ?>" aria-label="<?= e(t('photo_n', ['n' => $i + 1, 't' => $nMedia])) ?>">
@@ -42,7 +53,7 @@ $name = tr($p['name'], $lang);
       <?php if ($nMedia > 1): ?>
       <button type="button" class="g-arrow g-prev" data-prev aria-label="<?= e(t('prev')) ?>"><?= icon('chevron', 'ico ico-flip') ?></button>
       <button type="button" class="g-arrow g-next" data-next aria-label="<?= e(t('next')) ?>"><?= icon('chevron') ?></button>
-      <span class="g-count" data-count aria-hidden="true">1 / <?= $nMedia ?></span>
+      <span class="g-count" data-count aria-hidden="true" dir="ltr">1 / <?= $nMedia ?></span>
       <?php endif; ?>
     </div>
     <?php if ($nMedia > 1): ?>
@@ -59,8 +70,6 @@ $name = tr($p['name'], $lang);
   </div>
 
   <div class="pdp-info">
-    <h1 class="pdp-title"><?= e($name) ?></h1>
-    <?php if (tr($p['tagline'], $lang) !== ''): ?><p class="pdp-tagline"><?= e(tr($p['tagline'], $lang)) ?></p><?php endif; ?>
     <?php if ($p['highlights']): ?><ul class="chips chips-lg"><?php foreach ($p['highlights'] as $hl): ?><li><?= e(tr($hl, $lang)) ?></li><?php endforeach; ?></ul><?php endif; ?>
 
     <div class="pdp-price" data-price-box>
@@ -72,6 +81,15 @@ $name = tr($p['name'], $lang);
       <?php elseif ($state === 'low'): ?><span class="dot"></span><?= e(t('low_stock', ['n' => (int) $p['stock']])) ?>
       <?php else: ?><span class="dot"></span><?= e(t('in_stock')) ?><?php endif; ?>
     </p>
+
+    <?php if ($bundle && $state !== 'out'): ?>
+    <a class="offer-ribbon" href="?offre=<?= (int) $bundle['qty'] ?>#commander" data-pick="<?= (int) $bundle['qty'] ?>">
+      <span class="or-ico"><?= icon('gift') ?></span>
+      <span class="or-txt"><b><?= e(t('special_offer')) ?> : <?= e(tr($bundle['label'], $lang)) ?> <?= e(t('for_price', ['x' => money($bundle['price'], $lang)])) ?></b>
+        <small><?= e(t('instead_of', ['x' => money($bundle['compare'], $lang)])) ?> · <?= e(t('save', ['x' => money($bundle['compare'] - $bundle['price'], $lang)])) ?></small></span>
+      <?= icon('arrow', 'ico ico-dir') ?>
+    </a>
+    <?php endif; ?>
 
     <ul class="trust">
       <li><?= icon('cash') ?><span><?= e(t('trust_cod')) ?></span></li>
@@ -174,6 +192,19 @@ $name = tr($p['name'], $lang);
   </div>
 </section>
 
+<?php if ($benefits): ?>
+<section class="section section-tight-top benefits-alt">
+  <div class="wrap">
+    <div class="section-head center reveal"><h2 class="h2"><?= e(t('benefits_title')) ?></h2></div>
+    <ul class="benefits">
+      <?php foreach ($benefits as $i => $b): ?>
+      <li class="benefit reveal" style="--d:<?= $i * 70 ?>ms"><span class="benefit-ico"><?= icon((string) ($b['icon'] ?? 'sparkle')) ?></span><h3><?= e(tr($b['title'] ?? [], $lang)) ?></h3><p><?= e(tr($b['text'] ?? [], $lang)) ?></p></li>
+      <?php endforeach; ?>
+    </ul>
+  </div>
+</section>
+<?php endif; ?>
+
 <?php if ($p['contents']): ?>
 <section class="section section-white">
   <div class="wrap two-col">
@@ -213,6 +244,23 @@ $name = tr($p['name'], $lang);
       </li>
       <?php endforeach; ?>
     </ol>
+  </div>
+</section>
+<?php endif; ?>
+
+<?php if ($testimonials): ?>
+<section class="section">
+  <div class="wrap">
+    <div class="section-head center reveal"><h2 class="h2"><?= e(t('testimonials_title')) ?></h2></div>
+    <div class="testimonials">
+      <?php foreach ($testimonials as $tm): ?>
+      <figure class="testimonial reveal">
+        <?php $r = max(0, min(5, (int) ($tm['rating'] ?? 0))); if ($r): ?><div class="stars" aria-label="<?= $r ?>/5"><?= str_repeat(icon('star'), $r) ?></div><?php endif; ?>
+        <blockquote><?= e(tr($tm['text'], $lang)) ?></blockquote>
+        <figcaption><?= e((string) ($tm['name'] ?? '')) ?><?= !empty($tm['city']) ? ' · ' . e((string) $tm['city']) : '' ?></figcaption>
+      </figure>
+      <?php endforeach; ?>
+    </div>
   </div>
 </section>
 <?php endif; ?>

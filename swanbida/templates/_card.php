@@ -11,6 +11,7 @@ $img2 = $p['images'][1] ?? null;
   <a class="card-media" href="<?= e(product_url($p)) ?>" tabindex="-1" aria-hidden="true">
     <?= picture($img, ['sizes' => '(min-width: 1100px) 360px, (min-width: 640px) 45vw, 92vw', 'class' => 'card-img']) ?>
     <?php if ($img2): ?><?= picture($img2, ['sizes' => '(min-width: 1100px) 360px, (min-width: 640px) 45vw, 92vw', 'class' => 'card-img card-img-alt', 'alt' => '']) ?><?php endif; ?>
+    <?php if (free_delivery() && $st !== 'out'): ?><span class="ship-tag ship-tag-sm"><?= icon('truck') ?><?= e(t('free_delivery')) ?></span><?php endif; ?>
     <?php if ($st === 'out'): ?><span class="tag tag-muted"><?= e(t('out_of_stock')) ?></span>
     <?php elseif ($saving > 0): ?><span class="tag"><?= e(t('special_offer')) ?></span><?php endif; ?>
   </a>

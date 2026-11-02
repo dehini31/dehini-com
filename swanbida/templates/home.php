@@ -10,9 +10,11 @@ $packImgs = $fp ? $fp['images'] : [];
 ?>
 <section class="hero">
   <div class="wrap hero-grid">
+    <div class="hero-head">
+      <p class="eyebrow"><?= e(tr($home['hero_eyebrow'] ?? [], $lang)) ?></p>
+      <h1 class="display"><?= e(tr($home['hero_title'] ?? [], $lang)) ?></h1>
+    </div>
     <div class="hero-copy">
-      <p class="eyebrow reveal"><?= e(tr($home['hero_eyebrow'] ?? [], $lang)) ?></p>
-      <h1 class="display reveal"><?= e(tr($home['hero_title'] ?? [], $lang)) ?></h1>
       <p class="lead reveal"><?= e(tr($home['hero_text'] ?? [], $lang)) ?></p>
       <div class="hero-actions reveal">
         <a class="btn btn-primary btn-lg" href="<?= e($fUrl) ?>#commander" data-cta="hero"><?= e(t('order_now_long')) ?> <?= icon('arrow', 'ico ico-dir') ?></a>
@@ -28,6 +30,7 @@ $packImgs = $fp ? $fp['images'] : [];
       <div class="hero-frame">
         <?= picture($home['hero_image'] ?? ($fp ? product_main_image($fp) : null), ['sizes' => '(min-width: 960px) 50vw, 100vw', 'lazy' => false, 'priority' => true, 'class' => 'hero-img']) ?>
       </div>
+      <?php if (free_delivery()): ?><span class="ship-tag ship-tag-hero"><?= icon('truck') ?><?= e(t('free_delivery')) ?></span><?php endif; ?>
       <?php if ($fp && !empty($fp['highlights'])): ?>
       <ul class="hero-badges" aria-hidden="true">
         <?php foreach (array_slice($fp['highlights'], 0, 2) as $i => $hl): ?><li class="hb hb-<?= $i ?>"><?= e(tr($hl, $lang)) ?></li><?php endforeach; ?>
