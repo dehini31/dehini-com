@@ -17,9 +17,21 @@ if (!defined('SWB_SMTP_HOST') && is_file($impactCfg)) {
     try { require_once $impactCfg; } catch (Throwable $e) { /* config Impact illisible : on s'en passe */ }
 }
 
+/**
+ * Dossier des données par défaut, toujours hors de public_html — que la boutique soit un
+ * sous-dossier d'un site plus large (ex. dehini.com/swanbida/, public_html/swanbida/lib/…)
+ * ou la racine de son propre domaine (ex. swanbida.com, public_html/lib/…).
+ */
+function swb_default_data_dir(string $appRoot): string
+{
+    if (basename($appRoot) === 'public_html') return dirname($appRoot) . '/swanbida-data';
+    if (basename(dirname($appRoot)) === 'public_html') return dirname($appRoot, 2) . '/swanbida-data';
+    return dirname($appRoot) . '/swanbida-data'; // disposition non standard (tests locaux…)
+}
+
 $defaults = [
-    'SWB_SITE_URL'       => '',   // ex. https://dehini.com/swanbida/ — déduit de la requête si vide
-    'SWB_DATA_DIR'       => dirname(__DIR__, 3) . '/swanbida-data', // hors public_html
+    'SWB_SITE_URL'       => '',   // ex. https://swanbida.com/ — déduit de la requête si vide, mais recommandé en CLI (cron)
+    'SWB_DATA_DIR'       => swb_default_data_dir(dirname(__DIR__)), // toujours hors public_html
     'SWB_TIMEZONE'       => 'Africa/Algiers',
     'SWB_GRAPH_URL'      => 'https://graph.facebook.com/',  // tests : une fausse API peut la remplacer
     'SWB_TELEGRAM_URL'   => 'https://api.telegram.org/',
@@ -42,6 +54,19 @@ define('SWB_DB_PATH', SWB_DATA_DIR . '/swanbida.sqlite');
 define('SWB_ROOT', dirname(__DIR__));
 date_default_timezone_set(SWB_TIMEZONE);
 mb_internal_encoding('UTF-8');
+
+// Migration vers un autre hébergement : si SWB_REDIRECT_TO est définie (config.php), toute
+// visite sur CE déploiement est renvoyée vers le même chemin sur le nouveau domaine, paramètres
+// d'URL compris (utile pour ne perdre aucun clic publicitaire). À activer une fois le nouveau
+// site vérifié en ligne ; retirer cette ligne de config.php ramène l'ancien site tel quel.
+if (defined('SWB_REDIRECT_TO') && SWB_REDIRECT_TO !== '' && PHP_SAPI !== 'cli') {
+    $swbOldBase = rtrim(base_path(), '/');
+    $swbUri = (string) ($_SERVER['REQUEST_URI'] ?? '/');
+    $swbRest = $swbOldBase !== '' && strpos($swbUri, $swbOldBase) === 0 ? substr($swbUri, strlen($swbOldBase)) : $swbUri;
+    header('Location: ' . rtrim(SWB_REDIRECT_TO, '/') . ($swbRest === '' ? '/' : $swbRest), true,
+        in_array($_SERVER['REQUEST_METHOD'] ?? 'GET', ['GET', 'HEAD'], true) ? 301 : 307);
+    exit;
+}
 
 const SWB_LANGS = ['fr', 'ar'];
 const SWB_VERSION = '1.0.0';

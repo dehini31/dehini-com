@@ -516,6 +516,65 @@ d'ajouter les wilayas 59 à 69 et leurs communes le moment venu, sans toucher au
 `tests/swanbida/` contient un faux hébergement et une batterie de tests dans un vrai navigateur : voir
 `tests/swanbida/README.md`. Rien de ce dossier n'est copié sur le serveur.
 
+### 9. Hébergement dédié (domaine séparé, ex. swanbida.com)
+
+Le même code peut tourner seul, à la **racine** de son propre domaine, sur un hébergement complètement séparé de
+`dehini.com` — c'est le cas si la marque a son propre compte cPanel (ex. `swanbida.com` chez dzSecurity). La seule
+différence avec l'installation plus haut : on publie le **contenu** de `swanbida/` directement dans `public_html/`
+(pas dans un sous-dossier `swanbida/`). Le reste — admin, commandes, Meta, cron — fonctionne à l'identique ; aucune
+donnée n'est reprise de `dehini.com/swanbida/` (base neuve).
+
+1. **Domaine** : vérifier que `swanbida.com` pointe bien vers ce nouvel hébergement. Si le nom de domaine a été
+   enregistré ou transféré chez le même hébergeur, c'est automatique. S'il a été acheté ailleurs, il faut aller
+   chez son bureau d'enregistrement et remplacer ses **serveurs de noms (nameservers)** par ceux indiqués dans
+   l'email d'activation (ex. `oort-shared.dzsecurity.net` et `dns2-r.dzsecurity.net`) ; la propagation peut prendre
+   jusqu'à 24–48 h.
+2. **Terminal cPanel** du nouveau compte (cPanel → Avancé → Terminal ; identifiants reçus par email) :
+
+```bash
+cd ~ && git clone https://github.com/dehini31/dehini-com.git
+mkdir -p ~/public_html/admin ~/public_html/media
+cp -rf dehini-com/swanbida/. ~/public_html/
+```
+
+3. **Mot de passe propriétaire**, propre à ce site (rien à voir avec celui de `/admin` sur `dehini.com`) — affiché
+   une seule fois, à noter tout de suite :
+
+```bash
+php -r '$p = bin2hex(random_bytes(6)); echo "Mot de passe administrateur SWANBIDA : $p\n"; file_put_contents(getenv("HOME")."/public_html/config.php", "<?php\ndefine('"'"'SWB_OWNER_PASSWORD_HASH'"'"', '"'"'".password_hash($p, PASSWORD_DEFAULT)."'"'"');\ndefine('"'"'SWB_SITE_URL'"'"', '"'"'https://swanbida.com/'"'"');\n");'
+```
+
+4. **HTTPS** : dans cPanel → Sécurité → SSL/TLS Status, lancer AutoSSL si le certificat n'est pas déjà actif, puis
+   activer **Force HTTPS Redirect** dans cPanel → Domaines (pas de redirection forcée dans `.htaccess` : comme pour
+   `dehini.com`, le serveur peut être derrière un proxy qui ne transmet pas toujours l'information HTTPS, ce qui
+   tournerait en boucle).
+5. **Mise à jour automatique**, dans cPanel → Tâches Cron :
+
+```bash
+*/5 * * * * cd ~/dehini-com && git pull -q && cp -rf swanbida/. ~/public_html/
+*/10 * * * * /usr/local/bin/php ~/public_html/cron.php > /dev/null 2>&1
+```
+
+6. Ouvrir `https://swanbida.com/`, se connecter à `https://swanbida.com/admin/` avec le mot de passe de l'étape 3,
+   puis reconfigurer **Contenus → Général** (WhatsApp, téléphone, réseaux…), **Meta & suivi** (le pixel peut être le
+   même qu'ailleurs, mais Meta Business Suite doit **vérifier `swanbida.com` séparément** — Paramètres de la marque
+   → Domaines) et **Réglages** (notifications). Passer une commande test de bout en bout avant toute campagne
+   publicitaire.
+7. Une fois `swanbida.com` vérifié en ligne, **basculer `dehini.com/swanbida/`** vers la nouvelle adresse sans
+   perdre les clics publicitaires en cours : sur l'hébergement `dehini.com`, ajouter à `swanbida/config.php` :
+
+```php
+define('SWB_REDIRECT_TO', 'https://swanbida.com');
+```
+
+   Chaque page (et chaque paramètre d'URL, utile pour les publicités déjà actives) est alors redirigée vers la
+   même adresse sur `swanbida.com` (redirection permanente, bonne pour Google). Retirer cette ligne ramène
+   l'ancien site tel quel.
+
+Si le Terminal n'est pas proposé sur le forfait, la même publication se fait avec un client FTP (ex. FileZilla) et
+les identifiants FTP reçus par email, en envoyant le contenu du dossier `swanbida/` du dépôt (fichiers cachés
+comme `.htaccess` compris) dans `public_html/` ; les étapes 3 à 7 restent identiques.
+
 ## Utiliser l'admin
 
 1. Ouvrir `https://dehini.com/admin/`.

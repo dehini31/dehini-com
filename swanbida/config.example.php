@@ -28,3 +28,8 @@
 // define('SWB_SMTP_USER', 'swanbida@dehini.com');
 // define('SWB_SMTP_PASS', 'mot-de-passe-du-compte-email');
 // define('SWB_MAIL_FROM', 'swanbida@dehini.com');
+
+// Migration vers un autre hébergement : redirige tout ce déploiement (avec les paramètres
+// d'URL) vers le même chemin sur le nouveau domaine. À activer une fois le nouveau site
+// vérifié en ligne ; retirer cette ligne ramène l'ancien site tel quel.
+// define('SWB_REDIRECT_TO', 'https://swanbida.com');

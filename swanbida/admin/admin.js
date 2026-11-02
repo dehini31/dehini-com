@@ -104,7 +104,7 @@
       emailRow.hidden = !t;
       email.setAttribute('autocomplete', t ? 'username' : 'off');
       if (!t) email.value = '';
-      hint.textContent = t ? 'Le mot de passe de votre compte d\'équipe' : 'Le même mot de passe que /admin de dehini.com';
+      hint.textContent = t ? 'Le mot de passe de votre compte d\'équipe' : 'Le mot de passe propriétaire de la boutique';
       toggle.textContent = t ? '← Connexion du propriétaire' : 'Membre de l\'équipe ? Se connecter avec un email';
       err.textContent = msg || '';
       (t ? email : pass).focus();
