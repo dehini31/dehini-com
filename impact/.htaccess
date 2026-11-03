@@ -1,9 +1,21 @@
 Options -Indexes
+# index.php sert index.html avec l'en-tête de la langue demandée (référencement des versions ar/en).
+DirectoryIndex index.php index.html
 
 # Seuls la page, ses fichiers statiques et l'API sont accessibles.
 <FilesMatch "^(config\.php|config\.example\.php|cron\.php|\.user\.ini)$">
   Require all denied
 </FilesMatch>
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  # Pages lisibles par les moteurs de recherche (rendues par page.php) :
+  #   q/12-libelle, ar/q/12-libelle, en/q/12-libelle     une question
+  #   questions, ar/questions, en/questions             toutes les questions
+  RewriteRule ^(?:(ar|en)/)?q/([0-9]+)(?:-([^/]*))?/?$ page.php?lang=$1&q=$2&s=$3 [B,L,QSA]
+  RewriteRule ^(?:(ar|en)/)?questions/?$ page.php?lang=$1&hub=1 [L,QSA]
+  RewriteRule ^sitemap\.xml$ sitemap.php [L]
+</IfModule>
 
 <IfModule mod_headers.c>
   Header set X-Content-Type-Options "nosniff"

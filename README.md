@@ -27,7 +27,9 @@ Site personnel de Mohammed Dehini.
   arabe (RTL) : catalogue, fiche produit avec commande en paiement à la livraison, administration (commandes,
   produits, stock, contenus, livraison, statistiques), Meta Pixel + Conversions API et référencement. Voir la section
   « SWANBIDA » plus bas.
-- `robots.txt` — robots du domaine (déclare le sitemap de SWANBIDA ; Google ne lit que celui de la racine).
+- `robots.txt` — robots du domaine (déclare les plans du site ; Google ne lit que celui de la racine).
+- `sitemap.xml` — plan des pages principales de dehini.com (les questions du défi Impact ont le leur :
+  `/impact/sitemap.xml`). Voir « Référencement (SEO) » plus bas.
 
 ## Installation (serveur dzSecurity, compte cPanel `dehini91`)
 
@@ -46,7 +48,7 @@ cp -rf dehini-com/elbahiferti ~/public_html/
 cp -rf dehini-com/impact ~/public_html/
 cp -rf dehini-com/metakpis ~/public_html/
 cp -rf dehini-com/swanbida ~/public_html/
-cp -f dehini-com/robots.txt ~/public_html/robots.txt
+cp -f dehini-com/robots.txt dehini-com/sitemap.xml ~/public_html/
 ```
 
 ### 2. Créer le mot de passe de l'admin
@@ -76,7 +78,7 @@ depuis `/admin`, jamais depuis ce dépôt.
 Dans **cPanel → Tâches Cron**, toutes les 5 minutes :
 
 ```bash
-cd ~/dehini-com && git pull -q && cp -f index.html ~/public_html/index.html && cp -f admin/index.html admin/api.php admin/.htaccess admin/.user.ini ~/public_html/admin/ && cp -f uploads/.htaccess ~/public_html/uploads/.htaccess && cp -rf img ~/public_html/ && cp -rf elbahiferti ~/public_html/ && cp -rf impact ~/public_html/ && cp -rf metakpis ~/public_html/ && cp -rf swanbida ~/public_html/ && cp -f robots.txt ~/public_html/robots.txt
+cd ~/dehini-com && git pull -q && cp -f index.html ~/public_html/index.html && cp -f admin/index.html admin/api.php admin/.htaccess admin/.user.ini ~/public_html/admin/ && cp -f uploads/.htaccess ~/public_html/uploads/.htaccess && cp -rf img ~/public_html/ && cp -rf elbahiferti ~/public_html/ && cp -rf impact ~/public_html/ && cp -rf metakpis ~/public_html/ && cp -rf swanbida ~/public_html/ && cp -f robots.txt sitemap.xml ~/public_html/
 ```
 
 Cette commande ne touche jamais `data.json`, `admin/config.php`, `impact/config.php`,
@@ -131,6 +133,9 @@ déduit du fuseau horaire du navigateur (jamais de l'adresse IP).
   paiement est revérifié auprès de SofizPay, montant et compte destinataire compris, avant d'être
   compté).
 - `impact/cron.php` — emails de rappel (question du jour, impacts positifs des autres).
+- `impact/page.php`, `impact/sitemap.php`, `impact/index.php` — pages des questions et page de toutes les
+  questions lisibles par Google, plan du site, et en-tête de chaque langue du défi (voir « 10. Pages des
+  questions »).
 - La base de données (SQLite) est créée toute seule au premier passage, **hors de
   `public_html`** : `~/impact-data/impact.sqlite`. Elle n'est jamais dans Git ni écrasée par le
   déploiement, et se met à jour toute seule quand le code évolue. Pour la sauvegarder, il suffit
@@ -268,6 +273,41 @@ connexion :
 - **Questions les plus répondues, les plus positives et les plus difficiles** — un aperçu rapide
   sans avoir à ouvrir l'onglet « Questions » (le classement positif/difficile demande au moins
   8 réponses pour être significatif).
+
+### 9. Inscrits (les emails)
+
+Onglet « Inscrits » de `https://dehini.com/impact/admin.html` (lien « 📧 Défi Impact : inscrits » dans le
+menu de `/admin`) : tous les comptes, du plus récent au plus ancien, 100 par page.
+
+- **Recherche** sur le nom ou l'adresse email, et **filtres** : adresse confirmée ou non, compte Google,
+  personnes qui reçoivent la question du jour, personnes désabonnées de tout.
+- Pour chaque compte : langue, adresse confirmée ou non, en ligne en ce moment, emails reçus (question du
+  jour, impacts positifs, avis de messages), date d'inscription, dernière visite, nombre de réponses et de
+  récits.
+- **Actions** : décocher un type d'email désabonne la personne ; « Confirmer » valide l'adresse sans
+  attendre son clic ; « Renvoyer l'email » renvoie le lien de confirmation ; « Modifier l'email » corrige une
+  adresse (la nouvelle devra être confirmée) ; « Supprimer » efface le compte, ses réponses, ses récits et ses
+  conversations.
+- **Exporter (CSV pour Excel)** télécharge la liste affichée (filtre et recherche compris), avec accents et
+  séparateur point-virgule pour Excel en français.
+
+Les emails de rappel ne partent qu'aux adresses confirmées, et chacun contient un lien de désabonnement.
+Les comptes de Stats Meta KPIs ont leur propre liste dans `metakpis/admin.html`.
+
+### 10. Pages des questions (référencement)
+
+Chaque question a sa propre page, rendue par le serveur pour être lue par Google, en trois langues :
+`/impact/q/12-quel-impact-a-eu-…` (français), `/impact/ar/q/12-…`, `/impact/en/q/12-…`. On y trouve la
+question, les chiffres du monde, les **récits publiés** (le vrai contenu unique qui attire les visiteurs
+depuis Google), trois boutons pour répondre en un clic (la réponse est enregistrée dans le défi), le partage
+(WhatsApp, Facebook, X, LinkedIn) et les questions proches. La page `/impact/questions` (et `/ar/questions`,
+`/en/questions`) les liste toutes, par univers.
+
+Une question n'est proposée à Google qu'à partir de son **premier récit publié** (avant, sa page existe
+mais porte « noindex » : une page avec seulement une question serait jugée trop mince). Le plan
+`/impact/sitemap.xml` se met à jour tout seul. Ces adresses passent par `impact/.htaccess` (réécriture
+d'adresses, déjà utilisée par Stats Meta KPIs et SWANBIDA) ; `impact/index.php` donne à `/impact/?lang=ar`
+et `/impact/?lang=en` leur propre titre et leur propre adresse canonique.
 
 ## Stats Meta KPIs (`/metakpis/`)
 
@@ -596,6 +636,42 @@ Si le Terminal n'est pas proposé sur le forfait, la même publication se fait a
 les identifiants FTP reçus par email, en envoyant le contenu du dossier `swanbida/` du dépôt (fichiers cachés
 comme `.htaccess` compris) dans `public_html/` ; les étapes 3 à 7 restent identiques.
 
+## Référencement (SEO)
+
+Ce que fait le code :
+
+- **dehini.com** : titre, description, adresse canonique, aperçu de partage (Open Graph, X), et données
+  structurées « Person » + « WebSite » (nom, poste, entreprise, profils LinkedIn et GitHub repris de
+  `data.json`), texte alternatif du portrait, liens vers le défi Impact et Stats Meta KPIs en pied de page.
+- **Défi Impact** : une page par question et une page de toutes les questions (voir « 10. Pages des
+  questions »), versions arabe et anglaise signalées à Google (hreflang), données structurées.
+- **Plans du site** : `/sitemap.xml` (pages principales), `/impact/sitemap.xml` (défi, toutes les questions,
+  questions qui ont des récits), `/swanbida/sitemap.xml` ; tous déclarés dans `/robots.txt`.
+
+À faire une fois (15 minutes, gratuit) — sans cela Google met des semaines à tout découvrir :
+
+1. **Google Search Console** (`https://search.google.com/search-console`) → « Ajouter une propriété » →
+   **Domaine** `dehini.com`. Google donne un enregistrement **TXT** : dans **cPanel → Zone Editor** →
+   `dehini.com` → « + Ajouter un enregistrement » → TXT, nom `dehini.com.`, valeur collée telle quelle.
+   Revenir sur Search Console → « Valider » (parfois quelques minutes à quelques heures).
+2. Search Console → **Sitemaps** : soumettre `https://dehini.com/sitemap.xml` puis
+   `https://dehini.com/impact/sitemap.xml`.
+3. Search Console → **Inspection de l'URL** : coller `https://dehini.com/`, puis `https://dehini.com/impact/` et
+   `https://dehini.com/impact/questions` → « Demander l'indexation ».
+4. **Bing Webmaster Tools** (`https://www.bing.com/webmasters`) → « Importer depuis Google Search Console »
+   (Bing alimente aussi DuckDuckGo et Yahoo).
+
+Ce qui fait vraiment monter dans Google (le code ne peut pas le faire à votre place) :
+
+- **Des récits publiés** : chaque question qui reçoit un récit devient une page que Google peut proposer à
+  quelqu'un qui cherche « quitter la maison familiale témoignage ». Plus il y a de récits (et dans les trois
+  langues), plus il y a de portes d'entrée. Les emails « Et si vous racontiez cet impact positif ? » y aident.
+- **Des liens vers le site** : mettre `https://dehini.com` sur LinkedIn (section Coordonnées et « Sélection »),
+  GitHub, Facebook, Instagram, la signature email, les pages des marques (Swanbida, Rotinia…), et partager des
+  pages de questions sur les réseaux. Chaque lien depuis un autre site compte.
+- **Le temps** : les premières visites depuis Google arrivent en général après 2 à 8 semaines. Search
+  Console → « Performances » montre les recherches qui affichent le site et les clics.
+
 ## Utiliser l'admin
 
 1. Ouvrir `https://dehini.com/admin/`.
@@ -656,6 +732,8 @@ pas mis à jour automatiquement après coup.
 - Soutiens par carte : les données de carte ne passent jamais par le site (page de paiement SATIM) ;
   un paiement n'est compté qu'après vérification serveur auprès de SofizPay (statut, montant et
   compte destinataire), jamais sur la seule foi du retour navigateur ou de la notification.
+- Liste des inscrits (admin) : réservée à la session de `/admin` (jeton anti-CSRF sur les modifications) ;
+  l'export CSV neutralise les cellules qui commenceraient par une formule Excel (`=`, `+`, `-`, `@`).
 - « En ligne maintenant » (admin) : seul le nombre de personnes et la page qu'elles consultent
   sont gardés, pendant 150 secondes au plus (nettoyé automatiquement après une heure) ; rien de
   plus n'est retenu sur ce signal.

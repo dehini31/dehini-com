@@ -135,11 +135,29 @@
   .ctry-list .fl{font-size:1.1rem}
   .ctry-n,.top-n{margin-inline-start:auto;color:var(--muted);font-size:.8rem;white-space:nowrap}
   .top-list .q{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  /* -------------------------------------------------------------- Inscrits */
+  .u-table{width:100%;border-collapse:collapse;font-size:.86rem;min-width:860px}
+  .u-table th,.u-table td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--paper-100);vertical-align:middle}
+  .u-table th{color:var(--muted);font-weight:700;font-size:.74rem;text-transform:uppercase;letter-spacing:.02em;white-space:nowrap}
+  .u-table td.n{text-align:right;font-variant-numeric:tabular-nums}
+  .u-table .badge{white-space:nowrap}
+  a.btn{text-decoration:none;color:inherit}
+  .u-name{font-weight:700}
+  .u-mail{color:var(--ink);text-decoration:none;word-break:break-all}
+  .u-mail:hover{text-decoration:underline}
+  .u-sub{font-size:.76rem;color:var(--muted)}
+  .u-badges{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+  .b-ok{background:var(--pos-50);color:var(--pos-600)} .b-no{background:var(--warn-50);color:var(--warn)} .b-g{background:var(--social-50);color:var(--social)} .b-on{background:var(--pos);color:#fff}
+  .u-opts{display:grid;gap:3px;font-size:.78rem;white-space:nowrap}
+  .u-opts label{display:flex;align-items:center;gap:6px;cursor:pointer}
+  .u-acts{display:flex;flex-wrap:wrap;gap:6px}
+  .u-edit{display:flex;gap:6px;margin-top:6px}
+  .u-edit input{flex:1;min-width:180px;padding:6px 10px;border:1px solid var(--paper-200);border-radius:8px}
   .toast{position:fixed;bottom:20px;left:50%;translate:-50% 0;background:var(--ink);color:#fff;padding:12px 18px;border-radius:14px;font-size:.9rem;box-shadow:var(--shadow);z-index:9}
 </style>
 </head>
 <body>
-<!-- Administration du défi Impact : questions (ajout, modification, masquage, suppression), modération des récits,
+<!-- Administration du défi Impact : statistiques, inscrits (emails), questions (ajout, modification, masquage, suppression), modération des récits,
      soutiens (SofizPay et moyens manuels) et réglages (connexion Google).
      Connexion avec le mot de passe de /admin (même session). -->
 <div id="loginView" hidden>
@@ -160,6 +178,7 @@
   <div class="kpis" id="kpis"></div>
   <nav class="main-tabs">
     <a href="#stats" data-tab="stats">Statistiques</a>
+    <a href="#inscrits" data-tab="inscrits">Inscrits</a>
     <a href="#questions" data-tab="questions">Questions</a>
     <a href="#recits" data-tab="recits">Récits</a>
     <a href="#soutiens" data-tab="soutiens">Soutiens</a>
@@ -202,6 +221,18 @@
       <div class="panel"><h2>Les plus positives</h2><ol class="top-list" id="topPositive"></ol></div>
       <div class="panel"><h2>Les plus difficiles</h2><ol class="top-list" id="topNegative"></ol></div>
     </div>
+  </section>
+
+  <section id="tab-inscrits" hidden>
+    <div class="tabs" id="uTabs"></div>
+    <div class="toolbar">
+      <input type="search" id="uSearch" placeholder="Rechercher un nom ou une adresse email…">
+      <a class="btn btn-line" id="uCsv" href="api.php?action=mod_users_csv" download>Exporter (CSV pour Excel)</a>
+    </div>
+    <p class="summary" id="uSummary"></p>
+    <div class="panel" style="padding:8px 14px"><table class="u-table" id="uTable"></table></div>
+    <div class="pager" id="uPager"></div>
+    <p class="summary">Les emails de rappel (question du jour, impacts positifs) ne partent qu'aux adresses confirmées, et chacun contient un lien de désabonnement. Décocher une case ici désabonne la personne de ce type d'email.</p>
   </section>
 
   <section id="tab-questions" hidden>
@@ -642,8 +673,97 @@ function renderStats(d) {
   $("#topNegative").replaceChildren(...(d.top.negative.length ? d.top.negative.map(q => topRow(q, q.pct + " % négatif")) : [el("li", { text: "Pas assez de réponses (8 minimum)." })]));
 }
 
+/* -------------------------------------------------------------- Inscrits */
+const UFILTERS = [["all", "Tous"], ["verified", "Adresse confirmée"], ["unverified", "Non confirmée"], ["google", "Google"], ["daily", "Reçoivent la question du jour"], ["nomail", "Désabonnés de tout"]];
+const LANGS = { fr: "FR", ar: "AR", en: "EN" };
+const US = { filter: "all", q: "", offset: 0, total: 0, items: [], editing: null };
+const when = t => t ? new Date(t * 1000).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" }) : "—";
+function ago(t) {
+  const s = Math.max(0, Date.now() / 1000 - t);
+  if (s < 3600) return "à l'instant";
+  if (s < 86400) return "il y a " + Math.floor(s / 3600) + " h";
+  if (s < 30 * 86400) return "il y a " + Math.floor(s / 86400) + " j";
+  return when(t);
+}
+function usersQuery() {
+  return new URLSearchParams({ filter: US.filter, q: US.q }).toString();
+}
+async function loadUsers() {
+  let d;
+  try { d = await call("api.php?action=mod_users&" + usersQuery() + "&offset=" + US.offset); } catch (e) { if (e.status !== 401) toast(e.message); return; }
+  US.items = d.items; US.total = d.total;
+  $("#uTabs").replaceChildren(...UFILTERS.map(([k, l]) => el("button", { type: "button", "aria-pressed": String(k === US.filter), onclick: () => { US.filter = k; US.offset = 0; loadUsers(); } },
+    l, el("span", { class: "n", text: "(" + fmt(d.counts[k] || 0) + ")" }))));
+  $("#uCsv").href = "api.php?action=mod_users_csv&" + usersQuery();
+  renderUsers();
+}
+function renderUsers() {
+  const from = US.total ? US.offset + 1 : 0, to = US.offset + US.items.length;
+  $("#uSummary").textContent = US.total ? `${fmt(US.total)} compte(s) — ${from} à ${to}` : "";
+  const head = el("tr", {}, ...["Personne", "Statut", "Emails reçus", "Inscription", "Dernière visite", "Réponses", "Récits", ""].map((h, i) => el("th", { text: h, class: i === 5 || i === 6 ? "n" : null })));
+  $("#uTable").replaceChildren(head, ...(US.items.length ? US.items.map(userRow) : [el("tr", {}, el("td", { colspan: 8, class: "empty", text: US.q ? "Aucun compte ne correspond à cette recherche." : "Aucun compte pour l'instant." }))]));
+  const pages = Math.ceil(US.total / 100), page = Math.floor(US.offset / 100);
+  $("#uPager").replaceChildren(...(pages > 1 ? [
+    el("button", { class: "btn btn-line btn-sm", type: "button", disabled: page === 0, onclick: () => { US.offset -= 100; loadUsers(); } }, "← Précédent"),
+    el("span", { text: `Page ${page + 1} / ${pages}` }),
+    el("button", { class: "btn btn-line btn-sm", type: "button", disabled: page >= pages - 1, onclick: () => { US.offset += 100; loadUsers(); } }, "Suivant →"),
+  ] : []));
+}
+function userRow(u) {
+  const opt = (k, label) => el("label", {}, el("input", { type: "checkbox", checked: u[k], onchange: e => setUser(u, { [k]: e.target.checked }, e.target) }), label);
+  const person = el("td", {},
+    el("div", { class: "u-name", dir: "auto", text: u.name }),
+    el("a", { class: "u-mail", href: "mailto:" + u.email, text: u.email }),
+    el("div", { class: "u-sub", text: (LANGS[u.lang] || u.lang) + (u.google ? " · compte Google" : "") + (u.google && !u.has_pass ? " (sans mot de passe)" : "") }));
+  if (US.editing === u.id) {
+    const inp = el("input", { type: "email", value: u.email, "aria-label": "Nouvelle adresse email" });
+    person.append(el("form", { class: "u-edit", onsubmit: async e => { e.preventDefault(); if (await setUser(u, { email: inp.value.trim() })) US.editing = null; renderUsers(); } },
+      inp, el("button", { class: "btn btn-ink btn-sm", type: "submit" }, "OK"), el("button", { class: "btn btn-line btn-sm", type: "button", onclick: () => { US.editing = null; renderUsers(); } }, "Annuler")));
+  }
+  return el("tr", {},
+    person,
+    el("td", {}, el("div", { class: "u-badges" },
+      el("span", { class: "badge " + (u.verified ? "b-ok" : "b-no"), text: u.verified ? "Confirmée" : "Non confirmée" }),
+      u.online ? el("span", { class: "badge b-on", text: "En ligne" }) : null)),
+    el("td", {}, el("div", { class: "u-opts" }, opt("opt_daily", "Question du jour"), opt("opt_digest", "Impacts positifs"), opt("opt_msg", "Avis de messages"))),
+    el("td", { text: when(u.created) }),
+    el("td", { text: ago(u.last) }),
+    el("td", { class: "n", text: fmt(u.answers) }),
+    el("td", { class: "n", text: fmt(u.stories) }),
+    el("td", {}, el("div", { class: "u-acts" },
+      u.verified ? null : el("button", { class: "btn btn-line btn-sm", type: "button", title: "Marquer l'adresse comme confirmée sans attendre le clic de la personne", onclick: () => setUser(u, { verified: true }) }, "Confirmer"),
+      u.verified ? null : el("button", { class: "btn btn-line btn-sm", type: "button", onclick: e => resendUser(u, e.currentTarget) }, "Renvoyer l'email"),
+      el("button", { class: "btn btn-line btn-sm", type: "button", onclick: () => { US.editing = u.id; renderUsers(); } }, "Modifier l'email"),
+      el("button", { class: "btn btn-neg btn-sm", type: "button", onclick: () => deleteUser(u) }, "Supprimer"))));
+}
+async function setUser(u, patch, input) {
+  try {
+    const d = await call("api.php?action=mod_user_set", Object.assign({ id: u.id }, patch));
+    const i = US.items.findIndex(x => x.id === u.id);
+    if (i >= 0) US.items[i] = d.item;
+    toast(patch.email ? "Adresse modifiée : elle devra être confirmée." : "Enregistré.");
+    renderUsers();
+    return true;
+  } catch (e) {
+    toast(e.message);
+    if (input) input.checked = !input.checked;
+    return false;
+  }
+}
+async function resendUser(u, btn) {
+  btn.disabled = true;
+  try { await call("api.php?action=mod_user_resend", { id: u.id }); toast("Email de confirmation envoyé à " + u.email + "."); }
+  catch (e) { toast(e.message); btn.disabled = false; }
+}
+async function deleteUser(u) {
+  if (!confirm(`Supprimer définitivement le compte de ${u.name} (${u.email}) ?\n\nSes ${u.answers} réponse(s), ${u.stories} récit(s) et ses conversations seront effacés.`)) return;
+  try { await call("api.php?action=mod_user_delete", { id: u.id }); toast("Compte supprimé."); loadUsers(); } catch (e) { toast(e.message); }
+}
+let uSearchTimer;
+$("#uSearch").addEventListener("input", () => { clearTimeout(uSearchTimer); uSearchTimer = setTimeout(() => { US.q = $("#uSearch").value.trim(); US.offset = 0; loadUsers(); }, 250); });
+
 /* ------------------------------------------------------------ Navigation */
-const TABS = ["stats", "questions", "recits", "soutiens", "reglages"];
+const TABS = ["stats", "inscrits", "questions", "recits", "soutiens", "reglages"];
 function showTab() {
   const tab = TABS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "stats";
   document.querySelectorAll(".main-tabs a").forEach(a => a.classList.toggle("on", a.dataset.tab === tab));
@@ -651,6 +771,7 @@ function showTab() {
   // « En ligne maintenant » ne se rafraîchit tout seul que pendant qu'on regarde cet onglet.
   clearInterval(statsTimer);
   if (tab === "stats") { loadStats(); statsTimer = setInterval(loadStats, 20000); }
+  if (tab === "inscrits") loadUsers();
 }
 addEventListener("hashchange", showTab);
 
