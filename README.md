@@ -110,6 +110,13 @@ carte CIB / Edahabia (paiement en ligne SofizPay, sur le même compte que ecom.d
 affiche les autres moyens saisis à la main dans l'admin (PayPal, RedotPay, CCP, BaridiMob…). Voir
 « 7. Soutiens ».
 
+L'**espace pro** (`https://dehini.com/impact/#pro`, lien « Espace pro » en haut et bandeau sur
+l'accueil) permet aux entreprises, auto-entrepreneurs, professions libérales et associations de créer
+leur **page professionnelle**, de la lier aux questions de leur domaine et d'y publier leurs
+expériences. Les visiteurs sans compte peuvent laisser leur email pour recevoir les nouvelles
+expériences positives sur les questions auxquelles ils ont répondu « négatif ». Voir « 11. Pages pro
+et alertes email ».
+
 L'**impact mondial** (`https://dehini.com/impact/#monde`, bouton globe en haut) montre les
 résultats de tous les participants : part d'impacts positifs, « vous et le monde », les trois
 univers, la carte des 1000 questions (cliquer une case ouvre la question et ses chiffres), les
@@ -120,8 +127,11 @@ déduit du fuseau horaire du navigateur (jamais de l'adresse IP).
   français et anglais.
 - `impact/admin.html` — l'administration du défi, avec **le même mot de passe que `/admin`**
   (lien « Défi Impact » en bas du menu de `/admin`) : statistiques (dont qui est en ligne en ce
-  moment), questions (ajouter, modifier, masquer, supprimer), récits, soutiens et connexion
-  Google.
+  moment), inscrits et abonnés aux alertes, pages pro (mise en avant, vérification), questions
+  (ajouter, modifier, masquer, supprimer), récits, soutiens et connexion Google.
+- `impact/lib/pros.php` — pages pro : types de profils, domaines (et les mots qui servent à proposer
+  des questions), logo.
+- `impact/uploads/pros/` — les logos envoyés par les pros (voir « 11 »).
 - `impact/questions.json` — les 1000 questions de départ (340 personnelles, 330 sociales, 330
   professionnelles) dans les trois langues. Elles sont copiées dans la base au premier passage ;
   ensuite **c'est l'admin qui fait foi** et modifier ce fichier n'a plus d'effet (il sert
@@ -163,7 +173,8 @@ php ~/public_html/impact/cron.php --test=ton-adresse@gmail.com
 ```
 
 Envoie un exemple de chaque email (question du jour, rappel de récit, impacts positifs,
-bienvenue, mot de passe oublié, nouveau message, remerciement après un soutien). Ajouter `--lang=ar` ou `--lang=en` pour les autres langues. Si
+bienvenue, mot de passe oublié, nouveau message, remerciement après un soutien, confirmation d'abonnement
+aux alertes, alerte « nouvelle expérience positive »). Ajouter `--lang=ar` ou `--lang=en` pour les autres langues. Si
 la connexion SMTP échoue à cause du certificat, essayer `IMPACT_SMTP_HOST` = le nom du serveur
 cPanel (visible dans « Configurer le client de messagerie »).
 
@@ -184,6 +195,11 @@ Dans **cPanel → Tâches Cron**, **une fois par heure** :
 - **Impacts positifs des autres** — au plus une fois par semaine : jusqu'à 3 récits publiés par
   d'autres sur les questions où la personne a répondu « négatif » ou « aucun impact » (jamais deux
   fois le même).
+- **Alertes « nouvelle expérience positive »** — dès qu'une personne ou une page pro publie une
+  expérience sur une question à laquelle quelqu'un a répondu « négatif », cette personne la reçoit
+  (au plus un email toutes les 6 heures, 3 expériences maximum, jamais deux fois la même) : les
+  abonnés sans compte (fenêtre « Me prévenir par email ») et les comptes qui ont gardé « impacts
+  positifs ». Seules les expériences publiées depuis moins de 7 jours sont envoyées.
 
 Les emails ne partent qu'aux adresses **confirmées** (lien envoyé à l'inscription), dans la
 langue du site choisie par la personne, et chacun contient un lien de désabonnement en un clic
@@ -308,6 +324,64 @@ mais porte « noindex » : une page avec seulement une question serait jugée tr
 `/impact/sitemap.xml` se met à jour tout seul. Ces adresses passent par `impact/.htaccess` (réécriture
 d'adresses, déjà utilisée par Stats Meta KPIs et SWANBIDA) ; `impact/index.php` donne à `/impact/?lang=ar`
 et `/impact/?lang=en` leur propre titre et leur propre adresse canonique.
+
+### 11. Pages pro et alertes email (monétisation)
+
+**Pour les pros** — `https://dehini.com/impact/#pro` (aussi dans « Mon compte » → « Espace pro »).
+Il faut un compte (gratuit) ; une page pro par compte :
+
+1. **Profil** : nom, type (entreprise, auto-entrepreneur / indépendant, profession libérale,
+   association, autre), domaine (15 domaines : coaching, psychologie, santé, éducation, emploi,
+   immobilier, finance…), ville, mots-clés, présentation, site web, téléphone / WhatsApp, email
+   public et logo (JPEG, PNG ou WebP, 3 Mo max ; l'image est vérifiée, réduite à 400 px et
+   réenregistrée en WebP).
+2. **Questions liées** (60 max) : le site **propose les questions** qui correspondent au domaine et
+   aux mots-clés (« déménagement » → les questions sur le déménagement et le logement…), et on peut
+   chercher parmi les 1000 questions.
+3. **Expériences** publiées **au nom de la page** (son nom et son logo à la place du prénom). Comme
+   tous les récits, une expérience qui contient un lien, une adresse ou un numéro attend une
+   validation dans « Récits » : la publicité passe par la page pro, pas par les récits.
+
+La page pro apparaît :
+
+- à côté de ses questions dans le défi (« Des pros en parlent », sous chaque réponse et dans la fiche
+  d'une question) et sur les pages des questions (`/impact/q/…`) ;
+- sur ses expériences, partout où elles s'affichent (mur, résultat, pages des questions, emails) ;
+- sur sa **page publique** `https://dehini.com/impact/pro/nom-de-la-page` (en `/ar/pro/…` et
+  `/en/pro/…` aussi), avec boutons Site web, WhatsApp, Appeler et Email, ses expériences et ses
+  questions ; et dans l'**annuaire** `https://dehini.com/impact/pros`. Ces pages sont dans le plan du
+  site dès qu'elles ont du contenu (présentation de 80 caractères, une question liée ou une
+  expérience ; sinon « noindex »).
+
+**Ce que vous vendez** — onglet **« Pros »** de l'admin : la liste des pages (recherche, filtres en
+ligne / mises en avant / masquées), avec pour chacune le compte propriétaire, les contacts, le nombre
+de questions et d'expériences, et quatre actions :
+
+- **Mettre en avant** : l'emplacement sponsorisé. La page passe en tête à côté de ses questions, dans
+  le défi, sur les pages des questions et dans l'annuaire, avec la mention « Sponsorisé » ; ses liens
+  portent `rel="sponsored"` comme le demande Google. On l'active quand le pro a payé et on la retire à
+  la fin de la période.
+- **Vérifier** : badge « Vérifié » après contrôle de l'activité (le lien vers son site devient alors
+  un lien suivi par les moteurs de recherche ; sans vérification il porte `ugc nofollow`).
+- **Masquer / Afficher** : retire la page du site sans la supprimer.
+- **Supprimer** : efface la page, son logo et ses expériences (le compte et ses récits personnels
+  restent). Le pro peut aussi supprimer sa page lui-même depuis son espace.
+
+**Alertes email sans compte** — après 3 réponses « négatif », le défi propose une fois (puis pas
+avant 14 jours) de laisser son email pour recevoir les nouvelles expériences positives sur ces
+questions ; le même bouton apparaît sous une réponse « négatif » qui n'a encore aucun récit. Rien ne
+part avant le clic sur le lien de confirmation (personne ne peut inscrire l'adresse d'un autre).
+Chaque alerte contient un lien de désinscription (une page de confirmation, pour que les antivirus
+des messageries qui ouvrent les liens ne désinscrivent personne). Avec un compte, le bouton active
+simplement « impacts positifs ». Les abonnés sont listés sous les comptes dans l'onglet
+**« Inscrits »** (confirmés / en attente, nombre de réponses négatives, dernière alerte, export CSV,
+suppression). Si l'abonné crée ensuite un compte sur le même appareil, son abonnement suit.
+
+**Logos et déploiement** — les logos sont enregistrés dans `~/public_html/impact/uploads/pros/`. La
+copie du déploiement (`cp -rf impact ~/public_html/`) ne supprime jamais de fichier, ils restent donc
+d'une mise à jour à l'autre ; ils ne sont pas dans Git : pour une sauvegarde complète, copier ce
+dossier avec `~/impact-data/`. `impact/uploads/.htaccess` interdit l'exécution de scripts dans ce
+dossier.
 
 ## Stats Meta KPIs (`/metakpis/`)
 

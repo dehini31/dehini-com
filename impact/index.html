@@ -747,6 +747,120 @@
   .s-band h2{font-size:clamp(1.35rem,2.6vw,1.9rem)}
   .s-band p{color:var(--muted);margin-top:6px;max-width:580px}
   @media(max-width:860px){.s-grid{grid-template-columns:minmax(0,1fr)}.s-band{grid-template-columns:1fr;text-align:center;justify-items:center}}
+  /* ---------- Professionnels ---------- */
+  .pav{width:40px;height:40px;border-radius:50%;display:inline-grid;place-items:center;flex-shrink:0;overflow:hidden;background:hsl(var(--h,150) 55% 42%);color:#fff;font-weight:800;font-size:.86rem;text-transform:uppercase;box-shadow:0 0 0 2px #fff;letter-spacing:0}
+  .pav img{width:100%;height:100%;object-fit:cover;background:#fff}
+  .pav.xs{width:26px;height:26px;font-size:.7rem;box-shadow:none}
+  .pav.sm{width:32px;height:32px;font-size:.76rem}
+  .pav.lg{width:84px;height:84px;font-size:1.6rem;border-radius:24px;box-shadow:var(--shadow)}
+  .pro-tag{display:inline-flex;align-items:center;gap:3px;padding:1px 7px;border-radius:999px;background:var(--pro-50);color:#b86700;font-size:.68rem;font-weight:800;flex-shrink:0}
+  .pro-tag svg{width:12px;height:12px}
+  .who a{color:inherit;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .who a:hover{text-decoration:underline;color:var(--ink)}
+  .who a{min-width:0}
+  .p-exp .dotp{width:8px;height:8px;border-radius:50%;background:var(--pos);margin-top:6px;flex-shrink:0}
+  .p-badges:empty{display:none}
+  .pros-strip{margin-top:14px;padding:12px 14px;border-radius:16px;background:#fff;border:1px solid var(--paper-200)}
+  .pros-strip[hidden]{display:none}
+  .pros-strip .ps-t{display:flex;align-items:center;gap:8px;font-size:.8rem;font-weight:800;color:var(--ink-soft);margin-bottom:9px}
+  .pros-strip .ps-t svg{width:16px;height:16px;color:var(--pro)}
+  .ps-list{display:flex;flex-wrap:wrap;gap:8px}
+  .ps-item{display:inline-flex;align-items:center;gap:8px;padding:4px 12px 4px 4px;border-radius:999px;background:var(--paper-50);border:1px solid var(--paper-100);font-size:.82rem;font-weight:700;max-width:100%;transition:border-color .2s,background .2s}
+  .ps-item:hover{border-color:var(--pro);background:#fff}
+  .ps-item .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+  .ps-item .vf{color:var(--cobalt);width:15px;height:15px;flex-shrink:0}
+  .ps-item.feat{background:var(--pro-50);border-color:#ffd9a3}
+  .ps-item .sp{font-size:.66rem;font-weight:800;color:#b86700;text-transform:uppercase;letter-spacing:.04em}
+  .p-band{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:22px;padding:clamp(22px,4vw,36px);border-radius:var(--r-xl);background:var(--ink);color:#fff;position:relative;overflow:hidden;isolation:isolate}
+  .p-band::before{content:"";position:absolute;inset:auto -80px -120px auto;width:320px;height:320px;border-radius:50%;background:radial-gradient(circle,rgba(232,134,12,.35),transparent 70%);z-index:-1}
+  .p-band-ico{width:58px;height:58px;border-radius:18px;display:grid;place-items:center;background:var(--pro);color:#fff;box-shadow:0 16px 30px -14px rgba(232,134,12,.9)}
+  .p-band-ico svg{width:28px;height:28px}
+  .p-band h2{font-size:clamp(1.35rem,2.6vw,1.9rem)}
+  .p-band h2 em{font-style:normal;color:#ffb347}
+  .p-band p{color:#c4cadb;margin-top:6px;max-width:600px}
+  .p-band-act{display:flex;flex-direction:column;gap:10px;align-items:stretch}
+  .p-band-avs{display:flex;margin-top:14px}
+  .p-band-avs .pav{margin-inline-end:-8px;box-shadow:0 0 0 2px var(--ink)}
+  .p-band-avs:empty{display:none}
+  @media(max-width:860px){.p-band{grid-template-columns:1fr;text-align:center;justify-items:center}.p-band-avs{justify-content:center}}
+  .p-out{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr);gap:24px;align-items:center}
+  .p-out h2{font-size:clamp(1.5rem,3vw,2.2rem)}
+  .p-out .row{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
+  .p-steps{list-style:none;display:grid;gap:12px;counter-reset:st}
+  .p-steps li{display:flex;gap:12px;align-items:flex-start;background:var(--paper-50);border-radius:16px;padding:14px 16px;font-size:.92rem;color:var(--ink-soft)}
+  .p-steps li::before{counter-increment:st;content:counter(st);width:28px;height:28px;border-radius:50%;background:var(--pro);color:#fff;font-weight:800;display:grid;place-items:center;flex-shrink:0;font-size:.85rem}
+  .p-steps b{color:var(--ink);display:block}
+  .p-wrap{display:grid;gap:22px}
+  #proView > .sec{padding-top:clamp(28px,4vw,48px)}
+  .p-head{display:flex;flex-wrap:wrap;align-items:center;gap:18px}
+  .p-head .info{flex:1;min-width:220px}
+  .p-head h2{font-size:clamp(1.4rem,3vw,2rem);overflow-wrap:anywhere}
+  .p-head .meta{color:var(--muted);font-size:.9rem;margin-top:4px}
+  .p-head .acts{display:flex;flex-wrap:wrap;gap:8px}
+  .p-badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .p-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;font-size:.74rem;font-weight:800;background:var(--paper-100);color:var(--ink-soft)}
+  .p-badge svg{width:13px;height:13px}
+  .p-badge.vf{background:var(--social-50);color:var(--cobalt)}
+  .p-badge.ft{background:var(--pro-50);color:#b86700}
+  .p-badge.hd{background:var(--neg-50);color:var(--neg-600)}
+  .p-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,.75fr);gap:22px;align-items:start}
+  @media(max-width:900px){.p-grid,.p-out{grid-template-columns:minmax(0,1fr)}}
+  .w-card h3.p-t{display:flex;align-items:center;gap:10px;font-size:1.25rem;margin-bottom:6px}
+  .w-card h3.p-t svg{width:22px;height:22px;color:var(--pro)}
+  .w-card h3.p-t .n{white-space:nowrap;direction:ltr;unicode-bidi:isolate;margin-inline-start:auto;font-family:var(--f-body);font-size:.8rem;font-weight:800;color:var(--ink-soft);background:var(--paper-100);padding:3px 10px;border-radius:999px}
+  .p-form{margin-top:18px}
+  .p-form .two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 14px}
+  @media(max-width:560px){.p-form .two{grid-template-columns:minmax(0,1fr)}}
+  .field select{width:100%;border:1.5px solid var(--paper-200);border-radius:14px;padding:12px 14px;background:#fff;font-size:.98rem;line-height:1.4;color:var(--ink);font-family:inherit}
+  .field select:focus{outline:0;border-color:var(--pos);box-shadow:0 0 0 4px rgba(23,178,106,.15)}
+  .p-logo{display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px}
+  .p-logo .w-note{margin-top:0}
+  .p-file{position:relative;overflow:hidden;cursor:pointer}
+  .p-file input{position:absolute;inset:0;opacity:0;cursor:pointer}
+  .p-file.busy{opacity:.55;pointer-events:none}
+  .p-tips{list-style:none;display:grid;gap:10px;margin-top:14px;text-align:start;font-size:.88rem;color:var(--ink-soft)}
+  .p-tips li{display:flex;gap:9px}
+  .p-tips svg{width:17px;height:17px;color:var(--pos);flex-shrink:0;margin-top:2px}
+  .p-sel{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0}
+  .p-sel:empty{display:none}
+  .p-sel button{display:inline-flex;align-items:center;gap:6px;max-width:100%;padding:6px 8px 6px 12px;border-radius:999px;background:var(--pro-50);color:#8a4d00;font-size:.8rem;font-weight:700;text-align:start}
+  .p-sel button span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+  .p-sel button svg{width:14px;height:14px;flex-shrink:0}
+  .p-sel button:hover{background:#ffe6c2}
+  .p-qtools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:8px 0 12px}
+  .p-qtools .field{flex:1;min-width:200px;margin:0}
+  .p-qtools .tabs{margin:0}
+  .p-qlist{display:grid;gap:6px;max-height:420px;overflow-y:auto;padding:2px;overscroll-behavior:contain}
+  .p-q{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 12px;border-radius:14px;border:1px solid var(--paper-100);background:var(--paper-50);cursor:pointer;font-size:.92rem;transition:border-color .2s,background .2s}
+  .p-q:hover{border-color:var(--paper-200);background:#fff}
+  .p-q.on{border-color:#ffcf8a;background:var(--pro-50)}
+  .p-q input{width:18px;height:18px;accent-color:var(--pro)}
+  .p-q .chip{font-size:.7rem;padding:3px 9px 3px 7px}
+  .p-q .chip span{display:none}
+  .p-qfoot{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-top:14px}
+  .p-qfoot .w-note{margin:0}
+  .p-exps{display:grid;gap:12px;margin-top:16px}
+  .p-exp{border:1px solid var(--paper-200);border-radius:18px;padding:14px 16px;background:#fff}
+  .p-exp .q{font-size:.84rem;font-weight:700;color:var(--ink-soft);display:flex;gap:8px;align-items:flex-start}
+  .p-exp .q a:hover{text-decoration:underline}
+  .p-exp p.x{margin-top:6px;font-size:.92rem;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-line}
+  .p-exp .f{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+  .p-exp .f .grow{flex:1}
+  .p-new{margin-top:18px;padding:18px;border-radius:18px;background:var(--paper-50);border:1px dashed var(--paper-200)}
+  .p-new textarea{width:100%;border:1.5px solid var(--paper-200);border-radius:14px;padding:12px 14px;background:#fff;font-size:.98rem;line-height:1.55;resize:vertical}
+  .p-new textarea:focus{outline:0;border-color:var(--pos);box-shadow:0 0 0 4px rgba(23,178,106,.15)}
+  .p-danger{margin-top:4px}
+  .p-danger summary{cursor:pointer;font-size:.86rem;color:var(--neg-600);font-weight:700}
+  .p-danger p{font-size:.88rem;color:var(--muted);margin:10px 0}
+  .sub-ico{width:62px;height:62px;border-radius:20px;display:grid;place-items:center;margin:6px auto 16px;background:var(--pro-50);color:var(--pro)}
+  .sub-ico.ok{background:var(--pos-50);color:var(--pos)}
+  .sub-ico svg{width:30px;height:30px}
+  #subDlg h2{text-align:center;font-size:1.4rem}
+  #subDlg .dlg-intro{text-align:center}
+  #subForm .btn,#subDone .btn{width:100%}
+  .others-sub{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:12px;padding:10px 12px;border-radius:14px;background:#fff;border:1px dashed var(--paper-200);font-size:.84rem;color:var(--ink-soft)}
+  .others-sub svg{width:17px;height:17px;color:var(--pro);flex-shrink:0}
+  .others-sub span{flex:1;min-width:160px}
   @media(max-width:520px){.amounts{grid-template-columns:repeat(2,1fr)}.s-row{grid-template-columns:1fr}.ib-item{padding:14px;gap:12px}.ib-item .avatar{width:40px;height:40px}}
 
   /* ============ Notifications & effets ============ */
@@ -782,6 +896,7 @@
     <nav class="nav" data-i18n-attr="aria-label:a.nav" aria-label="Navigation">
       <a href="#how" data-i18n="nav.how">Comment ça marche</a>
       <a href="#mur" data-i18n="nav.wall">Le mur</a>
+      <a href="#pro" data-i18n="nav.pro">Espace pro</a>
       <a href="#soutenir" data-i18n="nav.support" data-support-link hidden>Soutenir</a>
     </nav>
     <div class="langs" role="group" data-i18n-attr="aria-label:a.lang" aria-label="Langue">
@@ -940,6 +1055,23 @@
               <p class="mm-q" id="mockQ"></p>
               <div class="mm-btns"><span style="background:var(--neg)" data-i18n="ans.neg"></span><span style="background:var(--none)" data-i18n="ans.none"></span><span style="background:var(--pos)" data-i18n="ans.pos"></span></div>
             </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="sec" id="pro-band" style="padding-top:clamp(40px,6vw,72px);padding-bottom:0">
+      <div class="wrap">
+        <div class="p-band" data-reveal>
+          <span class="p-band-ico"><i data-lucide="briefcase-business"></i></span>
+          <div>
+            <h2 data-i18n-html="pro.band.t">Vous êtes un <em>professionnel</em> ?</h2>
+            <p data-i18n="pro.band.p"></p>
+            <div class="p-band-avs" id="proBandAvs" aria-hidden="true"></div>
+          </div>
+          <div class="p-band-act">
+            <button class="btn btn-pos btn-lg" type="button" data-go="#pro"><i data-lucide="store"></i><span data-i18n="pro.band.cta">Créer ma page pro</span></button>
+            <a class="btn btn-glass" href="pros" data-page-link="pros"><span data-i18n="nav.pros">Annuaire des pros</span><i data-lucide="arrow-right" class="flip"></i></a>
           </div>
         </div>
       </div>
@@ -1134,6 +1266,26 @@
       </div>
     </section>
   </div>
+
+  <!-- ===================== Espace pro ===================== -->
+  <div id="proView" hidden>
+    <section class="w-hero">
+      <div class="w-rings" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+      <div class="wrap">
+        <p class="kicker"><span class="dots3"><i></i><i></i><i></i></span><span data-i18n="nav.pro">Espace pro</span></p>
+        <h1 data-i18n-html="pro.title" tabindex="-1" id="pTitle">Votre page <em>professionnelle</em>.</h1>
+        <p class="lead" data-i18n="pro.sub"></p>
+        <ul class="s-why">
+          <li><span><i data-lucide="target"></i></span><span data-i18n="pro.why.1"></span></li>
+          <li><span><i data-lucide="search"></i></span><span data-i18n="pro.why.2"></span></li>
+          <li><span><i data-lucide="mail-check"></i></span><span data-i18n="pro.why.3"></span></li>
+        </ul>
+      </div>
+    </section>
+    <section class="sec">
+      <div class="wrap" id="proBody"></div>
+    </section>
+  </div>
 </main>
 
 <footer class="site-foot">
@@ -1153,6 +1305,8 @@
       <a href="#resultat" data-i18n="nav.results">Mon résultat</a>
       <a href="#soutenir" data-i18n="nav.support" data-support-link hidden>Soutenir</a>
       <a href="questions" data-i18n="nav.allq" data-page-link="questions">Toutes les questions</a>
+      <a href="#pro" data-i18n="nav.pro">Espace pro</a>
+      <a href="pros" data-i18n="nav.pros" data-page-link="pros">Annuaire des pros</a>
     </div>
     <div class="f-bottom">
       <span><span data-i18n="ft.by">Un projet de</span> <a href="https://dehini.com/" style="color:#fff;font-weight:700">Mohammed Dehini</a> · dehini.com</span>
@@ -1275,6 +1429,7 @@
     <div class="me-actions">
       <button class="btn btn-line" type="button" data-go="#resultat"><i data-lucide="chart-pie"></i><span data-i18n="nav.results">Mon résultat</span></button>
       <button class="btn btn-line" type="button" data-go="#messages"><i data-lucide="message-circle"></i><span data-i18n="nav.msg">Messages</span></button>
+      <button class="btn btn-line" type="button" data-go="#pro"><i data-lucide="briefcase-business"></i><span data-i18n="nav.pro">Espace pro</span></button>
       <button class="btn btn-line" type="button" id="logoutBtn"><i data-lucide="log-out" class="flip"></i><span data-i18n="me.logout">Se déconnecter</span></button>
     </div>
     <details class="danger-zone">
@@ -1320,6 +1475,28 @@
       <button class="btn btn-pos btn-lg" type="submit" data-i18n="au.reset.submit">Enregistrer et me connecter</button>
       <p class="form-err" role="alert"></p>
     </form>
+  </div>
+</dialog>
+
+<dialog class="dlg" id="subDlg">
+  <form method="dialog" class="dlg-x"><button data-i18n-attr="aria-label:a.close" aria-label="Fermer"><i data-lucide="x"></i></button></form>
+  <div class="dlg-body">
+    <form class="auth-form" id="subForm" novalidate>
+      <span class="sub-ico" aria-hidden="true"><i data-lucide="bell-ring"></i></span>
+      <h2 data-i18n="sub.t">Ne ratez pas l'expérience qui vous aidera</h2>
+      <p class="dlg-intro" id="subIntro"></p>
+      <label class="field"><span data-i18n="au.email">Adresse email</span><input name="email" type="email" autocomplete="email" maxlength="190" required dir="ltr"></label>
+      <button class="btn btn-pos btn-lg" type="submit"><i data-lucide="bell"></i><span data-i18n="sub.cta">Me prévenir par email</span></button>
+      <p class="form-err" role="alert"></p>
+      <p class="fine" data-i18n="sub.fine"></p>
+      <div class="auth-links" style="justify-content:center;margin-top:10px"><button type="button" class="link" data-auth="signup" data-i18n="sub.account">Je préfère créer un compte</button></div>
+    </form>
+    <div id="subDone" hidden>
+      <span class="sub-ico ok" aria-hidden="true"><i data-lucide="mail-check"></i></span>
+      <h2 data-i18n="sub.done.t">Vérifiez votre boîte mail</h2>
+      <p class="dlg-intro" id="subDoneP"></p>
+      <form method="dialog"><button class="btn btn-ink btn-lg" style="width:100%" data-i18n="sub.done.ok">Compris</button></form>
+    </div>
   </div>
 </dialog>
 
@@ -1700,7 +1877,105 @@ const T = {
   "wt.title": ["Et le reste du <em>monde</em> ?", "وماذا عن بقية <em>العالم</em>؟", "What about the rest of the <em>world</em>?"],
   "wt.p": ["Découvrez en direct comment tous les participants ont vécu ces expériences : les plus positives, les plus difficiles, et où vous vous situez.", "اكتشف مباشرة كيف عاش كل المشاركين هذه التجارب: الأكثر إيجابية، والأصعب، وأين تقف أنت.", "See live how all participants lived these experiences: the most positive, the hardest, and where you stand."],
   "wt.cta": ["Explorer l'impact mondial", "استكشف الأثر العالمي", "Explore world impact"],
-  "rs.more": ["Afficher plus de réponses", "عرض المزيد من الإجابات", "Show more answers"],
+  "rs.more": ["Afficher plus de réponses", "عرض المزيد من الإجابات", "Show more answers"],  "nav.pro": ["Espace pro", "الفضاء المهني", "Pro space"],
+  "nav.pros": ["Annuaire des pros", "دليل المهنيين", "Pro directory"],
+  "pro.band.t": ["Vous êtes un <em>professionnel</em> ?", "هل أنت <em>مهني</em>؟", "Are you a <em>professional</em>?"],
+  "pro.band.p": ["Entreprise, auto-entrepreneur, profession libérale ou association : créez votre page gratuite, liez-la aux questions de votre domaine et soyez visible auprès de ceux qui vivent ces expériences.", "شركة أو مقاول ذاتي أو مهنة حرة أو جمعية: أنشئ صفحتك مجاناً، واربطها بأسئلة مجالك، وكن ظاهراً لدى من يعيشون هذه التجارب.", "Company, freelancer, licensed professional or non-profit: create your free page, link it to the questions in your field and be seen by the people living these experiences."],
+  "pro.band.cta": ["Créer ma page pro", "أنشئ صفحتي المهنية", "Create my pro page"],
+  "pro.title": ["Votre page <em>professionnelle</em>.", "صفحتك <em>المهنية</em>.", "Your <em>professional</em> page."],
+  "pro.sub": ["Mettez votre expérience au service de ceux qui en ont besoin : votre page apparaît à côté des questions de votre domaine, et vos expériences positives sont envoyées par email à ceux qui y ont répondu « négatif ».", "ضع خبرتك في خدمة من يحتاجها: تظهر صفحتك بجانب أسئلة مجالك، وتُرسَل تجاربك الإيجابية بالبريد إلى من أجابوا عنها بـ«سلبي».", "Put your experience to work for those who need it: your page appears next to the questions in your field, and your positive experiences are emailed to people who answered “negative”."],
+  "pro.why.1": ["Visible sur les questions de votre domaine", "ظاهر في أسئلة مجالك", "Shown on the questions in your field"],
+  "pro.why.2": ["Une page référencée sur Google", "صفحة تظهر في محركات البحث", "A page indexed by search engines"],
+  "pro.why.3": ["Vos expériences envoyées à ceux qu'elles aident", "تجاربك تصل إلى من تساعدهم", "Your experiences sent to those they help"],
+  "pro.out.t": ["Ouvrez votre page pro en 2 minutes", "افتح صفحتك المهنية في دقيقتين", "Open your pro page in 2 minutes"],
+  "pro.out.p": ["Il suffit d'un compte gratuit. Votre page pro y est rattachée : vous seul pouvez la modifier.", "يكفي حساب مجاني. صفحتك المهنية مرتبطة به: أنت وحدك من يعدّلها.", "All it takes is a free account. Your pro page is attached to it: only you can edit it."],
+  "pro.step.1.t": ["Décrivez votre activité", "صِف نشاطك", "Describe your business"],
+  "pro.step.1.p": ["Nom, domaine, ville, contacts et logo.", "الاسم والمجال والمدينة ووسائل الاتصال والشعار.", "Name, field, city, contacts and logo."],
+  "pro.step.2.t": ["Choisissez vos questions", "اختر أسئلتك", "Pick your questions"],
+  "pro.step.2.p": ["Le site vous propose celles qui correspondent à votre domaine et à vos mots-clés.", "يقترح عليك الموقع الأسئلة المناسبة لمجالك وكلماتك المفتاحية.", "The site suggests the ones matching your field and keywords."],
+  "pro.step.3.t": ["Partagez vos expériences", "شارك تجاربك", "Share your experiences"],
+  "pro.step.3.p": ["Publiées au nom de votre page, sur les questions et dans les emails.", "تُنشر باسم صفحتك، في الأسئلة وفي رسائل البريد.", "Published under your page's name, on the questions and in emails."],
+  "pro.new.t": ["Créez votre page", "أنشئ صفحتك", "Create your page"],
+  "pro.edit.t": ["Votre profil", "ملفك", "Your profile"],
+  "pro.f.name": ["Nom de l'entreprise ou nom professionnel", "اسم الشركة أو الاسم المهني", "Business or professional name"],
+  "pro.f.kind": ["Type de profil", "نوع الملف", "Profile type"],
+  "pro.f.domain": ["Domaine d'activité", "مجال النشاط", "Field"],
+  "pro.f.city": ["Ville", "المدينة", "City"],
+  "pro.f.kw": ["Mots-clés", "كلمات مفتاحية", "Keywords"],
+  "pro.f.kw.h": ["Séparés par des virgules : ils servent à vous proposer des questions.", "مفصولة بفواصل: تُستعمل لاقتراح الأسئلة عليك.", "Comma-separated: used to suggest questions to you."],
+  "pro.f.bio": ["Présentation", "تقديم", "About"],
+  "pro.f.bio.ph": ["Ce que vous faites, pour qui, et comment vous aidez…", "ماذا تفعل، ولمن، وكيف تساعد…", "What you do, for whom, and how you help…"],
+  "pro.f.web": ["Site web", "الموقع الإلكتروني", "Website"],
+  "pro.f.phone": ["Téléphone / WhatsApp", "الهاتف / واتساب", "Phone / WhatsApp"],
+  "pro.f.email": ["Email de contact (public)", "بريد التواصل (علني)", "Contact email (public)"],
+  "pro.f.public": ["Ces informations sont visibles sur votre page publique.", "تظهر هذه المعلومات في صفحتك العامة.", "This information is shown on your public page."],
+  "pro.saved": ["Page enregistrée.", "تم حفظ الصفحة.", "Page saved."],
+  "pro.created": ["Votre page pro est en ligne !", "صفحتك المهنية منشورة!", "Your pro page is live!"],
+  "pro.view": ["Voir ma page", "عرض صفحتي", "View my page"],
+  "pro.share.text": ["Découvrez {name} sur le Défi Impact", "اكتشف {name} في تحدي الأثر", "Discover {name} on the Impact Challenge"],
+  "pro.hidden": ["Votre page est masquée par la modération. Contactez-nous si c'est une erreur.", "صفحتك مخفية من طرف الإشراف. راسلنا إن كان ذلك خطأ.", "Your page has been hidden by moderation. Contact us if this is a mistake."],
+  "pro.verified": ["Vérifié", "موثّق", "Verified"],
+  "pro.featured": ["Sponsorisé", "إعلان", "Sponsored"],
+  "pro.logo.t": ["Logo", "الشعار", "Logo"],
+  "pro.logo.btn": ["Choisir un logo", "اختر شعاراً", "Choose a logo"],
+  "pro.logo.h": ["JPEG, PNG ou WebP, 3 Mo maximum. Une image carrée rend mieux.", "JPEG أو PNG أو WebP، 3 ميغا كحد أقصى. الصورة المربعة أفضل.", "JPEG, PNG or WebP, 3 MB max. A square image looks best."],
+  "pro.logo.ok": ["Logo mis à jour.", "تم تحديث الشعار.", "Logo updated."],
+  "pro.logo.first": ["Créez d'abord votre page pour ajouter un logo.", "أنشئ صفحتك أولاً لإضافة شعار.", "Create your page first to add a logo."],
+  "pro.tips.1": ["Une présentation d'au moins 80 caractères rend votre page visible sur Google.", "تقديم من 80 حرفاً على الأقل يجعل صفحتك تظهر في محركات البحث.", "An “about” of at least 80 characters makes your page visible on search engines."],
+  "pro.tips.2": ["Choisissez les questions où votre expérience aide vraiment.", "اختر الأسئلة التي تفيد فيها خبرتك حقاً.", "Pick the questions where your experience truly helps."],
+  "pro.tips.3": ["Restez bienveillant : pas de publicité agressive dans les expériences.", "حافظ على اللطف: لا إشهار مبالغ فيه في التجارب.", "Stay kind: no pushy advertising in experiences."],
+  "pro.qs.t": ["Questions liées à votre activité", "الأسئلة المرتبطة بنشاطك", "Questions linked to your business"],
+  "pro.qs.p": ["Votre page apparaît à côté de ces questions, dans le défi et sur leurs pages.", "تظهر صفحتك بجانب هذه الأسئلة، في التحدي وفي صفحاتها.", "Your page appears next to these questions, in the challenge and on their pages."],
+  "pro.qs.sug": ["Suggestions", "اقتراحات", "Suggestions"],
+  "pro.qs.sel": ["Sélection", "المختارة", "Selected"],
+  "pro.qs.search": ["Rechercher une question…", "ابحث عن سؤال…", "Search a question…"],
+  "pro.qs.none": ["Aucune question ne correspond.", "لا يوجد سؤال مطابق.", "No matching question."],
+  "pro.qs.sug.none": ["Ajoutez des mots-clés à votre profil pour de meilleures suggestions.", "أضف كلمات مفتاحية إلى ملفك للحصول على اقتراحات أفضل.", "Add keywords to your profile for better suggestions."],
+  "pro.qs.save": ["Enregistrer la sélection", "حفظ الاختيار", "Save selection"],
+  "pro.qs.saved": ["Sélection enregistrée.", "تم حفظ الاختيار.", "Selection saved."],
+  "pro.qs.max": ["{n} questions au maximum.", "{n} سؤالاً كحد أقصى.", "{n} questions maximum."],
+  "pro.qs.dirty": ["Modifications non enregistrées", "تعديلات غير محفوظة", "Unsaved changes"],
+  "pro.exp.t": ["Vos expériences", "تجاربك", "Your experiences"],
+  "pro.exp.p": ["Publiez, au nom de votre page, une expérience positive liée à l'une de vos questions. Elle s'affiche sur la question et sur votre page, et part par email à ceux qui y ont répondu « négatif ».", "انشر باسم صفحتك تجربة إيجابية مرتبطة بأحد أسئلتك. تظهر في السؤال وفي صفحتك، وتُرسل بالبريد إلى من أجابوا عنه بـ«سلبي».", "Publish, under your page's name, a positive experience linked to one of your questions. It shows on the question and on your page, and is emailed to people who answered “negative”."],
+  "pro.exp.q": ["Question", "السؤال", "Question"],
+  "pro.exp.pick": ["Choisissez une question…", "اختر سؤالاً…", "Choose a question…"],
+  "pro.exp.noq": ["Sélectionnez d'abord des questions ci-dessus.", "اختر أسئلة أعلاه أولاً.", "Select questions above first."],
+  "pro.exp.publish": ["Publier au nom de ma page", "انشر باسم صفحتي", "Publish under my page"],
+  "pro.exp.update": ["Mettre à jour", "تحديث", "Update"],
+  "pro.exp.none": ["Aucune expérience publiée pour l'instant.", "لم تُنشر أي تجربة بعد.", "No experience published yet."],
+  "pro.del.t": ["Supprimer ma page pro", "حذف صفحتي المهنية", "Delete my pro page"],
+  "pro.del.p": ["La page, son logo et les expériences publiées en son nom seront supprimés. Votre compte et vos récits personnels restent.", "ستُحذف الصفحة وشعارها والتجارب المنشورة باسمها. يبقى حسابك وقصصك الشخصية.", "The page, its logo and the experiences published under its name will be deleted. Your account and personal stories stay."],
+  "pro.del.confirm": ["Supprimer définitivement votre page pro ?", "هل تريد حذف صفحتك المهنية نهائياً؟", "Delete your pro page for good?"],
+  "pro.deleted": ["Page pro supprimée.", "تم حذف الصفحة المهنية.", "Pro page deleted."],
+  "pros.strip": ["Des pros en parlent", "مهنيون يتحدثون عن هذا", "Pros on this topic"],
+  "story.pro": ["Pro", "مهني", "Pro"],
+  "sub.t": ["Ne ratez pas l'expérience qui vous aidera", "لا تفوّت التجربة التي ستساعدك", "Don't miss the experience that will help you"],
+  "sub.p": ["Vous avez répondu « négatif » à certaines questions. Laissez votre email : dès qu'une personne ou un professionnel partage une expérience positive sur l'une d'elles, nous vous l'envoyons. Sans compte.", "أجبت بـ«سلبي» عن بعض الأسئلة. اترك بريدك: بمجرد أن يشارك شخص أو مهني تجربة إيجابية حول أحدها، نرسلها إليك. دون حساب.", "You answered “negative” to some questions. Leave your email: as soon as someone or a professional shares a positive experience on one of them, we'll send it to you. No account needed."],
+  "sub.p.q": ["Personne n'a encore partagé d'expérience positive sur « {q} ». Laissez votre email : nous vous l'enverrons dès qu'une personne ou un professionnel le fera. Sans compte.", "لم يشارك أحد بعد تجربة إيجابية حول «{q}». اترك بريدك: سنرسلها إليك بمجرد أن يفعل ذلك شخص أو مهني. دون حساب.", "Nobody has shared a positive experience on “{q}” yet. Leave your email: we'll send it to you as soon as someone or a professional does. No account needed."],
+  "sub.cta": ["Me prévenir par email", "نبّهني بالبريد", "Notify me by email"],
+  "sub.fine": ["Un email de confirmation vous sera envoyé. Au plus un email toutes les 6 heures, désinscription en un clic.", "ستصلك رسالة تأكيد. رسالة واحدة كل 6 ساعات على الأكثر، وإلغاء الاشتراك بنقرة.", "You'll get a confirmation email. At most one email every 6 hours, one-click unsubscribe."],
+  "sub.account": ["Je préfère créer un compte", "أفضّل إنشاء حساب", "I'd rather create an account"],
+  "sub.done.t": ["Vérifiez votre boîte mail", "تفقّد بريدك", "Check your inbox"],
+  "sub.done.p": ["Nous avons envoyé un lien de confirmation à {email}. Cliquez dessus pour activer les alertes.", "أرسلنا رابط تأكيد إلى {email}. انقر عليه لتفعيل التنبيهات.", "We sent a confirmation link to {email}. Click it to turn on alerts."],
+  "sub.done.ok": ["Compris", "حسناً", "Got it"],
+  "sub.ok": ["C'est confirmé : vous recevrez les nouvelles expériences positives par email.", "تم التأكيد: ستصلك التجارب الإيجابية الجديدة بالبريد.", "Confirmed: you'll receive new positive experiences by email."],
+  "sub.bad": ["Lien de confirmation invalide ou expiré.", "رابط التأكيد غير صالح أو منتهي الصلاحية.", "Invalid or expired confirmation link."],
+  "sub.acc": ["C'est noté : vous recevrez ces expériences par email.", "تم: ستصلك هذه التجارب بالبريد.", "Done: you'll receive these experiences by email."],
+  "sub.acc.unv": ["C'est noté. Confirmez votre adresse email pour recevoir ces expériences.", "تم. أكّد بريدك الإلكتروني لتصلك هذه التجارب.", "Done. Confirm your email address to receive these experiences."],
+  "ot.sub": ["Recevez-la par email dès qu'une expérience positive est publiée.", "استلمها بالبريد فور نشر تجربة إيجابية.", "Get it by email as soon as a positive experience is published."],
+  "ot.sub.on": ["Vous serez prévenu par email.", "سيصلك تنبيه بالبريد.", "You'll be notified by email."],
+  "pro.f.pick": ["Choisissez…", "اختر…", "Choose…"],
+  "pro.tips.t": ["Conseils", "نصائح", "Tips"],
+  "pro.qs.sug.l": ["Suggestions selon votre domaine et vos mots-clés", "اقتراحات حسب مجالك وكلماتك المفتاحية", "Suggestions based on your field and keywords"],
+  "pro.qs.found": ["Résultats de la recherche", "نتائج البحث", "Search results"],
+  "err.pro_domain": ["Choisissez votre domaine d'activité.", "اختر مجال نشاطك.", "Choose your field."],
+  "err.pro_pick": ["Choisissez une question.", "اختر سؤالاً.", "Choose a question."],
+  "err.no_pro": ["Créez d'abord votre page pro.", "أنشئ صفحتك المهنية أولاً.", "Create your pro page first."],
+  "err.pro_name": ["Indiquez le nom de votre activité (2 caractères minimum).", "أدخل اسم نشاطك (حرفان على الأقل).", "Enter your business name (2 characters minimum)."],
+  "err.pro_web": ["Adresse du site invalide.", "عنوان الموقع غير صالح.", "Invalid website address."],
+  "err.pro_too_many": ["60 questions au maximum.", "60 سؤالاً كحد أقصى.", "60 questions maximum."],
+  "err.logo_big": ["Image trop lourde (3 Mo maximum).", "الصورة كبيرة جداً (3 ميغا كحد أقصى).", "Image too large (3 MB max)."],
+  "err.logo_bad": ["Format non reconnu : utilisez une image JPEG, PNG ou WebP.", "صيغة غير معروفة: استعمل صورة JPEG أو PNG أو WebP.", "Unrecognised format: use a JPEG, PNG or WebP image."],
 };
 const LANGS = ["fr", "ar", "en"];
 const LANG_NAMES = { fr: "Français", ar: "العربية", en: "English" };
@@ -1791,10 +2066,11 @@ async function api(action, body, params, keepalive) {
   const opt = { credentials: "same-origin", headers: {}, keepalive: !!keepalive };
   if (body !== undefined) {
     opt.method = "POST";
-    opt.headers["Content-Type"] = "application/json";
+    const form = body instanceof FormData; // envoi de fichier (logo d'une page pro)
+    if (!form) opt.headers["Content-Type"] = "application/json";
     opt.headers["X-Requested-With"] = "impact";
     if (csrf) opt.headers["X-CSRF"] = csrf;
-    opt.body = JSON.stringify(body);
+    opt.body = form ? body : JSON.stringify(body);
   }
   let res, data;
   try { res = await fetch(url, opt); } catch (e) { throw new ApiError("network"); }
@@ -1837,6 +2113,7 @@ function setAnswer(id, v) {
   clearTimeout(flushTimer);
   flushTimer = setTimeout(flush, 700);
   refreshLight();
+  if (v === -1) setTimeout(maybeAskSub, 1100);
 }
 async function flush(keepalive) {
   await apiReady;
@@ -2098,7 +2375,11 @@ function storyCard(st, showQ) {
     el("p", { class: "story-imp" }, el("b", { text: t("story.impact") }), el("span", { dir: "auto", text: st.imp })),
     el("button", { class: "read-more", type: "button", hidden: true, onclick: e => { e.currentTarget.closest(".story").classList.add("open"); e.currentTarget.remove(); } }, t("story.more")),
     el("footer", { class: "story-foot" },
-      el("span", { class: "who" }, el("span", { class: "av", text: initial(st.author) || "·" }), el("span", { dir: "auto", text: st.author || t("story.anon") })),
+      st.pro
+        // Récit publié au nom d'une page pro : son logo, son nom (lien vers sa page) et la mention « Pro ».
+        ? el("span", { class: "who" }, proAvatar(st.pro, "xs"), el("a", { href: proUrl(st.pro), dir: "auto", text: st.pro.name }),
+          el("span", { class: "pro-tag", title: st.pro.verified ? t("pro.verified") : null }, st.pro.verified ? ic("badge-check") : null, t("story.pro")))
+        : el("span", { class: "who" }, el("span", { class: "av", text: initial(st.author) || "·" }), el("span", { dir: "auto", text: st.author || t("story.anon") })),
       reactBtn(st, 1), reactBtn(st, -1),
       st.dm ? el("button", { class: "dm", type: "button", title: t("story.write"), "aria-label": t("story.write"), onclick: () => openThread({ sid: st.id }) }, ic("message-circle")) : null,
       st.self ? null : el("button", { class: "report", type: "button", title: t("story.report"), "aria-label": t("story.report"), onclick: () => reportStory(st) }, ic("flag"))));
@@ -2318,6 +2599,7 @@ function openQDlg(id) {
       ? el("button", { class: "btn btn-pos", type: "button", onclick: () => { $("#qDlg").close(); openQuiz("all", id); } }, ic("play"), el("span", { text: t("qd.answer") }))
       : el("button", { class: "btn btn-ink", type: "button", onclick: () => { $("#qDlg").close(); go("#resultat/" + id); } }, ic("chart-pie"), el("span", { text: t("qd.see") })),
       el("a", { class: "btn btn-line", href: pageUrl("q/" + id) }, ic("file-text"), el("span", { text: t("qd.page") }))),
+    proStrip(id),
     s.stories ? othersBox(q) : null);
   if (!$("#qDlg").open) $("#qDlg").showModal();
   icons();
@@ -2632,7 +2914,8 @@ function resultItem(q) {
   return el("article", { class: "r-item v-" + KEY[v], id: "r-" + q.id, dataset: { q: q.id } },
     el("div", { class: "r-top" }, catChip(q.cat), el("span", { class: "r-num", text: "#" + q.id })),
     el("div", { class: "r-head" }, el("h3", { class: "r-q", text: qt(q) }), segControl(q.id, v)),
-    v === 1 ? storyBox(q) : othersBox(q));
+    v === 1 ? storyBox(q) : othersBox(q),
+    proStrip(q.id));
 }
 function rerenderItem(id) {
   const old = $("#r-" + id);
@@ -2827,7 +3110,7 @@ function fillOthers(box, id) {
   if (!o) { list.replaceChildren(el("div", { class: "skel" })); return; }
   const items = o.items.filter(s => !S.reported[s.id]);
   if (!items.length) {
-    list.replaceChildren(el("p", { class: "msg", text: t("ot.empty") }));
+    list.replaceChildren(el("p", { class: "msg", text: t("ot.empty") }), ans(id) === -1 ? subCta(id) : null);
     foot.append(el("button", { class: "btn btn-xs btn-line", type: "button", onclick: () => share(ti("share.invite")) }, ic("share-2"), el("span", { text: t("ot.invite") })));
     return;
   }
@@ -2867,8 +3150,8 @@ async function moreOthers(id, box, btn) {
 }
 
 /* --- Partage & recommencer --- */
-async function share(text) {
-  const url = location.origin + location.pathname;
+async function share(text, link) {
+  const url = link || location.origin + location.pathname;
   if (navigator.share) {
     try { await navigator.share({ title: t("brand"), text, url }); return; }
     catch (e) { if (e.name === "AbortError") return; }
@@ -2958,6 +3241,7 @@ function ownStoryTokens() {
 }
 function afterSignIn(d, msg) {
   applyServer(d);
+  setProMe(undefined);
   for (const k of Object.keys(OTH)) delete OTH[k];
   loadFeed(); // « dm » / « self » dépendent de la personne connectée
   renderAll();
@@ -2972,6 +3256,7 @@ function signedOut(expired) {
   S.answers = {}; S.stories = {}; S.pending = {}; S.drafts = {}; S.react = {}; S.nudged = 0;
   S.device = newDevice();
   INBOX = null;
+  setProMe(undefined);
   setUnread(0);
   for (const k of Object.keys(OTH)) delete OTH[k];
   loadFeed();
@@ -3356,6 +3641,405 @@ bindForm($("#supportForm"), async v => {
   location.href = d.url; // page de paiement SATIM
 });
 
+
+/* ======================================================= Professionnels */
+// Index public des pages pro (logo, nom, lien) et des questions auxquelles chacune est liée.
+let PROS = { list: [], by: {}, q: {}, kinds: {}, domains: {} }, PROS_AT = 0, PROS_LOAD = null;
+function loadPros() {
+  if (PROS_LOAD) return PROS_LOAD;
+  return (PROS_LOAD = (async () => {
+    await apiReady;
+    let ok = false;
+    if (online) {
+      try {
+        const d = await api("pros");
+        const list = (d.pros || []).sort((a, b) => (b.featured - a.featured) || (b.verified - a.verified));
+        PROS = { list, by: Object.fromEntries(list.map(p => [p.id, p])), q: d.q || {}, kinds: d.kinds || {}, domains: d.domains || {} };
+        PROS_AT = Date.now();
+        ok = true;
+      } catch (e) {}
+    }
+    PROS_LOAD = null;
+    refreshPros();
+    return ok;
+  })());
+}
+const label3 = row => (row ? row[LANGS.indexOf(lang)] || row[0] : "");
+const proUrl = p => pageUrl("pro/" + p.slug);
+const hue = str => { let h = 0; for (const ch of String(str)) h = (h * 31 + ch.codePointAt(0)) >>> 0; return h % 360; };
+const proInitials = name => String(name || "").trim().split(/\s+/).slice(0, 2).map(w => [...w][0] || "").join("") || "·";
+const fold = str => String(str || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+function proAvatar(p, size) {
+  return el("span", { class: "pav" + (size ? " " + size : ""), style: "--h:" + hue(p.name), "aria-hidden": "true" },
+    p.logo ? el("img", { src: p.logo, alt: "", loading: "lazy", decoding: "async" }) : proInitials(p.name));
+}
+const prosFor = qid => (PROS.q[qid] || []).map(id => PROS.by[id]).filter(Boolean).sort((a, b) => (b.featured - a.featured) || (b.verified - a.verified));
+
+/** « Des pros en parlent » : les pages pro liées à une question (avatars + noms, vers leur page). */
+function proStrip(qid) {
+  const box = el("div", { class: "pros-strip", dataset: { pq: qid }, hidden: true });
+  fillProStrip(box);
+  return box;
+}
+function fillProStrip(box) {
+  const list = prosFor(+box.dataset.pq);
+  box.hidden = !list.length;
+  if (!list.length) { box.replaceChildren(); return; }
+  box.replaceChildren(
+    el("p", { class: "ps-t" }, ic("briefcase-business"), el("span", { text: t("pros.strip") })),
+    el("div", { class: "ps-list" }, ...list.slice(0, 6).map(p => el("a", { class: "ps-item" + (p.featured ? " feat" : ""), href: proUrl(p), rel: p.featured ? "sponsored" : null },
+      proAvatar(p, "xs"), el("span", { class: "nm", dir: "auto", text: p.name }),
+      p.verified ? ic("badge-check", "vf") : null,
+      p.featured ? el("span", { class: "sp", text: t("pro.featured") }) : null))));
+  icons();
+}
+function refreshPros() {
+  $$(".pros-strip[data-pq]").forEach(fillProStrip);
+  $("#proBandAvs").replaceChildren(...PROS.list.slice(0, 8).map(p => proAvatar(p, "sm")));
+}
+
+/* --- Espace pro (#pro) : la page du compte connecté --- */
+let PRO_ME;            // undefined : pas encore chargée · null : pas de page · false : erreur
+let PRO_SEL = null;    // questions cochées (pas encore enregistrées)
+let PRO_SUG = null, PRO_FIND = "", PRO_EXP = null, PRO_LOAD = null, SUG_LOAD = false, PRO_KEY = "";
+function setProMe(p, keepSel) {
+  PRO_ME = p;
+  if (!p) { PRO_SEL = null; PRO_SUG = null; PRO_EXP = null; PRO_FIND = ""; return; }
+  if (!keepSel || !PRO_SEL) PRO_SEL = new Set(p.questions);
+}
+function loadProMe() {
+  if (PRO_LOAD) return PRO_LOAD;
+  return (PRO_LOAD = (async () => {
+    await apiReady;
+    try { if (online && user) setProMe((await api("pro_me")).pro); }
+    catch (e) { PRO_ME = false; }
+    PRO_LOAD = null;
+    renderPro(true);
+  })());
+}
+const sameSet = (a, list) => a.size === list.length && list.every(x => a.has(x));
+
+/** Toute la vue. Sans « force », ne reconstruit que si la langue, le compte ou la connexion a changé (pour ne pas effacer une saisie). */
+function renderPro(force) {
+  if ($("#proView").hidden) return;
+  const key = [lang, user ? user.email : "-", online, PRO_ME === undefined ? "u" : PRO_ME ? PRO_ME.id : String(PRO_ME), !!PROS_AT].join("|");
+  if (!force && key === PRO_KEY) return;
+  PRO_KEY = key;
+  const body = $("#proBody");
+  const msg = (icon, k, retry) => el("div", { class: "empty" }, ic(icon), el("p", { text: t(k) }),
+    retry ? el("button", { class: "btn btn-line btn-sm", style: "margin-top:12px", type: "button", onclick: retry }, ic("rotate-ccw"), el("span", { text: t("err.generic") })) : null);
+  let view;
+  if (online === false) view = msg("cloud-off", "ot.offline");
+  else if (online === null) view = el("div", { class: "skel" });
+  else if (!user) view = proOut();
+  else if (!PROS_AT) { view = el("div", { class: "skel" }); loadPros().then(ok => (ok ? renderPro(true) : body.replaceChildren(msg("cloud-off", "err.generic", () => renderPro(true))))); }
+  else if (PRO_ME === undefined) { view = el("div", { class: "skel" }); loadProMe(); }
+  else if (PRO_ME === false) view = msg("circle-alert", "err.generic", () => { PRO_ME = undefined; renderPro(true); });
+  else view = el("div", { class: "p-wrap" },
+    PRO_ME ? proHead() : null,
+    el("div", { class: "p-grid" }, proFormCard(), proSide()),
+    PRO_ME ? el("article", { class: "w-card", id: "proQs" }) : null,
+    PRO_ME ? el("article", { class: "w-card", id: "proExps" }) : null,
+    PRO_ME ? proDanger() : null);
+  body.replaceChildren(view);
+  if (PRO_ME) { renderProQs(); renderProExps(); }
+  icons();
+}
+
+function proOut() {
+  return el("div", { class: "w-card p-out" },
+    el("div", {},
+      el("h2", { text: t("pro.out.t") }),
+      el("p", { class: "w-note", text: t("pro.out.p") }),
+      el("div", { class: "row" },
+        el("button", { class: "btn btn-pos btn-lg", type: "button", dataset: { auth: "signup" } }, ic("user-plus"), el("span", { text: t("acc.create") })),
+        el("button", { class: "btn btn-line btn-lg", type: "button", dataset: { auth: "login" } }, el("span", { text: t("join.login") })))),
+    el("ol", { class: "p-steps" }, ...[1, 2, 3].map(i => el("li", {}, el("span", {}, el("b", { text: t("pro.step." + i + ".t") }), t("pro.step." + i + ".p"))))));
+}
+
+function proHead() {
+  const p = PRO_ME, live = p.status === "active";
+  const meta = [label3(PROS.kinds[p.kind]), label3(PROS.domains[p.domain]), p.city].filter(Boolean).join(" · ");
+  return el("article", { class: "w-card p-head" },
+    proAvatar(p, "lg"),
+    el("div", { class: "info" },
+      el("h2", { dir: "auto", text: p.name }),
+      el("p", { class: "meta", dir: "auto", text: meta }),
+      el("div", { class: "p-badges" },
+        p.verified ? el("span", { class: "p-badge vf" }, ic("badge-check"), t("pro.verified")) : null,
+        p.featured ? el("span", { class: "p-badge ft" }, ic("megaphone"), t("pro.featured")) : null,
+        live ? null : el("span", { class: "p-badge hd" }, ic("eye-off"), t("pro.hidden")))),
+    live ? el("div", { class: "acts" },
+      el("a", { class: "btn btn-ink btn-sm", href: proUrl(p), target: "_blank", rel: "noopener" }, ic("external-link"), el("span", { text: t("pro.view") })),
+      el("button", { class: "btn btn-line btn-sm", type: "button", onclick: () => share(t("pro.share.text", { name: p.name }), new URL(proUrl(p), location.href).href) }, ic("share-2"), el("span", { text: t("rs.share") }))) : null);
+}
+
+function proFormCard() {
+  const p = PRO_ME || {};
+  const field = (k, ctl, hint) => el("label", { class: "field" }, el("span", { text: t(k) }), ctl, hint ? (hint.nodeType ? hint : el("small", { text: hint })) : null);
+  const input = (name, max, val, type, dir) => el("input", { name, maxlength: max, value: val || "", type: type || "text", dir: dir || "auto" });
+  const opts = (obj, cur) => Object.entries(obj).map(([k, row]) => el("option", { value: k, selected: k === cur }, label3(row)));
+  const bio = el("textarea", { name: "bio", rows: 4, maxlength: 800, dir: "auto", placeholder: t("pro.f.bio.ph") }, p.bio || "");
+  const cnt = el("small");
+  const upd = () => (cnt.textContent = fmt(bio.value.length) + " / " + fmt(800));
+  bio.addEventListener("input", upd); upd();
+  const form = el("form", { class: "p-form", novalidate: true },
+    field("pro.f.name", el("input", { name: "name", maxlength: 80, required: true, dir: "auto", value: p.name || "", autocomplete: "organization" })),
+    el("div", { class: "two" },
+      field("pro.f.kind", el("select", { name: "kind" }, ...opts(PROS.kinds, p.kind || "company"))),
+      field("pro.f.domain", el("select", { name: "domain", required: true }, el("option", { value: "", selected: !p.domain, disabled: true }, t("pro.f.pick")), ...opts(PROS.domains, p.domain)))),
+    el("div", { class: "two" }, field("pro.f.city", input("city", 60, p.city)), field("pro.f.kw", input("keywords", 200, p.keywords), t("pro.f.kw.h"))),
+    field("pro.f.bio", bio, cnt),
+    el("div", { class: "two" }, field("pro.f.web", input("website", 200, p.website, "url", "ltr")), field("pro.f.phone", input("phone", 24, p.phone, "tel", "ltr"))),
+    field("pro.f.email", input("email", 190, p.email, "email", "ltr")),
+    el("p", { class: "w-note", style: "margin:0 0 16px", text: t("pro.f.public") }),
+    el("button", { class: "btn btn-pos btn-lg", type: "submit" }, ic(PRO_ME ? "save" : "store"), el("span", { text: t(PRO_ME ? "me.save" : "pro.band.cta") })),
+    el("p", { class: "form-err", role: "alert" }));
+  bindForm(form, async v => {
+    if (String(v.name || "").trim().length < 2) throw new ApiError("pro_name");
+    if (!v.domain) throw new ApiError("pro_domain");
+    const was = PRO_ME;
+    const d = await api("pro_save", Object.assign(v, { lang }));
+    if (!was || was.domain !== d.pro.domain || was.keywords !== d.pro.keywords) PRO_SUG = null;
+    setProMe(d.pro, true);
+    toast(t(was ? "pro.saved" : "pro.created"));
+    renderPro(true);
+    if (!was) { burstFrom($("#proBody .p-head") || $("#pTitle"), 1); $("#proBody").scrollIntoView({ behavior: REDUCED ? "auto" : "smooth" }); }
+    loadPros();
+  });
+  return el("article", { class: "w-card" }, el("h3", { class: "p-t" }, ic("building-2"), el("span", { text: t(PRO_ME ? "pro.edit.t" : "pro.new.t") })), form);
+}
+
+function proSide() {
+  const p = PRO_ME;
+  let logo = null;
+  if (p) {
+    const file = el("input", { type: "file", accept: "image/jpeg,image/png,image/webp", "aria-label": t("pro.logo.btn") });
+    logo = el("label", { class: "btn btn-line btn-sm p-file" }, ic("upload"), el("span", { text: t("pro.logo.btn") }), file);
+    file.addEventListener("change", () => { if (file.files[0]) uploadLogo(file.files[0], logo); });
+  }
+  return el("div", { class: "p-wrap" },
+    el("article", { class: "w-card p-logo" },
+      el("h3", { class: "p-t", style: "margin:0" }, ic("image"), el("span", { text: t("pro.logo.t") })),
+      p ? proAvatar(p, "lg") : el("span", { class: "pav lg", style: "--h:30" }, ic("store")),
+      logo,
+      el("p", { class: "w-note", text: t(p ? "pro.logo.h" : "pro.logo.first") })),
+    el("article", { class: "w-card" },
+      el("h3", { class: "p-t" }, ic("lightbulb"), el("span", { text: t("pro.tips.t") })),
+      el("ul", { class: "p-tips" }, ...[1, 2, 3].map(i => el("li", {}, ic("check"), el("span", { text: t("pro.tips." + i) }))))));
+}
+async function uploadLogo(file, btn) {
+  if (file.size > 3 * 1024 * 1024) { toast(t("err.logo_big"), "err"); return; }
+  const fd = new FormData();
+  fd.append("logo", file);
+  btn.classList.add("busy");
+  try {
+    const d = await api("pro_logo", fd);
+    setProMe(d.pro, true);
+    toast(t("pro.logo.ok"));
+    renderPro(true);
+    loadPros();
+  } catch (e) { toast(errText(e), "err"); btn.classList.remove("busy"); }
+}
+
+/* Questions liées : suggestions (domaine + mots-clés), recherche dans toutes les questions. */
+function loadSuggest() {
+  if (SUG_LOAD || !PRO_ME) return;
+  SUG_LOAD = true;
+  api("pro_suggest", undefined, { domain: PRO_ME.domain, kw: PRO_ME.keywords || "" })
+    .then(d => (PRO_SUG = d.items), () => (PRO_SUG = []))
+    .then(() => { SUG_LOAD = false; renderProQList(); });
+}
+function renderProQs() {
+  const box = $("#proQs");
+  if (!box) return;
+  const find = el("input", { type: "search", placeholder: t("pro.qs.search"), "aria-label": t("pro.qs.search"), dir: "auto", autocomplete: "off" });
+  find.value = PRO_FIND;
+  let ft;
+  find.addEventListener("input", () => { clearTimeout(ft); ft = setTimeout(() => { PRO_FIND = find.value; renderProQList(); }, 150); });
+  box.replaceChildren(
+    el("h3", { class: "p-t" }, ic("list-checks"), el("span", { text: t("pro.qs.t") }), el("span", { class: "n", id: "proQn" })),
+    el("p", { class: "w-note", style: "margin-top:4px", text: t("pro.qs.p") }),
+    el("div", { class: "p-sel", id: "proSel" }),
+    el("div", { class: "p-qtools" }, el("label", { class: "field" }, find)),
+    el("p", { class: "ps-t", id: "proQLbl", style: "font-size:.8rem;font-weight:800;color:var(--ink-soft);margin-bottom:8px" }),
+    el("div", { class: "p-qlist", id: "proQList" }),
+    el("div", { class: "p-qfoot" },
+      el("p", { class: "w-note", id: "proQNote" }),
+      el("button", { class: "btn btn-pos", type: "button", id: "proQSave", onclick: saveProQs }, ic("save"), el("span", { text: t("pro.qs.save") }))));
+  renderProQList();
+}
+function renderProQList() {
+  const list = $("#proQList");
+  if (!list || !PRO_ME) return;
+  const term = fold(PRO_FIND.trim()), searching = term.length >= 2;
+  $("#proQLbl").textContent = t(searching ? "pro.qs.found" : "pro.qs.sug.l");
+  if (!searching && PRO_SUG === null) { list.replaceChildren(el("div", { class: "skel" })); loadSuggest(); }
+  else {
+    const ids = searching ? Q.filter(q => fold(qt(q)).includes(term) || fold(q.fr).includes(term)).slice(0, 60).map(q => q.id) : PRO_SUG.filter(id => QBY[id]);
+    list.replaceChildren(...(ids.length ? ids.map(proQRow) : [el("p", { class: "w-note", style: "margin:0", text: t(searching ? "pro.qs.none" : "pro.qs.sug.none") })]));
+    list.scrollTop = 0;
+  }
+  renderProSel();
+}
+function proQRow(id) {
+  const on = PRO_SEL.has(id);
+  const cb = el("input", { type: "checkbox", checked: on });
+  cb.addEventListener("change", () => toggleProQ(id, cb.checked));
+  return el("label", { class: "p-q" + (on ? " on" : ""), dataset: { q: id } }, cb, el("span", { dir: "auto", text: qText(id) }), catChip(QBY[id].cat));
+}
+function toggleProQ(id, on) {
+  if (on && PRO_SEL.size >= 60) { on = false; toast(t("pro.qs.max", { n: fmt(60) }), "err"); }
+  if (on) PRO_SEL.add(id); else PRO_SEL.delete(id);
+  $$(`.p-q[data-q="${id}"]`).forEach(r => { r.classList.toggle("on", on); $("input", r).checked = on; });
+  renderProSel();
+}
+function renderProSel() {
+  if (!$("#proSel")) return;
+  $("#proQn").textContent = fmt(PRO_SEL.size) + " / " + fmt(60);
+  $("#proSel").replaceChildren(...[...PRO_SEL].filter(id => QBY[id]).map(id => el("button", { type: "button", title: qText(id), onclick: () => toggleProQ(id, false) },
+    el("span", { dir: "auto", text: qText(id) }), ic("x"))));
+  const dirty = !sameSet(PRO_SEL, PRO_ME.questions);
+  $("#proQSave").disabled = !dirty;
+  $("#proQNote").textContent = dirty ? t("pro.qs.dirty") : "";
+  icons();
+}
+async function saveProQs(e) {
+  const btn = e.currentTarget;
+  btn.disabled = true;
+  try {
+    const d = await api("pro_questions_set", { qids: [...PRO_SEL] });
+    setProMe(d.pro, true);
+    toast(t("pro.qs.saved"));
+    renderProSel();
+    renderProExps();
+    loadPros();
+  } catch (err) { toast(errText(err), "err"); btn.disabled = false; }
+}
+
+/* Expériences publiées au nom de la page. */
+async function reloadProMe() {
+  try { setProMe((await api("pro_me")).pro, true); } catch (e) {}
+  renderProExps();
+  loadPros();
+}
+function renderProExps() {
+  const box = $("#proExps");
+  if (!box || !PRO_ME) return;
+  const p = PRO_ME, byQ = Object.fromEntries(p.stories.map(st => [st.qid, st]));
+  const qids = [...new Set([...p.questions, ...p.stories.map(st => st.qid)])].filter(id => QBY[id]);
+  const list = p.stories.length
+    ? el("div", { class: "p-exps" }, ...p.stories.map(st => el("div", { class: "p-exp" },
+        el("p", { class: "q" }, el("span", { class: "dotp" }), QBY[st.qid] ? el("a", { href: pageUrl("q/" + st.qid), dir: "auto", text: qText(st.qid) }) : "#" + st.qid),
+        el("p", { class: "x", dir: "auto", text: st.exp }),
+        el("div", { class: "f" }, statusBadge(st.status),
+          st.status === "published" ? el("span", { class: "likes-n", title: t("story.like") }, ic("thumbs-up"), el("span", { text: fmt(st.likes || 0) })) : null,
+          el("span", { class: "grow" }),
+          el("button", { class: "btn btn-xs btn-line", type: "button", onclick: () => { PRO_EXP = st.qid; renderProExps(); const f = $("#proExps form"); f.scrollIntoView({ behavior: REDUCED ? "auto" : "smooth", block: "center" }); $("textarea", f).focus({ preventScroll: true }); } }, ic("pencil"), el("span", { text: t("st.edit") })),
+          el("button", { class: "btn btn-xs btn-line danger", type: "button", onclick: () => deleteProStory(st) }, ic("trash-2"), el("span", { text: t("st.delete") }))))))
+    : el("p", { class: "w-note", text: t("pro.exp.none") });
+  let form = el("p", { class: "p-new w-note", text: t("pro.exp.noq") });
+  if (qids.length) {
+    const sel = el("select", { name: "qid" }, el("option", { value: "" }, t("pro.exp.pick")), ...qids.map(id => el("option", { value: id, selected: PRO_EXP === id }, qText(id))));
+    const exp = el("textarea", { name: "exp", rows: 4, maxlength: 1500, dir: "auto", placeholder: t("st.exp.ph") });
+    const imp = el("textarea", { name: "imp", rows: 2, maxlength: 1000, dir: "auto", placeholder: t("st.imp.ph") });
+    const submit = el("button", { class: "btn btn-pos", type: "submit" }, ic("send", "flip"), el("span"));
+    const fillFrom = () => { const st = byQ[+sel.value]; exp.value = st ? st.exp : ""; imp.value = st ? st.imp : ""; $("span", submit).textContent = t(st ? "pro.exp.update" : "pro.exp.publish"); };
+    sel.addEventListener("change", () => { PRO_EXP = +sel.value || null; fillFrom(); });
+    form = el("form", { class: "p-new", novalidate: true },
+      el("label", { class: "field" }, el("span", { text: t("pro.exp.q") }), sel),
+      el("label", { class: "field" }, el("span", { text: t("st.title") }), exp),
+      el("label", { class: "field" }, el("span", { text: t("st.imp") }), imp),
+      submit, el("p", { class: "form-err", role: "alert" }));
+    fillFrom();
+    bindForm(form, async v => {
+      const qid = +v.qid, e1 = String(v.exp || "").trim(), e2 = String(v.imp || "").trim();
+      if (!qid) throw new ApiError("pro_pick");
+      if (e1.length < MIN_EXP || e2.length < MIN_IMP) throw new ApiError("too_short");
+      const st = byQ[qid];
+      const d = await api("story_save", { qid, exp: e1, imp: e2, public: true, as_pro: true, lang, id: st && st.id });
+      toast(t(d.story.status === "pending" ? "st.sentPending" : "st.sent"));
+      burstFrom(submit, 1);
+      PRO_EXP = null;
+      delete OTH[qid];
+      await reloadProMe();
+      loadFeed();
+    });
+  }
+  box.replaceChildren(
+    el("h3", { class: "p-t" }, ic("feather"), el("span", { text: t("pro.exp.t") }), el("span", { class: "n", text: fmt(p.stories.length) })),
+    el("p", { class: "w-note", style: "margin-top:4px", text: t("pro.exp.p") }),
+    list, form);
+  icons();
+}
+async function deleteProStory(st) {
+  if (!confirm(t("st.delete.confirm"))) return;
+  try { await api("story_delete", { id: st.id }); toast(t("st.deleted")); delete OTH[st.qid]; await reloadProMe(); loadFeed(); }
+  catch (e) { toast(errText(e), "err"); }
+}
+function proDanger() {
+  const btn = el("button", { class: "btn btn-danger btn-sm", type: "button" }, ic("trash-2"), el("span", { text: t("me.delete.btn") }));
+  btn.addEventListener("click", async () => {
+    if (!confirm(t("pro.del.confirm"))) return;
+    btn.disabled = true;
+    try { await api("pro_delete", {}); setProMe(null); toast(t("pro.deleted")); renderPro(true); scrollTo({ top: 0, behavior: REDUCED ? "auto" : "smooth" }); loadPros(); loadFeed(); }
+    catch (e) { toast(errText(e), "err"); btn.disabled = false; }
+  });
+  return el("details", { class: "w-card p-danger" }, el("summary", { text: t("pro.del.t") }), el("p", { text: t("pro.del.p") }), btn);
+}
+
+/* =================================== Alertes par email (sans compte) */
+// Après quelques réponses « négatif », on propose de recevoir par email les expériences positives
+// publiées sur ces questions (double confirmation côté serveur, envoi par le cron).
+const subOn = () => (user ? !!user.opt_digest : !!(S.sub || S.subOk));
+function subCta(qid) {
+  const on = subOn();
+  return el("div", { class: "others-sub" }, ic(on ? "bell-ring" : "bell"), el("span", { text: t(on ? "ot.sub.on" : "ot.sub") }),
+    on ? null : el("button", { class: "btn btn-xs btn-ink", type: "button", onclick: () => openSub(qid) }, ic("bell"), el("span", { text: t("sub.cta") })));
+}
+function refreshSubCtas() { $$(".others[data-q]").forEach(b => fillOthers(b, +b.dataset.q)); icons(); }
+function maybeAskSub() {
+  if (user || !online || subOn() || $("dialog[open]")) return;
+  if (S.subAsked && Date.now() - S.subAsked < 14 * 864e5) return;
+  if (Object.values(S.answers).filter(a => a[0] === -1).length < 3) return;
+  S.subAsked = Date.now();
+  save();
+  openSub();
+}
+async function openSub(qid) {
+  await apiReady;
+  if (!online) { toast(t("ot.offline"), "err"); return; }
+  if (user) {
+    // Avec un compte : il suffit d'activer les emails « impacts positifs ».
+    try { const d = await api("subscribe", { device: S.device, lang }); user.opt_digest = true; toast(t(d.verified === false ? "sub.acc.unv" : "sub.acc")); refreshSubCtas(); }
+    catch (e) { toast(errText(e), "err"); }
+    return;
+  }
+  $("#subForm").hidden = false;
+  $("#subDone").hidden = true;
+  $("#subIntro").textContent = qid ? t("sub.p.q", { q: qText(qid) }) : t("sub.p");
+  $("#subForm .form-err").textContent = "";
+  const inp = $("#subForm input[name=email]");
+  if (S.sub && !inp.value) inp.value = S.sub;
+  if (!$("#subDlg").open) $("#subDlg").showModal();
+  if (!matchMedia("(hover:none)").matches) setTimeout(() => inp.focus(), 30);
+  icons();
+}
+bindForm($("#subForm"), async v => {
+  const email = String(v.email || "").trim();
+  if (!/^\S+@\S+\.\S+$/.test(email)) throw new ApiError("bad_email");
+  clearTimeout(flushTimer);
+  await flush(); // les réponses « négatif » doivent être sur le serveur pour les alertes
+  await api("subscribe", { email, device: S.device, lang });
+  S.sub = email; S.subAsked = Date.now();
+  save();
+  $("#subDoneP").textContent = t("sub.done.p", { email });
+  $("#subForm").hidden = true;
+  $("#subDone").hidden = false;
+  icons();
+  refreshSubCtas();
+});
+
 /* ============================================================= Routage */
 function go(hash) {
   const target = hash || location.pathname + location.search;
@@ -3365,7 +4049,7 @@ function go(hash) {
   }
   route();
 }
-const VIEWS = { home: "#homeView", results: "#resultsView", world: "#worldView", messages: "#messagesView", support: "#supportView" };
+const VIEWS = { home: "#homeView", results: "#resultsView", world: "#worldView", messages: "#messagesView", support: "#supportView", pro: "#proView" };
 function showView(name) {
   const was = Object.keys(VIEWS).find(k => !$(VIEWS[k]).hidden) || "home";
   for (const [k, sel] of Object.entries(VIEWS)) $(sel).hidden = k !== name;
@@ -3409,6 +4093,12 @@ function route() {
     apiReady.then(() => { loadInbox(); if (+arg) openThread({ tid: +arg }); else if (online && !user) showAuth("login"); });
     return;
   }
+  if (name === "pro") {
+    showView("pro");
+    renderPro(true);
+    $("#pTitle").focus({ preventScroll: true });
+    return;
+  }
   if (name === "soutenir") {
     showView("support");
     renderSupport();
@@ -3437,7 +4127,7 @@ document.addEventListener("click", e => {
   const g = e.target.closest("[data-go]");
   if (g) { e.preventDefault(); if ($("#meDlg").open) $("#meDlg").close(); go(g.dataset.go); return; }
   const a = e.target.closest("[data-auth]");
-  if (a) { e.preventDefault(); showAuth(a.dataset.auth); return; }
+  if (a) { e.preventDefault(); if ($("#subDlg").open) $("#subDlg").close(); showAuth(a.dataset.auth); return; }
   const l = e.target.closest("[data-lang]");
   if (l && l.closest(".langs")) setLang(l.dataset.lang, true);
 });
@@ -3487,6 +4177,8 @@ function renderAll() {
   if (!$("#messagesView").hidden) renderInbox();
   if (TH) renderThread();
   if (QZ.open) renderQuiz(false);
+  renderPro();
+  refreshPros();
   renderAccount();
 }
 
@@ -3524,6 +4216,9 @@ async function boot() {
   resetToken = p.get("reset");
   // Retour de la page de paiement (support.php) : ?don=ok|wait|ko#soutenir
   if (["ok", "wait", "ko"].includes(p.get("don"))) DON_RESULT = p.get("don");
+  // Lien de confirmation de l'abonnement email (api.php?action=sub_confirm) : ?sub=ok|bad
+  const subRes = p.get("sub");
+  if (subRes === "ok") { S.subOk = 1; save(); }
   if (p.toString()) history.replaceState(null, "", location.pathname + location.hash);
 
   setLang(lang);
@@ -3534,9 +4229,13 @@ async function boot() {
   catch (e) { online = false; }
   markReady();
   renderAccount();
+  renderPro();
   if (online) { try { CFG = await api("config"); } catch (e) {} }
   renderSupport();
   if (DON_RESULT === "ok") setTimeout(() => { toast(t("sp.ok")); burstFrom($("#sTitle"), 1); }, 500);
+  if (subRes === "ok") setTimeout(() => toast(t("sub.ok")), 400);
+  if (subRes === "bad") setTimeout(() => toast(t("sub.bad"), "err"), 400);
+  loadPros();
   if (user) {
     await flush();
     try { applyServer(await api("pull")); } catch (e) {}

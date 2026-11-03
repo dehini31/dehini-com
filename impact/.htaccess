@@ -14,6 +14,9 @@ DirectoryIndex index.php index.html
   #   questions, ar/questions, en/questions             toutes les questions
   RewriteRule ^(?:(ar|en)/)?q/([0-9]+)(?:-([^/]*))?/?$ page.php?lang=$1&q=$2&s=$3 [B,L,QSA]
   RewriteRule ^(?:(ar|en)/)?questions/?$ page.php?lang=$1&hub=1 [L,QSA]
+  #   pro/nom-de-la-page, pros (et ar/…, en/…)          pages professionnelles, annuaire
+  RewriteRule ^(?:(ar|en)/)?pro/([a-z0-9-]+)/?$ page.php?lang=$1&pro=$2 [L,QSA]
+  RewriteRule ^(?:(ar|en)/)?pros/?$ page.php?lang=$1&pros=1 [L,QSA]
   RewriteRule ^sitemap\.xml$ sitemap.php [L]
 </IfModule>
 

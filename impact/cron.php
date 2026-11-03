@@ -12,6 +12,11 @@
  *   2. Impacts positifs — au plus tous les IMPACT_DIGEST_DAYS jours : jusqu'à 3
  *      récits d'autres participants sur les questions où le compte a répondu
  *      « impact négatif » ou « aucun impact » (jamais deux fois le même récit).
+ *   3. Nouvelles expériences positives — dès qu'un récit est publié (par une personne
+ *      ou une page pro) sur une question, ceux qui y ont répondu « impact négatif » le
+ *      reçoivent : comptes confirmés (emails « impacts positifs ») et abonnés sans compte
+ *      confirmés. Au plus un email toutes les IMPACT_ALERT_HOURS heures par personne,
+ *      jusqu'à 3 récits, jamais deux fois le même.
  *
  * Options :
  *   --dry-run               affiche ce qui partirait, sans rien envoyer ni modifier
@@ -27,6 +32,8 @@ if (PHP_SAPI !== 'cli') {
 
 require __DIR__ . '/lib/bootstrap.php';
 require __DIR__ . '/lib/mailer.php';
+require __DIR__ . '/lib/seo.php';
+require __DIR__ . '/lib/pros.php';
 
 $opts = getopt('', ['dry-run', 'test:', 'lang:']);
 $dry = isset($opts['dry-run']);
@@ -104,6 +111,8 @@ if (isset($opts['test'])) {
         'ar' => '(مثال) أثّرت فيّ قصتك كثيراً، شكراً لأنك شاركتها.', 'en' => '(example) Your story really moved me, thank you for sharing it.'][$lang];
     deliver($u, compose_message($u, 'Nadia', qtext($q, $lang), $sample, 0, true), 'msg', $dry);
     deliver($u, compose_thanks(['lang' => $lang, 'name' => 'Test', 'amount' => 1000]), 'all', $dry);
+    deliver($u, compose_sub_confirm(['lang' => $lang, 'token' => str_repeat('0', 48)]), 'all', $dry);
+    deliver($u, compose_alert(['email' => $to, 'lang' => $lang, 'name' => ''], $stories, site_url() . 'api.php?action=sub_unsub&token=' . str_repeat('0', 48)), 'all', $dry);
     Smtp::close();
     exit(0);
 }
@@ -151,6 +160,7 @@ if ((int) date('G') >= (int) IMPACT_DAILY_HOUR) {
 /* ------------------------------------------- 2. impacts positifs des autres */
 
 $left = $budget - $sent;
+$digestSent = 0;
 if ($left > 0) {
     $s = $pdo->prepare('SELECT * FROM users WHERE verified = 1 AND opt_digest = 1 AND last_digest <= ? AND digest_check <= ? ORDER BY last_digest, id LIMIT ?');
     $s->execute([$now - (int) IMPACT_DIGEST_DAYS * 86400, $now - 86400, $left * 3]);
@@ -169,9 +179,95 @@ if ($left > 0) {
             continue;
         }
         $left--;
+        $digestSent++;
         if (!deliver($u, compose_digest($u, $stories), 'digest', $dry) || $dry) continue;
         $done->execute([$now, $now, $u['id']]);
         foreach ($stories as $st) $seen->execute([$u['id'], $st['id']]);
+    }
+}
+
+/* ---------------------------- 3. nouvelles expériences positives (alertes) */
+
+$left = max(0, $budget - $sent - $digestSent);
+if ($left > 0) {
+    $since = $now - (int) IMPACT_ALERT_DAYS * 86400;
+    $gap = $now - (int) IMPACT_ALERT_HOURS * 3600;
+    $byQ = [];
+    foreach ($pdo->query("SELECT * FROM stories WHERE status = 'published' AND published >= $since ORDER BY published DESC LIMIT 500") as $st) {
+        $byQ[(int) $st['qid']][] = $st;
+    }
+    // Pour chaque personne qui a répondu « négatif » : les récits récents sur ces questions.
+    $recipients = [];
+    $neg = $pdo->prepare('SELECT pid FROM answers WHERE qid = ? AND v = -1');
+    foreach ($byQ as $qid => $list) {
+        $neg->execute([$qid]);
+        foreach ($neg->fetchAll(PDO::FETCH_COLUMN) as $pid) foreach ($list as $st) $recipients[$pid][(int) $st['id']] = $st;
+    }
+    say('Alertes : ' . count($byQ) . ' question(s) avec des récits récents, ' . count($recipients) . ' personne(s) concernée(s)');
+    $mailed = [];
+    $pick = function (array $stories, int $uid, array $seen, string $lang): array {
+        $list = array_values(array_filter($stories, function ($st) use ($uid, $seen) {
+            return (!$uid || (int) $st['uid'] !== $uid) && !isset($seen[(int) $st['id']]);
+        }));
+        usort($list, function ($a, $b) use ($lang) {
+            return [$b['lang'] === $lang, (int) $b['likes'], (int) $b['published']] <=> [$a['lang'] === $lang, (int) $a['likes'], (int) $a['published']];
+        });
+        return array_slice($list, 0, 3);
+    };
+    $userQ = $pdo->prepare('SELECT * FROM users WHERE id = ? AND verified = 1 AND opt_digest = 1');
+    $userSeen = $pdo->prepare('SELECT sid FROM digest_seen WHERE uid = ?');
+    $markUser = $pdo->prepare('INSERT OR IGNORE INTO digest_seen (uid, sid) VALUES (?, ?)');
+    $userDone = $pdo->prepare('UPDATE users SET last_alert = ? WHERE id = ?');
+    $subQ = $pdo->prepare('SELECT * FROM subscribers WHERE pid = ? AND confirmed = 1');
+    $subSeen = $pdo->prepare('SELECT sid FROM sub_seen WHERE sub = ?');
+    $markSub = $pdo->prepare('INSERT OR IGNORE INTO sub_seen (sub, sid) VALUES (?, ?)');
+    $subDone = $pdo->prepare('UPDATE subscribers SET last_alert = ? WHERE id = ?');
+
+    foreach ($recipients as $pid => $stories) {
+        if ($left <= 0) break;
+        $uid = strncmp((string) $pid, 'u', 1) === 0 ? (int) substr((string) $pid, 1) : 0;
+        // Compte confirmé qui accepte les emails « impacts positifs ».
+        if ($uid) {
+            $userQ->execute([$uid]);
+            $u = $userQ->fetch();
+            if ($u && (int) $u['last_alert'] <= $gap && !isset($mailed[$u['email']])) {
+                $userSeen->execute([$uid]);
+                $list = $pick($stories, $uid, array_flip(array_map('intval', $userSeen->fetchAll(PDO::FETCH_COLUMN))), impact_lang($u['lang']));
+                if ($list) {
+                    $u['lang'] = impact_lang($u['lang']);
+                    $left--;
+                    $mailed[$u['email']] = 1;
+                    if (deliver($u, compose_alert(['email' => $u['email'], 'lang' => $u['lang'], 'name' => $u['name']], $list, unsub_url($u, 'digest')), 'digest', $dry) && !$dry) {
+                        $userDone->execute([$now, $uid]);
+                        foreach ($list as $st) $markUser->execute([$uid, $st['id']]);
+                    }
+                }
+            }
+        }
+        // Abonnés sans compte (ou devenus un compte depuis) liés à ces réponses.
+        $subQ->execute([$pid]);
+        foreach ($subQ->fetchAll() as $sub) {
+            if ($left <= 0 || (int) $sub['last_alert'] > $gap || isset($mailed[$sub['email']])) continue;
+            $subSeen->execute([$sub['id']]);
+            $list = $pick($stories, $uid, array_flip(array_map('intval', $subSeen->fetchAll(PDO::FETCH_COLUMN))), impact_lang($sub['lang']));
+            if (!$list) continue;
+            $left--;
+            $mailed[$sub['email']] = 1;
+            $unsub = site_url() . 'api.php?action=sub_unsub&token=' . rawurlencode((string) $sub['token']);
+            [$subject, $html, $text] = compose_alert(['email' => $sub['email'], 'lang' => $sub['lang'], 'name' => ''], $list, $unsub);
+            if ($dry) {
+                say("  (dry-run) → {$sub['email']} : $subject");
+                continue;
+            }
+            try {
+                send_mail((string) $sub['email'], $subject, $html, $text, $unsub);
+                say("  ✓ {$sub['email']} : $subject");
+                $subDone->execute([$now, $sub['id']]);
+                foreach ($list as $st) $markSub->execute([$sub['id'], $st['id']]);
+            } catch (Throwable $e) {
+                say("  ✗ {$sub['email']} : " . $e->getMessage());
+            }
+        }
     }
 }
 

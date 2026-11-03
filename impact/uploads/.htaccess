@@ -1,0 +1,11 @@
+Options -Indexes
+
+# Logos des pages pro : images seulement, aucun script exécuté.
+<FilesMatch "\.(php|phtml|phar|php3|php4|php5|pl|py|cgi|sh|exe|html?|svg)$">
+  Require all denied
+</FilesMatch>
+
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  Header set Cache-Control "public, max-age=31536000, immutable"
+</IfModule>
