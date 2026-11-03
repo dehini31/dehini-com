@@ -276,6 +276,10 @@ connexion :
   toutes les 20 secondes tant que l'onglet est ouvert. La page envoie un petit signal toutes les
   45 secondes tant qu'elle est visible dans le navigateur du visiteur ; au-delà de 150 secondes
   sans signal, la personne n'est plus comptée comme en ligne.
+- **Affichages du site** — pages vues et visiteurs différents aujourd'hui, sur 7 et 30 jours,
+  l'évolution des 14 derniers jours, les pages les plus vues (accueil, défi, résultat, pages des
+  questions, pages pro, annuaire…) et les pros les plus affichés. Les robots (Google, aperçus de
+  liens…) ne sont pas comptés ; un visiteur = un appareil ou un compte. Voir aussi « 11 ».
 - **Comptes et participation** — comptes créés, adresses confirmées, connexions Google,
   participants, réponses (total, aujourd'hui, cette semaine).
 - **Récits, réactions, messages et soutiens** — récits par statut, « j'aime » / « je n'aime
@@ -348,8 +352,11 @@ La page pro apparaît :
   d'une question) et sur les pages des questions (`/impact/q/…`) ;
 - sur ses expériences, partout où elles s'affichent (mur, résultat, pages des questions, emails) ;
 - sur sa **page publique** `https://dehini.com/impact/pro/nom-de-la-page` (en `/ar/pro/…` et
-  `/en/pro/…` aussi), avec boutons Site web, WhatsApp, Appeler et Email, ses expériences et ses
-  questions ; et dans l'**annuaire** `https://dehini.com/impact/pros`. Ces pages sont dans le plan du
+  `/en/pro/…` aussi) : bandeau, logo, nom, badge « Vérifié », boutons WhatsApp / Appeler / Site web
+  (barre de contact fixe en bas sur téléphone), « À propos » avec ses spécialités (ses mots-clés),
+  ses expériences, et une colonne Contact et Partager. La liste des questions liées n'y est pas
+  affichée : elles servent à le montrer à côté de ces questions dans le défi. Et dans l'**annuaire**
+  `https://dehini.com/impact/pros`. Ces pages sont dans le plan du
   site dès qu'elles ont du contenu (présentation de 80 caractères, une question liée ou une
   expérience ; sinon « noindex »).
 
@@ -366,6 +373,25 @@ de questions et d'expériences, et quatre actions :
 - **Masquer / Afficher** : retire la page du site sans la supprimer.
 - **Supprimer** : efface la page, son logo et ses expériences (le compte et ses récits personnels
   restent). Le pro peut aussi supprimer sa page lui-même depuis son espace.
+
+**Statistiques d'affichage** — chaque pro les suit dans son espace (carte « Vos statistiques », sur
+7, 30 ou 90 jours) et l'admin les voit dans l'onglet « Pros » (chiffres des 30 derniers jours sur
+chaque page, « Statistiques détaillées », et « Copier le rapport » à envoyer au pro par email ou
+WhatsApp — utile pour vendre ou renouveler une mise en avant) :
+
+- **Affichages** — son nom ou son logo vu à l'écran : à côté d'une question (« Des pros en
+  parlent »), sur une de ses expériences (mur, résultat, pages des questions) ou dans l'annuaire.
+  Compté quand l'élément est réellement visible, une fois par question et par page vue ; avec la
+  comparaison à la période précédente.
+- **Personnes touchées** (personnes différentes), **visites de sa page**, **clics sur ses contacts**
+  (site web, WhatsApp, appel, email) et le taux de clic.
+- Un graphique jour par jour (semaine par semaine sur 90 jours), le tableau des chiffres, et les
+  questions qui le montrent le plus.
+
+Ces chiffres sont honnêtes par construction : les robots ne sont pas comptés, une même personne
+compte au plus 20 fois par jour pour un même pro, et le pro ne compte pas ses propres visites.
+Les totaux sont gardés jour par jour (la base reste petite) ; les listes qui servent à compter les
+personnes différentes sont effacées après 95 jours.
 
 **Alertes email sans compte** — après 3 réponses « négatif », le défi propose une fois (puis pas
 avant 14 jours) de laisser son email pour recevoir les nouvelles expériences positives sur ces

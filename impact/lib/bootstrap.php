@@ -87,6 +87,7 @@ function migrate(PDO $pdo): void
     if ($v < 3) migrate_v3($pdo);
     if ($v < 4) migrate_v4($pdo);
     if ($v < 5) migrate_v5($pdo);
+    if ($v < 6) migrate_v6($pdo);
 }
 
 function migrate_v1(PDO $pdo): void
@@ -538,4 +539,41 @@ function str_clean(string $s, int $max): string
     $s = preg_replace("/\r\n?/", "\n", $s) ?? '';
     $s = preg_replace("/\n{3,}/", "\n\n", $s) ?? '';
     return mb_substr($s, 0, $max);
+}
+
+/**
+ * v6 : compteurs d'affichage. Un total par jour (et non une ligne par affichage) : la base reste petite.
+ * pro_seen / visitors servent à compter les personnes différentes (gardés 95 jours).
+ */
+function migrate_v6(PDO $pdo): void
+{
+    $pdo->exec(<<<SQL
+    CREATE TABLE IF NOT EXISTS pro_stats (
+        pro_id INTEGER NOT NULL REFERENCES pros(id) ON DELETE CASCADE,
+        day TEXT NOT NULL,
+        kind TEXT NOT NULL,
+        qid INTEGER NOT NULL DEFAULT 0,
+        n INTEGER NOT NULL DEFAULT 0,
+        PRIMARY KEY (pro_id, day, kind, qid)
+    );
+    CREATE TABLE IF NOT EXISTS pro_seen (
+        pro_id INTEGER NOT NULL REFERENCES pros(id) ON DELETE CASCADE,
+        pid TEXT NOT NULL,
+        day TEXT NOT NULL,
+        n INTEGER NOT NULL DEFAULT 0,
+        PRIMARY KEY (pro_id, day, pid)
+    );
+    CREATE TABLE IF NOT EXISTS views_daily (
+        day TEXT NOT NULL,
+        view TEXT NOT NULL,
+        n INTEGER NOT NULL DEFAULT 0,
+        PRIMARY KEY (day, view)
+    );
+    CREATE TABLE IF NOT EXISTS visitors (
+        day TEXT NOT NULL,
+        pid TEXT NOT NULL,
+        PRIMARY KEY (day, pid)
+    );
+    PRAGMA user_version = 6;
+    SQL);
 }

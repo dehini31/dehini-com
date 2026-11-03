@@ -790,7 +790,51 @@
   .p-steps li{display:flex;gap:12px;align-items:flex-start;background:var(--paper-50);border-radius:16px;padding:14px 16px;font-size:.92rem;color:var(--ink-soft)}
   .p-steps li::before{counter-increment:st;content:counter(st);width:28px;height:28px;border-radius:50%;background:var(--pro);color:#fff;font-weight:800;display:grid;place-items:center;flex-shrink:0;font-size:.85rem}
   .p-steps b{color:var(--ink);display:block}
-  .p-wrap{display:grid;gap:22px}
+  .p-wrap{display:grid;grid-template-columns:minmax(0,1fr);gap:22px}
+  /* Statistiques de la page pro */
+  .st-head{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;margin-bottom:18px}
+  .st-head h3{margin:0}
+  .st-range{display:inline-flex;gap:4px;padding:4px;border-radius:999px;background:var(--paper-100)}
+  .st-range button{padding:7px 14px;border-radius:999px;font-size:.84rem;font-weight:700;color:var(--muted);transition:background .2s,color .2s}
+  .st-range button[aria-pressed=true]{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(11,16,32,.14)}
+  .st-body{transition:opacity .2s}
+  .st-body.loading{opacity:.45}
+  .st-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+  @media(max-width:820px){.st-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  .st-kpi{background:var(--paper-50);border-radius:16px;padding:14px 16px;min-width:0}
+  .st-kpi > span{display:block;font-size:.8rem;color:var(--muted);font-weight:500}
+  .st-kpi b{display:block;font-size:1.7rem;font-weight:700;line-height:1.15;margin-top:4px;letter-spacing:-.01em}
+  .st-kpi small{display:block;font-size:.75rem;color:var(--muted);margin-top:4px;line-height:1.35}
+  .st-kpi .up{color:var(--pos-600);font-weight:700}
+  .st-kpi .down{color:var(--neg-600);font-weight:700}
+  .st-chart{position:relative;margin-top:24px}
+  .st-chart h4,.st-cols h4{font-size:.9rem;margin-bottom:10px}
+  .st-plot{position:relative;height:170px;display:flex;align-items:flex-end;gap:2px;border-bottom:1px solid var(--paper-200)}
+  .st-grid{position:absolute;inset-inline:0;height:0;border-top:1px solid var(--paper-100);pointer-events:none}
+  .st-grid span{position:absolute;inset-inline-start:0;top:-17px;font-size:.7rem;color:var(--muted);font-variant-numeric:tabular-nums}
+  .st-col{position:relative;flex:1;height:100%;display:flex;align-items:flex-end;justify-content:center;min-width:0}
+  .st-col i{display:block;width:100%;max-width:24px;background:#c46f00;border-radius:4px 4px 0 0;min-height:2px;transition:filter .15s}
+  .st-col.zero i{background:var(--paper-200)}
+  .st-col:hover i,.st-col.on i{filter:brightness(1.18)}
+  .st-x{display:flex;justify-content:space-between;gap:8px;font-size:.72rem;color:var(--muted);margin-top:6px}
+  .st-tip{position:absolute;pointer-events:none;background:var(--ink);color:#fff;border-radius:10px;padding:8px 11px;font-size:.78rem;line-height:1.45;white-space:nowrap;transform:translate(-50%,calc(-100% - 8px));z-index:3;box-shadow:var(--shadow)}
+  .st-tip b{display:block;font-size:1rem}
+  .st-tip small{color:#aeb5c8}
+  .st-cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;margin-top:24px}
+  @media(max-width:820px){.st-cols{grid-template-columns:minmax(0,1fr)}}
+  .st-list{list-style:none;display:grid;grid-template-columns:minmax(0,1fr);gap:9px;font-size:.88rem}
+  .st-list li{display:flex;gap:10px;align-items:center;min-width:0}
+  .st-list svg{width:17px;height:17px;color:var(--ink-soft);flex-shrink:0}
+  .st-list .v{margin-inline-start:auto;font-weight:700;font-variant-numeric:tabular-nums}
+  .st-list .q{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .st-list .q:hover{text-decoration:underline}
+  .st-table summary{cursor:pointer;font-size:.84rem;font-weight:700;color:var(--ink-soft);margin-top:20px}
+  .st-table .scroll{max-height:280px;overflow:auto;margin-top:10px}
+  .st-table table{width:100%;border-collapse:collapse;font-size:.82rem}
+  .st-table th,.st-table td{padding:6px 8px;border-bottom:1px solid var(--paper-100);text-align:end;font-variant-numeric:tabular-nums}
+  .st-table th:first-child,.st-table td:first-child{text-align:start}
+  .st-table th{color:var(--muted);font-weight:700;position:sticky;top:0;background:#fff}
+  .st-note{font-size:.78rem;color:var(--muted);margin-top:14px;line-height:1.5}
   #proView > .sec{padding-top:clamp(28px,4vw,48px)}
   .p-head{display:flex;flex-wrap:wrap;align-items:center;gap:18px}
   .p-head .info{flex:1;min-width:220px}
@@ -1970,6 +2014,40 @@ const T = {
   "pro.qs.found": ["Résultats de la recherche", "نتائج البحث", "Search results"],
   "err.pro_domain": ["Choisissez votre domaine d'activité.", "اختر مجال نشاطك.", "Choose your field."],
   "err.pro_pick": ["Choisissez une question.", "اختر سؤالاً.", "Choose a question."],
+  "pst.t": ["Vos statistiques", "إحصائياتك", "Your statistics"],
+  "pst.7": ["7 jours", "7 أيام", "7 days"],
+  "pst.30": ["30 jours", "30 يوماً", "30 days"],
+  "pst.90": ["90 jours", "90 يوماً", "90 days"],
+  "pst.range": ["Période", "الفترة", "Period"],
+  "pst.imp": ["Affichages", "مرات الظهور", "Impressions"],
+  "pst.reach": ["Personnes touchées", "أشخاص وصلت إليهم", "People reached"],
+  "pst.view": ["Visites de votre page", "زيارات صفحتك", "Page visits"],
+  "pst.clicks": ["Clics sur vos contacts", "نقرات على وسائل التواصل", "Contact clicks"],
+  "pst.ctr": ["Taux de clic : {p}", "نسبة النقر: {p}", "Click rate: {p}"],
+  "pst.vs": ["vs les {n} jours précédents", "مقارنة بالأيام الـ{n} السابقة", "vs the previous {n} days"],
+  "pst.reach.p": ["personnes différentes", "أشخاص مختلفون", "different people"],
+  "pst.chart": ["Affichages par jour", "مرات الظهور يومياً", "Impressions per day"],
+  "pst.chart.w": ["Affichages par semaine", "مرات الظهور أسبوعياً", "Impressions per week"],
+  "pst.week": ["Semaine du {d}", "أسبوع {d}", "Week of {d}"],
+  "pst.tip.view": ["visites", "زيارات", "visits"],
+  "pst.tip.clicks": ["clics", "نقرات", "clicks"],
+  "pst.clk.t": ["Clics par contact", "النقرات حسب وسيلة التواصل", "Clicks by contact"],
+  "pst.web": ["Site web", "الموقع", "Website"],
+  "pst.wa": ["WhatsApp", "واتساب", "WhatsApp"],
+  "pst.call": ["Appels", "المكالمات", "Calls"],
+  "pst.mail": ["Emails", "البريد", "Emails"],
+  "pst.top": ["Questions qui vous montrent le plus", "الأسئلة التي تُظهرك أكثر", "Questions showing you the most"],
+  "pst.top.none": ["Pas encore d'affichage à côté d'une question.", "لا ظهور بعد بجانب الأسئلة.", "No impressions next to a question yet."],
+  "pst.table": ["Voir les chiffres jour par jour", "عرض الأرقام يوماً بيوم", "See the figures day by day"],
+  "pst.date": ["Date", "التاريخ", "Date"],
+  "pst.note": ["Un affichage = votre nom ou votre logo vu à l'écran : à côté d'une question, sur une expérience ou dans l'annuaire. Une même personne compte au plus 20 fois par jour ; les robots et vos propres visites ne sont pas comptés.", "مرة ظهور = اسمك أو شعارك ظاهر على الشاشة: بجانب سؤال أو على تجربة أو في الدليل. يُحتسب الشخص نفسه 20 مرة يومياً على الأكثر، ولا تُحتسب الروبوتات ولا زياراتك أنت.", "An impression = your name or logo seen on screen: next to a question, on an experience or in the directory. The same person counts at most 20 times a day; bots and your own visits are not counted."],
+  "pst.empty": ["Pas encore de chiffres : ils apparaissent dès que des visiteurs voient votre page.", "لا أرقام بعد: ستظهر بمجرد أن يرى الزوار صفحتك.", "No figures yet: they appear as soon as visitors see your page."],
+  "pst.n.imp": ["{n} affichages", "{n} مرة ظهور", "{n} impressions"],
+  "pst.n.imp.one": ["{n} affichage", "مرة ظهور واحدة", "{n} impression"],
+  "pst.n.view": ["{n} visites", "{n} زيارات", "{n} visits"],
+  "pst.n.view.one": ["{n} visite", "زيارة واحدة", "{n} visit"],
+  "pst.n.clicks": ["{n} clics", "{n} نقرات", "{n} clicks"],
+  "pst.n.clicks.one": ["{n} clic", "نقرة واحدة", "{n} click"],
   "err.no_pro": ["Créez d'abord votre page pro.", "أنشئ صفحتك المهنية أولاً.", "Create your pro page first."],
   "err.pro_name": ["Indiquez le nom de votre activité (2 caractères minimum).", "أدخل اسم نشاطك (حرفان على الأقل).", "Enter your business name (2 characters minimum)."],
   "err.pro_web": ["Adresse du site invalide.", "عنوان الموقع غير صالح.", "Invalid website address."],
@@ -2369,6 +2447,10 @@ function renderFeed() {
 /* ------------------------------------------------------------- Récits */
 const initial = s => (s || "").trim().charAt(0) || "·";
 function storyCard(st, showQ) {
+  const card = storyCardEl(st, showQ);
+  return st.pro ? watchImp(card, st.pro, st.qid) : card;
+}
+function storyCardEl(st, showQ) {
   return el("article", { class: "story", dataset: { sid: st.id } },
     showQ ? el("p", { class: "story-q" }, el("span", { class: "dotp" }), el("a", { href: pageUrl("q/" + st.qid), text: qText(st.qid) })) : null,
     el("blockquote", { class: "story-exp", dir: "auto", text: st.exp }),
@@ -3687,15 +3769,161 @@ function fillProStrip(box) {
   if (!list.length) { box.replaceChildren(); return; }
   box.replaceChildren(
     el("p", { class: "ps-t" }, ic("briefcase-business"), el("span", { text: t("pros.strip") })),
-    el("div", { class: "ps-list" }, ...list.slice(0, 6).map(p => el("a", { class: "ps-item" + (p.featured ? " feat" : ""), href: proUrl(p), rel: p.featured ? "sponsored" : null },
+    el("div", { class: "ps-list" }, ...list.slice(0, 6).map(p => watchImp(el("a", { class: "ps-item" + (p.featured ? " feat" : ""), href: proUrl(p), rel: p.featured ? "sponsored" : null },
       proAvatar(p, "xs"), el("span", { class: "nm", dir: "auto", text: p.name }),
       p.verified ? ic("badge-check", "vf") : null,
-      p.featured ? el("span", { class: "sp", text: t("pro.featured") }) : null))));
+      p.featured ? el("span", { class: "sp", text: t("pro.featured") }) : null), p, +box.dataset.pq))));
   icons();
 }
 function refreshPros() {
   $$(".pros-strip[data-pq]").forEach(fillProStrip);
   $("#proBandAvs").replaceChildren(...PROS.list.slice(0, 8).map(p => proAvatar(p, "sm")));
+}
+
+
+/* =============================================== Compteurs d'affichage */
+// Pages vues et affichages des pros (leur nom ou leur logo vu à l'écran), envoyés par lots à
+// api.php?action=track. Un même pro n'est compté qu'une fois par question et par page vue.
+const TRK = { q: [], timer: 0, seen: new Set(), view: "" };
+function trk(ev) { TRK.q.push(ev); clearTimeout(TRK.timer); TRK.timer = setTimeout(trkFlush, 2500); }
+async function trkFlush(keep) {
+  clearTimeout(TRK.timer);
+  if (!TRK.q.length) return;
+  await apiReady;
+  if (!online) { TRK.q = []; return; }
+  const ev = TRK.q.splice(0, 80);
+  try { await api("track", { device: S.device, ev }, null, keep === true); } catch (e) {}
+  if (TRK.q.length) trkFlush(keep);
+}
+addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") trkFlush(true); });
+/** Une page vue quand on change de vue (pas à chaque ancre de l'accueil). */
+function trkPage(view) {
+  if (view === TRK.view) return;
+  TRK.view = view;
+  TRK.seen.clear();
+  trk(["pv", view]);
+}
+const impIO = new IntersectionObserver(entries => entries.forEach(e => {
+  if (!e.isIntersecting) return;
+  impIO.unobserve(e.target);
+  const id = +e.target.dataset.pi, qid = +(e.target.dataset.pq || 0), k = id + "|" + qid;
+  if (!id || TRK.seen.has(k)) return;
+  TRK.seen.add(k);
+  trk(["imp", id, qid]);
+}), { threshold: 0.5 });
+function watchImp(node, pro, qid) {
+  node.dataset.pi = pro.id;
+  node.dataset.pq = qid || 0;
+  impIO.observe(node);
+  return node;
+}
+
+/* --- Statistiques de la page pro (espace pro) --- */
+let PRO_DAYS = 30, PRO_ST = null, PRO_ST_LOAD = 0, PRO_ST_BUSY = false;
+const pctFmt = x => fmt(Math.round(x)) + (lang === "fr" ? " %" : "%");
+const dShort = d => new Intl.DateTimeFormat(lang === "ar" ? "ar-DZ" : lang, { day: "numeric", month: "short" }).format(new Date(d + "T12:00:00"));
+/** Graduation « propre » au-dessus du maximum : 1, 2, 5 × 10ⁿ. */
+function niceMax(m) {
+  if (m <= 4) return 4;
+  const p = Math.pow(10, Math.floor(Math.log10(m))), f = m / p;
+  return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p;
+}
+async function loadProStats(days) {
+  PRO_DAYS = days || PRO_DAYS;
+  const ticket = ++PRO_ST_LOAD, n = PRO_DAYS;
+  const body = $("#proStats .st-body");
+  if (body) body.classList.add("loading"); // l'ancien graphique reste affiché pendant le chargement
+  PRO_ST_BUSY = true;
+  let d;
+  try { d = await api("pro_stats", undefined, { days: n, lang }); } catch (e) { d = { days: n, error: true }; }
+  if (ticket !== PRO_ST_LOAD) return;
+  PRO_ST_BUSY = false;
+  PRO_ST = d;
+  renderProStats();
+}
+function renderProStats() {
+  const box = $("#proStats");
+  if (!box) return;
+  const range = el("div", { class: "st-range", role: "group", "aria-label": t("pst.range") }, ...[7, 30, 90].map(n => el("button", {
+    type: "button", "aria-pressed": String(PRO_DAYS === n), onclick: () => { if (PRO_DAYS !== n) { PRO_DAYS = n; $$("#proStats .st-range button").forEach(b => b.setAttribute("aria-pressed", String(b.textContent === t("pst." + n)))); loadProStats(n); } },
+  }, t("pst." + n))));
+  const body = el("div", { class: "st-body" });
+  box.replaceChildren(el("div", { class: "st-head" }, el("h3", { class: "p-t" }, ic("chart-column"), el("span", { text: t("pst.t") })), range), body);
+  if (!PRO_ST || PRO_ST.days !== PRO_DAYS) {
+    body.append(el("div", { class: "skel" }));
+    if (!PRO_ST_BUSY) loadProStats();
+    icons();
+    return;
+  }
+  if (PRO_ST.error) {
+    body.append(el("p", { class: "st-note" }, t("err.generic") + " ", el("button", { class: "link", type: "button", onclick: () => { PRO_ST = null; renderProStats(); } }, t("pst.t"))));
+    return;
+  }
+  const d = PRO_ST, T0 = d.totals;
+  const delta = (cur, prev) => {
+    if (!prev) return null;
+    const ch = Math.round(((cur - prev) / prev) * 100);
+    return el("small", {}, el("span", { class: ch >= 0 ? "up" : "down", text: (ch >= 0 ? "▲ " : "▼ ") + pctFmt(Math.abs(ch)) }), " " + t("pst.vs", { n: fmt(d.days) }));
+  };
+  const kpi = (label, value, foot) => el("div", { class: "st-kpi" }, el("span", { text: label }), el("b", { text: fmt(value) }), foot);
+  body.append(el("div", { class: "st-kpis" },
+    kpi(t("pst.imp"), T0.imp, delta(T0.imp, d.prev.imp)),
+    kpi(t("pst.reach"), T0.reach, el("small", { text: t("pst.reach.p") })),
+    kpi(t("pst.view"), T0.view, delta(T0.view, d.prev.view)),
+    kpi(t("pst.clicks"), T0.clicks, T0.view ? el("small", { text: t("pst.ctr", { p: pctFmt((T0.clicks / T0.view) * 100) }) }) : delta(T0.clicks, d.prev.clicks))));
+  if (!T0.imp && !T0.view && !T0.clicks) {
+    body.append(el("p", { class: "st-note", text: t("pst.empty") }));
+    icons();
+    return;
+  }
+  // Colonnes : un point par jour (par semaine sur 90 jours, pour garder des barres lisibles).
+  const step = d.days > 31 ? 7 : 1, buckets = [];
+  for (let i = 0; i < d.labels.length; i += step) {
+    const sl = (k) => d.series[k].slice(i, i + step).reduce((a, b) => a + b, 0);
+    buckets.push({ d: d.labels[i], imp: sl("imp"), view: sl("view"), clicks: sl("clicks") });
+  }
+  const max = niceMax(Math.max(...buckets.map(b => b.imp)));
+  const plot = el("div", { class: "st-plot", role: "img", "aria-label": t(step > 1 ? "pst.chart.w" : "pst.chart") });
+  plot.append(el("div", { class: "st-grid", style: "top:0" }, el("span", { text: fmt(max) })), el("div", { class: "st-grid", style: "top:50%" }, el("span", { text: fmt(max / 2) })));
+  const tip = el("div", { class: "st-tip", hidden: true });
+  const when = b => (step > 1 ? t("pst.week", { d: dShort(b.d) }) : dShort(b.d));
+  buckets.forEach(b => {
+    const col = el("div", { class: "st-col" + (b.imp ? "" : " zero") }, el("i", { style: "height:" + (b.imp ? Math.max(2, (b.imp / max) * 100) : 0) + "%" }));
+    const show = () => {
+      $$(".st-col.on", plot).forEach(n => n.classList.remove("on"));
+      col.classList.add("on");
+      tip.replaceChildren(el("b", { text: tn("pst.n.imp", b.imp) }), el("small", { text: when(b) }), el("br"),
+        el("span", { text: tn("pst.n.view", b.view) + " · " + tn("pst.n.clicks", b.clicks) }));
+      tip.hidden = false;
+      const wr = tip.parentNode.getBoundingClientRect(), cr = col.getBoundingClientRect(), w = tip.offsetWidth;
+      tip.style.left = Math.min(Math.max(cr.left - wr.left + cr.width / 2, w / 2), wr.width - w / 2) + "px";
+      tip.style.top = Math.max(w ? 34 : 0, cr.bottom - wr.top - col.firstChild.offsetHeight) + "px";
+    };
+    col.addEventListener("pointerenter", show);
+    col.addEventListener("pointerdown", show);
+    plot.append(col);
+  });
+  plot.addEventListener("pointerleave", () => { tip.hidden = true; $$(".st-col.on", plot).forEach(n => n.classList.remove("on")); });
+  const mid = buckets[Math.floor(buckets.length / 2)];
+  body.append(el("div", { class: "st-chart" },
+    el("h4", { text: t(step > 1 ? "pst.chart.w" : "pst.chart") }),
+    el("div", { style: "position:relative;padding-top:18px" }, plot, tip),
+    el("div", { class: "st-x", "aria-hidden": "true" }, el("span", { text: dShort(buckets[0].d) }), el("span", { text: dShort(mid.d) }), el("span", { text: dShort(buckets[buckets.length - 1].d) }))));
+  const clk = [["web", "globe"], ["wa", "message-circle"], ["call", "phone"], ["mail", "mail"]];
+  body.append(el("div", { class: "st-cols" },
+    el("div", {}, el("h4", { text: t("pst.clk.t") }),
+      el("ul", { class: "st-list" }, ...clk.map(([k, icon]) => el("li", {}, ic(icon), el("span", { text: t("pst." + k) }), el("span", { class: "v", text: fmt(T0[k] || 0) }))))),
+    el("div", {}, el("h4", { text: t("pst.top") }),
+      d.top.length
+        ? el("ol", { class: "st-list" }, ...d.top.map(([qid, n, txt]) => el("li", {}, el("a", { class: "q", href: pageUrl("q/" + qid), dir: "auto", title: qText(qid) || txt, text: qText(qid) || txt }), el("span", { class: "v", text: fmt(n) }))))
+        : el("p", { class: "st-note", style: "margin:0", text: t("pst.top.none") }))));
+  // Les mêmes chiffres en tableau (lisibles sans survol).
+  body.append(el("details", { class: "st-table" }, el("summary", { text: t("pst.table") }),
+    el("div", { class: "scroll" }, el("table", {},
+      el("thead", {}, el("tr", {}, ...[t("pst.date"), t("pst.imp"), t("pst.view"), t("pst.clicks")].map(h => el("th", { scope: "col", text: h })))),
+      el("tbody", {}, ...d.labels.map((day, i) => el("tr", {}, el("td", { text: dShort(day) }), el("td", { text: fmt(d.series.imp[i]) }), el("td", { text: fmt(d.series.view[i]) }), el("td", { text: fmt(d.series.clicks[i]) }))).reverse())))));
+  body.append(el("p", { class: "st-note", text: t("pst.note") }));
+  icons();
 }
 
 /* --- Espace pro (#pro) : la page du compte connecté --- */
@@ -3704,7 +3932,7 @@ let PRO_SEL = null;    // questions cochées (pas encore enregistrées)
 let PRO_SUG = null, PRO_FIND = "", PRO_EXP = null, PRO_LOAD = null, SUG_LOAD = false, PRO_KEY = "";
 function setProMe(p, keepSel) {
   PRO_ME = p;
-  if (!p) { PRO_SEL = null; PRO_SUG = null; PRO_EXP = null; PRO_FIND = ""; return; }
+  if (!p) { PRO_SEL = null; PRO_SUG = null; PRO_EXP = null; PRO_FIND = ""; PRO_ST = null; return; }
   if (!keepSel || !PRO_SEL) PRO_SEL = new Set(p.questions);
 }
 function loadProMe() {
@@ -3737,12 +3965,13 @@ function renderPro(force) {
   else if (PRO_ME === false) view = msg("circle-alert", "err.generic", () => { PRO_ME = undefined; renderPro(true); });
   else view = el("div", { class: "p-wrap" },
     PRO_ME ? proHead() : null,
+    PRO_ME ? el("article", { class: "w-card", id: "proStats" }) : null,
     el("div", { class: "p-grid" }, proFormCard(), proSide()),
     PRO_ME ? el("article", { class: "w-card", id: "proQs" }) : null,
     PRO_ME ? el("article", { class: "w-card", id: "proExps" }) : null,
     PRO_ME ? proDanger() : null);
   body.replaceChildren(view);
-  if (PRO_ME) { renderProQs(); renderProExps(); }
+  if (PRO_ME) { renderProStats(); renderProQs(); renderProExps(); }
   icons();
 }
 
@@ -4061,6 +4290,7 @@ let CUR_VIEW = "home";
 function route() {
   const [name, arg] = decodeURIComponent(location.hash.slice(1)).split("/");
   CUR_VIEW = name || "home";
+  trkPage(["defi", "resultat", "monde", "messages", "soutenir", "pro"].includes(name) ? name : "home");
   if (name === "defi") {
     if (!QZ.open || (arg && arg !== QZ.cat)) {
       if (arg && (arg === "all" || CATS.includes(arg)) && arg !== QZ.cat) { QZ.cat = arg; QZ.seq = seqFor(arg); QZ.i = QZ.seq.findIndex(q => ans(q.id) === undefined); }

@@ -129,6 +129,25 @@
   .trend-bars i{flex:1;border-radius:3px 3px 0 0;min-height:2px;position:relative}
   .trend-bars.s i{background:var(--social)}
   .trend-bars.a i{background:var(--pos)}
+  .trend-bars.v i{background:#c46f00}
+  .trend-bars.u i{background:var(--perso)}
+  .sec-h{font-size:1.15rem;margin:26px 0 12px}
+  .hint-s{font-size:.78rem;color:var(--muted);margin-top:4px}
+  /* Statistiques d'une page pro */
+  .p-stats{grid-column:1 / -1;display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center;font-size:.84rem;color:var(--ink-soft);background:var(--paper-50);border-radius:12px;padding:10px 14px}
+  .p-stats b{color:var(--ink);font-variant-numeric:tabular-nums}
+  .p-stats .lbl{font-weight:700;color:var(--muted);font-size:.76rem;text-transform:uppercase;letter-spacing:.03em}
+  .p-detail{grid-column:1 / -1;border:1px solid var(--paper-200);border-radius:14px;padding:16px}
+  .p-detail .ranges{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+  .p-detail .ranges button{padding:6px 12px;border-radius:999px;border:1px solid var(--paper-200);background:#fff;font-size:.8rem;font-weight:700;color:var(--muted)}
+  .p-detail .ranges button[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:#fff}
+  .p-detail .stat-grid{margin-bottom:14px}
+  .p-detail .trend-bars{height:90px}
+  .p-detail .cols{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:14px}
+  @media(max-width:700px){.p-detail .cols{grid-template-columns:1fr}}
+  .p-detail h3{font-size:.86rem;margin-bottom:8px}
+  .p-detail .delta{font-size:.74rem;font-weight:700}
+  .p-detail .delta.up{color:var(--pos-600)} .p-detail .delta.down{color:var(--neg-600)}
   .trend-n{width:30px;text-align:right;font-size:.78rem;color:var(--ink-soft);flex-shrink:0}
   .ctry-list,.top-list{list-style:none;display:grid;grid-template-columns:minmax(0,1fr);gap:8px;font-size:.88rem}
   .ctry-list li,.top-list li{display:flex;align-items:center;gap:10px}
@@ -208,6 +227,20 @@
     </div>
     <div class="online-views" id="onlineViews"></div>
 
+    <h2 class="sec-h">Affichages du site</h2>
+    <div class="stat-grid" id="sgViews"></div>
+    <div class="stat-cols">
+      <div class="panel">
+        <h2>Pages vues et visiteurs — 14 derniers jours</h2>
+        <div class="trend-row"><span class="trend-label">Pages vues</span><div class="trend-bars v" id="trendPv"></div><span class="trend-n" id="trendPvMax"></span></div>
+        <div class="trend-row"><span class="trend-label">Visiteurs</span><div class="trend-bars u" id="trendUv"></div><span class="trend-n" id="trendUvMax"></span></div>
+        <p class="hint-s">Survoler une barre pour le chiffre du jour. Les robots ne sont pas comptés ; un visiteur = un appareil ou un compte.</p>
+      </div>
+      <div class="panel"><h2>Pages les plus vues (30 jours)</h2><ol class="top-list" id="topViews"></ol></div>
+    </div>
+    <div class="panel"><h2>Pros les plus affichés (30 jours)</h2><table class="cat-table" id="topPros"></table></div>
+
+    <h2 class="sec-h">Comptes et participation</h2>
     <div class="stat-grid" id="sgAccounts"></div>
     <div class="stat-grid" id="sgEngagement"></div>
     <div class="stat-grid" id="sgContent"></div>
@@ -669,6 +702,26 @@ function renderStats(d) {
     ? views.map(([k, n]) => el("span", { text: (VIEWN[k] || k) + " · " + n }))
     : [el("span", { text: "Personne sur le site en ce moment." })]));
 
+  const V = d.views;
+  $("#sgViews").replaceChildren(
+    stat(V.pv.today, "pages vues aujourd'hui"), stat(V.pv.week, "pages vues (7 jours)"), stat(V.pv.month, "pages vues (30 jours)"),
+    stat(V.uv.today, "visiteurs aujourd'hui"), stat(V.uv.week, "visiteurs (7 jours)"), stat(V.uv.month, "visiteurs (30 jours)"));
+  const bars = (id, vals, label) => {
+    const max = Math.max(1, ...vals);
+    $("#" + id).replaceChildren(...vals.map((n, i) => el("i", { style: "height:" + Math.max(3, n / max * 100) + "%", title: V.trend.days[i] + " : " + fmt(n) + " " + label })));
+    $("#" + id + "Max").textContent = fmt(Math.max(...vals));
+  };
+  bars("trendPv", V.trend.pv, "page(s) vue(s)");
+  bars("trendUv", V.trend.uv, "visiteur(s)");
+  $("#topViews").replaceChildren(...(V.by_view.length ? V.by_view.map(([k, name, n]) => el("li", {}, el("span", { class: "q", text: name }), el("span", { class: "top-n", text: fmt(n) })))
+    : [el("li", { text: "Pas encore de pages vues." })]));
+  $("#topPros").replaceChildren(
+    el("tr", {}, ...["Page pro", "Affichages", "Personnes", "Visites", "Clics"].map(h => el("th", { text: h }))),
+    ...(V.top_pros.length ? V.top_pros.map(x => el("tr", {},
+      el("td", {}, el("a", { href: "pro/" + x.slug, target: "_blank", rel: "noopener", dir: "auto", text: x.name })),
+      el("td", { text: fmt(x.imp) }), el("td", { text: fmt(x.reach) }), el("td", { text: fmt(x.view) }), el("td", { text: fmt(x.clicks) })))
+      : [el("tr", {}, el("td", { colspan: 5, text: "Aucun affichage de pro pour l'instant." }))]));
+
   $("#sgAccounts").replaceChildren(
     stat(d.accounts.total, "comptes créés"), stat(d.accounts.verified, "adresses confirmées"),
     stat(d.accounts.google, "connexion Google"), stat(d.accounts.daily, "question du jour activée"),
@@ -830,7 +883,9 @@ $("#subSearch").addEventListener("input", () => { clearTimeout(subSearchTimer); 
 
 /* ------------------------------------------------------------------ Pros */
 const PFILTERS = [["all", "Toutes"], ["active", "En ligne"], ["featured", "Mises en avant"], ["hidden", "Masquées"]];
-const PR = { status: "all", q: "", labels: null };
+const PR = { status: "all", q: "", labels: null, open: null, days: 30 };
+/** Accord en français : 0 et 1 au singulier. */
+const pl = (n, one, many) => (n > 1 ? many : one);
 const hue = s => { let h = 0; for (const ch of String(s)) h = (h * 31 + ch.codePointAt(0)) >>> 0; return h % 360; };
 async function loadPros() {
   if (!PR.labels) { try { const d = await call("api.php?action=pros"); PR.labels = { kinds: d.kinds, domains: d.domains }; } catch (e) { PR.labels = { kinds: {}, domains: {} }; } }
@@ -841,6 +896,8 @@ async function loadPros() {
     l, el("span", { class: "n", text: "(" + fmt(d.counts[k] || 0) + ")" }))));
   $("#pSummary").textContent = d.items.length ? fmt(d.items.length) + " page(s)" : "";
   $("#pList").replaceChildren(...(d.items.length ? d.items.map(proItem) : [el("div", { class: "empty", text: PR.q ? "Aucune page ne correspond." : "Aucune page pro pour l'instant." })]));
+  const open = d.items.find(x => x.id === PR.open);
+  if (open) loadProDetail(open);
 }
 function proItem(p) {
   const lbl = (o, k) => (o && o[k] ? o[k][0] : k);
@@ -864,11 +921,49 @@ function proItem(p) {
         p.website ? el("a", { href: p.website, target: "_blank", rel: "noopener nofollow", text: p.website.replace(/^https?:\/\//, "") }) : null,
         p.phone ? el("a", { href: "tel:" + p.phone.replace(/[^\d+]/g, ""), text: p.phone }) : null,
         p.email ? el("a", { href: "mailto:" + p.email, text: p.email }) : null)),
+    el("div", { class: "p-stats" }, el("span", { class: "lbl", text: "30 derniers jours" }),
+      el("span", {}, el("b", { text: fmt(p.stats.imp) }), pl(p.stats.imp, " affichage", " affichages")),
+      el("span", {}, el("b", { text: fmt(p.stats.reach) }), pl(p.stats.reach, " personne touchée", " personnes touchées")),
+      el("span", {}, el("b", { text: fmt(p.stats.view) }), pl(p.stats.view, " visite de la page", " visites de la page")),
+      el("span", {}, el("b", { text: fmt(p.stats.clicks) }), pl(p.stats.clicks, " clic sur les contacts", " clics sur les contacts"))),
+    PR.open === p.id ? el("div", { class: "p-detail", id: "pDetail" }) : null,
     el("div", { class: "actions" },
+      el("button", { class: "btn btn-ink btn-sm", type: "button", onclick: () => { PR.open = PR.open === p.id ? null : p.id; PR.days = 30; loadPros(); } }, PR.open === p.id ? "Fermer les statistiques" : "Statistiques détaillées"),
       el("button", { class: "btn " + (p.featured ? "btn-line" : "btn-pos") + " btn-sm", type: "button", onclick: () => setPro(p, { featured: !p.featured }, p.featured ? "Mise en avant retirée." : "Page mise en avant (sponsorisée).") }, p.featured ? "Retirer la mise en avant" : "★ Mettre en avant"),
       el("button", { class: "btn btn-line btn-sm", type: "button", onclick: () => setPro(p, { verified: !p.verified }, p.verified ? "Badge retiré." : "Page vérifiée.") }, p.verified ? "Retirer « Vérifié »" : "✓ Vérifier"),
       el("button", { class: "btn btn-line btn-sm", type: "button", onclick: () => setPro(p, { status: hidden ? "active" : "hidden" }, hidden ? "Page de nouveau en ligne." : "Page masquée.") }, hidden ? "Afficher" : "Masquer"),
       el("button", { class: "btn btn-neg btn-sm", type: "button", onclick: () => deletePro(p) }, "Supprimer")));
+}
+/** Statistiques détaillées d'un pro (mêmes chiffres que dans son espace pro) + rapport à copier pour lui. */
+async function loadProDetail(p) {
+  const box = $("#pDetail");
+  let d;
+  try { d = await call("api.php?action=mod_pro_stats&id=" + p.id + "&days=" + (PR.days || 30)); } catch (e) { box.textContent = e.message; return; }
+  const T = d.totals;
+  const delta = (cur, prev) => {
+    if (!prev) return null;
+    const ch = Math.round((cur - prev) / prev * 100);
+    return el("span", { class: "delta " + (ch >= 0 ? "up" : "down"), text: (ch >= 0 ? " ▲ " : " ▼ ") + Math.abs(ch) + " %" });
+  };
+  const tile = (n, label, dl) => el("div", { class: "stat-card" }, el("b", { text: fmt(n) }), el("span", {}, label, dl));
+  const max = Math.max(1, ...d.series.imp);
+  const report = `${p.name} — Défi Impact, ${d.days} derniers jours :\n` +
+    `• ${fmt(T.imp)} affichages (nom ou logo vu à l'écran)\n• ${fmt(T.reach)} personnes touchées\n• ${fmt(T.view)} visites de la page\n` +
+    `• ${fmt(T.clicks)} clics sur les contacts (site ${fmt(T.web)}, WhatsApp ${fmt(T.wa)}, appels ${fmt(T.call)}, email ${fmt(T.mail)})` +
+    (d.top.length ? `\nQuestions qui l'affichent le plus : ${d.top.slice(0, 3).map(x => "« " + x[2] + " » (" + fmt(x[1]) + ")").join(", ")}` : "");
+  box.replaceChildren(
+    el("div", { class: "ranges" }, ...[7, 30, 90].map(n => el("button", { type: "button", "aria-pressed": String(d.days === n), onclick: () => { PR.days = n; loadProDetail(p); } }, n + " jours")),
+      el("button", { type: "button", style: "margin-inline-start:auto", onclick: () => navigator.clipboard.writeText(report).then(() => toast("Rapport copié : collez-le dans un email ou WhatsApp au pro."), () => prompt("", report)) }, "Copier le rapport")),
+    el("div", { class: "stat-grid" },
+      tile(T.imp, pl(T.imp, "affichage", "affichages"), delta(T.imp, d.prev.imp)), tile(T.reach, pl(T.reach, "personne touchée", "personnes touchées")),
+      tile(T.view, pl(T.view, "visite de la page", "visites de la page"), delta(T.view, d.prev.view)), tile(T.clicks, pl(T.clicks, "clic", "clics") + (T.view ? " (" + Math.round(T.clicks / T.view * 100) + " % des visites)" : ""), delta(T.clicks, d.prev.clicks))),
+    el("h3", { text: "Affichages par jour" }),
+    el("div", { class: "trend-bars v" }, ...d.series.imp.map((n, i) => el("i", { style: "height:" + Math.max(3, n / max * 100) + "%" + (n ? "" : ";background:var(--paper-200)"), title: `${d.labels[i]} : ${fmt(n)} affichage(s), ${fmt(d.series.view[i])} visite(s), ${fmt(d.series.clicks[i])} clic(s)` }))),
+    el("div", { class: "cols" },
+      el("div", {}, el("h3", { text: "Clics par contact" }), el("ol", { class: "top-list" },
+        ...[["web", "Site web"], ["wa", "WhatsApp"], ["call", "Appels"], ["mail", "Emails"]].map(([k, l]) => el("li", {}, el("span", { class: "q", text: l }), el("span", { class: "top-n", text: fmt(T[k]) }))))),
+      el("div", {}, el("h3", { text: "Questions qui l'affichent le plus" }), el("ol", { class: "top-list" },
+        ...(d.top.length ? d.top.map(x => el("li", {}, el("span", { class: "q", text: "#" + x[0] + " " + x[2] }), el("span", { class: "top-n", text: fmt(x[1]) }))) : [el("li", { text: "Aucune pour l'instant." })])))));
 }
 async function setPro(p, patch, msg) {
   try { await call("api.php?action=mod_pro_set", Object.assign({ id: p.id }, patch)); toast(msg); loadPros(); } catch (e) { toast(e.message); }
