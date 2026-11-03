@@ -68,7 +68,15 @@ if (defined('SWB_REDIRECT_TO') && SWB_REDIRECT_TO !== '' && PHP_SAPI !== 'cli') 
     exit;
 }
 
-const SWB_LANGS = ['fr', 'ar'];
+const SWB_LANGS = ['ar', 'fr'];
+/** Langue principale : servie sans préfixe (swanbida.com/) ; les autres sous /fr/… */
+const SWB_DEFAULT_LANG = 'ar';
+
+/** Préfixe d'adresse d'une langue : '' pour la langue principale, « fr/ » sinon. */
+function lang_prefix(string $lang): string
+{
+    return $lang === SWB_DEFAULT_LANG || !in_array($lang, SWB_LANGS, true) ? '' : $lang . '/';
+}
 const SWB_VERSION = '1.0.0';
 
 /** Statuts commerciaux d'une commande, dans l'ordre du parcours. */
@@ -86,7 +94,11 @@ function base_path(): string
     static $b = null;
     if ($b !== null) return $b;
     if (SWB_SITE_URL !== '') return $b = rtrim((string) (parse_url(SWB_SITE_URL, PHP_URL_PATH) ?: ''), '/');
-    if (PHP_SAPI === 'cli') return $b = '/swanbida';
+    if (PHP_SAPI === 'cli') {
+        $u = cli_site_url();
+        if ($u !== '') return $b = rtrim((string) (parse_url($u, PHP_URL_PATH) ?: ''), '/');
+        return $b = basename(SWB_ROOT) === 'public_html' ? '' : '/' . basename(SWB_ROOT); // racine d'un domaine, ou sous-dossier
+    }
     $name = str_replace('\\', '/', (string) ($_SERVER['SCRIPT_NAME'] ?? '/swanbida/index.php'));
     $file = (string) ($_SERVER['SCRIPT_FILENAME'] ?? '');
     $real = $file !== '' ? str_replace('\\', '/', (string) (realpath($file) ?: $file)) : '';
@@ -112,12 +124,34 @@ function site_origin(): string
         $p = parse_url(SWB_SITE_URL);
         return ($p['scheme'] ?? 'https') . '://' . ($p['host'] ?? 'dehini.com') . (isset($p['port']) ? ':' . $p['port'] : '');
     }
-    if (PHP_SAPI === 'cli') return 'https://dehini.com';
+    if (PHP_SAPI === 'cli') {
+        $p = parse_url(cli_site_url());
+        return !empty($p['host']) ? ($p['scheme'] ?? 'https') . '://' . $p['host'] . (isset($p['port']) ? ':' . $p['port'] : '') : 'https://dehini.com';
+    }
     $host = preg_replace('/[^A-Za-z0-9.\-:\[\]]/', '', (string) ($_SERVER['HTTP_HOST'] ?? 'dehini.com')) ?: 'dehini.com';
     // Le site public est toujours annoncé en https:// (canonical, sitemap, Meta), même si le proxy de
     // l'hébergeur ne transmet pas l'information HTTPS au serveur. Seul un test local reste en http.
     $local = (bool) preg_match('/^(localhost|127\.|\[::1\]|0\.0\.0\.0)/', $host);
     return ($local && !is_https() ? 'http' : 'https') . '://' . $host;
+}
+
+/**
+ * Sans SWB_SITE_URL, le cron (CLI) ne connaît pas l'adresse du site : on reprend celle vue lors de
+ * la dernière connexion à l'admin (liens des alertes Telegram, événements Meta du cron).
+ */
+function cli_site_url(): string
+{
+    static $u = null;
+    if ($u === null) {
+        try { $u = (string) (meta_get('site_url') ?? ''); } catch (Throwable $e) { $u = ''; }
+    }
+    return $u;
+}
+function remember_site_url(): void
+{
+    if (PHP_SAPI === 'cli' || SWB_SITE_URL !== '') return;
+    $u = abs_url('');
+    if (meta_get('site_url') !== $u) meta_set('site_url', $u);
 }
 
 /** URL publique absolue d'un chemin relatif à la boutique (« produit/x », « assets/… »). */
@@ -160,7 +194,69 @@ function db(): PDO
 function migrate(PDO $pdo): void
 {
     $v = (int) $pdo->query('PRAGMA user_version')->fetchColumn();
-    if ($v >= 1) return;
+    if ($v < 1) migrate_v1($pdo);
+    if ($v < 2) migrate_v2($pdo);
+}
+
+/**
+ * v2 : commandes abandonnées — formulaires commencés (téléphone saisi) mais pas envoyés, pour
+ * rappeler le client. Une ligne par formulaire (clé du formulaire), fusionnée par téléphone.
+ */
+function migrate_v2(PDO $pdo): void
+{
+    $pdo->exec('BEGIN IMMEDIATE');
+    try {
+        if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= 2) {
+            $pdo->exec('COMMIT');
+            return;
+        }
+        $pdo->exec(<<<SQL
+        CREATE TABLE IF NOT EXISTS drafts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ckey TEXT NOT NULL UNIQUE,
+            status TEXT NOT NULL DEFAULT 'open',        -- open | contacted | converted | dismissed
+            pid INTEGER NOT NULL DEFAULT 0,
+            qty INTEGER NOT NULL DEFAULT 1,
+            total INTEGER NOT NULL DEFAULT 0,
+            name TEXT NOT NULL DEFAULT '',
+            phone TEXT NOT NULL,
+            wilaya TEXT NOT NULL DEFAULT '',
+            commune TEXT NOT NULL DEFAULT '',
+            note TEXT NOT NULL DEFAULT '',
+            lang TEXT NOT NULL DEFAULT 'ar',
+            utm_source TEXT NOT NULL DEFAULT '',
+            utm_campaign TEXT NOT NULL DEFAULT '',
+            campaign_id TEXT NOT NULL DEFAULT '',
+            ad_id TEXT NOT NULL DEFAULT '',
+            attribution TEXT NOT NULL DEFAULT '{}',
+            fbp TEXT NOT NULL DEFAULT '',
+            fbc TEXT NOT NULL DEFAULT '',
+            vid TEXT NOT NULL DEFAULT '',
+            ip TEXT NOT NULL DEFAULT '',
+            ua TEXT NOT NULL DEFAULT '',
+            source_url TEXT NOT NULL DEFAULT '',
+            order_id INTEGER,
+            recovered INTEGER NOT NULL DEFAULT 0,
+            contacts INTEGER NOT NULL DEFAULT 0,
+            contacted_at INTEGER NOT NULL DEFAULT 0,
+            admin_note TEXT NOT NULL DEFAULT '',
+            notified INTEGER NOT NULL DEFAULT 0,
+            created INTEGER NOT NULL,
+            updated INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS drafts_status ON drafts(status, updated);
+        CREATE INDEX IF NOT EXISTS drafts_phone ON drafts(phone, pid);
+        PRAGMA user_version = 2;
+        SQL);
+        $pdo->exec('COMMIT');
+    } catch (Throwable $e) {
+        $pdo->exec('ROLLBACK');
+        throw $e;
+    }
+}
+
+function migrate_v1(PDO $pdo): void
+{
     $pdo->exec('BEGIN IMMEDIATE');
     try {
         // Une autre requête a pu migrer pendant qu'on attendait le verrou.
@@ -402,6 +498,10 @@ const SETTING_DEFAULTS = [
     'wa_template_fr'    => "Bonjour {name}, merci pour votre commande SWANBIDA n° {ref} : {items}, total {total}, livraison à {commune} ({wilaya}). Pouvez-vous nous confirmer la commande ?",
     'wa_template_ar'    => "مرحباً {name}، شكراً على طلبك من SWANBIDA رقم {ref}: {items}، المجموع {total}، التوصيل إلى {commune} ({wilaya}). هل تؤكد الطلب؟",
     'order_rate_ip'     => '8',         // commandes max par heure et par IP
+    'abandon_minutes'   => '20',        // un formulaire commencé est « abandonné » après N minutes sans activité
+    'notify_abandoned'  => '1',         // prévenir sur Telegram des commandes abandonnées
+    'wa_abandon_fr'     => "Bonjour {name}, vous avez commencé une commande SWANBIDA ({items}, {total}) sans la terminer. Voulez-vous que nous la confirmions pour vous ?",
+    'wa_abandon_ar'     => "مرحباً {name}، لاحظنا أنك بدأت طلباً من SWANBIDA ({items}، {total}) ولم تُكمله. هل تريد أن نؤكده لك؟",
 ];
 
 function setting(string $k): string

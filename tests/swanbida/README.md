@@ -16,7 +16,11 @@ les coordonnées dans l'admin, puis exécute `e2e.js` (Playwright / Chromium, iP
 - Lead serveur unique (`lead.<n°>`), valeur, `fbc`, données hachées ;
 - aucune conversion à l'ouverture ni au rafraîchissement de la page de remerciement ;
 - connexion à l'admin, confirmation de la commande → un seul Purchase (`purchase.<n°>`) côté serveur ;
-- absence d'erreur JavaScript et de défilement horizontal ; captures d'écran dans `<dossier>/shots`.
+- arabe sur `/` (RTL), français sur `/fr/`, `hreflang` x-default, redirection 301 des anciennes adresses `/ar/…` ;
+- commandes abandonnées : enregistrement dès qu'un téléphone valide est tapé, rien avant ; ligne fermée quand la
+  commande est envoyée ; alerte Telegram unique par le cron ; Appeler / note / « Contactée » / « Créer la commande »
+  dans l'admin → Lead serveur avec le `fbc` de la publicité d'origine, pas de doublon au double clic ;
+- absence d'erreur JavaScript et de défilement horizontal (boutique et admin) ; captures d'écran dans `<dossier>/shots`.
 
 Pour naviguer à la main : `setup.sh <dossier>`, puis
 `php -S 127.0.0.1:8090 -t <dossier>/public_html tests/swanbida/router.php` et ouvrir

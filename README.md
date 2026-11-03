@@ -384,8 +384,9 @@ lien « Connecter l'extension » n'en dépend pas.
 
 ## SWANBIDA (`/swanbida/`)
 
-Boutique de la marque SWANBIDA 🦢 — *L'élégance dans chaque détail* — en français (`/swanbida/`) et en arabe
-(`/swanbida/ar/`, de droite à gauche), pensée d'abord pour le téléphone (trafic Facebook / Instagram). PHP + SQLite,
+Boutique de la marque SWANBIDA 🦢 — *L'élégance dans chaque détail* — en **arabe, langue principale**
+(`/swanbida/`, de droite à gauche) et en français (`/swanbida/fr/`, bouton « FR » en haut de chaque page), pensée
+d'abord pour le téléphone (trafic Facebook / Instagram). PHP + SQLite,
 sans dépendance ni étape de construction, comme le reste du site.
 
 | Adresse | Page |
@@ -400,12 +401,15 @@ sans dépendance ni étape de construction, comme le reste du site.
 | `/swanbida/admin/` | Administration |
 | `/swanbida/sitemap.xml`, `/swanbida/robots.txt` | Référencement |
 
-Chaque page existe en arabe sous `/swanbida/ar/…`.
+Chaque page existe en français sous `/swanbida/fr/…` (ex. `/swanbida/fr/produit/pack-serviette-blanc`) : c'est
+l'adresse à mettre dans les publicités en français. Les anciennes adresses `/swanbida/ar/…` redirigent (301) vers la
+même page sans `/ar/`, paramètres de publicité compris. `hreflang` x-default = arabe.
 
 - `swanbida/index.php` — toutes les pages (rendu serveur : titres, descriptions, canonical, hreflang fr-DZ / ar-DZ,
   Open Graph, données structurées Schema.org Organization, WebSite, Product, BreadcrumbList, Article).
 - `swanbida/api.php` — commande, wilayas / communes, événements de navigation. `swanbida/admin/` — administration.
-- `swanbida/cron.php` — renvoi des événements Meta, sauvegarde quotidienne, purge des données techniques.
+- `swanbida/cron.php` — renvoi des événements Meta, sauvegarde quotidienne, alertes des commandes abandonnées,
+  purge des données techniques.
 - `swanbida/lib/` (code), `swanbida/templates/` (gabarits) — bloqués en accès direct.
 - `swanbida/assets/` — style, script, logo, icônes et **visuels provisoires** (illustrations du pack, à remplacer par
   les vraies photos depuis l'admin). `swanbida/media/` — photos et vidéos envoyées depuis l'admin (hors Git).
@@ -444,8 +448,8 @@ Si l'envoi de photos échoue avec « Fichier trop lourd », relever `upload_max_
 ### 2. Commandes (paiement à la livraison)
 
 Le formulaire est directement sur la fiche produit : offre (1 ou 2 packs, offres modifiables dans l'admin), nom et
-prénom, téléphone, wilaya, commune (liste selon la wilaya, ou saisie libre « Autre commune »), adresse, remarque
-facultative. Le montant (offre + frais de la wilaya) est **recalculé par le serveur**, jamais pris du navigateur.
+prénom, téléphone, wilaya, commune (liste selon la wilaya, ou saisie libre « Autre commune »), remarque
+facultative — pas de champ « adresse détaillée » (le livreur appelle le client). Le montant (offre + frais de la wilaya) est **recalculé par le serveur**, jamais pris du navigateur.
 Chaque commande reçoit un numéro unique lisible au téléphone (`SW-7K4M2Q`) et un lien de suivi privé.
 
 - Validation côté serveur de chaque champ (numéros algériens 05 / 06 / 07, +213, chiffres arabes acceptés).
@@ -461,9 +465,22 @@ Chaque commande reçoit un numéro unique lisible au téléphone (`SW-7K4M2Q`) e
 annulée, retournée) avec compteurs, recherche (n°, nom, téléphone, commune, n° de suivi), filtres (wilaya, dates,
 source, doublons, campagne / publicité depuis le tableau de bord), changement de statut groupé, export Excel / CSV
 (séparateur « ; », UTF-8). Fiche commande : boutons Appeler et WhatsApp (message de confirmation pré-rempli,
-modifiable dans Réglages), modification du client, de l'adresse, de l'offre, des frais, du transporteur et du n° de
+modifiable dans Réglages), modification du client, de l'adresse (facultative, pour le livreur), de l'offre, des frais, du transporteur et du n° de
 suivi (affichés au client sur sa page de suivi), notes internes, historique complet, origine publicitaire et
 événements Meta envoyés.
+
+**Commandes abandonnées** (menu « Abandonnées », compteur rouge) : dès qu'un visiteur a tapé un numéro de téléphone
+valide dans le formulaire, ce qu'il a saisi (offre, nom, wilaya, commune, remarque, publicité d'origine) est
+enregistré automatiquement — même s'il ferme la page. S'il envoie sa commande, la ligne disparaît d'elle-même
+(« commandée par le client »). Sinon, après **20 minutes sans activité** (réglable), elle passe dans **À rappeler** :
+
+- boutons **Appeler** et **WhatsApp** (message de relance pré-rempli dans la langue du client, modifiable dans
+  Réglages) — un appel ou un message la classe dans « Contactées » ; note interne ; « Ignorer » ;
+- **Créer la commande** : compléter le nom, la wilaya, la commune ou l'offre et enregistrer — la commande arrive en
+  « Nouvelle », avec l'attribution publicitaire du client (Lead Meta envoyé avec le clic d'origine `fbc`, Purchase à
+  la confirmation comme d'habitude). La ligne passe en « Récupérée » ;
+- alerte **Telegram** (une seule par commande abandonnée, envoyée par le cron), tuile « Abandonnées / récupérées »
+  sur le tableau de bord ; effacement automatique au bout de 30 jours (mentionné dans la page Confidentialité).
 
 **Notifications** de chaque nouvelle commande : email (jusqu'à 5 adresses, via le compte SMTP du défi Impact si
 `swanbida/config.php` n'en définit pas d'autre), **Telegram** (créer un bot avec @BotFather, coller son jeton et

@@ -4,7 +4,7 @@
 
   /* ================================================================ outils */
   var API = 'api.php';
-  var state = { user: null, csrf: '', maxId: 0, pending: 0, seen: 0 };
+  var state = { user: null, csrf: '', maxId: 0, pending: 0, abandoned: 0, seen: 0 };
   var app = document.getElementById('app');
 
   function h(tag, attrs) {
@@ -133,7 +133,7 @@
 
   /* ================================================================ coque */
   var NAV = [
-    ['tableau', 'Tableau de bord', 'dashboard'], ['commandes', 'Commandes', 'orders'], ['produits', 'Produits & stock', 'catalog'],
+    ['tableau', 'Tableau de bord', 'dashboard'], ['commandes', 'Commandes', 'orders'], ['abandonnees', 'Abandonnées', 'orders'], ['produits', 'Produits & stock', 'catalog'],
     ['collections', 'Collections', 'catalog'], ['contenus', 'Contenus', 'content'], ['guides', 'Guides', 'content'],
     ['livraison', 'Livraison', 'shipping'], ['meta', 'Meta & suivi', 'meta'], ['reglages', 'Réglages', 'settings'], ['compte', 'Mon compte', 'orders']
   ];
@@ -158,7 +158,8 @@
       if (!can(n[2])) return;
       if (n[0] === 'compte' && state.user.role === 'owner') return;
       navEl.appendChild(h('a', { href: '#/' + n[0], class: cur === n[0] ? 'on' : '' }, n[1],
-        n[0] === 'commandes' && state.pending ? h('span', { class: 'count', title: 'Commandes à confirmer' }, state.pending) : null));
+        n[0] === 'commandes' && state.pending ? h('span', { class: 'count', title: 'Commandes à confirmer' }, state.pending) : null,
+        n[0] === 'abandonnees' && state.abandoned ? h('span', { class: 'count', title: 'Commandes abandonnées à rappeler' }, state.abandoned) : null));
     });
   }
   function page(title, sub, actions) {
@@ -185,10 +186,11 @@
   function poll(first) {
     api('poll', { query: { since: state.maxId } }).then(function (j) {
       state.pending = j.pending;
+      state.abandoned = j.abandoned || 0;
       if (!first && j.items.length && j.max_id > state.maxId) {
         var n = j.items.filter(function (o) { return o.id > state.maxId; });
         n.forEach(function (o) {
-          toast('🦢 Nouvelle commande ' + o.ref + ' — ' + o.name + ' — ' + money(o.total));
+          toast('🦢 Nouvelle commande ' + o.ref + ' — \u2068' + o.name + '\u2069 — ' + money(o.total));
           if (window.Notification && Notification.permission === 'granted') {
             try { var no = new Notification('Nouvelle commande ' + o.ref, { body: o.name + ' · ' + o.wilaya_name + ' · ' + money(o.total), tag: o.ref }); no.onclick = function () { window.focus(); location.hash = '#/commandes/' + o.id; }; } catch (e) { /* */ }
           }
@@ -210,11 +212,11 @@
     var r = parts[0] || (can('dashboard') ? 'tableau' : 'commandes');
     drawNav();
     var views = {
-      tableau: viewDashboard, commandes: parts[1] ? function () { viewOrder(+parts[1]); } : viewOrders,
+      tableau: viewDashboard, commandes: parts[1] ? function () { viewOrder(+parts[1]); } : viewOrders, abandonnees: viewDrafts,
       produits: parts[1] ? function () { viewProduct(parts[1]); } : viewProducts, collections: viewCollections, contenus: viewContent,
       guides: parts[1] ? function () { viewArticle(parts[1]); } : viewArticles, livraison: viewShipping, meta: viewMeta, reglages: viewSettings, compte: viewAccount
     };
-    var need = { tableau: 'dashboard', commandes: 'orders', produits: 'catalog', collections: 'catalog', contenus: 'content', guides: 'content', livraison: 'shipping', meta: 'meta', reglages: 'settings', compte: 'orders' };
+    var need = { tableau: 'dashboard', commandes: 'orders', abandonnees: 'orders', produits: 'catalog', collections: 'catalog', contenus: 'content', guides: 'content', livraison: 'shipping', meta: 'meta', reglages: 'settings', compte: 'orders' };
     if (!views[r] || !can(need[r])) { location.hash = '#/' + (can('dashboard') ? 'tableau' : 'commandes'); return; }
     views[r]();
   }
@@ -244,7 +246,8 @@
         kpi(k.n ? money(k.v / k.n) : '—', 'Panier moyen', null),
         kpi(k.shipped, 'Expédiées', pct(k.delivered, k.shipped) + ' livrées'),
         kpi(k.cancelled, 'Annulées', pct(k.cancelled, k.n)),
-        kpi(k.returned, 'Retournées', pct(k.returned, k.shipped) + ' des expédiées')
+        kpi(k.returned, 'Retournées', pct(k.returned, k.shipped) + ' des expédiées'),
+        kpi((s.abandoned && s.abandoned.abandoned) || 0, 'Abandonnées', h('a', { href: '#/abandonnees' }, ((s.abandoned && s.abandoned.recovered) || 0) + ' récupérées · ' + money((s.abandoned && s.abandoned.recovered_v) || 0)))
       ));
       // Graphique
       var c = h('div', { class: 'card' }, h('h2', null, 'Commandes par jour'), chart(s.series),
@@ -489,6 +492,114 @@
     function row(k, v) { return v ? [h('dt', null, k), h('dd', null, v)] : null; }
   }
   function nextOf(s) { return { new: 'confirmed', confirmed: 'preparing', preparing: 'shipped', shipped: 'delivered' }[s]; }
+
+  /* ================================================== commandes abandonnées */
+  var DRAFT_TABS = [['todo', 'À rappeler'], ['live', 'En cours de saisie'], ['contacted', 'Contactées'], ['converted', 'Récupérées / commandées'], ['dismissed', 'Ignorées']];
+  function viewDrafts() {
+    var f = {};
+    try { f = JSON.parse(sessionStorage.getItem('swb_df') || '{}') || {}; } catch (e) { f = {}; }
+    f.tab = f.tab || 'todo'; f.page = f.page || 1;
+    var save = function () { sessionStorage.setItem('swb_df', JSON.stringify(f)); };
+    var m = page('Commandes abandonnées', 'Clients qui ont commencé à remplir le formulaire (téléphone saisi) sans l\'envoyer. Rappelez-les ou écrivez-leur sur WhatsApp, puis créez la commande en un clic.');
+    var tabs = h('div', { class: 'tabs' });
+    var q = h('input', { type: 'search', placeholder: 'Nom ou téléphone…', value: f.q || '' });
+    var deb = null;
+    q.addEventListener('input', function () { clearTimeout(deb); deb = setTimeout(function () { f.q = q.value; f.page = 1; save(); load(); }, 300); });
+    var info = h('p', { class: 'small muted' });
+    var list = h('div', { class: 'olist' });
+    var pager = h('div', { class: 'pager' });
+    m.appendChild(tabs);
+    m.appendChild(h('div', { class: 'filters' }, h('div', { class: 'wide' }, q)));
+    m.appendChild(info); m.appendChild(list); m.appendChild(pager);
+    function mark(d, st) {
+      return api('draft_update', { body: { id: d.id, status: st } }).then(function () { poll(false); });
+    }
+    function load() {
+      api('drafts', { query: { tab: f.tab, q: f.q || '', page: f.page } }).then(function (j) {
+        clear(tabs);
+        DRAFT_TABS.forEach(function (t) {
+          tabs.appendChild(h('button', { class: f.tab === t[0] ? 'on' : '', onclick: function () { f.tab = t[0]; f.page = 1; save(); load(); } }, t[1], h('span', { class: 'n' }, j.counts[t[0]] || 0)));
+        });
+        info.textContent = f.tab === 'live'
+          ? 'Formulaires modifiés il y a moins de ' + j.minutes + ' min : le client est peut-être encore en train de commander. Ils passent dans « À rappeler » ensuite.'
+          : f.tab === 'todo' ? 'Sans activité depuis plus de ' + j.minutes + ' min et jamais envoyées (réglable dans Réglages → Commandes abandonnées). Effacées automatiquement au bout de 30 jours.' : '';
+        clear(list);
+        if (!j.items.length) list.appendChild(h('p', { class: 'muted' }, 'Aucune commande abandonnée ici.'));
+        j.items.forEach(function (d) { list.appendChild(card(d)); });
+        if (f.tab === 'todo' && !f.q && f.page === 1) poll(false); // compteur du menu à jour
+        clear(pager);
+        if (j.pages > 1) {
+          pager.appendChild(h('button', { class: 'btn btn-sm', disabled: j.page <= 1 ? true : null, onclick: function () { f.page--; save(); load(); } }, '‹ Précédent'));
+          pager.appendChild(h('span', null, 'Page ' + j.page + ' / ' + j.pages + ' · ' + j.total));
+          pager.appendChild(h('button', { class: 'btn btn-sm', disabled: j.page >= j.pages ? true : null, onclick: function () { f.page++; save(); load(); } }, 'Suivant ›'));
+        } else pager.appendChild(h('span', null, j.total + ' commande(s) abandonnée(s)'));
+      }).catch(fail);
+    }
+    function card(d) {
+      var place = [d.commune, d.wilaya_name].filter(Boolean).join(', ');
+      var stLabel = { open: 'à rappeler', contacted: 'contactée' + (d.contacts > 1 ? ' ×' + d.contacts : ''), converted: d.recovered ? 'récupérée' : 'commandée par le client', dismissed: 'ignorée' }[d.status];
+      var box = h('div', { class: 'orow drow', 'data-draft': d.id });
+      var noteIn = h('input', { type: 'text', placeholder: 'Note interne (ex. ne répond pas, rappeler demain)', value: d.admin_note || '' });
+      var form = h('div', { class: 'dconv', hidden: true });
+      var acts = h('div', { class: 'acts' });
+      if (d.status !== 'converted') {
+        acts.appendChild(h('a', { class: 'btn btn-sm', href: 'tel:' + d.phone, onclick: function () { if (d.status === 'open') mark(d, 'contacted'); } }, icon('phone'), 'Appeler'));
+        acts.appendChild(h('a', { class: 'btn btn-sm btn-wa', href: d.wa, target: '_blank', rel: 'noopener', onclick: function () { if (d.status === 'open') mark(d, 'contacted'); } }, icon('wa'), 'WhatsApp'));
+        acts.appendChild(h('button', { class: 'btn btn-sm btn-p', onclick: function () { form.hidden = !form.hidden; if (!form.firstChild) buildForm(d, form); } }, 'Créer la commande'));
+        if (d.status === 'open') acts.appendChild(h('button', { class: 'btn btn-sm', onclick: function () { mark(d, 'contacted').then(function () { toast('Marquée comme contactée'); load(); }).catch(fail); } }, 'Contactée'));
+        if (d.status !== 'open') acts.appendChild(h('button', { class: 'btn btn-sm', onclick: function () { mark(d, 'open').then(function () { toast('Remise dans « À rappeler »'); load(); }).catch(fail); } }, 'À rappeler'));
+        if (d.status !== 'dismissed') acts.appendChild(h('button', { class: 'btn btn-sm btn-d', onclick: function () { mark(d, 'dismissed').then(function () { toast('Ignorée'); load(); }).catch(fail); } }, 'Ignorer'));
+      } else if (d.order_id) {
+        acts.appendChild(h('a', { class: 'btn btn-sm', href: '#/commandes/' + d.order_id }, 'Voir la commande ' + (d.order_ref || '')));
+      }
+      box.appendChild(h('div', null,
+        h('div', { class: 'l1' }, h('b', null, d.name || 'Sans nom'), h('span', { class: 'badge b-draft-' + d.status }, stLabel), h('span', { class: 'small muted' }, ago(d.updated)), h('span', { class: 'tot' }, money(d.total))),
+        h('div', { class: 'l2' }, h('span', { dir: 'ltr' }, d.phone_display), place ? ' · ' + place : ' · wilaya non choisie', ' · ', d.lang === 'ar' ? 'site arabe' : 'site français'),
+        h('div', { class: 'l3' }, d.items + (d.source ? ' · ' + d.source + (d.campaign ? ' / ' + d.campaign : '') : '') + (d.note ? ' · 📝 ' + d.note : '') + (d.contacted_at ? ' · contactée ' + ago(d.contacted_at) : ''))));
+      box.appendChild(acts);
+      if (d.status !== 'converted') {
+        box.appendChild(h('div', { class: 'row dnote' }, h('div', { class: 'grow' }, noteIn), h('button', { class: 'btn btn-sm', onclick: function () {
+          api('draft_update', { body: { id: d.id, admin_note: noteIn.value } }).then(function () { toast('Note enregistrée'); }).catch(fail);
+        } }, 'Enregistrer la note')));
+      } else if (d.admin_note) box.appendChild(h('div', { class: 'l3' }, '🔒 ' + d.admin_note));
+      box.appendChild(form);
+      return box;
+    }
+    function buildForm(d, form) {
+      geo().then(function (w) {
+        var F = {};
+        F.name = h('input', { type: 'text', value: d.name || '', placeholder: 'Nom et prénom' });
+        F.phone = h('input', { type: 'tel', value: d.phone_display || d.phone, dir: 'ltr' });
+        F.wilaya = h('select', null, h('option', { value: '' }, '— Wilaya —'), w.map(function (x) { return h('option', { value: x.c }, x.c + ' – ' + x.fr); }));
+        F.wilaya.value = d.wilaya || '';
+        var dlId = 'dl-draft-' + d.id;
+        var dl = h('datalist', { id: dlId });
+        function fill() { clear(dl); var x = w.filter(function (y) { return y.c === F.wilaya.value; })[0]; (x ? x.m : []).forEach(function (c) { dl.appendChild(h('option', { value: c[0] })); }); }
+        F.wilaya.addEventListener('change', fill); fill();
+        F.commune = h('input', { type: 'text', value: d.commune || '', list: dlId });
+        F.qty = h('select', null, d.tiers.map(function (t) { return h('option', { value: t.qty }, t.label + ' — ' + money(t.price)); }));
+        F.qty.value = d.qty;
+        F.note = h('input', { type: 'text', value: d.note || '' });
+        var go = h('button', { class: 'btn btn-p', onclick: function () {
+          var fields = {}; ['name', 'phone', 'wilaya', 'commune', 'qty', 'note'].forEach(function (k) { fields[k] = F[k].value; });
+          go.disabled = true;
+          api('draft_convert', { body: { id: d.id, fields: fields } }).then(function (j) {
+            toast('Commande ' + j.ref + ' créée');
+            poll(false);
+            location.hash = '#/commandes/' + j.order_id;
+          }).catch(function (e) { go.disabled = false; fail(e); });
+        } }, 'Enregistrer la commande');
+        add(form, [
+          h('h3', null, 'Compléter et créer la commande'),
+          h('div', { class: 'grid g2' }, h('label', { class: 'f' }, 'Nom et prénom', F.name), h('label', { class: 'f' }, 'Téléphone', F.phone)),
+          h('div', { class: 'grid g2' }, h('label', { class: 'f' }, 'Wilaya', F.wilaya), h('label', { class: 'f' }, 'Commune', F.commune, dl)),
+          h('div', { class: 'grid g2' }, h('label', { class: 'f' }, 'Offre', F.qty), h('label', { class: 'f' }, 'Remarque', F.note)),
+          h('div', { class: 'row' }, go, h('span', { class: 'small muted' }, 'La commande arrive au statut « Nouvelle ». Meta reçoit le Lead ; Purchase partira à la confirmation, comme d\'habitude.'))
+        ]);
+      }).catch(fail);
+    }
+    load();
+  }
 
   /* ============================================================== éditeurs */
   function counter(input, max) {
@@ -937,7 +1048,7 @@
     m.appendChild(body);
     api('settings').then(function (j) {
       var s = j.settings;
-      ['allow_backorder', 'desk_enabled'].forEach(function (k) { s[k] = s[k] === '1'; });
+      ['allow_backorder', 'desk_enabled', 'notify_abandoned'].forEach(function (k) { s[k] = s[k] === '1'; });
       s.telegram_token = ''; s.telegram_clear = false;
       if (j.last_error) body.appendChild(h('div', { class: 'alert alert-d small' }, 'Dernière erreur de notification : ' + j.last_error));
       var tg = h('input', { type: 'password', autocomplete: 'off', placeholder: j.settings.telegram_set ? 'Jeton enregistré — laisser vide pour le garder' : '123456789:AA…' });
@@ -955,6 +1066,12 @@
           textField(s, 'order_rate_ip', 'Commandes max par heure et par connexion', { type: 'number' }), textField(s, 'return_days', 'Délai d\'échange affiché à Google (jours)', { type: 'number' })),
         checkField(s, 'desk_enabled', 'Proposer la livraison au bureau du transporteur (stop desk)'),
         checkField(s, 'allow_backorder', 'Accepter les commandes quand le stock est épuisé'),
+        h('h3', null, 'Commandes abandonnées'),
+        h('div', { class: 'grid g2' }, textField(s, 'abandon_minutes', 'Considérer un formulaire comme abandonné après… (minutes sans activité)', { type: 'number' }),
+          h('div', null, checkField(s, 'notify_abandoned', 'Prévenir sur Telegram de chaque commande abandonnée'))),
+        h('p', { class: 'small muted' }, 'Message WhatsApp de relance — variables : {name} {items} {total} {phone}'),
+        textField(s, 'wa_abandon_fr', 'Relance en français', { multi: true, rows: 3 }),
+        (function () { var t = textField(s, 'wa_abandon_ar', 'Relance en arabe', { multi: true, rows: 3 }); t.querySelector('textarea').setAttribute('dir', 'rtl'); return t; })(),
         h('h3', null, 'Message WhatsApp de confirmation'), h('p', { class: 'small muted' }, 'Variables : {name} {ref} {items} {total} {wilaya} {commune} {address} {phone}'),
         textField(s, 'wa_template_fr', 'Français', { multi: true, rows: 3 }),
         (function () { var t = textField(s, 'wa_template_ar', 'Arabe', { multi: true, rows: 3 }); t.querySelector('textarea').setAttribute('dir', 'rtl'); return t; })()));

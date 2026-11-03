@@ -159,11 +159,6 @@ $testimonials = array_values(array_filter((array) ($home['testimonials'] ?? []),
           <p class="field-err" data-err="commune"></p>
         </div>
       </div>
-      <div class="field">
-        <label for="f-address"><?= e(t('f_address')) ?></label>
-        <input id="f-address" name="address" type="text" required maxlength="250" autocomplete="street-address" placeholder="<?= e(t('ph_address')) ?>" enterkeyhint="done">
-        <p class="field-err" data-err="address"></p>
-      </div>
       <?php if ($desk): ?>
       <fieldset class="field delivery-choice">
         <legend><?= e(t('f_delivery')) ?></legend>

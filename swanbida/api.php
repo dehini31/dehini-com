@@ -4,6 +4,7 @@
  *   GET  ?action=geo             wilayas, frais de livraison et communes (mis en cache)
  *   POST ?action=order           nouvelle commande (JSON ou formulaire classique sans JavaScript)
  *   POST ?action=t               événement de navigation (doublé côté serveur vers Meta, compteurs du tunnel)
+ *   POST ?action=draft           formulaire commencé (téléphone saisi) : commande abandonnée s'il n'est pas envoyé
  */
 declare(strict_types=1);
 
@@ -16,6 +17,7 @@ require __DIR__ . '/lib/orders.php';
 require __DIR__ . '/lib/meta.php';
 require __DIR__ . '/lib/notify.php';
 require __DIR__ . '/lib/view.php';
+require __DIR__ . '/lib/drafts.php';
 
 security_headers();
 header('X-Robots-Tag: noindex');
@@ -54,7 +56,7 @@ try {
             $isJson = stripos((string) ($_SERVER['CONTENT_TYPE'] ?? ''), 'application/json') !== false;
             $in = $isJson ? input_json() : $_POST;
             if (!$isJson && isset($in['attr']) && is_string($in['attr'])) $in['attr'] = json_decode($in['attr'], true) ?: [];
-            $lang = in_array($in['lang'] ?? '', SWB_LANGS, true) ? (string) $in['lang'] : 'fr';
+            $lang = in_array($in['lang'] ?? '', SWB_LANGS, true) ? (string) $in['lang'] : SWB_DEFAULT_LANG;
             current_lang($lang);
             $ctx = request_ctx($in);
             $ctx['url'] = own_url((string) ($in['url'] ?? ($_SERVER['HTTP_REFERER'] ?? '')));
@@ -96,6 +98,15 @@ try {
                     'content_type' => 'product', 'num_items' => $o['qty'], 'contents' => [['id' => (string) $it['sku'], 'quantity' => (int) $it['qty']]],
                 ],
             ]);
+        }
+
+        case 'draft': {
+            if ($method !== 'POST') json_out(['error' => 'method'], 405);
+            if (!rate_ok('draft:' . ip_hash(), 60, 600)) json_out(['ok' => false], 429);
+            $b = input_json();
+            $ctx = request_ctx($b);
+            $ctx['url'] = own_url((string) ($b['url'] ?? ''));
+            json_out(['ok' => draft_save($b, $ctx)]);
         }
 
         case 't': {

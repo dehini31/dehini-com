@@ -42,7 +42,7 @@ $wa = whatsapp_link(t('wa_order_prefill', ['ref' => $o['ref']]));
     <div class="oc-row oc-total"><span><?= e(t('total')) ?></span><b><?= e(money($o['total'], $lang)) ?></b></div>
     <dl class="oc-meta">
       <div><dt><?= e(t('customer')) ?></dt><dd><?= e($o['name']) ?> · <span dir="ltr"><?= e($o['phone']) ?></span></dd></div>
-      <div><dt><?= e(t('delivery_to')) ?></dt><dd><?= e($o['commune']) ?>, <?= e($o['wilaya_name']) ?><br><?= e($o['address']) ?></dd></div>
+      <div><dt><?= e(t('delivery_to')) ?></dt><dd><?= e($o['commune']) ?>, <?= e($o['wilaya_name']) ?><?php if ($o['address'] !== ''): ?><br><?= e($o['address']) ?><?php endif; ?></dd></div>
       <div><dt><?= e(t('order_date')) ?></dt><dd><?= e(date_long($o['created'])) ?></dd></div>
     </dl>
   </div>

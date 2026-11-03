@@ -4,13 +4,17 @@
  *  - événements Pixel (PageView, ViewContent, AddToCart, InitiateCheckout, Lead) avec event_id,
  *    et mêmes event_id reçus par la fausse Conversions API (déduplication) ;
  *  - aucune conversion à l'ouverture / au rafraîchissement de la page de remerciement ;
- *  - administration : connexion, confirmation de la commande → Purchase côté serveur uniquement.
+ *  - administration : connexion, confirmation de la commande → Purchase côté serveur uniquement ;
+ *  - arabe langue principale (/), français sous /fr/ ;
+ *  - commandes abandonnées : formulaire commencé puis quitté → alerte Telegram (cron), relance et
+ *    création de la commande depuis l'admin (Lead serveur avec l'attribution de la publicité).
  *
  * Prérequis : serveurs lancés (voir tests/swanbida/README.md).
  *   node tests/swanbida/e2e.js <dossier du faux hébergement> [dossier des captures]
  */
 const { chromium, devices } = require('playwright');
 const fs = require('fs');
+const { execFileSync } = require('child_process');
 const path = require('path');
 
 const DIR = process.argv[2];
@@ -48,7 +52,7 @@ async function order(browser, lang) {
   console.log(`\n▶ Commande mobile (${lang}) depuis une publicité`);
   const { ctx, page, errors } = await newPage(browser, ar ? { locale: 'ar-DZ' } : {});
   const ad = '?utm_source=facebook&utm_medium=paid&utm_campaign=Lancement%20Pack&utm_content=Video%201&campaign_id=1202000000001&adset_id=1202000000002&ad_id=1202000000003&fbclid=IwAR0e2eTest' + lang;
-  await page.goto(BASE + (ar ? '/ar' : '') + '/produit/pack-serviette-blanc' + ad, { waitUntil: 'networkidle' });
+  await page.goto(BASE + (ar ? '' : '/fr') + '/produit/pack-serviette-blanc' + ad, { waitUntil: 'networkidle' });
   await sleep(1300);
   let calls = await fbqCalls(page);
   check(calls.some(c => c.name === 'PageView' && /^pv\./.test(c.id)), 'PageView navigateur avec eventID');
@@ -140,7 +144,7 @@ async function order(browser, lang) {
   await page.waitForFunction(() => { const s = document.querySelector('#f-commune-sel'); return s && !s.disabled && s.options.length > 10; });
   const communeVal = await page.evaluate(() => [...document.querySelectorAll('#f-commune-sel option')].find(o => o.value === 'Bab Ezzouar').value);
   await page.selectOption('#f-commune-sel', communeVal);
-  await page.fill('#f-address', ar ? 'حي 1000 مسكن، عمارة 3' : 'Cité 1000 logements, bât. 3');
+  check(!(await page.$('#f-address')), 'formulaire : plus de champ « adresse détaillée »');
   await page.screenshot({ path: path.join(SHOTS, `form-${lang}.png`), fullPage: false });
   const [resp] = await Promise.all([
     page.waitForResponse(r => r.url().includes('action=order')),
@@ -181,7 +185,19 @@ async function order(browser, lang) {
 async function home(browser, lang) {
   console.log(`\n▶ Accueil mobile (${lang})`);
   const { ctx, page, errors } = await newPage(browser, lang === 'ar' ? { locale: 'ar-DZ' } : {});
-  await page.goto(BASE + (lang === 'ar' ? '/ar/' : '/'), { waitUntil: 'networkidle' });
+  await page.goto(BASE + (lang === 'ar' ? '/' : '/fr/'), { waitUntil: 'networkidle' });
+  const L = await page.evaluate(() => ({
+    lang: document.documentElement.lang, dir: document.documentElement.dir,
+    xdef: (document.querySelector('link[hreflang="x-default"]') || {}).href || '',
+    sw: (document.querySelector('.lang-switch') || {}).href || '',
+  }));
+  check(L.lang.startsWith(lang) && L.dir === (lang === 'ar' ? 'rtl' : 'ltr'), `langue : ${lang === 'ar' ? '/ = arabe (RTL)' : '/fr/ = français (LTR)'}`);
+  check(L.xdef === BASE + '/', 'hreflang x-default → version arabe (/)');
+  check(lang === 'ar' ? L.sw.endsWith('/swanbida/fr/') : L.sw.endsWith('/swanbida/'), 'bouton de langue → ' + L.sw.replace(BASE, ''));
+  if (lang === 'ar') {
+    const old = await ctx.request.get(BASE + '/ar/produit/pack-serviette-blanc?utm_source=facebook', { maxRedirects: 0 });
+    check(old.status() === 301 && old.headers().location.endsWith('/swanbida/produit/pack-serviette-blanc?utm_source=facebook'), 'ancienne adresse /ar/… → 301 vers /… (paramètres gardés)');
+  }
   const r = await page.evaluate(() => {
     const h = document.querySelector('.hero-head h1').getBoundingClientRect(), f = document.querySelector('.hero-frame').getBoundingClientRect();
     const tag = document.querySelector('.hero-visual .ship-tag');
@@ -277,6 +293,132 @@ async function admin(browser, ref) {
   await a.close();
 }
 
+async function adminLogin(browser, opts) {
+  const ctx = await browser.newContext(opts || { ...devices['iPhone 13'] });
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  await page.goto(BASE + '/admin/', { waitUntil: 'networkidle' });
+  await page.fill('input[type=password]', 'test-owner-pass');
+  await page.click('button[type=submit]');
+  await page.waitForSelector('.kpi');
+  const call = (action, body, query) => page.evaluate(async ([action, body, query]) => {
+    const s = await fetch('api.php?action=session').then(r => r.json());
+    const qs = query ? '&' + new URLSearchParams(query) : '';
+    const init = body === undefined ? {} : { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF': s.csrf }, body: JSON.stringify(body) };
+    return fetch('api.php?action=' + action + qs, init).then(r => r.json());
+  }, [action, body, query]);
+  return { ctx, page, errors, call };
+}
+function telegrams() {
+  if (!fs.existsSync(FAKE)) return [];
+  return fs.readFileSync(FAKE, 'utf8').trim().split('\n').filter(Boolean).map(l => JSON.parse(l)).filter(r => r.path.startsWith('/bot')).map(r => r.body.text || '');
+}
+
+async function abandoned(browser) {
+  console.log('\n▶ Commande abandonnée : formulaire commencé, quitté, puis récupéré depuis l\'admin');
+  const A = await adminLogin(browser);
+  // Telegram configuré (fausse API) pour recevoir l'alerte du cron.
+  const st = (await A.call('settings')).settings;
+  Object.assign(st, { telegram_token: '1234567890:AAHtestTokenForSwanbidaE2E_abc', notify_telegram_chat: '424242', notify_abandoned: true, abandon_minutes: 20 });
+  check((await A.call('settings_save', st)).ok, 'réglages : Telegram + alerte des commandes abandonnées');
+
+  // Le client arrive d'une publicité (site arabe), choisit 2 packs, tape nom, téléphone, wilaya… puis s'en va.
+  const { ctx, page, errors } = await newPage(browser, { locale: 'ar-DZ' });
+  await page.goto(BASE + '/produit/pack-serviette-blanc?utm_source=facebook&utm_campaign=Relance&campaign_id=1202000000009&ad_id=1202000000099&fbclid=IwAR0abandon', { waitUntil: 'networkidle' });
+  await page.click('.tier:nth-of-type(2) .tier-box');
+  await page.fill('#f-name', 'سمير حداد');
+  const noPhone = page.waitForResponse(r => r.url().includes('action=draft'), { timeout: 2500 }).then(() => true).catch(() => false);
+  check(!(await noPhone), 'rien n\'est enregistré tant que le téléphone n\'est pas valide');
+  const saved = page.waitForResponse(r => r.url().includes('action=draft'));
+  await page.fill('#f-phone', '0661 98 76 54');
+  const r1 = await saved;
+  check((await r1.json()).ok, 'téléphone saisi → formulaire enregistré automatiquement');
+  const saved2 = page.waitForResponse(r => r.url().includes('action=draft'));
+  await page.selectOption('#f-wilaya', '31');
+  await saved2;
+  check(errors.length === 0, 'aucune erreur JavaScript côté client' + (errors.length ? ' : ' + errors.join(' | ') : ''));
+  await ctx.close();
+
+  let live = await A.call('drafts', undefined, { tab: 'live' });
+  const d = live.items.find(x => x.name === 'سمير حداد');
+  check(d && d.qty === 2 && d.total === 13500 && d.wilaya === '31' && d.source === 'facebook', 'admin : « En cours de saisie » avec offre, total, wilaya et source');
+  check(d && /^https:\/\/wa\.me\/213661987654\?text=/.test(d.wa) && decodeURIComponent(d.wa).includes('سمير حداد'), 'lien WhatsApp de relance en arabe avec le prénom');
+  const todo0 = await A.call('drafts', undefined, { tab: 'todo' });
+  check(!todo0.items.some(x => x.name === 'سمير حداد'), 'pas encore « À rappeler » (moins de 20 min)');
+  check(![...live.items, ...todo0.items].some(x => x.name === 'Nadia Belkacem' || x.name === 'كريمة بن صالح'), 'les commandes déjà envoyées ne sont pas dans les abandonnées');
+
+  // Une cliente commence (formulaire enregistré), puis envoie sa commande : elle sort des abandonnées.
+  const B = await newPage(browser, { locale: 'ar-DZ' });
+  await B.page.goto(BASE + '/produit/pack-serviette-blanc', { waitUntil: 'networkidle' });
+  const sv = B.page.waitForResponse(r => r.url().includes('action=draft'));
+  await B.page.fill('#f-phone', '0555 11 22 33');
+  await sv;
+  await B.page.fill('#f-name', 'لينا');
+  await B.page.selectOption('#f-wilaya', '16');
+  await B.page.waitForFunction(() => { const s = document.querySelector('#f-commune-sel'); return s && !s.disabled && s.options.length > 10; });
+  await B.page.selectOption('#f-commune-sel', 'Bab Ezzouar');
+  const [or] = await Promise.all([B.page.waitForResponse(r => r.url().includes('action=order')), B.page.click('[data-submit]')]);
+  const lina = await or.json();
+  await B.page.waitForURL(/\/commande\/SW-/);
+  await B.ctx.close();
+  const conv0 = await A.call('drafts', undefined, { tab: 'converted' });
+  const l = conv0.items.find(x => x.phone.endsWith('555112233'));
+  check(l && l.status === 'converted' && !l.recovered && l.order_ref === lina.ref, 'formulaire commencé puis envoyé → « commandée par le client » (' + lina.ref + '), pas de relance');
+
+  // 25 minutes plus tard (horloge avancée dans la base) : le cron prévient l'équipe, une seule fois.
+  const db = path.join(DIR, 'swanbida-data', 'swanbida.sqlite');
+  execFileSync('php', ['-r', '$p = new PDO("sqlite:" . $argv[1]); $p->exec("UPDATE drafts SET updated = updated - 1500, created = created - 1500 WHERE status = \'open\'");', db]);
+  const cron = path.join(DIR, 'public_html', 'swanbida', 'cron.php');
+  const out = execFileSync('php', [cron, '--verbose'], { encoding: 'utf8' });
+  check(/Commandes abandonnées signalées : 1 /.test(out), 'cron : 1 commande abandonnée signalée');
+  const tg = telegrams().filter(t => t.includes('Commande abandonnée'));
+  check(tg.length === 1 && tg[0].includes('سمير حداد') && /13\s?500\sDA/.test(tg[0]) && tg[0].includes(BASE + '/admin/#/abandonnees'), 'Telegram : nom, montant et lien vers l\'admin');
+  execFileSync('php', [cron, '--verbose'], { encoding: 'utf8' });
+  check(telegrams().filter(t => t.includes('Commande abandonnée')).length === 1, 'cron relancé : pas de seconde alerte');
+
+  // Admin : menu avec compteur, appel → « contactée », puis création de la commande.
+  const p = A.page;
+  await p.goto(BASE + '/admin/#/abandonnees');
+  await p.waitForSelector('.drow');
+  await sleep(400);
+  check((await p.textContent('.nav a[href="#/abandonnees"]')).replace(/\D/g, '') === '1', 'menu « Abandonnées » avec le compteur 1');
+  const row = p.locator('.drow', { hasText: 'سمير حداد' });
+  check(await row.isVisible(), 'onglet « À rappeler » : la commande abandonnée apparaît');
+  await p.screenshot({ path: path.join(SHOTS, 'admin-abandoned-mobile.png'), fullPage: true });
+  await row.locator('input[type=text]').fill('Rappeler après 18 h');
+  await row.locator('button:has-text("Enregistrer la note")').click();
+  await sleep(500);
+  await row.locator('button:has-text("Contactée")').click();
+  await sleep(700);
+  check(!(await p.locator('.drow', { hasText: 'سمير حداد' }).count()), '« Contactée » : sort de « À rappeler »');
+  await p.click('.tabs button:has-text("Contactées")');
+  await p.waitForSelector('.drow:has-text("سمير حداد")');
+  const row2 = p.locator('.drow', { hasText: 'سمير حداد' });
+  check((await row2.locator('input[type=text]').inputValue()) === 'Rappeler après 18 h', 'note interne gardée');
+  await row2.locator('button:has-text("Créer la commande")').click();
+  await row2.locator('.dconv select').first().waitFor();
+  await row2.locator('.dconv input[list]').fill('Oran');
+  await row2.locator('button:has-text("Enregistrer la commande")').click();
+  await p.waitForURL(/#\/commandes\/\d+$/);
+  await p.waitForSelector('.status-bar');
+  const ref = (await p.textContent('h1')).replace('Commande ', '').trim();
+  check(/^SW-[A-Z0-9]{6}$/.test(ref), 'commande créée depuis la relance : ' + ref);
+  check(await p.isVisible('.log :text("Créée depuis une commande abandonnée")'), 'historique : « créée depuis une commande abandonnée »');
+  await sleep(800);
+  const lead = fakeEvents().filter(e => e.name === 'Lead' && e.id === 'lead.' + ref);
+  check(lead.length === 1 && lead[0].cd.value === 13500 && lead[0].ud.fbc && lead[0].ud.fbc.endsWith('IwAR0abandon'), 'Lead serveur avec la valeur et le clic publicitaire d\'origine (fbc)');
+  const conv = await A.call('drafts', undefined, { tab: 'converted' });
+  const c = conv.items.find(x => x.name === 'سمير حداد');
+  check(c && c.recovered === 1 && c.order_ref === ref, 'abandonnée → « Récupérée », liée à ' + ref);
+  const stats = await A.call('stats', undefined, { days: 30 });
+  check(stats.abandoned && +stats.abandoned.recovered === 1 && +stats.abandoned.recovered_v === 13500, 'tableau de bord : 1 récupérée, 13 500 DA');
+  const again = await A.call('draft_convert', { id: c.id, fields: {} });
+  check(again.ref === ref, 'double clic : pas de seconde commande');
+  check(A.errors.length === 0, 'aucune erreur JavaScript dans l\'admin' + (A.errors.length ? ' : ' + A.errors.join(' | ') : ''));
+  await A.ctx.close();
+}
+
 (async () => {
   const browser = await chromium.launch();
   try {
@@ -285,6 +427,7 @@ async function admin(browser, ref) {
     const refFr = await order(browser, 'fr');
     await order(browser, 'ar');
     await admin(browser, refFr);
+    await abandoned(browser);
   } catch (e) {
     console.error(e);
     failures++;
