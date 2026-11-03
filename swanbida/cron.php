@@ -1,10 +1,11 @@
 <?php
 /**
  * Tâches planifiées de SWANBIDA — à lancer toutes les 10 minutes par le cron de cPanel :
- *   /usr/local/bin/php ~/public_html/swanbida/cron.php > /dev/null 2>&1
+ *   /usr/local/bin/php ~/public_html/cron.php > /dev/null 2>&1   (ou …/swanbida/cron.php dans un sous-dossier)
  *
  *  - renvoie à Meta les événements serveur en attente (Lead, Purchase, livraison) ;
  *  - sauvegarde la base une fois par jour (30 jours gardés dans ~/swanbida-data/backups) ;
+ *  - signale sur Telegram les commandes abandonnées, et les efface au bout de 30 jours ;
  *  - efface les données techniques des commandes (IP, navigateur) au bout de 45 jours ;
  *  - nettoie les compteurs d'essais expirés.
  * Options : --backup (sauvegarde immédiate), --verbose.
@@ -26,6 +27,7 @@ require __DIR__ . '/lib/meta.php';
 require __DIR__ . '/lib/notify.php';
 require __DIR__ . '/lib/view.php';
 require __DIR__ . '/lib/backup.php';
+require __DIR__ . '/lib/drafts.php';
 
 $verbose = in_array('--verbose', $argv, true);
 $say = function (string $m) use ($verbose) { if ($verbose) echo $m, "\n"; };
@@ -35,6 +37,7 @@ if (!$lock || !flock($lock, LOCK_EX | LOCK_NB)) { $say('Déjà en cours.'); exit
 
 $n = capi_process(100);
 $say("Meta : $n événement(s) envoyé(s).");
+$say('Commandes abandonnées signalées : ' . drafts_notify_abandoned() . ' ; effacées (plus de 30 jours) : ' . drafts_purge() . '.');
 
 if (in_array('--backup', $argv, true) || (int) date('G') >= 2) {
     $f = backup_daily(in_array('--backup', $argv, true));

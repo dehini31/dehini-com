@@ -217,7 +217,7 @@
     var keyEl = $('[data-key]', form);
     var fe = function (n) { return form.elements.namedItem(n); };
     keyEl.value = rid(24);
-    window.addEventListener('pageshow', function (e) { if (e.persisted) { keyEl.value = rid(24); setBusy(false); } });
+    window.addEventListener('pageshow', function (e) { if (e.persisted) { keyEl.value = rid(24); setBusy(false); submitted = false; lastDraft = ''; } });
 
     function tierQty() { var c = tierInputs.filter(function (i) { return i.checked; })[0]; return c ? +c.value : 0; }
     function tierPrice() { var c = tierInputs.filter(function (i) { return i.checked; })[0]; return c ? +c.getAttribute('data-price') : 0; }
@@ -359,7 +359,6 @@
       if (!normPhone(fe('phone').value)) { setErr('phone', I.err_phone); bad.push('phone'); }
       if (!wSel.value) { setErr('wilaya', I.err_wilaya); bad.push('wilaya'); }
       if (communeValue().length < 2) { setErr('commune', I.err_commune); bad.push('commune'); }
-      if (fe('address').value.trim().length < 4) { setErr('address', I.err_address); bad.push('address'); }
       return bad;
     }
     function setBusy(b) {
@@ -379,7 +378,7 @@
       setBusy(true);
       var data = {
         product: +fe('product').value, qty: tierQty(), name: fe('name').value.trim(), phone: fe('phone').value.trim(), wilaya: wSel.value,
-        commune: communeValue(), address: fe('address').value.trim(), note: fe('note') ? fe('note').value.trim() : '', delivery: delivery(),
+        commune: communeValue(), note: fe('note') ? fe('note').value.trim() : '', delivery: delivery(),
         lang: S.lang, key: keyEl.value, hp: fe('hp').value, attr: attribution(), url: location.href.split('#')[0],
         fbp: getCookie('_fbp'), fbc: getCookie('_fbc')
       };
@@ -398,6 +397,7 @@
             window.fbq('track', 'Lead', { value: r.lead.value, currency: r.lead.currency, content_ids: r.lead.content_ids, content_type: 'product', num_items: r.lead.num_items, contents: r.lead.contents }, { eventID: r.lead.event_id });
           } catch (err) { /* bloqué */ }
         }
+        submitted = true; clearTimeout(draftTimer);
         saveOrder(r.ref, r.url);
         setTimeout(function () { location.href = r.url; }, S.pixel ? 450 : 0);
       }).catch(function () {
@@ -405,6 +405,30 @@
         errBox.textContent = I.err_network; errBox.hidden = false;
       });
     });
+
+    // Commande abandonnée : dès qu'un téléphone valide est saisi, ce qui est tapé est gardé (pour
+    // rappeler le client s'il ne termine pas). Rien n'est envoyé sans téléphone, ni après la commande.
+    var submitted = false, lastDraft = '', draftTimer = null;
+    function sendDraft(beacon) {
+      if (submitted || !normPhone(fe('phone').value)) return;
+      var body = JSON.stringify({
+        product: +fe('product').value, qty: tierQty(), name: fe('name').value.trim(), phone: fe('phone').value.trim(), wilaya: wSel.value,
+        commune: communeValue(), note: fe('note') ? fe('note').value.trim() : '', delivery: delivery(), lang: S.lang, key: keyEl.value,
+        hp: fe('hp').value, attr: attribution(), url: location.href.split('#')[0], fbp: getCookie('_fbp'), fbc: getCookie('_fbc')
+      });
+      if (body === lastDraft) return;
+      lastDraft = body;
+      var url = S.api + '?action=draft';
+      try {
+        if (beacon && navigator.sendBeacon && navigator.sendBeacon(url, new Blob([body], { type: 'text/plain' }))) return;
+        fetch(url, { method: 'POST', body: body, keepalive: true, credentials: 'same-origin', headers: { 'Content-Type': 'text/plain' } }).catch(function () {});
+      } catch (e) { /* hors ligne */ }
+    }
+    function scheduleDraft() { clearTimeout(draftTimer); draftTimer = setTimeout(function () { sendDraft(false); }, 1500); }
+    form.addEventListener('input', scheduleDraft);
+    form.addEventListener('change', scheduleDraft);
+    window.addEventListener('pagehide', function () { sendDraft(true); });
+    doc.addEventListener('visibilitychange', function () { if (doc.visibilityState === 'hidden') sendDraft(true); });
 
     // Barre « Commander » collante (mobile) : visible quand le formulaire est hors de l'écran.
     var sticky = $('[data-sticky]');

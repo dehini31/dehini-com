@@ -137,7 +137,7 @@ function sitemap_xml(): string
                 foreach ($en['langs'] as $l2) {
                     $x .= '    <xhtml:link rel="alternate" hreflang="' . HREFLANG[$l2] . '" href="' . e(page_abs($en['route'], $l2)) . "\"/>\n";
                 }
-                $x .= '    <xhtml:link rel="alternate" hreflang="x-default" href="' . e(page_abs($en['route'], 'fr')) . "\"/>\n";
+                $x .= '    <xhtml:link rel="alternate" hreflang="x-default" href="' . e(page_abs($en['route'], SWB_DEFAULT_LANG)) . "\"/>\n";
             }
             $x .= "  </url>\n";
         }
@@ -148,5 +148,7 @@ function sitemap_xml(): string
 function robots_txt(): string
 {
     $b = base_path();
-    return "User-agent: *\nAllow: $b/\nDisallow: $b/admin/\nDisallow: $b/api.php\nDisallow: $b/commande/\nDisallow: $b/ar/commande/\n\nSitemap: " . abs_url('sitemap.xml') . "\n";
+    $orders = '';
+    foreach (SWB_LANGS as $l) $orders .= "Disallow: $b/" . lang_prefix($l) . "commande/\n";
+    return "User-agent: *\nAllow: $b/\nDisallow: $b/admin/\nDisallow: $b/api.php\n" . $orders . "\nSitemap: " . abs_url('sitemap.xml') . "\n";
 }

@@ -40,7 +40,7 @@ $fonts = $lang === 'ar'
 <?php else: ?><meta name="robots" content="index, follow, max-image-preview:large">
 <link rel="canonical" href="<?= e($canonical) ?>">
 <?php foreach ($langs as $l): ?><link rel="alternate" hreflang="<?= e(HREFLANG[$l]) ?>" href="<?= e(page_abs($page['route'], $l)) ?>">
-<?php endforeach; if (count($langs) > 1): ?><link rel="alternate" hreflang="x-default" href="<?= e(page_abs($page['route'], 'fr')) ?>">
+<?php endforeach; if (count($langs) > 1): ?><link rel="alternate" hreflang="x-default" href="<?= e(page_abs($page['route'], SWB_DEFAULT_LANG)) ?>">
 <?php endif; endif; ?>
 <meta name="theme-color" content="#faf7f1">
 <meta property="og:site_name" content="SWANBIDA">

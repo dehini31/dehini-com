@@ -2,12 +2,12 @@
 /** Aides d'affichage des pages publiques : adresses, images, icônes, prix, gabarit. */
 declare(strict_types=1);
 
-/** Adresse interne d'une page : « produit/x » → /swanbida/produit/x (ou /swanbida/ar/produit/x). */
+/** Adresse interne d'une page : « produit/x » → /produit/x en arabe (langue principale), /fr/produit/x en français. */
 function url(string $route = '', ?string $lang = null): string
 {
     $lang = $lang ?? current_lang();
     $route = trim($route, '/');
-    $prefix = $lang === 'ar' ? 'ar/' : '';
+    $prefix = lang_prefix($lang);
     return rel_url($prefix . $route);
 }
 

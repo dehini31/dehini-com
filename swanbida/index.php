@@ -1,7 +1,7 @@
 <?php
 /**
  * SWANBIDA — pages publiques (dehini.com/swanbida/). Toutes les adresses qui ne sont pas des
- * fichiers réels arrivent ici (voir .htaccess). Français sans préfixe, arabe sous /ar/.
+ * fichiers réels arrivent ici (voir .htaccess). Arabe (langue principale) sans préfixe, français sous /fr/.
  */
 declare(strict_types=1);
 
@@ -35,14 +35,20 @@ $redirect = function (string $to, int $code = 301) use ($qs) {
 };
 if ($uri === $base) $redirect($base . '/');
 $path = strpos($uri, $base . '/') === 0 ? substr($uri, strlen($base) + 1) : ltrim($uri, '/');
-$lang = 'fr';
-if ($path === 'ar') $redirect($base . '/ar/');
-if (strpos($path, 'ar/') === 0) {
-    $lang = 'ar';
-    $path = substr($path, 3);
+$lang = SWB_DEFAULT_LANG;
+// Ancien préfixe de la langue principale (ex. /ar/produit/x, adresses partagées avant le changement) → sans préfixe.
+if ($path === SWB_DEFAULT_LANG || strpos($path, SWB_DEFAULT_LANG . '/') === 0) $redirect($base . '/' . substr($path, strlen(SWB_DEFAULT_LANG) + 1));
+foreach (SWB_LANGS as $l) {
+    if ($l === SWB_DEFAULT_LANG) continue;
+    if ($path === $l) $redirect($base . '/' . $l . '/');
+    if (strpos($path, $l . '/') === 0) {
+        $lang = $l;
+        $path = substr($path, strlen($l) + 1);
+        break;
+    }
 }
-if ($path === 'index.php') $redirect($base . '/' . ($lang === 'ar' ? 'ar/' : ''));
-if ($path !== '' && substr($path, -1) === '/') $redirect($base . '/' . ($lang === 'ar' ? 'ar/' : '') . rtrim($path, '/'));
+if ($path === 'index.php') $redirect($base . '/' . lang_prefix($lang));
+if ($path !== '' && substr($path, -1) === '/') $redirect($base . '/' . lang_prefix($lang) . rtrim($path, '/'));
 current_lang($lang);
 
 // Identifiant anonyme du visiteur (déduplication Meta, « external_id ») : un cookie, rien d'autre.
@@ -244,7 +250,7 @@ function page_article(string $slug): void
     $langs = array_values(array_filter(SWB_LANGS, fn($l) => article_has_lang($a, $l)));
     if (!in_array($lang, $langs, true)) {
         // Guide pas encore traduit : on renvoie vers la langue où il existe.
-        header('Location: ' . url('guides/' . $a['slug'], $langs[0] ?? 'fr'), true, 302);
+        header('Location: ' . url('guides/' . $a['slug'], $langs[0] ?? SWB_DEFAULT_LANG), true, 302);
         return;
     }
     $crumbs = [[t('nav_home'), ''], [t('nav_guides'), 'guides'], [tr($a['title'], $lang), 'guides/' . $a['slug']]];

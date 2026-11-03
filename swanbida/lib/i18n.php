@@ -28,7 +28,7 @@ const UI = [
         'delivery_home' => 'À domicile', 'delivery_desk' => 'Au bureau du transporteur',
         'subtotal' => 'Sous-total', 'shipping' => 'Livraison', 'shipping_free' => 'Gratuite', 'shipping_pending' => 'Selon la wilaya', 'total' => 'Total à payer à la livraison',
         'submit' => 'Confirmer ma commande', 'submit_note' => 'Aucun paiement maintenant. Vous payez à la réception, après vérification.',
-        'sending' => 'Envoi en cours…', 'privacy_note' => 'Vos informations servent uniquement à traiter votre commande.',
+        'sending' => 'Envoi en cours…', 'privacy_note' => 'Vos informations servent uniquement à traiter votre commande et à vous recontacter à son sujet.',
         'err_name' => 'Indiquez votre nom et prénom.', 'err_phone' => 'Numéro invalide : 10 chiffres commençant par 05, 06 ou 07.',
         'err_wilaya' => 'Choisissez votre wilaya.', 'err_commune' => 'Choisissez votre commune.', 'err_address' => 'Indiquez une adresse plus précise.',
         'err_tier' => 'Choisissez une offre.', 'err_generic' => 'La commande n\'a pas pu être envoyée. Réessayez ou contactez-nous sur WhatsApp.',
@@ -89,7 +89,7 @@ const UI = [
         'delivery_home' => 'إلى المنزل', 'delivery_desk' => 'في مكتب شركة التوصيل',
         'subtotal' => 'المجموع الفرعي', 'shipping' => 'التوصيل', 'shipping_free' => 'مجاني', 'shipping_pending' => 'حسب الولاية', 'total' => 'المبلغ المدفوع عند الاستلام',
         'submit' => 'تأكيد الطلب', 'submit_note' => 'لا دفع الآن. تدفع عند الاستلام، بعد المعاينة.',
-        'sending' => 'جارٍ الإرسال…', 'privacy_note' => 'تُستعمل معلوماتك فقط لمعالجة طلبك.',
+        'sending' => 'جارٍ الإرسال…', 'privacy_note' => 'تُستعمل معلوماتك فقط لمعالجة طلبك والتواصل معك بشأنه.',
         'err_name' => 'أدخل الاسم واللقب.', 'err_phone' => 'رقم غير صحيح: 10 أرقام تبدأ بـ 05 أو 06 أو 07.',
         'err_wilaya' => 'اختر ولايتك.', 'err_commune' => 'اختر بلديتك.', 'err_address' => 'أدخل عنواناً أدقّ.',
         'err_tier' => 'اختر عرضاً.', 'err_generic' => 'تعذّر إرسال الطلب. أعد المحاولة أو تواصل معنا عبر واتساب.',
@@ -136,8 +136,8 @@ function t(string $key, array $vars = []): string
 
 function current_lang(?string $set = null): string
 {
-    static $lang = 'fr';
-    if ($set !== null) $lang = in_array($set, SWB_LANGS, true) ? $set : 'fr';
+    static $lang = SWB_DEFAULT_LANG;
+    if ($set !== null) $lang = in_array($set, SWB_LANGS, true) ? $set : SWB_DEFAULT_LANG;
     return $lang;
 }
 

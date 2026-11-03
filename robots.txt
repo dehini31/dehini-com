@@ -4,6 +4,6 @@ Disallow: /admin/
 Disallow: /swanbida/admin/
 Disallow: /swanbida/api.php
 Disallow: /swanbida/commande/
-Disallow: /swanbida/ar/commande/
+Disallow: /swanbida/fr/commande/
 
 Sitemap: https://dehini.com/swanbida/sitemap.xml
