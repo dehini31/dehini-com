@@ -26,6 +26,8 @@ $defaults = [
     'IMPACT_NOTIFY_EMAIL'   => '',          // reçoit un email quand un récit attend une validation
     'IMPACT_DAILY_HOUR'     => 9,           // heure locale à partir de laquelle part la question du jour
     'IMPACT_DIGEST_DAYS'    => 7,           // au plus un email « impacts positifs » tous les N jours
+    'IMPACT_ALERT_HOURS'    => 6,           // alertes « nouvelle expérience positive » : au plus une toutes les N heures par personne
+    'IMPACT_ALERT_DAYS'     => 7,           // … sur les récits publiés depuis N jours au plus
     'IMPACT_MAIL_BATCH'     => 80,          // emails max par passage du cron (limites de l'hébergeur)
     'IMPACT_GOOGLE_CLIENT_ID' => '',        // « Se connecter avec Google » (le réglage de l'admin a priorité)
     'IMPACT_GOOGLE_CERTS'   => 'https://www.googleapis.com/oauth2/v1/certs', // clés publiques de Google
@@ -84,6 +86,7 @@ function migrate(PDO $pdo): void
     if ($v < 2) migrate_v2($pdo);
     if ($v < 3) migrate_v3($pdo);
     if ($v < 4) migrate_v4($pdo);
+    if ($v < 5) migrate_v5($pdo);
 }
 
 function migrate_v1(PDO $pdo): void
@@ -295,6 +298,81 @@ function migrate_v4(PDO $pdo): void
     CREATE INDEX IF NOT EXISTS presence_seen ON presence(seen);
     PRAGMA user_version = 4;
     SQL);
+}
+
+/**
+ * v5 : pages professionnelles (entreprises, auto-entrepreneurs…) liées à des questions,
+ * récits publiés au nom d'une page pro, et abonnés par email sans compte (alertes quand
+ * une expérience positive est publiée sur une question où ils ont répondu « négatif »).
+ */
+function migrate_v5(PDO $pdo): void
+{
+    $pdo->exec(<<<SQL
+    CREATE TABLE IF NOT EXISTS pros (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        uid INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+        slug TEXT NOT NULL UNIQUE,
+        name TEXT NOT NULL,
+        kind TEXT NOT NULL,
+        domain TEXT NOT NULL,
+        keywords TEXT NOT NULL DEFAULT '',
+        city TEXT NOT NULL DEFAULT '',
+        bio TEXT NOT NULL DEFAULT '',
+        website TEXT NOT NULL DEFAULT '',
+        phone TEXT NOT NULL DEFAULT '',
+        email TEXT NOT NULL DEFAULT '',
+        logo TEXT NOT NULL DEFAULT '',
+        status TEXT NOT NULL DEFAULT 'active',
+        verified INTEGER NOT NULL DEFAULT 0,
+        featured INTEGER NOT NULL DEFAULT 0,
+        lang TEXT NOT NULL DEFAULT 'fr',
+        created INTEGER NOT NULL,
+        updated INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS pros_status ON pros(status, featured);
+    CREATE TABLE IF NOT EXISTS pro_questions (
+        pro_id INTEGER NOT NULL REFERENCES pros(id) ON DELETE CASCADE,
+        qid INTEGER NOT NULL,
+        PRIMARY KEY (pro_id, qid)
+    );
+    CREATE INDEX IF NOT EXISTS pro_questions_q ON pro_questions(qid);
+    -- Abonnés sans compte : pid = l'appareil (« d… ») dont les réponses négatives déclenchent les alertes.
+    CREATE TABLE IF NOT EXISTS subscribers (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        email TEXT NOT NULL UNIQUE,
+        pid TEXT NOT NULL DEFAULT '',
+        lang TEXT NOT NULL DEFAULT 'fr',
+        token TEXT NOT NULL,
+        confirmed INTEGER NOT NULL DEFAULT 0,
+        created INTEGER NOT NULL,
+        confirmed_at INTEGER NOT NULL DEFAULT 0,
+        last_alert INTEGER NOT NULL DEFAULT 0,
+        mailed INTEGER NOT NULL DEFAULT 0
+    );
+    CREATE INDEX IF NOT EXISTS subscribers_pid ON subscribers(pid);
+    CREATE TABLE IF NOT EXISTS sub_seen (
+        sub INTEGER NOT NULL REFERENCES subscribers(id) ON DELETE CASCADE,
+        sid INTEGER NOT NULL,
+        PRIMARY KEY (sub, sid)
+    );
+    SQL);
+    add_column($pdo, 'stories', 'pro_id', 'INTEGER REFERENCES pros(id) ON DELETE SET NULL');
+    add_column($pdo, 'stories', 'published', 'INTEGER NOT NULL DEFAULT 0');
+    add_column($pdo, 'users', 'last_alert', 'INTEGER NOT NULL DEFAULT 0');
+    $pdo->exec(<<<SQL
+    UPDATE stories SET published = created WHERE status = 'published' AND published = 0;
+    CREATE INDEX IF NOT EXISTS stories_pro ON stories(pro_id);
+    CREATE INDEX IF NOT EXISTS stories_pub ON stories(status, published);
+    PRAGMA user_version = 5;
+    SQL);
+}
+
+/** Minuscules sans accents (comparaisons et recherches sur les textes en français / anglais). */
+function fold(string $s): string
+{
+    return strtr(mb_strtolower($s), ['à' => 'a', 'â' => 'a', 'ä' => 'a', 'á' => 'a', 'ç' => 'c', 'é' => 'e', 'è' => 'e', 'ê' => 'e',
+        'ë' => 'e', 'î' => 'i', 'ï' => 'i', 'í' => 'i', 'ô' => 'o', 'ö' => 'o', 'ó' => 'o', 'ù' => 'u', 'û' => 'u', 'ü' => 'u',
+        'ú' => 'u', 'ÿ' => 'y', 'ñ' => 'n', 'œ' => 'oe', 'æ' => 'ae', '’' => "'"]);
 }
 
 /** Fenêtre considérée « en ligne » : un peu plus que deux signaux manqués. */

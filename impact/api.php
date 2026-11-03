@@ -28,6 +28,10 @@
  *   POST support_start {amount,message,public,lang}  -> URL de paiement SofizPay (nom/email du
  *        compte connecté, ou valeurs neutres sans compte ; retour et notification : support.php)
  *   POST ping      {device,view}  signal de présence (admin : qui est en ligne en ce moment)
+ *   GET  pros                     pages pro en ligne et questions auxquelles elles sont liées
+ *   GET  pro_me | pro_suggest ?domain=&kw=   POST pro_save | pro_logo (fichier) | pro_questions_set {qids} | pro_delete
+ *   POST subscribe {email,device,lang}   alertes par email sans compte (confirmation par lien)
+ *   GET  sub_confirm ?token= | sub_unsub ?token=   pages (confirmation, désabonnement)
  *   GET|POST unsub ?type=daily|digest|msg|all&token=   page de désabonnement
  *   mod_* : administration (statistiques, inscrits, récits, questions, soutiens, réglages), réservée
  *           à la session de /admin
@@ -38,6 +42,7 @@ require __DIR__ . '/lib/bootstrap.php';
 require __DIR__ . '/lib/mailer.php';
 require __DIR__ . '/lib/google.php';
 require __DIR__ . '/lib/sofizpay.php';
+require __DIR__ . '/lib/pros.php';
 
 header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: same-origin');
@@ -62,6 +67,8 @@ try {
 /* Les deux liens des emails renvoient des pages, pas du JSON. */
 if ($action === 'verify') page_verify();
 if ($action === 'unsub') page_unsub($isPost);
+if ($action === 'sub_confirm') page_sub_confirm();
+if ($action === 'sub_unsub') page_sub_unsub($isPost);
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -226,7 +233,12 @@ function delete_user(int $uid): void
     $pdo->prepare('DELETE FROM people WHERE pid = ?')->execute([$pid]);
     $pdo->prepare('DELETE FROM presence WHERE pid = ?')->execute([$pid]);
     $pdo->prepare('UPDATE donations SET uid = NULL WHERE uid = ?')->execute([$uid]);
-    // sessions, récits, conversations et messages : ON DELETE CASCADE
+    $pdo->prepare('DELETE FROM subscribers WHERE pid = ?')->execute([$pid]);
+    $s = $pdo->prepare('SELECT logo FROM pros WHERE uid = ?');
+    $s->execute([$uid]);
+    if ($logo = $s->fetchColumn()) pro_delete_logo((string) $logo);
+    meta_set('pros_cache', '');
+    // sessions, récits, page pro, conversations et messages : ON DELETE CASCADE
     $pdo->prepare('DELETE FROM users WHERE id = ?')->execute([$uid]);
 }
 
@@ -275,6 +287,7 @@ function merge_device(int $uid, $device): void
         else $pdo->prepare('UPDATE reactions SET pid = ? WHERE sid = ? AND pid = ?')->execute(['u' . $uid, $r['sid'], 'd' . $device]);
     }
     $pdo->prepare('DELETE FROM reactions WHERE pid = ?')->execute(['d' . $device]);
+    $pdo->prepare('UPDATE subscribers SET pid = ? WHERE pid = ?')->execute(['u' . $uid, 'd' . $device]);
 }
 
 /** Rattache au compte les récits publiés sans compte (prouvés par leur jeton d'édition). */
@@ -290,7 +303,7 @@ function claim_stories(int $uid, $list): void
 
 /* ------------------------------------------------------------- récits */
 
-const STORY_PUBLIC_COLS = 'id, qid, uid, author, exp, imp, lang, likes, dislikes, created';
+const STORY_PUBLIC_COLS = 'id, qid, uid, pro_id, author, exp, imp, lang, likes, dislikes, created';
 
 function story_row(array $r, bool $own = false): array
 {
@@ -299,6 +312,9 @@ function story_row(array $r, bool $own = false): array
         'exp' => (string) $r['exp'], 'imp' => (string) $r['imp'], 'lang' => (string) $r['lang'],
         'likes' => (int) $r['likes'], 'dislikes' => (int) ($r['dislikes'] ?? 0), 'created' => (int) $r['created'],
     ];
+    // Récit publié au nom d'une page pro : son nom, son logo et le lien vers sa page.
+    $pros = pros_active();
+    if (!empty($r['pro_id']) && isset($pros[(int) $r['pro_id']])) $o['pro'] = pro_public($pros[(int) $r['pro_id']]);
     if ($own) {
         $o['status'] = (string) $r['status'];
     } else {
@@ -421,9 +437,10 @@ function notify_message(array $t, int $from, string $body): void
     }
 }
 
+/** Récits personnels d'un compte (ceux publiés au nom de sa page pro sont dans son espace pro). */
 function own_stories(int $uid): array
 {
-    $s = db()->prepare('SELECT * FROM stories WHERE uid = ? ORDER BY id');
+    $s = db()->prepare('SELECT * FROM stories WHERE uid = ? AND pro_id IS NULL ORDER BY id');
     $s->execute([$uid]);
     return array_map(function ($r) { return story_row($r, true); }, $s->fetchAll());
 }
@@ -512,6 +529,94 @@ function page_unsub(bool $isPost): void
         . '<p style="margin:22px 0 0"><a href="./?lang=' . $l . '" style="color:#2f5bff">' . h(ms($l, 'back')) . '</a></p>'
         . '</main></body></html>';
     exit;
+}
+
+/* -------------------------------------------- abonnés sans compte */
+
+function subscriber_by_token(): ?array
+{
+    $tok = (string) ($_GET['token'] ?? '');
+    if (!preg_match('/^[a-f0-9]{48}$/', $tok)) return null;
+    $s = db()->prepare('SELECT * FROM subscribers WHERE token = ?');
+    $s->execute([$tok]);
+    return $s->fetch() ?: null;
+}
+
+/** Lien de l'email de confirmation : l'adresse est confirmée, retour sur le défi. */
+function page_sub_confirm(): void
+{
+    $sub = subscriber_by_token();
+    if ($sub && !$sub['confirmed']) {
+        db()->prepare('UPDATE subscribers SET confirmed = 1, confirmed_at = ? WHERE id = ?')->execute([time(), $sub['id']]);
+    }
+    header('Location: ./?lang=' . ($sub ? impact_lang($sub['lang']) : 'fr') . '&sub=' . ($sub ? 'ok' : 'bad'), true, 302);
+    exit;
+}
+
+/** Lien « ne plus recevoir » des alertes : confirmation par un bouton (les robots de messagerie ouvrent les liens). */
+function page_sub_unsub(bool $isPost): void
+{
+    header('Content-Type: text/html; charset=utf-8');
+    $sub = subscriber_by_token();
+    $l = $sub ? impact_lang($sub['lang']) : impact_lang($_GET['lang'] ?? 'fr');
+    $done = false;
+    if ($sub && $isPost) {
+        db()->prepare('DELETE FROM subscribers WHERE id = ?')->execute([$sub['id']]);
+        $done = true;
+    }
+    $font = mail_font($l);
+    if (!$sub && !$done) $body = '<p>' . h(ms($l, 'unsub_bad')) . '</p>';
+    elseif ($done) $body = '<p>' . h(ms($l, 'sub_unsub_done')) . '</p>';
+    else $body = '<p style="font-size:1.15rem;font-weight:700">' . h(ms($l, 'sub_unsub_q')) . '</p>'
+        . '<p style="color:#6b7185;font-size:.9rem">' . h($sub['email']) . '</p>'
+        . '<form method="post"><button style="margin-top:8px;padding:13px 26px;border:0;border-radius:999px;background:#0b1020;color:#fff;font:700 15px ' . $font . ';cursor:pointer">'
+        . h(ms($l, 'unsub_confirm')) . '</button></form>';
+    echo '<!DOCTYPE html><html lang="' . $l . '" dir="' . ($l === 'ar' ? 'rtl' : 'ltr') . '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+        . '<meta name="robots" content="noindex"><title>' . h(ms($l, 'unsub_title')) . ' — ' . h(ms($l, 'brand')) . '</title></head>'
+        . '<body style="margin:0;min-height:100vh;display:grid;place-items:center;background:#f0f1f4;font:16px/1.6 ' . $font . ';color:#20283f;padding:16px;box-sizing:border-box">'
+        . '<main style="max-width:440px;width:100%;background:#fff;border-radius:22px;padding:32px;box-shadow:0 8px 30px -12px rgba(11,16,32,.2)">'
+        . '<p style="margin:0 0 6px;font-weight:800;color:#0b1020">' . h(ms($l, 'brand')) . '</p>'
+        . '<h1 style="margin:0 0 16px;font-size:1.4rem;color:#0b1020">' . h(ms($l, 'unsub_title')) . '</h1>' . $body
+        . '<p style="margin:22px 0 0"><a href="./?lang=' . $l . '" style="color:#2f5bff">' . h(ms($l, 'back')) . '</a></p>'
+        . '</main></body></html>';
+    exit;
+}
+
+/* --------------------------------------------------------- pages pro */
+
+/** Page pro du compte connecté, avec tout ce qu'il peut modifier. */
+function own_pro(int $uid): ?array
+{
+    $s = db()->prepare('SELECT * FROM pros WHERE uid = ?');
+    $s->execute([$uid]);
+    return $s->fetch() ?: null;
+}
+/** Supprime une page pro, son logo et les expériences publiées en son nom (le compte et ses récits personnels restent). */
+function delete_pro(array $p): void
+{
+    $pdo = db();
+    $pdo->beginTransaction();
+    foreach (['digest_seen', 'sub_seen'] as $t) $pdo->prepare("DELETE FROM $t WHERE sid IN (SELECT id FROM stories WHERE pro_id = ?)")->execute([$p['id']]);
+    $pdo->prepare('DELETE FROM stories WHERE pro_id = ?')->execute([$p['id']]);
+    $pdo->prepare('DELETE FROM pros WHERE id = ?')->execute([$p['id']]);
+    $pdo->commit();
+    pro_delete_logo((string) $p['logo']);
+    meta_set('pros_cache', '');
+    meta_set('stats_cache', '');
+}
+
+function pro_owner_view(array $p): array
+{
+    $s = db()->prepare('SELECT qid FROM pro_questions WHERE pro_id = ? ORDER BY qid');
+    $s->execute([$p['id']]);
+    $qids = array_map('intval', $s->fetchAll(PDO::FETCH_COLUMN));
+    $s = db()->prepare('SELECT * FROM stories WHERE pro_id = ? ORDER BY id DESC');
+    $s->execute([$p['id']]);
+    return pro_public($p) + [
+        'keywords' => (string) $p['keywords'], 'bio' => (string) $p['bio'], 'website' => (string) $p['website'],
+        'phone' => (string) $p['phone'], 'email' => (string) $p['email'], 'status' => (string) $p['status'],
+        'questions' => $qids, 'stories' => array_map(function ($r) { return story_row($r, true); }, $s->fetchAll()),
+    ];
 }
 
 /* --------------------------------------------------------- modération */
@@ -1007,27 +1112,40 @@ switch ($action) {
         $imp = str_clean((string) ($b['imp'] ?? ''), 1000);
         if (mb_strlen($exp) < 15 || mb_strlen($imp) < 10) fail('too_short');
         $author = empty($b['anon']) ? str_clean((string) ($b['author'] ?? ''), 40) : '';
+        $proId = null;
+        if (!empty($b['as_pro'])) {
+            $s = $pdo->prepare('SELECT id, name FROM pros WHERE uid = ?');
+            $s->execute([$u['id']]);
+            $pro = $s->fetch();
+            if (!$pro) fail('no_pro');
+            [$proId, $author] = [(int) $pro['id'], (string) $pro['name']];
+        }
         $lang = impact_lang($b['lang'] ?? 'fr');
         $status = empty($b['public']) ? 'private'
             : ((IMPACT_MODERATION === 'manual' || looks_spammy($exp . ' ' . $imp)) ? 'pending' : 'published');
         $now = time();
         $id = (int) ($b['id'] ?? 0);
         if (!$id) {
-            // Un seul récit par question et par compte : on met à jour l'existant.
-            $s = $pdo->prepare('SELECT id FROM stories WHERE uid = ? AND qid = ?');
-            $s->execute([$u['id'], $qid]);
+            // Un seul récit par question et par compte (plus un au nom de sa page pro) : on met à jour l'existant.
+            $s = $pdo->prepare('SELECT id FROM stories WHERE uid = ? AND qid = ? AND pro_id IS ?');
+            $s->execute([$u['id'], $qid, $proId]);
             $id = (int) ($s->fetchColumn() ?: 0);
         }
         if ($id) {
             $st = story_for_edit($id, $u, $b['token'] ?? null);
+            // Un récit personnel reste personnel, un récit de la page pro reste celui de la page.
+            if ((int) ($st['pro_id'] ?? 0) !== (int) $proId) fail('generic');
             if ($st['status'] === 'hidden' && $status === 'published') $status = 'pending';
-            $pdo->prepare('UPDATE stories SET qid = ?, author = ?, exp = ?, imp = ?, lang = ?, status = ?, updated = ? WHERE id = ?')
-                ->execute([$qid, $author, $exp, $imp, $lang, $status, $now, $id]);
+            // Date de publication : celle où le récit devient visible (alertes aux abonnés).
+            $published = $status === 'published' ? ($st['status'] === 'published' ? (int) $st['published'] : $now) : 0;
+            $pdo->prepare('UPDATE stories SET qid = ?, author = ?, exp = ?, imp = ?, lang = ?, status = ?, pro_id = ?, published = ?, updated = ? WHERE id = ?')
+                ->execute([$qid, $author, $exp, $imp, $lang, $status, $proId, $published, $now, $id]);
         } else {
-            $pdo->prepare('INSERT INTO stories (qid, uid, author, exp, imp, lang, status, ehash, iph, created, updated) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-                ->execute([$qid, $u['id'], $author, $exp, $imp, $lang, $status, hash('sha256', token(16)), ip_hash(), $now, $now]);
+            $pdo->prepare('INSERT INTO stories (qid, uid, pro_id, author, exp, imp, lang, status, published, ehash, iph, created, updated) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+                ->execute([$qid, $u['id'], $proId, $author, $exp, $imp, $lang, $status, $status === 'published' ? $now : 0, hash('sha256', token(16)), ip_hash(), $now, $now]);
             $id = (int) $pdo->lastInsertId();
         }
+        if ($proId) meta_set('pros_cache', '');
         $s = $pdo->prepare('SELECT * FROM stories WHERE id = ?');
         $s->execute([$id]);
         $row = $s->fetch();
@@ -1094,6 +1212,159 @@ switch ($action) {
         $pdo->prepare('INSERT OR REPLACE INTO presence (pid, seen, view) VALUES (?, ?, ?)')->execute([$pid, time(), $view]);
         if (random_int(1, 50) === 1) $pdo->prepare('DELETE FROM presence WHERE seen < ?')->execute([time() - 3600]);
         ok();
+        break;
+    }
+
+    /* ------------------------------------------------------ pages pro */
+
+    case 'pros': {
+        // Index public : petit, mis en cache 5 minutes (vidé à chaque modification d'une page pro).
+        $c = json_decode((string) meta_get('pros_cache'), true);
+        if (is_array($c) && ($c['at'] ?? 0) > time() - 300) ok($c['data']);
+        $data = ['pros' => array_values(array_map('pro_public', pros_active())), 'q' => (object) pros_by_question(),
+            // Libellés des types et domaines [fr, ar, en] pour l'espace pro du défi.
+            'kinds' => PRO_KINDS, 'domains' => array_map(function ($d) { return $d[0]; }, PRO_DOMAINS)];
+        meta_set('pros_cache', (string) json_encode(['at' => time(), 'data' => $data]));
+        ok($data);
+        break;
+    }
+
+    case 'pro_me': {
+        $u = require_user();
+        $p = own_pro((int) $u['id']);
+        ok(['pro' => $p ? pro_owner_view($p) : null]);
+        break;
+    }
+
+    case 'pro_suggest': {
+        require_user();
+        $domain = (string) ($_GET['domain'] ?? '');
+        if (!isset(PRO_DOMAINS[$domain])) $domain = 'autre';
+        ok(['items' => pro_suggest($domain, mb_substr((string) ($_GET['kw'] ?? ''), 0, 200))]);
+        break;
+    }
+
+    case 'pro_save': {
+        if (!$isPost) fail('generic', 405);
+        $u = require_user();
+        rate('pro_save', 40, 3600);
+        $name = str_clean((string) ($b['name'] ?? ''), 80);
+        if (mb_strlen($name) < 2) fail('pro_name');
+        $kind = (string) ($b['kind'] ?? '');
+        $domain = (string) ($b['domain'] ?? '');
+        if (!isset(PRO_KINDS[$kind]) || !isset(PRO_DOMAINS[$domain])) fail('generic');
+        $web = trim((string) ($b['website'] ?? ''));
+        if ($web !== '' && !preg_match('~^https?://~i', $web)) $web = 'https://' . $web;
+        if ($web !== '' && (strlen($web) > 200 || !filter_var($web, FILTER_VALIDATE_URL))) fail('pro_web');
+        $phone = trim((string) ($b['phone'] ?? ''));
+        if ($phone !== '' && !preg_match('/^\+?[0-9 ().-]{6,24}$/', $phone)) fail('bad_phone');
+        $email = strtolower(trim((string) ($b['email'] ?? '')));
+        if ($email !== '' && (strlen($email) > 190 || !filter_var($email, FILTER_VALIDATE_EMAIL))) fail('bad_email');
+        $vals = [$name, $kind, $domain, str_clean((string) ($b['keywords'] ?? ''), 200), str_clean((string) ($b['city'] ?? ''), 60),
+            str_clean((string) ($b['bio'] ?? ''), 800), $web, $phone, $email, impact_lang($b['lang'] ?? $u['lang']), time()];
+        $p = own_pro((int) $u['id']);
+        if ($p) {
+            $pdo->prepare('UPDATE pros SET name = ?, kind = ?, domain = ?, keywords = ?, city = ?, bio = ?, website = ?, phone = ?, email = ?, lang = ?, updated = ? WHERE id = ?')
+                ->execute(array_merge($vals, [$p['id']]));
+            // Les récits publiés au nom de la page suivent son nouveau nom.
+            $pdo->prepare('UPDATE stories SET author = ? WHERE pro_id = ?')->execute([$name, $p['id']]);
+        } else {
+            // L'adresse de la page est fixée à la création (les liens partagés restent valables).
+            $pdo->prepare('INSERT INTO pros (name, kind, domain, keywords, city, bio, website, phone, email, lang, updated, uid, slug, created) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+                ->execute(array_merge($vals, [$u['id'], pro_slug($name), time()]));
+        }
+        meta_set('pros_cache', '');
+        ok(['pro' => pro_owner_view(own_pro((int) $u['id']))]);
+        break;
+    }
+
+    case 'pro_logo': {
+        if (!$isPost) fail('generic', 405);
+        $u = require_user();
+        rate('pro_logo', 20, 3600);
+        $p = own_pro((int) $u['id']);
+        if (!$p) fail('no_pro');
+        try {
+            $name = pro_store_logo($_FILES['logo'] ?? []);
+        } catch (Throwable $e) {
+            fail($e->getMessage() === 'too_big' ? 'logo_big' : 'logo_bad');
+        }
+        pro_delete_logo((string) $p['logo']);
+        $pdo->prepare('UPDATE pros SET logo = ?, updated = ? WHERE id = ?')->execute([$name, time(), $p['id']]);
+        meta_set('pros_cache', '');
+        ok(['pro' => pro_owner_view(own_pro((int) $u['id']))]);
+        break;
+    }
+
+    case 'pro_questions_set': {
+        if (!$isPost) fail('generic', 405);
+        $u = require_user();
+        $p = own_pro((int) $u['id']);
+        if (!$p) fail('no_pro');
+        $qs = questions();
+        $ids = [];
+        foreach ((array) ($b['qids'] ?? []) as $id) if (isset($qs[(int) $id])) $ids[(int) $id] = 1;
+        if (count($ids) > 60) fail('pro_too_many');
+        $pdo->beginTransaction();
+        $pdo->prepare('DELETE FROM pro_questions WHERE pro_id = ?')->execute([$p['id']]);
+        $ins = $pdo->prepare('INSERT INTO pro_questions (pro_id, qid) VALUES (?, ?)');
+        foreach (array_keys($ids) as $id) $ins->execute([$p['id'], $id]);
+        $pdo->commit();
+        meta_set('pros_cache', '');
+        ok(['pro' => pro_owner_view($p)]);
+        break;
+    }
+
+    case 'pro_delete': {
+        if (!$isPost) fail('generic', 405);
+        $u = require_user();
+        $p = own_pro((int) $u['id']);
+        if (!$p) fail('no_pro');
+        delete_pro($p);
+        ok();
+        break;
+    }
+
+    /* --------------------------------------- alertes par email sans compte */
+
+    case 'subscribe': {
+        if (!$isPost) fail('generic', 405);
+        $u = user_for_write();
+        if ($u) {
+            // Avec un compte : ce sont les emails « impacts positifs » du compte.
+            $pdo->prepare('UPDATE users SET opt_digest = 1 WHERE id = ?')->execute([$u['id']]);
+            ok(['account' => true, 'verified' => (bool) $u['verified']]);
+        }
+        rate('subscribe', 6, 3600);
+        $email = strtolower(trim((string) ($b['email'] ?? '')));
+        if (strlen($email) > 190 || !filter_var($email, FILTER_VALIDATE_EMAIL)) fail('bad_email');
+        $device = $b['device'] ?? '';
+        if (!valid_device($device)) fail('generic');
+        $lang = impact_lang($b['lang'] ?? 'fr');
+        $s = $pdo->prepare('SELECT * FROM subscribers WHERE email = ?');
+        $s->execute([$email]);
+        $sub = $s->fetch();
+        if ($sub) {
+            $pdo->prepare('UPDATE subscribers SET pid = ?, lang = ? WHERE id = ?')->execute(['d' . $device, $lang, $sub['id']]);
+        } else {
+            $pdo->prepare('INSERT INTO subscribers (email, pid, lang, token, created) VALUES (?, ?, ?, ?, ?)')
+                ->execute([$email, 'd' . $device, $lang, token(), time()]);
+            $s->execute([$email]);
+            $sub = $s->fetch();
+        }
+        $sub['lang'] = $lang;
+        // Double confirmation : rien ne part avant le clic sur le lien (personne ne peut inscrire l'adresse d'un autre).
+        if (!$sub['confirmed'] && (int) $sub['mailed'] < time() - 120) {
+            try {
+                [$subj, $html, $text] = compose_sub_confirm($sub);
+                send_mail($email, $subj, $html, $text);
+                $pdo->prepare('UPDATE subscribers SET mailed = ? WHERE id = ?')->execute([time(), $sub['id']]);
+            } catch (Throwable $e) {
+                error_log('impact subscribe: ' . $e->getMessage());
+                fail('mail', 502);
+            }
+        }
+        ok(['pending' => !$sub['confirmed']]);
         break;
     }
 
@@ -1267,8 +1538,11 @@ switch ($action) {
         require_admin();
         $st = (string) ($b['status'] ?? '');
         if (!in_array($st, ['published', 'hidden', 'pending'], true)) fail('generic');
-        $pdo->prepare('UPDATE stories SET status = ?, reports = CASE WHEN ? = \'published\' THEN 0 ELSE reports END WHERE id = ?')
-            ->execute([$st, $st, (int) ($b['id'] ?? 0)]);
+        $pdo->prepare('UPDATE stories SET reports = CASE WHEN ? = \'published\' THEN 0 ELSE reports END,
+            published = CASE WHEN ? = \'published\' AND status != \'published\' THEN ? WHEN ? != \'published\' THEN 0 ELSE published END,
+            status = ? WHERE id = ?')
+            ->execute([$st, $st, time(), $st, $st, (int) ($b['id'] ?? 0)]);
+        meta_set('pros_cache', '');
         meta_set('stats_cache', '');
         ok();
         break;
@@ -1426,6 +1700,114 @@ switch ($action) {
         break;
     }
 
+    case 'mod_pros': {
+        require_admin();
+        $where = '1';
+        $args = [];
+        if (in_array($_GET['status'] ?? '', ['active', 'hidden'], true)) { $where .= ' AND p.status = ?'; $args[] = $_GET['status']; }
+        if (($_GET['status'] ?? '') === 'featured') $where .= ' AND p.featured = 1';
+        $q = trim((string) ($_GET['q'] ?? ''));
+        if ($q !== '') {
+            $where .= " AND (LOWER(p.name) LIKE ? ESCAPE '\\' OR LOWER(u.email) LIKE ? ESCAPE '\\' OR LOWER(p.city) LIKE ? ESCAPE '\\')";
+            $like = '%' . strtr(mb_strtolower($q), ['\\' => '\\\\', '%' => '\\%', '_' => '\\_']) . '%';
+            array_push($args, $like, $like, $like);
+        }
+        $s = $pdo->prepare("SELECT p.*, u.email AS owner,
+                (SELECT COUNT(*) FROM pro_questions pq WHERE pq.pro_id = p.id) AS nq,
+                (SELECT COUNT(*) FROM stories st WHERE st.pro_id = p.id AND st.status = 'published') AS ns
+            FROM pros p JOIN users u ON u.id = p.uid WHERE $where ORDER BY p.featured DESC, p.created DESC LIMIT 300");
+        $s->execute($args);
+        $items = array_map(function ($p) {
+            return pro_public($p) + ['status' => (string) $p['status'], 'owner' => (string) $p['owner'], 'email' => (string) $p['email'],
+                'phone' => (string) $p['phone'], 'website' => (string) $p['website'], 'bio' => (string) $p['bio'],
+                'questions' => (int) $p['nq'], 'stories' => (int) $p['ns'], 'created' => (int) $p['created']];
+        }, $s->fetchAll());
+        $counts = [];
+        foreach (['all' => '1', 'active' => "status = 'active'", 'hidden' => "status = 'hidden'", 'featured' => 'featured = 1'] as $k => $c) {
+            $counts[$k] = (int) $pdo->query("SELECT COUNT(*) FROM pros WHERE $c")->fetchColumn();
+        }
+        ok(['items' => $items, 'counts' => $counts]);
+        break;
+    }
+
+    case 'mod_pro_set': {
+        if (!$isPost) fail('generic', 405);
+        require_admin();
+        $id = (int) ($b['id'] ?? 0);
+        $sets = [];
+        $vals = [];
+        if (isset($b['status'])) {
+            if (!in_array($b['status'], ['active', 'hidden'], true)) fail('Statut invalide.');
+            $sets[] = 'status = ?';
+            $vals[] = $b['status'];
+        }
+        foreach (['verified', 'featured'] as $k) if (array_key_exists($k, $b)) { $sets[] = "$k = ?"; $vals[] = empty($b[$k]) ? 0 : 1; }
+        if (!$sets) fail('Rien à modifier.');
+        $vals[] = $id;
+        $s = $pdo->prepare('UPDATE pros SET ' . implode(', ', $sets) . ' WHERE id = ?');
+        $s->execute($vals);
+        if (!$s->rowCount()) fail('Page pro introuvable.', 404);
+        meta_set('pros_cache', '');
+        ok();
+        break;
+    }
+
+    case 'mod_pro_delete': {
+        if (!$isPost) fail('generic', 405);
+        require_admin();
+        $s = $pdo->prepare('SELECT * FROM pros WHERE id = ?');
+        $s->execute([(int) ($b['id'] ?? 0)]);
+        $p = $s->fetch();
+        if (!$p) fail('Page pro introuvable.', 404);
+        delete_pro($p);
+        ok();
+        break;
+    }
+
+    case 'mod_subs': {
+        require_admin();
+        $where = '1';
+        $args = [];
+        if (in_array($_GET['filter'] ?? '', ['confirmed', 'pending'], true)) $where = 's.confirmed = ' . ($_GET['filter'] === 'confirmed' ? 1 : 0);
+        $q = trim((string) ($_GET['q'] ?? ''));
+        if ($q !== '') {
+            $where .= " AND LOWER(s.email) LIKE ? ESCAPE '\\'";
+            $args[] = '%' . strtr(mb_strtolower($q), ['\\' => '\\\\', '%' => '\\%', '_' => '\\_']) . '%';
+        }
+        $s = $pdo->prepare("SELECT s.*, (SELECT COUNT(*) FROM answers a WHERE a.pid = s.pid AND a.v = -1) AS neg
+            FROM subscribers s WHERE $where ORDER BY s.created DESC LIMIT 500");
+        $s->execute($args);
+        $items = array_map(function ($r) {
+            return ['id' => (int) $r['id'], 'email' => (string) $r['email'], 'lang' => (string) $r['lang'], 'confirmed' => (bool) $r['confirmed'],
+                'created' => (int) $r['created'], 'last_alert' => (int) $r['last_alert'], 'neg' => (int) $r['neg'],
+                'account' => strncmp((string) $r['pid'], 'u', 1) === 0];
+        }, $s->fetchAll());
+        if (($_GET['format'] ?? '') === 'csv') {
+            header('Content-Type: text/csv; charset=utf-8');
+            header('Content-Disposition: attachment; filename="abonnes-defi-impact-' . date('Y-m-d') . '.csv"');
+            echo "\xEF\xBB\xBF" . implode(';', array_map('csv_cell', ['Email', 'Langue', 'Confirmé', 'Inscription', 'Dernière alerte', 'Réponses négatives'])) . "\r\n";
+            foreach ($items as $r) {
+                echo implode(';', array_map('csv_cell', [$r['email'], $r['lang'], $r['confirmed'] ? 'oui' : 'non', date('Y-m-d H:i', $r['created']),
+                    $r['last_alert'] ? date('Y-m-d H:i', $r['last_alert']) : '', $r['neg']])) . "\r\n";
+            }
+            exit;
+        }
+        $counts = [];
+        foreach (['all' => '1', 'confirmed' => 'confirmed = 1', 'pending' => 'confirmed = 0'] as $k => $c) {
+            $counts[$k] = (int) $pdo->query("SELECT COUNT(*) FROM subscribers WHERE $c")->fetchColumn();
+        }
+        ok(['items' => $items, 'counts' => $counts]);
+        break;
+    }
+
+    case 'mod_sub_delete': {
+        if (!$isPost) fail('generic', 405);
+        require_admin();
+        $pdo->prepare('DELETE FROM subscribers WHERE id = ?')->execute([(int) ($b['id'] ?? 0)]);
+        ok();
+        break;
+    }
+
     case 'mod_users': {
         require_admin();
         $filter = array_key_exists((string) ($_GET['filter'] ?? ''), USER_FILTERS) ? (string) $_GET['filter'] : 'all';
@@ -1551,6 +1933,8 @@ switch ($action) {
             'google'   => (int) $pdo->query('SELECT COUNT(*) FROM users WHERE google_sub IS NOT NULL')->fetchColumn(),
             'daily'    => (int) $pdo->query('SELECT COUNT(*) FROM users WHERE opt_daily = 1')->fetchColumn(),
             'digest'   => (int) $pdo->query('SELECT COUNT(*) FROM users WHERE opt_digest = 1')->fetchColumn(),
+            'pros'     => (int) $pdo->query("SELECT COUNT(*) FROM pros WHERE status = 'active'")->fetchColumn(),
+            'subscribers' => (int) $pdo->query('SELECT COUNT(*) FROM subscribers WHERE confirmed = 1')->fetchColumn(),
         ];
 
         $answersTotal = (int) $pdo->query('SELECT COUNT(*) FROM answers')->fetchColumn();

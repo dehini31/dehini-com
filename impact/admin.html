@@ -153,11 +153,25 @@
   .u-acts{display:flex;flex-wrap:wrap;gap:6px}
   .u-edit{display:flex;gap:6px;margin-top:6px}
   .u-edit input{flex:1;min-width:180px;padding:6px 10px;border:1px solid var(--paper-200);border-radius:8px}
+  .sub-h{font-size:1.15rem;margin:34px 0 6px}
+  .s-table{min-width:720px}
+  /* -------------------------------------------------------------- Pros */
+  .p-item{display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px 16px}
+  .p-av{width:56px;height:56px;border-radius:16px;display:grid;place-items:center;overflow:hidden;background:hsl(var(--h,150) 55% 42%);color:#fff;font-weight:800;font-size:1.1rem;text-transform:uppercase}
+  .p-av img{width:100%;height:100%;object-fit:cover;background:#fff}
+  .p-name{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}
+  .p-name a{font-weight:700;font-size:1.05rem;color:var(--ink);text-decoration:none}
+  .p-name a:hover{text-decoration:underline}
+  .p-bio{margin-top:8px;font-size:.9rem;color:var(--ink-soft);white-space:pre-line;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .p-contacts{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:8px;font-size:.82rem}
+  .p-contacts a{color:var(--social);text-decoration:none;word-break:break-all}
+  .p-item .actions{grid-column:1 / -1;margin-top:0}
+  .b-vf{background:var(--social-50);color:var(--social)} .b-ft{background:var(--warn-50);color:var(--warn)}
   .toast{position:fixed;bottom:20px;left:50%;translate:-50% 0;background:var(--ink);color:#fff;padding:12px 18px;border-radius:14px;font-size:.9rem;box-shadow:var(--shadow);z-index:9}
 </style>
 </head>
 <body>
-<!-- Administration du défi Impact : statistiques, inscrits (emails), questions (ajout, modification, masquage, suppression), modération des récits,
+<!-- Administration du défi Impact : statistiques, inscrits (comptes et abonnés aux alertes), pages pro (mise en avant, vérification), questions (ajout, modification, masquage, suppression), modération des récits,
      soutiens (SofizPay et moyens manuels) et réglages (connexion Google).
      Connexion avec le mot de passe de /admin (même session). -->
 <div id="loginView" hidden>
@@ -179,6 +193,7 @@
   <nav class="main-tabs">
     <a href="#stats" data-tab="stats">Statistiques</a>
     <a href="#inscrits" data-tab="inscrits">Inscrits</a>
+    <a href="#pros" data-tab="pros">Pros</a>
     <a href="#questions" data-tab="questions">Questions</a>
     <a href="#recits" data-tab="recits">Récits</a>
     <a href="#soutiens" data-tab="soutiens">Soutiens</a>
@@ -233,6 +248,26 @@
     <div class="panel" style="padding:8px 14px"><table class="u-table" id="uTable"></table></div>
     <div class="pager" id="uPager"></div>
     <p class="summary">Les emails de rappel (question du jour, impacts positifs) ne partent qu'aux adresses confirmées, et chacun contient un lien de désabonnement. Décocher une case ici désabonne la personne de ce type d'email.</p>
+
+    <h2 class="sub-h">Abonnés aux alertes (sans compte)</h2>
+    <p class="summary">Adresses laissées dans la fenêtre « Me prévenir par email » du défi : ces personnes reçoivent les nouvelles expériences positives publiées sur les questions auxquelles elles ont répondu « négatif » (au plus un email toutes les 6 heures, trois expériences maximum). Rien ne part tant que l'adresse n'est pas confirmée par le lien reçu.</p>
+    <div class="tabs" id="subTabs"></div>
+    <div class="toolbar">
+      <input type="search" id="subSearch" placeholder="Rechercher une adresse…">
+      <a class="btn btn-line" id="subCsv" href="api.php?action=mod_subs&amp;format=csv" download>Exporter (CSV pour Excel)</a>
+    </div>
+    <div class="panel" style="padding:8px 14px"><table class="u-table s-table" id="subTable"></table></div>
+  </section>
+
+  <section id="tab-pros" hidden>
+    <div class="tabs" id="pTabs"></div>
+    <div class="toolbar">
+      <input type="search" id="pSearch" placeholder="Rechercher un nom, une ville ou l'email du compte…">
+      <a class="btn btn-line" href="pros" target="_blank" rel="noopener">↗ Annuaire public</a>
+    </div>
+    <p class="summary" id="pSummary"></p>
+    <div id="pList"></div>
+    <p class="summary"><b>Mettre en avant</b> = emplacement sponsorisé (la publicité que vous vendez) : la page passe en tête à côté de ses questions, dans le défi et dans l'annuaire, avec la mention « Sponsorisé » ; ses liens portent <code>rel="sponsored"</code> comme l'exige Google. <b>Vérifier</b> ajoute le badge « Vérifié » après contrôle de l'activité, et rend le lien vers son site suivi par les moteurs de recherche. <b>Masquer</b> retire la page du site sans la supprimer.</p>
   </section>
 
   <section id="tab-questions" hidden>
@@ -605,7 +640,7 @@ function donItem(x) {
 }
 
 /* --------------------------------------------------------- Statistiques */
-const VIEWN = { home: "Accueil", resultat: "Résultat", defi: "Défi en cours", monde: "Impact mondial", messages: "Messages", soutenir: "Soutenir", autre: "Autre" };
+const VIEWN = { home: "Accueil", resultat: "Résultat", defi: "Défi en cours", monde: "Impact mondial", messages: "Messages", soutenir: "Soutenir", pro: "Espace pro", autre: "Autre" };
 const flag = cc => cc.replace(/./g, ch => String.fromCodePoint(127397 + ch.charCodeAt(0)));
 let DN;
 const countryName = cc => (DN || (DN = new Intl.DisplayNames(["fr"], { type: "region" }))).of(cc) || cc;
@@ -636,7 +671,8 @@ function renderStats(d) {
 
   $("#sgAccounts").replaceChildren(
     stat(d.accounts.total, "comptes créés"), stat(d.accounts.verified, "adresses confirmées"),
-    stat(d.accounts.google, "connexion Google"), stat(d.accounts.daily, "question du jour activée"));
+    stat(d.accounts.google, "connexion Google"), stat(d.accounts.daily, "question du jour activée"),
+    stat(d.accounts.pros, "pages pro en ligne"), stat(d.accounts.subscribers, "abonnés aux alertes (sans compte)"));
 
   $("#sgEngagement").replaceChildren(
     stat(d.engagement.participants, "participants (≥ 1 réponse)"), stat(d.engagement.answers, "réponses au total"),
@@ -762,8 +798,90 @@ async function deleteUser(u) {
 let uSearchTimer;
 $("#uSearch").addEventListener("input", () => { clearTimeout(uSearchTimer); uSearchTimer = setTimeout(() => { US.q = $("#uSearch").value.trim(); US.offset = 0; loadUsers(); }, 250); });
 
+/* ------------------------------------------------- Abonnés aux alertes (sans compte) */
+const SB = { filter: "all", q: "" };
+const SFILTERS = [["all", "Tous"], ["confirmed", "Confirmés"], ["pending", "En attente de confirmation"]];
+async function loadSubs() {
+  const qs = new URLSearchParams({ filter: SB.filter, q: SB.q }).toString();
+  let d;
+  try { d = await call("api.php?action=mod_subs&" + qs); } catch (e) { if (e.status !== 401) toast(e.message); return; }
+  $("#subTabs").replaceChildren(...SFILTERS.map(([k, l]) => el("button", { type: "button", "aria-pressed": String(k === SB.filter), onclick: () => { SB.filter = k; loadSubs(); } },
+    l, el("span", { class: "n", text: "(" + fmt(d.counts[k] || 0) + ")" }))));
+  $("#subCsv").href = "api.php?action=mod_subs&format=csv&" + qs;
+  const head = el("tr", {}, ...["Adresse", "Statut", "Langue", "Inscription", "Dernière alerte", "Réponses négatives", ""].map((h, i) => el("th", { text: h, class: i === 5 ? "n" : null })));
+  $("#subTable").replaceChildren(head, ...(d.items.length ? d.items.map(r => el("tr", {},
+    el("td", {}, el("a", { class: "u-mail", href: "mailto:" + r.email, text: r.email })),
+    el("td", {}, el("div", { class: "u-badges" },
+      el("span", { class: "badge " + (r.confirmed ? "b-ok" : "b-no"), text: r.confirmed ? "Confirmée" : "En attente" }),
+      r.account ? el("span", { class: "badge b-g", text: "a créé un compte" }) : null)),
+    el("td", { text: LANGS[r.lang] || r.lang }),
+    el("td", { text: when(r.created) }),
+    el("td", { text: r.last_alert ? ago(r.last_alert) : "—" }),
+    el("td", { class: "n", text: fmt(r.neg) }),
+    el("td", {}, el("button", { class: "btn btn-neg btn-sm", type: "button", onclick: () => deleteSub(r) }, "Supprimer"))))
+    : [el("tr", {}, el("td", { colspan: 7, class: "empty", text: SB.q ? "Aucune adresse ne correspond." : "Aucun abonné pour l'instant." }))]));
+}
+async function deleteSub(r) {
+  if (!confirm(`Supprimer l'abonnement de ${r.email} ? Cette adresse ne recevra plus aucune alerte.`)) return;
+  try { await call("api.php?action=mod_sub_delete", { id: r.id }); toast("Abonnement supprimé."); loadSubs(); } catch (e) { toast(e.message); }
+}
+let subSearchTimer;
+$("#subSearch").addEventListener("input", () => { clearTimeout(subSearchTimer); subSearchTimer = setTimeout(() => { SB.q = $("#subSearch").value.trim(); loadSubs(); }, 250); });
+
+/* ------------------------------------------------------------------ Pros */
+const PFILTERS = [["all", "Toutes"], ["active", "En ligne"], ["featured", "Mises en avant"], ["hidden", "Masquées"]];
+const PR = { status: "all", q: "", labels: null };
+const hue = s => { let h = 0; for (const ch of String(s)) h = (h * 31 + ch.codePointAt(0)) >>> 0; return h % 360; };
+async function loadPros() {
+  if (!PR.labels) { try { const d = await call("api.php?action=pros"); PR.labels = { kinds: d.kinds, domains: d.domains }; } catch (e) { PR.labels = { kinds: {}, domains: {} }; } }
+  const qs = new URLSearchParams({ status: PR.status === "all" ? "" : PR.status, q: PR.q }).toString();
+  let d;
+  try { d = await call("api.php?action=mod_pros&" + qs); } catch (e) { if (e.status !== 401) toast(e.message); return; }
+  $("#pTabs").replaceChildren(...PFILTERS.map(([k, l]) => el("button", { type: "button", "aria-pressed": String(k === PR.status), onclick: () => { PR.status = k; loadPros(); } },
+    l, el("span", { class: "n", text: "(" + fmt(d.counts[k] || 0) + ")" }))));
+  $("#pSummary").textContent = d.items.length ? fmt(d.items.length) + " page(s)" : "";
+  $("#pList").replaceChildren(...(d.items.length ? d.items.map(proItem) : [el("div", { class: "empty", text: PR.q ? "Aucune page ne correspond." : "Aucune page pro pour l'instant." })]));
+}
+function proItem(p) {
+  const lbl = (o, k) => (o && o[k] ? o[k][0] : k);
+  const hidden = p.status !== "active";
+  const initials = String(p.name).trim().split(/\s+/).slice(0, 2).map(w => [...w][0] || "").join("");
+  return el("div", { class: "item p-item" + (hidden ? " off" : "") },
+    el("span", { class: "p-av", style: "--h:" + hue(p.name) }, p.logo ? el("img", { src: p.logo, alt: "" }) : initials),
+    el("div", {},
+      el("div", { class: "p-name" },
+        hidden ? el("span", { dir: "auto", style: "font-weight:700;font-size:1.05rem", text: p.name }) : el("a", { href: "pro/" + p.slug, target: "_blank", rel: "noopener", dir: "auto", text: p.name }),
+        hidden ? el("span", { class: "badge b-hidden", text: "Masquée" }) : null,
+        p.verified ? el("span", { class: "badge b-vf", text: "Vérifié" }) : null,
+        p.featured ? el("span", { class: "badge b-ft", text: "Sponsorisé" }) : null),
+      el("div", { class: "meta", style: "margin-top:4px" },
+        el("span", { text: [lbl(PR.labels.kinds, p.kind), lbl(PR.labels.domains, p.domain), p.city].filter(Boolean).join(" · ") }),
+        el("span", { text: "compte : " + p.owner }),
+        el("span", { text: "créée le " + when(p.created) }),
+        el("span", { text: fmt(p.questions) + " question(s) · " + fmt(p.stories) + " expérience(s) publiée(s)" })),
+      p.bio ? el("p", { class: "p-bio", dir: "auto", text: p.bio }) : null,
+      el("div", { class: "p-contacts" },
+        p.website ? el("a", { href: p.website, target: "_blank", rel: "noopener nofollow", text: p.website.replace(/^https?:\/\//, "") }) : null,
+        p.phone ? el("a", { href: "tel:" + p.phone.replace(/[^\d+]/g, ""), text: p.phone }) : null,
+        p.email ? el("a", { href: "mailto:" + p.email, text: p.email }) : null)),
+    el("div", { class: "actions" },
+      el("button", { class: "btn " + (p.featured ? "btn-line" : "btn-pos") + " btn-sm", type: "button", onclick: () => setPro(p, { featured: !p.featured }, p.featured ? "Mise en avant retirée." : "Page mise en avant (sponsorisée).") }, p.featured ? "Retirer la mise en avant" : "★ Mettre en avant"),
+      el("button", { class: "btn btn-line btn-sm", type: "button", onclick: () => setPro(p, { verified: !p.verified }, p.verified ? "Badge retiré." : "Page vérifiée.") }, p.verified ? "Retirer « Vérifié »" : "✓ Vérifier"),
+      el("button", { class: "btn btn-line btn-sm", type: "button", onclick: () => setPro(p, { status: hidden ? "active" : "hidden" }, hidden ? "Page de nouveau en ligne." : "Page masquée.") }, hidden ? "Afficher" : "Masquer"),
+      el("button", { class: "btn btn-neg btn-sm", type: "button", onclick: () => deletePro(p) }, "Supprimer")));
+}
+async function setPro(p, patch, msg) {
+  try { await call("api.php?action=mod_pro_set", Object.assign({ id: p.id }, patch)); toast(msg); loadPros(); } catch (e) { toast(e.message); }
+}
+async function deletePro(p) {
+  if (!confirm(`Supprimer définitivement la page « ${p.name} » ?\n\nSon logo et ses ${p.stories} expérience(s) publiée(s) seront effacés. Le compte de ${p.owner} reste.`)) return;
+  try { await call("api.php?action=mod_pro_delete", { id: p.id }); toast("Page supprimée."); loadPros(); } catch (e) { toast(e.message); }
+}
+let pSearchTimer;
+$("#pSearch").addEventListener("input", () => { clearTimeout(pSearchTimer); pSearchTimer = setTimeout(() => { PR.q = $("#pSearch").value.trim(); loadPros(); }, 250); });
+
 /* ------------------------------------------------------------ Navigation */
-const TABS = ["stats", "inscrits", "questions", "recits", "soutiens", "reglages"];
+const TABS = ["stats", "inscrits", "pros", "questions", "recits", "soutiens", "reglages"];
 function showTab() {
   const tab = TABS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "stats";
   document.querySelectorAll(".main-tabs a").forEach(a => a.classList.toggle("on", a.dataset.tab === tab));
@@ -771,7 +889,8 @@ function showTab() {
   // « En ligne maintenant » ne se rafraîchit tout seul que pendant qu'on regarde cet onglet.
   clearInterval(statsTimer);
   if (tab === "stats") { loadStats(); statsTimer = setInterval(loadStats, 20000); }
-  if (tab === "inscrits") loadUsers();
+  if (tab === "inscrits") { loadUsers(); loadSubs(); }
+  if (tab === "pros") loadPros();
 }
 addEventListener("hashchange", showTab);
 

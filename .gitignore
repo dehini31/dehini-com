@@ -18,3 +18,7 @@
 /swanbida/media/*
 !/swanbida/media/.gitkeep
 !/swanbida/media/.htaccess
+
+# Logos des pages pro du défi Impact (envoyés depuis le site).
+/impact/uploads/pros/*
+!/impact/uploads/pros/.gitkeep

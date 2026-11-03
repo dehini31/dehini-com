@@ -50,6 +50,14 @@ const MAIL_STR = [
         'thanks_subject' => 'Merci pour votre soutien au défi Impact',
         'thanks_intro' => 'Votre soutien de {amount} a bien été reçu. Il aide le défi Impact à rester gratuit, sans publicité, et à grandir.',
         'thanks_sign' => 'Merci du fond du cœur. — Mohammed Dehini',
+        'sub_subject' => 'Confirmez votre adresse pour recevoir les expériences positives',
+        'sub_intro' => 'Vous avez demandé à recevoir par email les expériences positives publiées sur les questions où vous avez répondu « impact négatif ». Confirmez votre adresse pour les recevoir :',
+        'sub_cta' => 'Confirmer mon adresse', 'sub_ignore' => 'Si vous n\'êtes pas à l\'origine de cette demande, ignorez cet email : rien ne vous sera envoyé.',
+        'alert_subject_1' => 'Une expérience positive sur « {q} »', 'alert_subject_n' => '{n} nouvelles expériences positives pour vous',
+        'alert_intro' => 'Vous avez répondu « impact négatif » à ces questions. Quelqu\'un vient de raconter comment il l\'a vécue positivement :',
+        'alert_read' => 'Lire et répondre', 'alert_pro' => 'Page professionnelle', 'alert_hello' => 'Bonjour,',
+        'sub_unsub' => 'Ne plus recevoir ces emails', 'sub_unsub_q' => 'Ne plus recevoir les expériences positives par email ?',
+        'sub_unsub_done' => 'C\'est fait : vous ne recevrez plus ces emails, et votre adresse a été effacée.',
     ],
     'ar' => [
         'brand' => 'تحدي الأثر', 'tagline' => 'تحدّي التجارب الإيجابية',
@@ -94,6 +102,14 @@ const MAIL_STR = [
         'thanks_subject' => 'شكراً على دعمك لتحدي الأثر',
         'thanks_intro' => 'وصلنا دعمك بقيمة {amount}. إنه يساعد تحدي الأثر على البقاء مجانياً وبلا إعلانات، وعلى النمو.',
         'thanks_sign' => 'شكراً من القلب. — محمد دهيني',
+        'sub_subject' => 'أكّد عنوانك لتصلك التجارب الإيجابية',
+        'sub_intro' => 'طلبت أن تصلك عبر البريد التجارب الإيجابية المنشورة على الأسئلة التي أجبت عنها بـ«أثر سلبي». أكّد عنوانك لتصلك:',
+        'sub_cta' => 'تأكيد عنواني', 'sub_ignore' => 'إن لم تكن أنت من طلب ذلك، فتجاهل هذه الرسالة: لن يصلك أي شيء.',
+        'alert_subject_1' => 'تجربة إيجابية حول «{q}»', 'alert_subject_n' => '{n} تجارب إيجابية جديدة لك',
+        'alert_intro' => 'أجبت بـ«أثر سلبي» على هذه الأسئلة. شخص ما روى للتو كيف عاشها بشكل إيجابي:',
+        'alert_read' => 'اقرأ وأجب', 'alert_pro' => 'الصفحة المهنية', 'alert_hello' => 'مرحباً،',
+        'sub_unsub' => 'إيقاف هذه الرسائل', 'sub_unsub_q' => 'إيقاف رسائل التجارب الإيجابية عبر البريد؟',
+        'sub_unsub_done' => 'تمّ: لن تصلك هذه الرسائل بعد الآن، وحُذف عنوانك.',
     ],
     'en' => [
         'brand' => 'Impact Challenge', 'tagline' => 'The positive experiences challenge',
@@ -138,6 +154,14 @@ const MAIL_STR = [
         'thanks_subject' => 'Thank you for supporting the Impact Challenge',
         'thanks_intro' => 'Your support of {amount} has been received. It helps the Impact Challenge stay free, ad-free, and keep growing.',
         'thanks_sign' => 'Thank you from the bottom of our hearts. — Mohammed Dehini',
+        'sub_subject' => 'Confirm your address to receive positive experiences',
+        'sub_intro' => 'You asked to receive by email the positive experiences published on questions you answered “negative impact”. Confirm your address to receive them:',
+        'sub_cta' => 'Confirm my address', 'sub_ignore' => 'If you didn\'t request this, ignore this email: nothing will be sent to you.',
+        'alert_subject_1' => 'A positive experience about “{q}”', 'alert_subject_n' => '{n} new positive experiences for you',
+        'alert_intro' => 'You answered “negative impact” to these questions. Someone just shared how they lived it positively:',
+        'alert_read' => 'Read and answer', 'alert_pro' => 'Professional page', 'alert_hello' => 'Hi,',
+        'sub_unsub' => 'Stop these emails', 'sub_unsub_q' => 'Stop receiving positive experiences by email?',
+        'sub_unsub_done' => 'Done: you won\'t receive these emails anymore, and your address has been erased.',
     ],
 ];
 
@@ -371,6 +395,63 @@ function money_da(string $l, int $n): string
     if ($l === 'ar') return $n . ' دج';
     if ($l === 'en') return number_format($n) . ' DZD';
     return number_format($n, 0, ',', "\u{00A0}") . "\u{00A0}DA";
+}
+
+/** Confirmation d'un abonnement sans compte (rien ne part avant le clic). */
+function compose_sub_confirm(array $sub): array
+{
+    $l = impact_lang($sub['lang']);
+    $href = site_url() . 'api.php?action=sub_confirm&token=' . rawurlencode((string) $sub['token']);
+    $inner = '<p style="margin:0 0 14px">' . h(ms($l, 'alert_hello')) . '</p>'
+        . '<p style="margin:0">' . h(ms($l, 'sub_intro')) . '</p>'
+        . mail_button($href, ms($l, 'sub_cta'), MAIL_COLORS['pos'], $l)
+        . '<p style="margin:0;font-size:13px;color:#6b7185">' . h(ms($l, 'sub_ignore')) . '</p>';
+    $text = ms($l, 'alert_hello') . "\n\n" . ms($l, 'sub_intro') . "\n" . $href . "\n\n" . ms($l, 'sub_ignore');
+    $subject = ms($l, 'sub_subject');
+    return [$subject, mail_layout($l, $subject, ms($l, 'sub_intro'), $inner), $text];
+}
+
+/**
+ * Alerte : de nouvelles expériences positives sur des questions où la personne a répondu
+ * « négatif ». $to = ['email', 'lang', 'name' (vide pour un abonné sans compte)].
+ * Chaque récit renvoie vers la page de sa question ; celui d'un pro, vers sa page.
+ */
+function compose_alert(array $to, array $stories, string $unsubUrl): array
+{
+    require_once __DIR__ . '/seo.php';
+    $l = impact_lang($to['lang']);
+    $f = mail_font($l);
+    $qs = questions(true);
+    $pros = function_exists('pros_active') ? pros_active() : [];
+    $blocks = '';
+    $hello = $to['name'] !== '' ? ms($l, 'hello', ['name' => $to['name']]) : ms($l, 'alert_hello');
+    $text = $hello . "\n\n" . ms($l, 'alert_intro') . "\n\n";
+    foreach ($stories as $s) {
+        $q = $qs[(int) $s['qid']] ?? null;
+        if (!$q) continue;
+        $pro = !empty($s['pro_id']) && isset($pros[(int) $s['pro_id']]) ? $pros[(int) $s['pro_id']] : null;
+        $author = $s['author'] !== '' ? $s['author'] : ms($l, 'anon');
+        $exp = mb_strimwidth((string) $s['exp'], 0, 320, '…');
+        $imp = mb_strimwidth((string) $s['imp'], 0, 240, '…');
+        $url = q_url($q, $l);
+        $who = '— ' . ugc($author) . ($pro ? ' · <a href="' . h(pro_url($pro, $l)) . '" style="color:#2f5bff">' . h(ms($l, 'alert_pro')) . '</a>' : '');
+        $blocks .= '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 14px;border-radius:16px;background:#f7f7f9"><tr><td style="padding:18px 20px">'
+            . '<p style="margin:0 0 10px;font:700 14px/1.4 ' . $f . ';color:#4b5470">' . h(typo($l, qtext($q, $l))) . '</p>'
+            . '<p style="margin:0 0 10px;font:400 15px/1.6 ' . $f . ';color:#0b1020;border-inline-start:3px solid #17b26a;padding-inline-start:12px">' . ugc($exp) . '</p>'
+            . '<p style="margin:0 0 8px;font:400 14px/1.6 ' . $f . ';color:#079455"><b>' . h(ms($l, 'digest_impact')) . '</b> ' . ugc($imp) . '</p>'
+            . '<p style="margin:0 0 10px;font:400 12px/1.4 ' . $f . ';color:#6b7185">' . $who . '</p>'
+            . '<a href="' . h($url) . '" style="font:700 14px ' . $f . ';color:#07854b">' . h(ms($l, 'alert_read')) . ' →</a>'
+            . '</td></tr></table>';
+        $text .= '* ' . qtext($q, $l) . "\n  « " . $exp . " »\n  " . ms($l, 'digest_impact') . ' ' . $imp . "\n  — " . $author
+            . ($pro ? ' (' . pro_url($pro, $l) . ')' : '') . "\n  " . $url . "\n\n";
+    }
+    $inner = '<p style="margin:0 0 14px">' . h($hello) . '</p><p style="margin:0 0 20px;color:#4b5470">' . h(ms($l, 'alert_intro')) . '</p>' . $blocks;
+    $n = count($stories);
+    $first = $qs[(int) $stories[0]['qid']] ?? [];
+    $subject = $n === 1 ? ms($l, 'alert_subject_1', ['q' => mb_strimwidth(qtext($first, $l), 0, 70, '…')]) : ms($l, 'alert_subject_n', ['n' => $n]);
+    $unsub = [ms($l, 'sub_unsub') => $unsubUrl];
+    $text .= "--\n" . ms($l, 'footer_why') . "\n" . ms($l, 'sub_unsub') . ' : ' . $unsubUrl . "\n";
+    return [$subject, mail_layout($l, $subject, ms($l, 'alert_intro'), $inner, $unsub), $text];
 }
 
 /** Remerciement après un soutien payé en ligne. */

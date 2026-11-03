@@ -58,6 +58,15 @@ function hub_url(string $lang): string
 {
     return seo_base() . seo_prefix($lang) . 'questions';
 }
+/** Page publique d'un professionnel, et l'annuaire des professionnels. */
+function pro_url(array $pro, string $lang): string
+{
+    return seo_base() . seo_prefix($lang) . 'pro/' . rawurlencode((string) $pro['slug']);
+}
+function pros_url(string $lang): string
+{
+    return seo_base() . seo_prefix($lang) . 'pros';
+}
 /** Le défi lui-même, dans une langue donnée (la page d'accueil sans paramètre choisit la langue du visiteur). */
 function home_url(?string $lang = null): string
 {
@@ -101,6 +110,16 @@ const SEO_STR = [
         'hub_intro' => 'Chaque question parle d\'une expérience de vie : un déménagement, un échec, une rencontre, un premier emploi… Ouvrez-en une pour voir comment les autres l\'ont vécue et lire leurs expériences positives, puis donnez votre réponse.',
         'with_stories' => '{n} récit(s)', 'start' => 'Relever le défi', 'lang_name' => 'Français',
         'foot' => 'Un projet de Mohammed Dehini · dehini.com', 'nf' => 'Cette question n\'existe pas ou n\'est plus en ligne.',
+        'pros' => 'Professionnels', 'all_pros' => 'Tous les professionnels', 'pros_title' => 'Professionnels et entreprises du Défi Impact',
+        'pros_h1' => 'Des professionnels qui partagent leur expérience',
+        'pros_desc' => 'Entreprises, auto-entrepreneurs et professionnels liés aux expériences de vie du Défi Impact : leurs domaines, leurs expériences et comment les contacter.',
+        'pros_intro' => 'Ils ont choisi les questions qui touchent à leur métier et y partagent leur expérience. Vous êtes professionnel ? Créez votre page gratuitement.',
+        'pros_cta' => 'Créer ma page professionnelle', 'pros_empty' => 'Aucune page professionnelle pour l\'instant : soyez le premier !',
+        'pro_related' => 'Des professionnels pour en parler', 'pro_join' => 'Vous êtes professionnel ? Associez votre page à cette question',
+        'pro_verified' => 'Vérifié', 'pro_featured' => 'Sponsorisé', 'pro_site' => 'Site web', 'pro_call' => 'Appeler', 'pro_mail' => 'Email', 'pro_wa' => 'WhatsApp',
+        'pro_qs' => 'Questions sur lesquelles ce professionnel intervient', 'pro_exps' => 'Ses expériences', 'pro_contact' => 'Contacter',
+        'pro_title' => '{name} — {domain} · Défi Impact', 'pro_desc' => '{name} ({domain}{city}) : expériences et questions de vie sur lesquelles ce professionnel intervient sur le Défi Impact.',
+        'pro_nf' => 'Cette page professionnelle n\'existe pas ou n\'est plus en ligne.', 'pro_by' => 'Page professionnelle',
     ],
     'ar' => [
         'brand' => 'تحدي الأثر', 'home' => 'التحدي', 'all' => 'كل الأسئلة',
@@ -118,6 +137,16 @@ const SEO_STR = [
         'hub_intro' => 'كل سؤال يتناول تجربة من تجارب الحياة: انتقال، فشل، لقاء، أول عمل… افتح أحدها لترى كيف عاشها الآخرون واقرأ تجاربهم الإيجابية، ثم أجب أنت.',
         'with_stories' => '{n} قصة', 'start' => 'خُض التحدي', 'lang_name' => 'العربية',
         'foot' => 'مشروع من إعداد محمد دهيني · dehini.com', 'nf' => 'هذا السؤال غير موجود أو لم يعد متاحاً.',
+        'pros' => 'المهنيون', 'all_pros' => 'كل المهنيين', 'pros_title' => 'مهنيون وشركات في تحدي الأثر',
+        'pros_h1' => 'مهنيون يشاركون تجاربهم',
+        'pros_desc' => 'شركات ومقاولون ذاتيون ومهنيون مرتبطون بتجارب الحياة في تحدي الأثر: مجالاتهم وتجاربهم وطرق التواصل معهم.',
+        'pros_intro' => 'اختاروا الأسئلة المرتبطة بمهنتهم ويشاركون فيها تجربتهم. هل أنت مهني؟ أنشئ صفحتك مجاناً.',
+        'pros_cta' => 'إنشاء صفحتي المهنية', 'pros_empty' => 'لا توجد صفحات مهنية بعد: كن الأول!',
+        'pro_related' => 'مهنيون يتحدثون عن هذا', 'pro_join' => 'هل أنت مهني؟ اربط صفحتك بهذا السؤال',
+        'pro_verified' => 'موثّق', 'pro_featured' => 'إعلان', 'pro_site' => 'الموقع', 'pro_call' => 'اتصال', 'pro_mail' => 'البريد', 'pro_wa' => 'واتساب',
+        'pro_qs' => 'أسئلة يتدخّل فيها هذا المهني', 'pro_exps' => 'تجاربه', 'pro_contact' => 'تواصل',
+        'pro_title' => '{name} — {domain} · تحدي الأثر', 'pro_desc' => '{name} ({domain}{city}): تجارب وأسئلة حياتية يتدخّل فيها هذا المهني في تحدي الأثر.',
+        'pro_nf' => 'هذه الصفحة المهنية غير موجودة أو لم تعد متاحة.', 'pro_by' => 'صفحة مهنية',
     ],
     'en' => [
         'brand' => 'Impact Challenge', 'home' => 'The challenge', 'all' => 'All questions',
@@ -135,6 +164,16 @@ const SEO_STR = [
         'hub_intro' => 'Each question is about a life experience: a move, a failure, a meeting, a first job… Open one to see how others lived it and read their positive experiences, then give your answer.',
         'with_stories' => '{n} story(ies)', 'start' => 'Take the challenge', 'lang_name' => 'English',
         'foot' => 'A project by Mohammed Dehini · dehini.com', 'nf' => 'This question doesn\'t exist or is no longer online.',
+        'pros' => 'Professionals', 'all_pros' => 'All professionals', 'pros_title' => 'Professionals and companies on the Impact Challenge',
+        'pros_h1' => 'Professionals who share their experience',
+        'pros_desc' => 'Companies, freelancers and professionals linked to the life experiences of the Impact Challenge: their fields, their experiences and how to contact them.',
+        'pros_intro' => 'They chose the questions related to their work and share their experience there. Are you a professional? Create your page for free.',
+        'pros_cta' => 'Create my professional page', 'pros_empty' => 'No professional page yet: be the first!',
+        'pro_related' => 'Professionals to talk about it', 'pro_join' => 'Are you a professional? Link your page to this question',
+        'pro_verified' => 'Verified', 'pro_featured' => 'Sponsored', 'pro_site' => 'Website', 'pro_call' => 'Call', 'pro_mail' => 'Email', 'pro_wa' => 'WhatsApp',
+        'pro_qs' => 'Questions this professional covers', 'pro_exps' => 'Their experiences', 'pro_contact' => 'Contact',
+        'pro_title' => '{name} — {domain} · Impact Challenge', 'pro_desc' => '{name} ({domain}{city}): experiences and life questions this professional covers on the Impact Challenge.',
+        'pro_nf' => 'This professional page doesn\'t exist or is no longer online.', 'pro_by' => 'Professional page',
     ],
 ];
 
