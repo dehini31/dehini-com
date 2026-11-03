@@ -31,6 +31,8 @@
  *   GET  pros                     pages pro en ligne et questions auxquelles elles sont liées
  *   GET  pro_me | pro_suggest ?domain=&kw=   POST pro_save | pro_logo (fichier) | pro_questions_set {qids} | pro_delete
  *   POST subscribe {email,device,lang}   alertes par email sans compte (confirmation par lien)
+ *   POST track {device,ev:[[pv,view]|[imp,pro,qid]|[view|web|wa|call|mail,pro]]}   compteurs d'affichage
+ *   GET  pro_stats ?days=7|30|90   statistiques de la page pro du compte connecté
  *   GET  sub_confirm ?token= | sub_unsub ?token=   pages (confirmation, désabonnement)
  *   GET|POST unsub ?type=daily|digest|msg|all&token=   page de désabonnement
  *   mod_* : administration (statistiques, inscrits, récits, questions, soutiens, réglages), réservée
@@ -43,6 +45,7 @@ require __DIR__ . '/lib/mailer.php';
 require __DIR__ . '/lib/google.php';
 require __DIR__ . '/lib/sofizpay.php';
 require __DIR__ . '/lib/pros.php';
+require __DIR__ . '/lib/views.php';
 
 header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: same-origin');
@@ -1325,6 +1328,33 @@ switch ($action) {
         break;
     }
 
+    /* ------------------------------------------------ compteurs d'affichage */
+
+    case 'track': {
+        // Lot d'événements envoyé par le navigateur (défi et pages publiques) : pages vues, affichages
+        // des pros, visites de leur page et clics sur leurs contacts. Pas de jeton CSRF : rien de
+        // sensible, et l'en-tête X-Requested-With empêche déjà l'envoi depuis un autre site.
+        if (!$isPost) fail('generic', 405);
+        if (is_bot((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''))) ok(['n' => 0]);
+        $u = current_user();
+        $device = $b['device'] ?? '';
+        if (!$u && !valid_device($device)) fail('generic');
+        // Large : beaucoup de mobiles partagent la même adresse IP chez l'opérateur ; le plafond par
+        // personne et par jour (track_events) protège déjà les chiffres.
+        rate('track', 1200, 600);
+        $n = track_events($u ? 'u' . $u['id'] : 'd' . $device, $u ? (int) $u['id'] : 0, (array) ($b['ev'] ?? []));
+        ok(['n' => $n]);
+        break;
+    }
+
+    case 'pro_stats': {
+        $u = require_user();
+        $p = own_pro((int) $u['id']);
+        if (!$p) fail('no_pro');
+        ok(pro_stats_view((int) $p['id'], (int) ($_GET['days'] ?? 30), impact_lang($_GET['lang'] ?? $u['lang'])));
+        break;
+    }
+
     /* --------------------------------------- alertes par email sans compte */
 
     case 'subscribe': {
@@ -1717,8 +1747,10 @@ switch ($action) {
                 (SELECT COUNT(*) FROM stories st WHERE st.pro_id = p.id AND st.status = 'published') AS ns
             FROM pros p JOIN users u ON u.id = p.uid WHERE $where ORDER BY p.featured DESC, p.created DESC LIMIT 300");
         $s->execute($args);
-        $items = array_map(function ($p) {
+        $st30 = pros_stats_30();
+        $items = array_map(function ($p) use ($st30) {
             return pro_public($p) + ['status' => (string) $p['status'], 'owner' => (string) $p['owner'], 'email' => (string) $p['email'],
+                'stats' => $st30[(int) $p['id']] ?? ['imp' => 0, 'view' => 0, 'clicks' => 0, 'reach' => 0],
                 'phone' => (string) $p['phone'], 'website' => (string) $p['website'], 'bio' => (string) $p['bio'],
                 'questions' => (int) $p['nq'], 'stories' => (int) $p['ns'], 'created' => (int) $p['created']];
         }, $s->fetchAll());
@@ -1749,6 +1781,16 @@ switch ($action) {
         if (!$s->rowCount()) fail('Page pro introuvable.', 404);
         meta_set('pros_cache', '');
         ok();
+        break;
+    }
+
+    case 'mod_pro_stats': {
+        require_admin();
+        $s = $pdo->prepare('SELECT id FROM pros WHERE id = ?');
+        $s->execute([(int) ($_GET['id'] ?? 0)]);
+        $id = (int) $s->fetchColumn();
+        if (!$id) fail('Page pro introuvable.', 404);
+        ok(pro_stats_view($id, (int) ($_GET['days'] ?? 30), 'fr'));
         break;
     }
 
@@ -2020,6 +2062,7 @@ switch ($action) {
             'online' => $online, 'accounts' => $accounts, 'engagement' => $engagement, 'cats' => $cats,
             'stories' => $stories, 'messages' => $messages, 'countries' => $countries, 'countries_total' => $countriesTotal,
             'donations' => $donations, 'trend' => ['days' => $days, 'signups' => array_values($signupsByDay), 'answers' => array_values($answersByDay)],
+            'views' => site_views_view(),
             'top' => $top,
         ]);
         break;

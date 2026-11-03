@@ -49,6 +49,34 @@ function pro_rel(array $p): string
 {
     return $p['featured'] ? 'sponsored noopener' : ($p['verified'] ? 'noopener' : 'ugc nofollow noopener');
 }
+/** Petites icônes (traits de 2 px, style du défi), sans bibliothèque externe. */
+function icon(string $name): string
+{
+    $d = [
+        'pin' => '<path d="M20 10c0 5-5.5 10.2-7.4 11.8a1 1 0 0 1-1.2 0C9.5 20.2 4 15 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/>',
+        'phone' => '<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.9.6 2.8.7a2 2 0 0 1 1.7 2z"/>',
+        'chat' => '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
+        'mail' => '<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-9 5.7a2 2 0 0 1-2 0L2 7"/>',
+        'globe' => '<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20M2 12h20"/>',
+        'calendar' => '<rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+        'check' => '<path d="M3.9 8.6a4 4 0 0 1 4.7-4.7 4 4 0 0 1 6.8 0 4 4 0 0 1 4.7 4.7 4 4 0 0 1 0 6.8 4 4 0 0 1-4.7 4.7 4 4 0 0 1-6.8 0 4 4 0 0 1-4.7-4.7 4 4 0 0 1 0-6.8Z"/><path d="m9 12 2 2 4-4"/>',
+        'like' => '<path d="M7 10v12M15 5.9 14 10h5.8a2 2 0 0 1 1.9 2.6l-2.3 8a2 2 0 0 1-1.9 1.4H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.8a2 2 0 0 0 1.8-1.1L12 2a3.1 3.1 0 0 1 3 3.9Z"/>',
+        'arrow' => '<path d="M7 7h10v10M7 17 17 7"/>',
+        'quote' => '<path d="M16 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z"/><path d="M5 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z"/>',
+        'link' => '<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.8 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>',
+    ][$name] ?? '';
+    return '<svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' . $d . '</svg>';
+}
+/** « novembre 2026 », « نوفمبر 2026 », « November 2026 ». */
+function month_year(int $t, string $lang): string
+{
+    $m = [
+        'fr' => ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'],
+        'ar' => ['جانفي', 'فيفري', 'مارس', 'أفريل', 'ماي', 'جوان', 'جويلية', 'أوت', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'],
+        'en' => ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+    ];
+    return ($m[$lang] ?? $m['fr'])[(int) date('n', $t) - 1] . ' ' . date('Y', $t);
+}
 /** Numéro WhatsApp au format international (0550… → 213550…). */
 function wa_number(string $phone): string
 {
@@ -60,7 +88,7 @@ function wa_number(string $phone): string
 function pro_card(array $p, string $lang): string
 {
     $city = $p['city'] !== '' ? ' · ' . h($p['city']) : '';
-    return '<li><a class="pcard" href="' . h(pro_url($p, $lang)) . '">' . pro_avatar($p) . '<span><b dir="auto">' . h($p['name']) . '</b>'
+    return '<li><a class="pcard" data-pi="' . (int) $p['id'] . '" href="' . h(pro_url($p, $lang)) . '">' . pro_avatar($p) . '<span><b dir="auto">' . h($p['name']) . '</b>'
         . ($p['verified'] ? ' <em class="vb" title="' . h(seo_t($lang, 'pro_verified')) . '">✓</em>' : '')
         . '<small>' . h(pro_label('domain', (string) $p['domain'], $lang)) . $city . '</small>'
         . ($p['featured'] ? '<small class="sp">' . h(seo_t($lang, 'pro_featured')) . '</small>' : '') . '</span></a></li>';
@@ -105,9 +133,13 @@ if ($isPros) {
         $s = db()->prepare('SELECT qid FROM pro_questions WHERE pro_id = ?');
         $s->execute([$pro['id']]);
         $proQs = array_values(array_filter(array_map(function ($i) use ($qs) { return $qs[(int) $i] ?? null; }, $s->fetchAll(PDO::FETCH_COLUMN))));
-        $s = db()->prepare("SELECT qid, exp, imp, lang, likes FROM stories WHERE status = 'published' AND pro_id = ? ORDER BY published DESC");
+        $s = db()->prepare("SELECT qid, exp, imp, lang, likes, published FROM stories WHERE status = 'published' AND pro_id = ? ORDER BY published DESC");
         $s->execute([$pro['id']]);
         $proStories = $s->fetchAll();
+        $proLikes = array_sum(array_map(function ($r) { return (int) $r['likes']; }, $proStories));
+        // Spécialités : les mots-clés saisis par le pro (« déménagement, location… »).
+        $proTags = array_slice(array_values(array_unique(array_filter(array_map('trim', preg_split('/[,;\n]+/u', (string) $pro['keywords'])), function ($k) { return $k !== '' && mb_strlen($k) <= 40; }))), 0, 12);
+        $proHost = $pro['website'] !== '' ? preg_replace('~^www\.~i', '', (string) parse_url((string) $pro['website'], PHP_URL_HOST)) : '';
         $domain = pro_label('domain', (string) $pro['domain'], $lang);
         $alts = [];
         foreach (IMPACT_LANGS as $l) $alts[$l] = pro_url($pro, $l);
@@ -301,9 +333,87 @@ $catName = function (string $cat) use ($lang): string { return SEO_CATS[$lang][$
   .story .pby{display:inline-flex;align-items:center;gap:8px;text-decoration:none;font-weight:700;color:var(--ink)}
   .story .pby .pav{border-radius:8px;font-size:.8rem}
   @media(max-width:480px){.answers{grid-template-columns:1fr}}
+  .ic{flex-shrink:0;width:18px;height:18px}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .btn.sm{padding:8px 14px;font-size:.86rem}
+  /* ---------- Page d'un professionnel ---------- */
+  main.pp{padding:0 0 70px}
+  .pp-wrap{max-width:1080px;margin:0 auto;padding:0 18px}
+  .pp-cover{height:150px;background:radial-gradient(120% 140% at 85% 0%,rgba(23,178,106,.32),transparent 55%),radial-gradient(90% 120% at 10% 100%,rgba(47,91,255,.28),transparent 60%),var(--ink);color:#c9cfdf}
+  .pp-cover .crumbs{padding-top:16px;margin:0;color:#aeb5c8}
+  .pp-cover .crumbs a{color:#dfe3ee}
+  .pp-id{position:relative;margin-top:-64px;background:#fff;border-radius:24px;padding:22px 24px;box-shadow:0 1px 2px rgba(11,16,32,.05),0 18px 40px -20px rgba(11,16,32,.35);display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:18px 22px;align-items:center}
+  .pp-id .pav{border-radius:26px;font-size:2.4rem;box-shadow:0 0 0 4px #fff,0 8px 24px -10px rgba(11,16,32,.4);margin-top:-46px;align-self:start;background:#fff}
+  .pp-id h1{font-size:clamp(1.5rem,3.6vw,2.2rem);margin:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;overflow-wrap:anywhere}
+  .pp-vf{display:inline-grid;place-items:center;color:var(--cobalt)}
+  .pp-vf .ic{width:24px;height:24px}
+  .pp-sub{color:var(--ink-soft);font-weight:500;margin-top:2px}
+  .pp-meta{list-style:none;display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:10px;font-size:.88rem;color:var(--muted)}
+  .pp-meta li{display:flex;align-items:center;gap:6px}
+  .pp-meta .ic{width:16px;height:16px}
+  .pp-cta{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
+  .pp-cta .btn .ic,.pp-bar .btn .ic{width:17px;height:17px}
+  .pp-grid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:22px;margin-top:22px;align-items:start}
+  .pp-card{background:#fff;border-radius:20px;padding:22px 24px;box-shadow:0 1px 2px rgba(11,16,32,.05),0 10px 30px -18px rgba(11,16,32,.22)}
+  .pp-card + .pp-card,.pp-card + .pp-join{margin-top:16px}
+  .pp-card h2,.pp-exps h2{font-size:1.1rem;margin:0 0 12px}
+  .pp-card h3{font-size:.82rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:18px 0 10px}
+  html[lang=ar] .pp-card h3{letter-spacing:0;text-transform:none}
+  .pp-bio{color:var(--ink-soft);font-size:1rem;white-space:pre-line;line-height:1.7}
+  .pp-tags{list-style:none;display:flex;flex-wrap:wrap;gap:8px}
+  .pp-tags li{padding:6px 12px;border-radius:999px;background:var(--paper-100);font-size:.85rem;font-weight:500;color:var(--ink-soft)}
+  .pp-exps{margin-top:26px}
+  .pp-main > .pp-exps:first-child{margin-top:0}
+  .pp-n{display:inline-grid;place-items:center;min-width:26px;height:26px;padding:0 8px;border-radius:999px;background:var(--pos-50);color:var(--pos-600);font-size:.8rem;vertical-align:2px}
+  .pp-exp{background:#fff;border-radius:20px;padding:20px 22px;margin-bottom:14px;box-shadow:0 1px 2px rgba(11,16,32,.05),0 10px 30px -18px rgba(11,16,32,.22)}
+  .pp-q{display:block;text-decoration:none;padding-bottom:12px;margin-bottom:14px;border-bottom:1px solid var(--paper-100)}
+  .pp-q small{display:block;font-size:.74rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700}
+  html[lang=ar] .pp-q small{letter-spacing:0;text-transform:none}
+  .pp-q span{font-weight:700;color:var(--ink)}
+  .pp-q:hover span{text-decoration:underline}
+  .pp-exp blockquote{font-size:1.02rem;line-height:1.7;margin-bottom:14px}
+  .pp-exp .imp{background:var(--pos-50);color:#0a5c37;border-radius:14px;padding:12px 14px;font-size:.95rem}
+  .pp-exp .imp b{display:block;font-size:.74rem;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px}
+  html[lang=ar] .pp-exp .imp b{letter-spacing:0;text-transform:none}
+  .pp-exp footer{display:flex;gap:16px;margin-top:12px;padding:0;border:0;font-size:.82rem;color:var(--muted)}
+  .pp-exp footer:empty{display:none}
+  .is-pp header .wrap,.is-pp footer .wrap{max-width:1080px}
+  .pp-exp footer span{display:inline-flex;align-items:center;gap:6px}
+  .pp-exp footer .ic{width:15px;height:15px}
+  .pp-empty{background:#fff;border:2px dashed var(--paper-200);border-radius:20px;padding:26px;text-align:center;color:var(--muted)}
+  .pp-side{position:sticky;top:18px}
+  .pp-contact{list-style:none;display:grid;gap:4px}
+  .pp-contact a,.pp-row{display:flex;align-items:center;gap:12px;padding:9px 10px;margin:0 -10px;border-radius:14px;text-decoration:none}
+  .pp-contact a:hover{background:var(--paper-50)}
+  .pp-contact small{display:block;font-size:.74rem;color:var(--muted);line-height:1.3}
+  .pp-contact b{display:block;font-size:.92rem;font-weight:700;overflow-wrap:anywhere;line-height:1.35}
+  .pp-ic{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:var(--paper-100);color:var(--ink-soft);flex-shrink:0}
+  .pp-ic.wa{background:var(--pos-50);color:var(--pos-600)}
+  .pp-join{margin-top:16px;border-radius:20px;padding:22px 24px;background:var(--ink);color:#c9cfdf}
+  .pp-join h2{color:#fff;font-size:1.05rem;margin:0 0 6px}
+  .pp-join p{font-size:.9rem;margin-bottom:14px}
+  .pp-all{display:inline-flex;align-items:center;gap:4px;margin-top:12px;font-size:.86rem;color:#fff;font-weight:700;text-decoration:none}
+  .pp-all .ic{width:15px;height:15px}
+  html[dir=rtl] .pp-all .ic{transform:scaleX(-1)}
+  .pp-bar{display:none}
+  @media(max-width:900px){
+    .pp-grid{grid-template-columns:minmax(0,1fr)}
+    .pp-side{position:static}
+    .pp-id{grid-template-columns:auto minmax(0,1fr)}
+    .pp-cta{grid-column:1 / -1;justify-content:flex-start}
+  }
+  @media(max-width:600px){
+    .pp-cover{height:132px}
+    .pp-id{grid-template-columns:minmax(0,1fr);padding:18px;margin-top:-44px}
+    .pp-id .pav{width:88px!important;height:88px!important;margin-top:-58px}
+    .pp-cta{display:none}
+    .pp-bar{display:flex;gap:8px;position:fixed;inset:auto 0 0 0;z-index:5;padding:10px 14px calc(10px + env(safe-area-inset-bottom));background:rgba(255,255,255,.96);backdrop-filter:blur(8px);border-top:1px solid var(--paper-200)}
+    .pp-bar .btn{flex:1;justify-content:center}
+    main.pp{padding-bottom:96px}
+  }
 </style>
 </head>
-<body>
+<body<?= isset($_GET['pro']) && $pro ? ' class="is-pp"' : '' ?>>
 <header>
   <div class="wrap">
     <a class="brand" href="<?= h(home_url($lang)) ?>"><span class="dots"><i></i><i></i><i></i></span><?= h(seo_t($lang, 'brand')) ?></a>
@@ -315,7 +425,7 @@ $catName = function (string $cat) use ($lang): string { return SEO_CATS[$lang][$
   </div>
 </header>
 
-<main class="wrap">
+<main class="<?= isset($_GET['pro']) && $pro ? 'pp' : 'wrap' ?>">
 <?php if ($isPros): ?>
   <p class="crumbs"><a href="<?= h(home_url($lang)) ?>"><?= h(seo_t($lang, 'brand')) ?></a> › <?= h(seo_t($lang, 'pros')) ?></p>
   <h1><?= h(seo_t($lang, 'pros_h1')) ?></h1>
@@ -325,41 +435,101 @@ $catName = function (string $cat) use ($lang): string { return SEO_CATS[$lang][$
   <ul class="pcards"><?php foreach ($all as $x) echo pro_card($x, $lang); ?></ul>
   <?php else: ?><p class="hint"><?= h(seo_t($lang, 'pros_empty')) ?></p><?php endif ?>
 
-<?php elseif (isset($_GET['pro']) && $pro): ?>
-  <p class="crumbs"><a href="<?= h(home_url($lang)) ?>"><?= h(seo_t($lang, 'brand')) ?></a> › <a href="<?= h(pros_url($lang)) ?>"><?= h(seo_t($lang, 'pros')) ?></a></p>
-  <div class="phead">
-    <?= pro_avatar($pro, 84) ?>
-    <div>
-      <h1 dir="auto"><?= h($pro['name']) ?></h1>
-      <p class="pmeta"><?= h(pro_label('kind', (string) $pro['kind'], $lang)) ?> · <?= h($domain) ?><?= $pro['city'] !== '' ? ' · ' . h($pro['city']) : '' ?></p>
-      <div class="badges">
-        <?php if ($pro['verified']): ?><span class="b-v">✓ <?= h(seo_t($lang, 'pro_verified')) ?></span><?php endif ?>
-        <?php if ($pro['featured']): ?><span class="b-s"><?= h(seo_t($lang, 'pro_featured')) ?></span><?php endif ?>
+<?php elseif (isset($_GET['pro']) && $pro):
+    $wa = $pro['phone'] !== '' ? 'https://wa.me/' . wa_number((string) $pro['phone']) : '';
+    $tel = $pro['phone'] !== '' ? 'tel:' . preg_replace('/[^0-9+]/', '', (string) $pro['phone']) : '';
+    $nExp = count($proStories); ?>
+  <div class="pp-cover"><div class="pp-wrap">
+    <p class="crumbs"><a href="<?= h(home_url($lang)) ?>"><?= h(seo_t($lang, 'brand')) ?></a> › <a href="<?= h(pros_url($lang)) ?>"><?= h(seo_t($lang, 'pros')) ?></a></p>
+  </div></div>
+  <div class="pp-wrap">
+    <section class="pp-id">
+      <?= pro_avatar($pro, 112) ?>
+      <div class="pp-who">
+        <h1 dir="auto"><?= h($pro['name']) ?><?php if ($pro['verified']): ?><span class="pp-vf" title="<?= h(seo_t($lang, 'pro_verified')) ?>"><?= icon('check') ?><span class="sr"><?= h(seo_t($lang, 'pro_verified')) ?></span></span><?php endif ?></h1>
+        <p class="pp-sub"><?= h(pro_label('kind', (string) $pro['kind'], $lang)) ?> · <?= h($domain) ?></p>
+        <ul class="pp-meta">
+          <?php if ($pro['city'] !== ''): ?><li><?= icon('pin') ?><span dir="auto"><?= h($pro['city']) ?></span></li><?php endif ?>
+          <li><?= icon('calendar') ?><?= h(seo_t($lang, 'pro_since', ['d' => month_year((int) $pro['created'], $lang)])) ?></li>
+          <?php if ($nExp): ?><li><?= icon('quote') ?><?= nf($nExp, $lang) ?> <?= h(seo_t($lang, $nExp > 1 ? 'pro_n_exps' : 'pro_n_exp')) ?></li><?php endif ?>
+          <?php if ($proLikes): ?><li><?= icon('like') ?><?= nf($proLikes, $lang) ?> <?= h(seo_t($lang, 'pro_n_likes')) ?></li><?php endif ?>
+        </ul>
       </div>
+      <div class="pp-cta">
+        <?php if ($wa): ?><a class="btn pos" data-pc="wa" href="<?= h($wa) ?>" target="_blank" rel="noopener nofollow"><?= icon('chat') ?><?= h(seo_t($lang, 'pro_wa')) ?></a><?php endif ?>
+        <?php if ($tel): ?><a class="btn line" data-pc="call" href="<?= h($tel) ?>"><?= icon('phone') ?><?= h(seo_t($lang, 'pro_call')) ?></a><?php endif ?>
+        <?php if ($pro['website'] !== ''): ?><a class="btn<?= $wa ? ' line' : '' ?>" data-pc="web" href="<?= h($pro['website']) ?>" target="_blank" rel="<?= pro_rel($pro) ?>"><?= icon('globe') ?><?= h(seo_t($lang, 'pro_site')) ?></a><?php endif ?>
+        <?php if ($pro['email'] !== '' && !$wa): ?><a class="btn line" data-pc="mail" href="mailto:<?= h($pro['email']) ?>"><?= icon('mail') ?><?= h(seo_t($lang, 'pro_mail')) ?></a><?php endif ?>
+      </div>
+    </section>
+
+    <div class="pp-grid">
+      <div class="pp-main">
+        <?php if ($pro['bio'] !== '' || $proTags): ?>
+        <section class="pp-card">
+          <h2><?= h(seo_t($lang, 'pro_about')) ?></h2>
+          <?php if ($pro['bio'] !== ''): ?><p class="pp-bio" dir="auto"><?= h($pro['bio']) ?></p><?php endif ?>
+          <?php if ($proTags): ?>
+          <h3><?= h(seo_t($lang, 'pro_spec')) ?></h3>
+          <ul class="pp-tags"><?php foreach ($proTags as $tag): ?><li dir="auto"><?= h($tag) ?></li><?php endforeach ?></ul>
+          <?php endif ?>
+        </section>
+        <?php endif ?>
+
+        <section class="pp-exps">
+          <h2><?= h(seo_t($lang, 'pro_exps')) ?><?php if ($nExp): ?> <span class="pp-n"><?= nf($nExp, $lang) ?></span><?php endif ?></h2>
+          <?php foreach ($proStories as $st): $sq = $qs[(int) $st['qid']] ?? null; if (!$sq) continue; ?>
+          <article class="pp-exp" lang="<?= h($st['lang']) ?>">
+            <a class="pp-q" href="<?= h(q_url($sq, $lang)) ?>"><small><?= h(seo_t($lang, 'pro_on')) ?></small><span dir="auto"><?= h(qtext($sq, $lang)) ?></span></a>
+            <blockquote dir="auto"><?= ugc_html((string) $st['exp']) ?></blockquote>
+            <div class="imp"><b><?= h(seo_t($lang, 'impact')) ?></b><p dir="auto"><?= ugc_html((string) $st['imp']) ?></p></div>
+            <footer><?php if ((int) $st['likes']): ?><span><?= icon('like') ?><?= nf((int) $st['likes'], $lang) ?></span><?php endif ?><?php if ((int) $st['published']): ?><span><?= h(month_year((int) $st['published'], $lang)) ?></span><?php endif ?></footer>
+          </article>
+          <?php endforeach ?>
+          <?php if (!$nExp): ?><p class="pp-empty"><?= h(seo_t($lang, 'pro_none')) ?></p><?php endif ?>
+        </section>
+      </div>
+
+      <aside class="pp-side">
+        <?php if ($wa || $pro['email'] !== '' || $pro['website'] !== '' || $pro['city'] !== ''): ?>
+        <section class="pp-card">
+          <h2><?= h(seo_t($lang, 'pro_contact')) ?></h2>
+          <ul class="pp-contact">
+            <?php if ($tel): ?><li><a data-pc="call" href="<?= h($tel) ?>"><span class="pp-ic"><?= icon('phone') ?></span><span><small><?= h(seo_t($lang, 'pro_phone')) ?></small><b dir="ltr"><?= h($pro['phone']) ?></b></span></a></li>
+            <li><a data-pc="wa" href="<?= h($wa) ?>" target="_blank" rel="noopener nofollow"><span class="pp-ic wa"><?= icon('chat') ?></span><span><small><?= h(seo_t($lang, 'pro_wa')) ?></small><b><?= h(seo_t($lang, 'pro_wa_send')) ?></b></span></a></li><?php endif ?>
+            <?php if ($pro['email'] !== ''): ?><li><a data-pc="mail" href="mailto:<?= h($pro['email']) ?>"><span class="pp-ic"><?= icon('mail') ?></span><span><small><?= h(seo_t($lang, 'pro_mail')) ?></small><b dir="ltr"><?= h($pro['email']) ?></b></span></a></li><?php endif ?>
+            <?php if ($pro['website'] !== ''): ?><li><a data-pc="web" href="<?= h($pro['website']) ?>" target="_blank" rel="<?= pro_rel($pro) ?>"><span class="pp-ic"><?= icon('globe') ?></span><span><small><?= h(seo_t($lang, 'pro_site')) ?></small><b dir="ltr"><?= h($proHost ?: $pro['website']) ?></b></span></a></li><?php endif ?>
+            <?php if ($pro['city'] !== ''): ?><li><span class="pp-row"><span class="pp-ic"><?= icon('pin') ?></span><span><small><?= h(seo_t($lang, 'pro_city')) ?></small><b dir="auto"><?= h($pro['city']) ?></b></span></span></li><?php endif ?>
+          </ul>
+        </section>
+        <?php endif ?>
+        <section class="pp-card">
+          <h2><?= h(seo_t($lang, 'pro_share')) ?></h2>
+          <?php $u = rawurlencode($page['canonical']); $txt = rawurlencode((string) $pro['name']); ?>
+          <div class="share">
+            <a class="btn line sm" href="https://wa.me/?text=<?= $txt ?>%20<?= $u ?>" target="_blank" rel="noopener nofollow">WhatsApp</a>
+            <a class="btn line sm" href="https://www.facebook.com/sharer/sharer.php?u=<?= $u ?>" target="_blank" rel="noopener nofollow">Facebook</a>
+            <a class="btn line sm" href="https://www.linkedin.com/sharing/share-offsite/?url=<?= $u ?>" target="_blank" rel="noopener nofollow">LinkedIn</a>
+            <button class="btn line sm" type="button" id="copy" data-url="<?= h($page['canonical']) ?>" data-ok="<?= h(seo_t($lang, 'copied')) ?>"><?= icon('link') ?><?= h(seo_t($lang, 'copy')) ?></button>
+          </div>
+        </section>
+        <section class="pp-join">
+          <h2><?= h(seo_t($lang, 'pro_cta_t')) ?></h2>
+          <p><?= h(seo_t($lang, 'pro_cta_p')) ?></p>
+          <a class="btn pos" href="<?= h(home_url($lang)) ?>#pro"><?= h(seo_t($lang, 'pro_cta')) ?></a>
+          <a class="pp-all" href="<?= h(pros_url($lang)) ?>"><?= h(seo_t($lang, 'all_pros')) ?> <?= icon('arrow') ?></a>
+        </section>
+      </aside>
     </div>
   </div>
-  <?php if ($pro['bio'] !== ''): ?><p class="bio" dir="auto"><?= h($pro['bio']) ?></p><?php endif ?>
-  <div class="contact">
-    <?php if ($pro['website'] !== ''): ?><a class="btn" href="<?= h($pro['website']) ?>" target="_blank" rel="<?= pro_rel($pro) ?>"><?= h(seo_t($lang, 'pro_site')) ?></a><?php endif ?>
-    <?php if ($pro['phone'] !== ''): ?><a class="btn pos" href="https://wa.me/<?= h(wa_number((string) $pro['phone'])) ?>" target="_blank" rel="noopener nofollow"><?= h(seo_t($lang, 'pro_wa')) ?></a>
-    <a class="btn line" href="tel:<?= h(preg_replace('/[^0-9+]/', '', (string) $pro['phone'])) ?>"><?= h(seo_t($lang, 'pro_call')) ?></a><?php endif ?>
-    <?php if ($pro['email'] !== ''): ?><a class="btn line" href="mailto:<?= h($pro['email']) ?>"><?= h(seo_t($lang, 'pro_mail')) ?></a><?php endif ?>
-  </div>
-  <?php if ($proStories): ?>
-  <h2><?= h(seo_t($lang, 'pro_exps')) ?></h2>
-    <?php foreach ($proStories as $st): $sq = $qs[(int) $st['qid']] ?? null; if (!$sq) continue; ?>
-    <article class="story" lang="<?= h($st['lang']) ?>">
-      <p class="crumbs" style="margin-bottom:8px"><a href="<?= h(q_url($sq, $lang)) ?>"><?= h(qtext($sq, $lang)) ?></a></p>
-      <blockquote dir="auto"><?= ugc_html((string) $st['exp']) ?></blockquote>
-      <div class="imp"><b><?= h(seo_t($lang, 'impact')) ?></b><p dir="auto"><?= ugc_html((string) $st['imp']) ?></p></div>
-    </article>
-    <?php endforeach ?>
+  <?php if ($wa || $pro['website'] !== '' || $pro['email'] !== ''): ?>
+  <nav class="pp-bar" aria-label="<?= h(seo_t($lang, 'pro_contact')) ?>">
+    <?php if ($wa): ?><a class="btn pos" data-pc="wa" href="<?= h($wa) ?>" target="_blank" rel="noopener nofollow"><?= icon('chat') ?><?= h(seo_t($lang, 'pro_wa')) ?></a>
+    <a class="btn line" data-pc="call" href="<?= h($tel) ?>"><?= icon('phone') ?><?= h(seo_t($lang, 'pro_call')) ?></a>
+    <?php elseif ($pro['website'] !== ''): ?><a class="btn" data-pc="web" href="<?= h($pro['website']) ?>" target="_blank" rel="<?= pro_rel($pro) ?>"><?= icon('globe') ?><?= h(seo_t($lang, 'pro_site')) ?></a>
+    <?php else: ?><a class="btn" data-pc="mail" href="mailto:<?= h($pro['email']) ?>"><?= icon('mail') ?><?= h(seo_t($lang, 'pro_mail')) ?></a><?php endif ?>
+  </nav>
   <?php endif ?>
-  <?php if ($proQs): ?>
-  <h2><?= h(seo_t($lang, 'pro_qs')) ?></h2>
-  <ul class="list"><?php foreach ($proQs as $x): ?><li><a href="<?= h(q_url($x, $lang)) ?>"><span dir="auto"><?= h(qtext($x, $lang)) ?></span></a></li><?php endforeach ?></ul>
-  <?php endif ?>
-  <p style="margin-top:22px"><a class="btn line" href="<?= h(pros_url($lang)) ?>"><?= h(seo_t($lang, 'all_pros')) ?></a></p>
 
 <?php elseif (isset($_GET['pro'])): ?>
   <h1><?= h(seo_t($lang, 'pro_nf')) ?></h1>
@@ -416,7 +586,7 @@ $catName = function (string $cat) use ($lang): string { return SEO_CATS[$lang][$
       <blockquote dir="auto"><?= ugc_html((string) $st['exp']) ?></blockquote>
       <div class="imp"><b><?= h(seo_t($lang, 'impact')) ?></b><p dir="auto"><?= ugc_html((string) $st['imp']) ?></p></div>
       <?php $sp = !empty($st['pro_id']) ? (pros_active()[(int) $st['pro_id']] ?? null) : null; ?>
-      <p class="who"><?php if ($sp): ?><a class="pby" href="<?= h(pro_url($sp, $lang)) ?>"><?= pro_avatar($sp, 26) ?><span dir="auto"><?= h($sp['name']) ?></span></a> · <?= h(seo_t($lang, 'pro_by')) ?><?php else: ?><span dir="auto"><?= h($st['author'] !== '' ? (string) $st['author'] : seo_t($lang, 'anon')) ?></span><?php endif ?><?= (int) $st['likes'] ? ' · ' . h(seo_t($lang, 'likes', ['n' => nf((int) $st['likes'], $lang)])) : '' ?></p>
+      <p class="who"><?php if ($sp): ?><a class="pby" data-pi="<?= (int) $sp['id'] ?>" href="<?= h(pro_url($sp, $lang)) ?>"><?= pro_avatar($sp, 26) ?><span dir="auto"><?= h($sp['name']) ?></span></a> · <?= h(seo_t($lang, 'pro_by')) ?><?php else: ?><span dir="auto"><?= h($st['author'] !== '' ? (string) $st['author'] : seo_t($lang, 'anon')) ?></span><?php endif ?><?= (int) $st['likes'] ? ' · ' . h(seo_t($lang, 'likes', ['n' => nf((int) $st['likes'], $lang)])) : '' ?></p>
     </article>
     <?php endforeach ?>
     <?php if ($storyTotal > count($stories)): ?><p><a class="btn line" href="<?= h(home_url($lang)) ?>"><?= h(seo_t($lang, 'more')) ?></a></p><?php endif ?>
@@ -453,6 +623,57 @@ $catName = function (string $cat) use ($lang): string { return SEO_CATS[$lang][$
     <span><a href="<?= h(home_url($lang)) ?>"><?= h(seo_t($lang, 'home')) ?></a> · <a href="<?= h(hub_url($lang)) ?>"><?= h(seo_t($lang, 'all')) ?></a> · <a href="<?= h(pros_url($lang)) ?>"><?= h(seo_t($lang, 'pros')) ?></a> · <a href="https://dehini.com/">dehini.com</a></span>
   </div>
 </footer>
+<?php
+// Compteurs d'affichage (voir lib/views.php) : page vue, visite d'une page pro, pros vus à l'écran, clics sur leurs contacts.
+$trackView = $isPros ? 'page_pros' : (isset($_GET['pro']) ? ($pro ? 'page_pro' : '') : ($isHub ? 'page_hub' : ($q ? 'page_q' : '')));
+$trackCfg = ['api' => rtrim(str_replace('\\', '/', dirname((string) $_SERVER['SCRIPT_NAME'])), '/') . '/api.php?action=track',
+    'pv' => $trackView, 'pro' => $pro ? (int) $pro['id'] : 0, 'q' => $q ? (int) $q['id'] : 0];
+?>
+<?php if ($trackView !== ''): ?>
+<script>
+(function (C) {
+  var dev = "", S = {};
+  try {
+    S = JSON.parse(localStorage.getItem("impact-v1") || "{}") || {};
+    dev = S.device || "";
+    if (!/^[a-f0-9]{32}$/.test(dev)) {
+      dev = Array.prototype.map.call(crypto.getRandomValues(new Uint8Array(16)), function (b) { return (b < 16 ? "0" : "") + b.toString(16); }).join("");
+      S.device = dev;
+      localStorage.setItem("impact-v1", JSON.stringify(S));
+    }
+  } catch (e) { return; }
+  var queue = [], timer, seen = {};
+  function send() {
+    clearTimeout(timer);
+    if (!queue.length || !window.fetch) return;
+    fetch(C.api, { method: "POST", keepalive: true, credentials: "same-origin",
+      headers: { "Content-Type": "application/json", "X-Requested-With": "impact" },
+      body: JSON.stringify({ device: dev, ev: queue.splice(0, 80) }) }).catch(function () {});
+  }
+  function push(e) { queue.push(e); clearTimeout(timer); timer = setTimeout(send, 1500); }
+  push(["pv", C.pv]);
+  if (C.pro) push(["view", C.pro]);
+  if ("IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function (list) {
+      list.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        io.unobserve(e.target);
+        var id = +e.target.getAttribute("data-pi");
+        if (seen[id]) return;
+        seen[id] = 1;
+        push(["imp", id, C.q]);
+      });
+    }, { threshold: 0.5 });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-pi]"), function (n) { io.observe(n); });
+  }
+  document.addEventListener("click", function (e) {
+    var a = e.target.closest && e.target.closest("[data-pc]");
+    if (a) { push([a.getAttribute("data-pc"), C.pro]); send(); }
+  });
+  addEventListener("pagehide", send);
+})(<?= json_encode($trackCfg, JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) ?>);
+</script>
+<?php endif ?>
 <script>
   var c = document.getElementById("copy");
   if (c) c.addEventListener("click", function () {
