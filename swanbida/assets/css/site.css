@@ -211,7 +211,7 @@ ul, ol { margin: 0; padding: 0; }
 .grid-cards { display: grid; gap: 18px; }
 .card { background: var(--white); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); display: flex; flex-direction: column; transition: transform .35s var(--ease), box-shadow .35s var(--ease); }
 .card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
-.card-media { position: relative; display: block; aspect-ratio: 1; background: var(--sand); overflow: hidden; }
+.card-media { position: relative; display: block; aspect-ratio: 4 / 5; background: var(--sand); overflow: hidden; }
 .card-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: opacity .5s var(--ease), transform .9s var(--ease); }
 .card-img-alt { opacity: 0; }
 .card:hover .card-img-alt { opacity: 1; }
@@ -294,7 +294,7 @@ ul, ol { margin: 0; padding: 0; }
 .g-main { position: relative; border-radius: var(--radius); overflow: hidden; background: var(--sand); }
 .g-track { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; scrollbar-width: none; overscroll-behavior-x: contain; }
 .g-track::-webkit-scrollbar { display: none; }
-.g-slide { flex: 0 0 100%; margin: 0; scroll-snap-align: center; aspect-ratio: 1; position: relative; background: var(--sand); }
+.g-slide { flex: 0 0 100%; margin: 0; scroll-snap-align: center; aspect-ratio: 4 / 5; position: relative; background: var(--sand); }
 .g-zoom, .g-yt { display: block; width: 100%; height: 100%; padding: 0; border: 0; background: none; cursor: zoom-in; position: relative; }
 .g-img, .g-yt img, .g-video { width: 100%; height: 100%; object-fit: cover; }
 .g-video { background: #000; }

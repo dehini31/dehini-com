@@ -861,7 +861,7 @@ try {
             need('settings');
             $emails = [];
             foreach (preg_split('/[\s,;]+/', (string) ($b['notify_emails'] ?? '')) ?: [] as $m) {
-                if ($m === '') continue;
+                if ($m === '' || strpos($m, '@') === false) continue; // texte pré-rempli par le navigateur (ex. un domaine) : ignoré en silence
                 if (!filter_var($m, FILTER_VALIDATE_EMAIL)) fail('Email invalide : ' . $m);
                 $emails[] = $m;
             }

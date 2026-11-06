@@ -100,6 +100,8 @@ async function order(browser, lang) {
   });
   check(layout.titleAbove, 'fiche produit : titre au-dessus de la photo sur mobile');
   check(layout.tagIn, 'fiche produit : badge « Livraison gratuite » dans le coin de la photo');
+  const ratio = await page.evaluate(() => { const r = document.querySelector('.g-slide').getBoundingClientRect(); return r.width / r.height; });
+  check(Math.abs(ratio - 4 / 5) < 0.02, `galerie : photo au format 4:5, pas carré (${ratio.toFixed(2)})`);
   // Bandeau d'offre : choisit l'offre 2 packs.
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.click('.offer-ribbon');
@@ -321,7 +323,11 @@ async function abandoned(browser) {
   // Telegram configuré (fausse API) pour recevoir l'alerte du cron.
   const st = (await A.call('settings')).settings;
   Object.assign(st, { telegram_token: '1234567890:AAHtestTokenForSwanbidaE2E_abc', notify_telegram_chat: '424242', notify_abandoned: true, abandon_minutes: 20 });
-  check((await A.call('settings_save', st)).ok, 'réglages : Telegram + alerte des commandes abandonnées');
+  // Texte pré-rempli par le navigateur dans « Emails à prévenir » (ex. le domaine « swanbida.com », sans @) :
+  // ignoré en silence, ne doit pas bloquer l'enregistrement du reste des réglages.
+  st.notify_emails = 'swanbida.com';
+  check((await A.call('settings_save', st)).ok, 'réglages : Telegram + alerte des commandes abandonnées (texte pré-rempli sans @ dans « Emails » ignoré)');
+  check((await A.call('settings')).settings.notify_emails === '', '« swanbida.com » (sans @) non retenu comme email');
 
   // Le client arrive d'une publicité (site arabe), choisit 2 packs, tape nom, téléphone, wilaya… puis s'en va.
   const { ctx, page, errors } = await newPage(browser, { locale: 'ar-DZ' });
