@@ -625,7 +625,7 @@
   }
   function textField(obj, key, label, opt) {
     opt = opt || {};
-    var el = opt.multi ? h('textarea', { rows: opt.rows || 3 }) : h('input', { type: opt.type || 'text' });
+    var el = opt.multi ? h('textarea', { rows: opt.rows || 3, autocomplete: opt.autocomplete || 'off' }) : h('input', { type: opt.type || 'text', autocomplete: opt.autocomplete || 'off' });
     el.value = obj[key] == null ? '' : obj[key];
     if (opt.ph) el.placeholder = opt.ph;
     el.addEventListener('input', function () { obj[key] = opt.type === 'number' ? (el.value === '' ? '' : +el.value) : el.value; });
