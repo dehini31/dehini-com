@@ -1049,17 +1049,12 @@
     api('settings').then(function (j) {
       var s = j.settings;
       ['allow_backorder', 'desk_enabled', 'notify_abandoned'].forEach(function (k) { s[k] = s[k] === '1'; });
-      s.telegram_token = ''; s.telegram_clear = false;
       if (j.last_error) body.appendChild(h('div', { class: 'alert alert-d small' }, 'Dernière erreur de notification : ' + j.last_error));
-      var tg = h('input', { type: 'password', autocomplete: 'off', placeholder: j.settings.telegram_set ? 'Jeton enregistré — laisser vide pour le garder' : '123456789:AA…' });
-      tg.oninput = function () { s.telegram_token = tg.value; };
       body.appendChild(h('div', { class: 'card' }, h('h2', null, 'Notifications de nouvelles commandes'),
         textField(s, 'notify_emails', 'Emails à prévenir (jusqu\'à 5, séparés par des virgules)', { hint: 'Envoi : ' + j.smtp }),
-        h('div', { class: 'grid g2' }, h('label', { class: 'f' }, 'Bot Telegram : jeton', h('span', { class: 'hint' }, 'Créé avec @BotFather. Stocké chiffré.'), tg),
-          textField(s, 'notify_telegram_chat', 'Telegram : identifiant du chat', { hint: 'Ex. 123456789 ou -100… pour un groupe' })),
         h('p', { class: 'small muted' }, 'L\'administration ouverte émet aussi un signal sonore et une notification du navigateur à chaque commande.'),
         h('div', { class: 'row' }, h('button', { class: 'btn', onclick: function () {
-          api('settings_save', { body: s }).then(function () { return api('notify_test', { body: {} }); }).then(function (r) { toast('Telegram : ' + r.result.telegram + ' · Email : ' + r.result.email); }).catch(fail);
+          api('settings_save', { body: s }).then(function () { return api('notify_test', { body: {} }); }).then(function (r) { toast('Email : ' + r.result.email); }).catch(fail);
         } }, 'Enregistrer et tester'))));
       body.appendChild(h('div', { class: 'card' }, h('h2', null, 'Commandes'),
         h('div', { class: 'grid g3' }, textField(s, 'duplicate_hours', 'Signaler un doublon si même téléphone dans les… (heures)', { type: 'number' }),
@@ -1068,7 +1063,7 @@
         checkField(s, 'allow_backorder', 'Accepter les commandes quand le stock est épuisé'),
         h('h3', null, 'Commandes abandonnées'),
         h('div', { class: 'grid g2' }, textField(s, 'abandon_minutes', 'Considérer un formulaire comme abandonné après… (minutes sans activité)', { type: 'number' }),
-          h('div', null, checkField(s, 'notify_abandoned', 'Prévenir sur Telegram de chaque commande abandonnée'))),
+          h('div', null, checkField(s, 'notify_abandoned', 'Prévenir par email de chaque commande abandonnée'))),
         h('p', { class: 'small muted' }, 'Message WhatsApp de relance — variables : {name} {items} {total} {phone}'),
         textField(s, 'wa_abandon_fr', 'Relance en français', { multi: true, rows: 3 }),
         (function () { var t = textField(s, 'wa_abandon_ar', 'Relance en arabe', { multi: true, rows: 3 }); t.querySelector('textarea').setAttribute('dir', 'rtl'); return t; })(),

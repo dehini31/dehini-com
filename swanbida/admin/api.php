@@ -848,11 +848,10 @@ try {
         /* ----------------------------------------------------------------- réglages */
         case 'settings': {
             need('settings');
-            $keys = ['notify_emails', 'notify_telegram_chat', 'gsc_verification', 'allow_backorder', 'duplicate_hours', 'desk_enabled', 'return_days',
+            $keys = ['notify_emails', 'gsc_verification', 'allow_backorder', 'duplicate_hours', 'desk_enabled', 'return_days',
                 'wa_template_fr', 'wa_template_ar', 'order_rate_ip', 'abandon_minutes', 'notify_abandoned', 'wa_abandon_fr', 'wa_abandon_ar'];
             $out = [];
             foreach ($keys as $k) $out[$k] = setting($k);
-            $out['telegram_set'] = secret_setting('notify_telegram_token', 'SWB_TELEGRAM_TOKEN') !== '';
             ok(['settings' => $out, 'smtp' => SWB_SMTP_HOST !== '' ? SWB_SMTP_HOST : 'fonction mail() de PHP', 'last_error' => meta_get('notify_last_error') ?? '',
                 'last_backup' => (int) (meta_get('last_backup') ?? 0), 'backups' => admin_can(admin_user_cached(), 'backup') ? backups_list() : [],
                 'version' => SWB_VERSION, 'data_dir' => SWB_DATA_DIR, 'cron_last' => (int) (meta_get('cron_last') ?? 0)]);
@@ -866,12 +865,6 @@ try {
                 $emails[] = $m;
             }
             setting_set('notify_emails', implode(', ', array_slice($emails, 0, 5)));
-            if (isset($b['telegram_token']) && $b['telegram_token'] !== '') {
-                if (!preg_match('/^\d{5,15}:[A-Za-z0-9_\-]{20,60}$/', trim((string) $b['telegram_token']))) fail('Jeton du bot Telegram invalide.');
-                setting_set('notify_telegram_token', seal(trim((string) $b['telegram_token'])));
-            }
-            if (!empty($b['telegram_clear'])) setting_set('notify_telegram_token', '');
-            setting_set('notify_telegram_chat', one_line($b['notify_telegram_chat'] ?? '', 40));
             setting_set('gsc_verification', one_line(preg_replace('/^.*content="([^"]+)".*$/s', '$1', (string) ($b['gsc_verification'] ?? '')) ?? '', 120));
             setting_set('allow_backorder', !empty($b['allow_backorder']) ? '1' : '0');
             setting_set('desk_enabled', !empty($b['desk_enabled']) ? '1' : '0');
@@ -887,8 +880,6 @@ try {
         case 'notify_test': {
             need('settings');
             $res = [];
-            [$tok, $terr] = telegram_send('🦢 <b>SWANBIDA</b> : test de notification réussi.');
-            $res['telegram'] = $tok ? 'envoyé' : $terr;
             $mails = notify_emails();
             if ($mails) {
                 try {

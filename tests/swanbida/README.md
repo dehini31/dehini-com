@@ -2,7 +2,8 @@
 
 Faux hébergement local qui reproduit cPanel : `public_html/swanbida/` (copie du code), `public_html/admin/config.php`
 (mot de passe propriétaire `test-owner-pass`) et `swanbida-data/` créé à côté, comme sur le serveur. Une fausse API
-Meta / Telegram (`fake-services.php`) enregistre tout ce que la boutique envoie.
+Meta (`fake-services.php`) enregistre tout ce que la boutique envoie ; les emails sont écrits dans `mail.jsonl` au
+lieu d'être envoyés (`SWB_MAIL_LOG`).
 
 ```bash
 tests/swanbida/run.sh /tmp/swb-test
@@ -18,7 +19,7 @@ les coordonnées dans l'admin, puis exécute `e2e.js` (Playwright / Chromium, iP
 - connexion à l'admin, confirmation de la commande → un seul Purchase (`purchase.<n°>`) côté serveur ;
 - arabe sur `/` (RTL), français sur `/fr/`, `hreflang` x-default, redirection 301 des anciennes adresses `/ar/…` ;
 - commandes abandonnées : enregistrement dès qu'un téléphone valide est tapé, rien avant ; ligne fermée quand la
-  commande est envoyée ; alerte Telegram unique par le cron ; Appeler / note / « Contactée » / « Créer la commande »
+  commande est envoyée ; alerte email unique par le cron ; Appeler / note / « Contactée » / « Créer la commande »
   dans l'admin → Lead serveur avec le `fbc` de la publicité d'origine, pas de doublon au double clic ;
 - absence d'erreur JavaScript et de défilement horizontal (boutique et admin) ; captures d'écran dans `<dossier>/shots`.
 

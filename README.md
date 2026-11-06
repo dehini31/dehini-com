@@ -514,7 +514,7 @@ même page sans `/ar/`, paramètres de publicité compris. `hreflang` x-default 
 - `swanbida/assets/` — style, script, logo, icônes et **visuels provisoires** (illustrations du pack, à remplacer par
   les vraies photos depuis l'admin). `swanbida/media/` — photos et vidéos envoyées depuis l'admin (hors Git).
 - La base SQLite est créée toute seule **hors de `public_html`** : `~/swanbida-data/swanbida.sqlite`, avec
-  `secret.key` (chiffre le jeton Meta et celui du bot Telegram) et `backups/`. Ne jamais les mettre dans Git.
+  `secret.key` (chiffre le jeton Meta) et `backups/`. Ne jamais les mettre dans Git.
 
 Hébergement : PHP 7.4 ou plus récent avec `pdo_sqlite`, `gd` (avec WebP), `openssl`, `mbstring` ; `curl`, `intl`,
 `zip` et `exif` sont utilisés s'ils sont présents. Les adresses canoniques, le sitemap et les événements Meta sont
@@ -557,8 +557,7 @@ Chaque commande reçoit un numéro unique lisible au téléphone (`SW-7K4M2Q`) e
   dans les 24 h → commande acceptée mais marquée « doublon possible ». Champ piège anti-robots et limites par
   connexion (8 commandes / heure, réglable) et par téléphone.
 - Stock décompté à la commande, rendu si la commande est annulée ou retournée ; rupture → formulaire remplacé par
-  un bouton WhatsApp (ou commandes acceptées si « accepter en rupture » est coché). Alerte stock bas par email /
-  Telegram.
+  un bouton WhatsApp (ou commandes acceptées si « accepter en rupture » est coché). Alerte stock bas par email.
 - Sans JavaScript, le formulaire fonctionne quand même (envoi classique).
 
 **Administration → Commandes** : onglets par statut (nouvelle, confirmée, en préparation, expédiée, livrée,
@@ -579,13 +578,14 @@ enregistré automatiquement — même s'il ferme la page. S'il envoie sa command
 - **Créer la commande** : compléter le nom, la wilaya, la commune ou l'offre et enregistrer — la commande arrive en
   « Nouvelle », avec l'attribution publicitaire du client (Lead Meta envoyé avec le clic d'origine `fbc`, Purchase à
   la confirmation comme d'habitude). La ligne passe en « Récupérée » ;
-- alerte **Telegram** (une seule par commande abandonnée, envoyée par le cron), tuile « Abandonnées / récupérées »
-  sur le tableau de bord ; effacement automatique au bout de 30 jours (mentionné dans la page Confidentialité).
+- alerte **email** (une seule par commande abandonnée, envoyée par le cron, aux adresses de « Notifications » dans
+  Réglages), tuile « Abandonnées / récupérées » sur le tableau de bord ; effacement automatique au bout de 30 jours
+  (mentionné dans la page Confidentialité).
 
 **Notifications** de chaque nouvelle commande : email (jusqu'à 5 adresses, via le compte SMTP du défi Impact si
-`swanbida/config.php` n'en définit pas d'autre), **Telegram** (créer un bot avec @BotFather, coller son jeton et
-l'identifiant du chat dans Réglages → « Enregistrer et tester »), et dans l'admin ouverte : signal sonore,
-notification du navigateur (« Activer les alertes ») et compteur des commandes à confirmer.
+`swanbida/config.php` n'en définit pas d'autre, bouton Réglages → « Enregistrer et tester »), et dans l'admin
+ouverte : signal sonore, notification du navigateur (« Activer les alertes ») et compteur des commandes à
+confirmer.
 
 **Équipe** (Réglages) : comptes email + mot de passe avec deux rôles — *Gestion* (commandes, produits, contenus,
 livraison, statistiques) et *Confirmation* (commandes uniquement, idéal pour les appels de confirmation). Le
@@ -845,6 +845,6 @@ pas mis à jour automatiquement après coup.
 - SWANBIDA : administration à sessions (cookie `HttpOnly`, `Secure`, `SameSite=Strict`, expiration après 4 h
   d'inactivité et 12 h au plus), anti-CSRF sur chaque écriture, rôles, limites d'essais de connexion, mots de passe
   hachés ; validation serveur de toutes les commandes ; politique de sécurité du contenu (CSP) avec nonce sur les
-  pages publiques ; jeton Conversions API et jeton Telegram chiffrés (AES-256-GCM, clé hors `public_html`) ;
+  pages publiques ; jeton Conversions API chiffré (AES-256-GCM, clé hors `public_html`) ;
   `lib/`, `templates/`, `config.php`, `cron.php` bloqués en accès direct ; aucun script exécutable dans `media/` ;
   IP et navigateur des commandes effacés au bout de 45 jours ; exports CSV protégés contre les formules Excel.

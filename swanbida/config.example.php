@@ -7,7 +7,7 @@
  * (exclu de Git, bloqué par .htaccess) et décommente ce dont tu as besoin.
  */
 
-// Adresse publique (sert aux liens des emails et de Telegram).
+// Adresse publique (sert aux liens des emails).
 // define('SWB_SITE_URL', 'https://dehini.com/swanbida/');
 
 // Dossier des données (base SQLite, clé de chiffrement, sauvegardes) — hors public_html.

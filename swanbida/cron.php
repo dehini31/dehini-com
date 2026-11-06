@@ -5,7 +5,7 @@
  *
  *  - renvoie à Meta les événements serveur en attente (Lead, Purchase, livraison) ;
  *  - sauvegarde la base une fois par jour (30 jours gardés dans ~/swanbida-data/backups) ;
- *  - signale sur Telegram les commandes abandonnées, et les efface au bout de 30 jours ;
+ *  - signale par email les commandes abandonnées, et les efface au bout de 30 jours ;
  *  - efface les données techniques des commandes (IP, navigateur) au bout de 45 jours ;
  *  - nettoie les compteurs d'essais expirés.
  * Options : --backup (sauvegarde immédiate), --verbose.

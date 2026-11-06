@@ -145,7 +145,7 @@ function draft_convert(array $d, array $fields, string $actor): array
     return ['order' => $o];
 }
 
-/** Telegram : une alerte par commande devenue abandonnée (au plus $limit par passage du cron). */
+/** Email : une alerte par commande devenue abandonnée (au plus $limit par passage du cron). */
 function drafts_notify_abandoned(int $limit = 20): int
 {
     $cut = time() - abandon_after();
@@ -156,15 +156,8 @@ function drafts_notify_abandoned(int $limit = 20): int
         $d = draft_decode($r);
         db()->prepare('UPDATE drafts SET notified = 1 WHERE id = ?')->execute([$d['id']]);
         if (setting('notify_abandoned') !== '1') continue;
-        $w = $d['wilaya'] !== '' ? wilaya_label($d['wilaya'], 'fr') : '';
-        $src = array_filter([$d['utm_source'], $d['utm_campaign']]);
-        $txt = '<b>🛒 Commande abandonnée</b>' . "\n" . e($d['name'] !== '' ? $d['name'] : 'Sans nom') . ' — <a href="tel:' . e($d['phone']) . '">' . e(phone_display($d['phone'])) . '</a>'
-            . ($w !== '' ? "\n" . e(trim($d['commune'] . ', ' . $w, ', ')) : '')
-            . "\n" . e(draft_items_text($d, 'fr')) . ' — <b>' . e(money($d['total'], 'fr')) . '</b>'
-            . ($src ? "\n📣 " . e(implode(' · ', $src)) : '')
-            . "\n" . '<a href="' . e(abs_url('admin/#/abandonnees')) . '">Rappeler depuis l\'admin</a>';
-        [$ok] = telegram_send($txt);
-        if ($ok) $n++;
+        notify_abandoned_draft($d);
+        $n++;
     }
     return $n;
 }
