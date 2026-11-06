@@ -6,7 +6,7 @@
  *  - aucune conversion à l'ouverture / au rafraîchissement de la page de remerciement ;
  *  - administration : connexion, confirmation de la commande → Purchase côté serveur uniquement ;
  *  - arabe langue principale (/), français sous /fr/ ;
- *  - commandes abandonnées : formulaire commencé puis quitté → alerte Telegram (cron), relance et
+ *  - commandes abandonnées : formulaire commencé puis quitté → alerte email (cron), relance et
  *    création de la commande depuis l'admin (Lead serveur avec l'attribution de la publicité).
  *
  * Prérequis : serveurs lancés (voir tests/swanbida/README.md).
@@ -312,22 +312,24 @@ async function adminLogin(browser, opts) {
   }, [action, body, query]);
   return { ctx, page, errors, call };
 }
-function telegrams() {
-  if (!fs.existsSync(FAKE)) return [];
-  return fs.readFileSync(FAKE, 'utf8').trim().split('\n').filter(Boolean).map(l => JSON.parse(l)).filter(r => r.path.startsWith('/bot')).map(r => r.body.text || '');
+function mails() {
+  const f = path.join(DIR, 'mail.jsonl');
+  if (!fs.existsSync(f)) return [];
+  return fs.readFileSync(f, 'utf8').trim().split('\n').filter(Boolean).map(l => JSON.parse(l));
 }
 
 async function abandoned(browser) {
   console.log('\n▶ Commande abandonnée : formulaire commencé, quitté, puis récupéré depuis l\'admin');
   const A = await adminLogin(browser);
-  // Telegram configuré (fausse API) pour recevoir l'alerte du cron.
   const st = (await A.call('settings')).settings;
-  Object.assign(st, { telegram_token: '1234567890:AAHtestTokenForSwanbidaE2E_abc', notify_telegram_chat: '424242', notify_abandoned: true, abandon_minutes: 20 });
+  Object.assign(st, { notify_abandoned: true, abandon_minutes: 20 });
   // Texte pré-rempli par le navigateur dans « Emails à prévenir » (ex. le domaine « swanbida.com », sans @) :
   // ignoré en silence, ne doit pas bloquer l'enregistrement du reste des réglages.
   st.notify_emails = 'swanbida.com';
-  check((await A.call('settings_save', st)).ok, 'réglages : Telegram + alerte des commandes abandonnées (texte pré-rempli sans @ dans « Emails » ignoré)');
+  check((await A.call('settings_save', st)).ok, 'réglages : alerte des commandes abandonnées (texte pré-rempli sans @ dans « Emails » ignoré)');
   check((await A.call('settings')).settings.notify_emails === '', '« swanbida.com » (sans @) non retenu comme email');
+  st.notify_emails = 'equipe@swanbida.com';
+  check((await A.call('settings_save', st)).ok, 'réglages : adresse de notification enregistrée');
 
   // Le client arrive d'une publicité (site arabe), choisit 2 packs, tape nom, téléphone, wilaya… puis s'en va.
   const { ctx, page, errors } = await newPage(browser, { locale: 'ar-DZ' });
@@ -378,10 +380,11 @@ async function abandoned(browser) {
   const cron = path.join(DIR, 'public_html', 'swanbida', 'cron.php');
   const out = execFileSync('php', [cron, '--verbose'], { encoding: 'utf8' });
   check(/Commandes abandonnées signalées : 1 /.test(out), 'cron : 1 commande abandonnée signalée');
-  const tg = telegrams().filter(t => t.includes('Commande abandonnée'));
-  check(tg.length === 1 && tg[0].includes('سمير حداد') && /13\s?500\sDA/.test(tg[0]) && tg[0].includes(BASE + '/admin/#/abandonnees'), 'Telegram : nom, montant et lien vers l\'admin');
+  const alertMails = mails().filter(m => m.subject.includes('Commande abandonnée'));
+  check(alertMails.length === 1 && alertMails[0].to === 'equipe@swanbida.com' && alertMails[0].text.includes('سمير حداد')
+    && /13\s?500\sDA/.test(alertMails[0].text) && alertMails[0].text.includes(BASE + '/admin/#/abandonnees'), 'email d\'alerte : destinataire, nom, montant et lien vers l\'admin');
   execFileSync('php', [cron, '--verbose'], { encoding: 'utf8' });
-  check(telegrams().filter(t => t.includes('Commande abandonnée')).length === 1, 'cron relancé : pas de seconde alerte');
+  check(mails().filter(m => m.subject.includes('Commande abandonnée')).length === 1, 'cron relancé : pas de seconde alerte');
 
   // Admin : menu avec compteur, appel → « contactée », puis création de la commande.
   const p = A.page;

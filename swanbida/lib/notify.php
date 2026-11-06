@@ -1,5 +1,5 @@
 <?php
-/** Notifications de l'équipe : email et Telegram (nouvelle commande, stock bas). */
+/** Notifications de l'équipe par email (nouvelle commande, stock bas, commande abandonnée). */
 declare(strict_types=1);
 
 function mail_from(): string
@@ -96,28 +96,17 @@ function notify_emails(): array
     return array_slice(array_unique($out), 0, 5);
 }
 
-function telegram_send(string $html): array
-{
-    $tok = secret_setting('notify_telegram_token', 'SWB_TELEGRAM_TOKEN');
-    $chat = setting('notify_telegram_chat');
-    if ($tok === '' || $chat === '') return [false, 'Telegram non configuré'];
-    try {
-        [$code, $res] = http_post_json(rtrim(SWB_TELEGRAM_URL, '/') . '/bot' . $tok . '/sendMessage', [
-            'chat_id' => $chat, 'text' => $html, 'parse_mode' => 'HTML', 'disable_web_page_preview' => true,
-        ], 10);
-    } catch (Throwable $e) {
-        return [false, $e->getMessage()];
-    }
-    $j = json_decode($res, true);
-    return !empty($j['ok']) ? [true, ''] : [false, (string) ($j['description'] ?? ('HTTP ' . $code))];
-}
-
 function admin_order_url(array $o): string
 {
     return abs_url('admin/#/commandes/' . $o['id']);
 }
 
-/** Prévient l'équipe d'une nouvelle commande (email + Telegram), après la réponse au client. */
+function admin_abandoned_url(): string
+{
+    return abs_url('admin/#/abandonnees');
+}
+
+/** Prévient l'équipe d'une nouvelle commande par email, après la réponse au client. */
 function notify_new_order(array $o): void
 {
     $items = order_items_text($o, 'fr');
@@ -132,14 +121,6 @@ function notify_new_order(array $o): void
     $src = array_filter([$o['utm_source'], $o['utm_campaign'], $o['ad_id'] ? 'ad ' . $o['ad_id'] : '']);
     if ($src) $lines[] = 'Source : ' . implode(' · ', $src);
     $url = admin_order_url($o);
-
-    $tg = '<b>🦢 Nouvelle commande ' . e($o['ref']) . '</b>' . ($o['duplicate_of'] ? ' ⚠️ doublon possible' : '') . "\n"
-        . e($o['name']) . ' — <a href="tel:' . e($o['phone']) . '">' . e(phone_display($o['phone'])) . "</a>\n"
-        . e($o['commune'] . ', ' . wilaya_label($o['wilaya'], 'fr')) . "\n" . ($o['address'] !== '' ? e($o['address']) . "\n" : '')
-        . e($items) . "\n<b>" . e(money($o['total'], 'fr')) . '</b>' . ($o['note'] !== '' ? "\n📝 " . e($o['note']) : '')
-        . ($src ? "\n📣 " . e(implode(' · ', $src)) : '') . "\n" . '<a href="' . e($url) . '">Ouvrir dans l\'admin</a>';
-    [$ok, $err] = telegram_send($tg);
-    if (!$ok && $err !== 'Telegram non configuré') meta_set('notify_last_error', date('Y-m-d H:i') . ' Telegram : ' . $err);
 
     $to = notify_emails();
     if (!$to) return;
@@ -164,6 +145,41 @@ function notify_new_order(array $o): void
     }
 }
 
+/** Prévient l'équipe par email qu'une commande a été abandonnée (un envoi par commande, voir drafts.php). */
+function notify_abandoned_draft(array $d): void
+{
+    $to = notify_emails();
+    if (!$to) return;
+    $w = $d['wilaya'] !== '' ? wilaya_label($d['wilaya'], 'fr') : '';
+    $place = trim($d['commune'] . ($w !== '' ? ', ' . $w : ''), ', ');
+    $src = array_filter([$d['utm_source'], $d['utm_campaign']]);
+    $url = admin_abandoned_url();
+    $lines = ['Client : ' . ($d['name'] !== '' ? $d['name'] : 'Sans nom') . ' — ' . phone_display($d['phone'])];
+    if ($place !== '') $lines[] = 'Livraison : ' . $place;
+    $lines[] = 'Produit : ' . draft_items_text($d, 'fr');
+    $lines[] = 'Montant : ' . money($d['total'], 'fr');
+    if ($src) $lines[] = 'Source : ' . implode(' · ', $src);
+    $text = implode("\n", $lines) . "\n\n" . $url;
+    $rows = '';
+    foreach ($lines as $l) {
+        [$k, $v] = array_pad(explode(' : ', $l, 2), 2, '');
+        $rows .= '<tr><td style="padding:6px 12px 6px 0;color:#6b6b63;white-space:nowrap;vertical-align:top">' . e($k) . '</td><td style="padding:6px 0;color:#1f2421">' . e($v) . '</td></tr>';
+    }
+    $html = '<div style="font-family:Arial,sans-serif;background:#faf7f1;padding:24px"><div style="max-width:560px;margin:0 auto;background:#fff;border-radius:14px;padding:24px;border:1px solid #ebe3d6">'
+        . '<p style="margin:0 0 4px;color:#2f4a3a;font-weight:bold;letter-spacing:.12em;font-size:12px">SWANBIDA</p>'
+        . '<h1 style="margin:0 0 16px;font-size:20px;color:#1f2421">🛒 Commande abandonnée</h1>'
+        . '<table style="border-collapse:collapse;font-size:14px;width:100%">' . $rows . '</table>'
+        . '<p style="margin:20px 0 0"><a href="' . e($url) . '" style="display:inline-block;background:#2f4a3a;color:#fff;text-decoration:none;padding:12px 20px;border-radius:999px;font-weight:bold">Rappeler depuis l\'admin</a></p>'
+        . '</div></div>';
+    foreach ($to as $m) {
+        try {
+            send_mail($m, 'Commande abandonnée — ' . ($d['name'] !== '' ? $d['name'] : phone_display($d['phone'])), $html, $text);
+        } catch (Throwable $e) {
+            meta_set('notify_last_error', date('Y-m-d H:i') . ' Email : ' . $e->getMessage());
+        }
+    }
+}
+
 /** Alerte stock bas (au plus une fois par produit et par jour). */
 function notify_low_stock(array $p): void
 {
@@ -171,7 +187,6 @@ function notify_low_stock(array $p): void
     if ((meta_get($k) ?? '') === date('Y-m-d')) return;
     meta_set($k, date('Y-m-d'));
     $msg = 'Stock bas : ' . tr($p['name'], 'fr') . ' — ' . (int) $p['stock'] . ' restant(s).';
-    telegram_send('⚠️ ' . e($msg));
     foreach (notify_emails() as $m) {
         try { send_mail($m, $msg, '<p style="font-family:Arial,sans-serif">' . e($msg) . '</p>', $msg); } catch (Throwable $e) { /* sans effet */ }
     }

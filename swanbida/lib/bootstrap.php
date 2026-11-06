@@ -34,7 +34,6 @@ $defaults = [
     'SWB_DATA_DIR'       => swb_default_data_dir(dirname(__DIR__)), // toujours hors public_html
     'SWB_TIMEZONE'       => 'Africa/Algiers',
     'SWB_GRAPH_URL'      => 'https://graph.facebook.com/',  // tests : une fausse API peut la remplacer
-    'SWB_TELEGRAM_URL'   => 'https://api.telegram.org/',
     'SWB_ADMIN_CONFIG'   => dirname(__DIR__, 2) . '/admin/config.php', // mot de passe de /admin (propriétaire)
     'SWB_MAIL_FROM'      => defined('IMPACT_MAIL_FROM') ? IMPACT_MAIL_FROM : '',
     'SWB_MAIL_FROM_NAME' => 'SWANBIDA',
@@ -137,7 +136,7 @@ function site_origin(): string
 
 /**
  * Sans SWB_SITE_URL, le cron (CLI) ne connaît pas l'adresse du site : on reprend celle vue lors de
- * la dernière connexion à l'admin (liens des alertes Telegram, événements Meta du cron).
+ * la dernière connexion à l'admin (liens des alertes par email, événements Meta du cron).
  */
 function cli_site_url(): string
 {
@@ -487,8 +486,6 @@ const SETTING_DEFAULTS = [
     'purchase_trigger'  => 'confirmed', // confirmed | delivered
     'delivered_event'   => 'OrderDelivered',
     'notify_emails'     => '',
-    'notify_telegram_token' => '',      // chiffré
-    'notify_telegram_chat'  => '',
     'gsc_verification'  => '',
     'fb_domain_verification' => '',
     'allow_backorder'   => '0',
@@ -499,7 +496,7 @@ const SETTING_DEFAULTS = [
     'wa_template_ar'    => "مرحباً {name}، شكراً على طلبك من SWANBIDA رقم {ref}: {items}، المجموع {total}، التوصيل إلى {commune} ({wilaya}). هل تؤكد الطلب؟",
     'order_rate_ip'     => '8',         // commandes max par heure et par IP
     'abandon_minutes'   => '20',        // un formulaire commencé est « abandonné » après N minutes sans activité
-    'notify_abandoned'  => '1',         // prévenir sur Telegram des commandes abandonnées
+    'notify_abandoned'  => '1',         // prévenir par email des commandes abandonnées
     'wa_abandon_fr'     => "Bonjour {name}, vous avez commencé une commande SWANBIDA ({items}, {total}) sans la terminer. Voulez-vous que nous la confirmions pour vous ?",
     'wa_abandon_ar'     => "مرحباً {name}، لاحظنا أنك بدأت طلباً من SWANBIDA ({items}، {total}) ولم تُكمله. هل تريد أن نؤكده لك؟",
 ];
@@ -570,7 +567,7 @@ function client_ip(): string
 }
 
 /**
- * Clé de chiffrement des secrets (jeton Conversions API, bot Telegram) : générée au premier
+ * Clé de chiffrement des secrets (jeton Conversions API) : générée au premier
  * passage dans le dossier de la base (hors public_html), jamais dans Git ni dans la base.
  */
 function secret_key(): string
@@ -743,7 +740,7 @@ function phone_display(string $p): string
 /* ================================================================ HTTP sortant */
 
 /**
- * Requête sortante (Meta, Telegram) : [code HTTP, corps]. $json = corps JSON envoyé en POST.
+ * Requête sortante (Meta) : [code HTTP, corps]. $json = corps JSON envoyé en POST.
  */
 function http_post_json(string $url, array $json, int $timeout = 15): array
 {
