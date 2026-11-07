@@ -22,6 +22,8 @@ $defaults = [
     'IMPACT_SMTP_USER'      => '',
     'IMPACT_SMTP_PASS'      => '',
     'IMPACT_SMTP_VERIFY'    => true,        // vérification du certificat TLS
+    'IMPACT_BREVO_KEY'      => '',          // clé API Brevo : si renseignée, les emails partent par Brevo (HTTPS) au lieu du SMTP
+    'IMPACT_BREVO_URL'      => 'https://api.brevo.com/v3/smtp/email',
     'IMPACT_MODERATION'     => 'auto',      // auto = publié tout de suite | manual = validé dans /impact/admin.html
     'IMPACT_NOTIFY_EMAIL'   => '',          // reçoit un email quand un récit attend une validation
     'IMPACT_DAILY_HOUR'     => 9,           // heure locale à partir de laquelle part la question du jour
@@ -438,6 +440,30 @@ function http_get(string $url, array $query = [], int $timeout = 20): array
         }
     }
     return [$code, $body, $headers];
+}
+
+/** POST JSON (API d'envoi d'emails…). Renvoie [code HTTP, corps]. */
+function http_post_json(string $url, array $data, array $headers = [], int $timeout = 20): array
+{
+    $body = (string) json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    $headers = array_merge(['Content-Type: application/json', 'Accept: application/json'], $headers);
+    if (function_exists('curl_init')) {
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_POST => true, CURLOPT_POSTFIELDS => $body, CURLOPT_HTTPHEADER => $headers,
+            CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => $timeout, CURLOPT_CONNECTTIMEOUT => 10,
+        ]);
+        $res = curl_exec($ch);
+        if ($res === false) throw new RuntimeException('HTTP ' . $url . ' : ' . curl_error($ch));
+        return [(int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE), (string) $res];
+    }
+    $ctx = stream_context_create(['http' => ['method' => 'POST', 'timeout' => $timeout, 'ignore_errors' => true,
+        'header' => implode("\r\n", $headers) . "\r\n", 'content' => $body]]);
+    $res = @file_get_contents($url, false, $ctx);
+    if ($res === false) throw new RuntimeException('HTTP ' . $url . ' : échec');
+    $code = 0;
+    foreach ($http_response_header ?? [] as $line) if (preg_match('~^HTTP/\S+\s+(\d+)~', $line, $m)) $code = (int) $m[1];
+    return [$code, (string) $res];
 }
 
 /** Sel propre à l'installation (hachage des IP, jamais stockées en clair). */

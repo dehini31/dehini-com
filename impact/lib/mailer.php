@@ -727,9 +727,37 @@ function mime_qp(string $s): string
     return quoted_printable_encode(str_replace("\n", "\r\n", $s));
 }
 
+/** Comment partent les emails (affiché par le cron et l'admin). */
+function mail_transport(): string
+{
+    if (IMPACT_BREVO_KEY !== '') return 'API Brevo';
+    return IMPACT_SMTP_HOST !== '' ? 'SMTP ' . IMPACT_SMTP_HOST : 'fonction mail() de PHP';
+}
+
+/**
+ * Envoi par l'API de Brevo (service d'emailing) : ses serveurs ont une bonne réputation auprès de
+ * Gmail, et l'appel passe en HTTPS (les hébergements mutualisés bloquent souvent le SMTP sortant).
+ * Le domaine dehini.com doit être authentifié dans Brevo (DKIM) pour que DMARC passe.
+ */
+function brevo_send(string $to, string $subject, string $html, string $text, ?string $unsubUrl): void
+{
+    $data = ['sender' => ['name' => IMPACT_MAIL_FROM_NAME, 'email' => mail_from()], 'to' => [['email' => $to]],
+        'subject' => $subject, 'htmlContent' => $html, 'textContent' => $text];
+    if ($unsubUrl) $data['headers'] = ['List-Unsubscribe' => '<' . $unsubUrl . '>', 'List-Unsubscribe-Post' => 'List-Unsubscribe=One-Click'];
+    [$code, $body] = http_post_json(IMPACT_BREVO_URL, $data, ['api-key: ' . IMPACT_BREVO_KEY]);
+    if ($code < 200 || $code >= 300) {
+        $msg = (string) (json_decode($body, true)['message'] ?? mb_substr($body, 0, 200));
+        throw new RuntimeException('Brevo ' . $code . ' : ' . $msg);
+    }
+}
+
 /** Envoie un email. Lève une exception en cas d'échec. */
 function send_mail(string $to, string $subject, string $html, string $text, ?string $unsubUrl = null): void
 {
+    if (IMPACT_BREVO_KEY !== '') {
+        brevo_send($to, $subject, $html, $text, $unsubUrl);
+        return;
+    }
     [$headers, $body] = build_mime($html, $text, $unsubUrl);
     if (IMPACT_SMTP_HOST === '') {
         // mail() : le sujet reste sur une ligne (segments séparés par une espace).

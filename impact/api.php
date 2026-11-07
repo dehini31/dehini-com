@@ -1737,7 +1737,7 @@ switch ($action) {
             'automations' => $autos, 'domains' => $domains,
             'particulier' => ['fr' => cm('fr', 'p_subject'), 'ar' => cm('ar', 'p_subject'), 'en' => cm('en', 'p_subject')],
             'settings' => ['test_to' => setting('mail_test_to') !== '' ? setting('mail_test_to') : IMPACT_NOTIFY_EMAIL, 'inv_per_hour' => camp_per_hour(),
-                'inv_sign' => camp_sign(), 'from' => mail_from(), 'smtp' => IMPACT_SMTP_HOST !== ''],
+                'inv_sign' => camp_sign(), 'from' => mail_from(), 'smtp' => IMPACT_SMTP_HOST !== '' || IMPACT_BREVO_KEY !== '', 'transport' => mail_transport()],
             'campaigns' => camp_list(),
             'optouts' => (int) $pdo->query('SELECT COUNT(*) FROM email_optout')->fetchColumn(),
             'sent_hour' => (int) $pdo->query("SELECT COUNT(*) FROM campaign_rcpt WHERE status IN ('sent', 'failed') AND sent > " . (time() - 3600))->fetchColumn(),

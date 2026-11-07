@@ -1105,7 +1105,7 @@ async function loadEmails() {
   try { d = await call("api.php?action=mod_mail"); } catch (e) { if (e.status !== 401) toast(e.message); return; }
   EM.data = d;
   const S = d.settings;
-  $("#mSender").replaceChildren("Expéditeur : ", el("b", { text: S.from }), S.smtp ? " — envoi par SMTP." : " — fonction mail() de PHP (configurez le SMTP dans config.php pour une meilleure délivrabilité).",
+  $("#mSender").replaceChildren("Expéditeur : ", el("b", { text: S.from }), " — envoi par ", el("b", { text: S.transport }), S.smtp ? "." : " (configurez Brevo ou le SMTP dans config.php pour une meilleure délivrabilité).",
     " Invitations envoyées dans l'heure : " + fmt(d.sent_hour) + " / " + fmt(S.inv_per_hour) + ".");
   const f = $("#mSettings");
   f.test_to.value = S.test_to || ""; f.inv_per_hour.value = S.inv_per_hour; f.inv_sign.value = S.inv_sign;

@@ -107,7 +107,7 @@ if (isset($opts['test'])) {
     $only = isset($opts['only']) ? array_filter(array_map('trim', explode(',', (string) $opts['only']))) : [];
     $domain = in_array($opts['domain'] ?? '', CAMPAIGN_DOMAINS, true) ? (string) $opts['domain'] : 'psy';
     $u = ['id' => 0, 'email' => $to, 'name' => 'Test', 'lang' => $lang, 'utoken' => str_repeat('0', 48), 'vtoken' => str_repeat('0', 48)];
-    say("Envoi des exemples à $to (" . (IMPACT_SMTP_HOST !== '' ? 'SMTP ' . IMPACT_SMTP_HOST : 'mail()') . ", expéditeur " . IMPACT_MAIL_FROM_NAME . ' <' . mail_from() . '>)');
+    say("Envoi des exemples à $to (" . mail_transport() . ", expéditeur " . IMPACT_MAIL_FROM_NAME . ' <' . mail_from() . '>)');
     $q = $qs[pick(array_keys($qs), $today)];
     $stories = $pdo->query("SELECT * FROM stories WHERE status = 'published' ORDER BY created DESC LIMIT 3")->fetchAll();
     if (!$stories) {

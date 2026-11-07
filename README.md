@@ -495,11 +495,22 @@ mutualisé doit encore **se faire une réputation** auprès de Gmail. Dans l'ord
    puis les invitations par petits lots (10 à 20 par heure la première semaine), uniquement vers des
    personnes qui vous connaissent ou dont l'adresse professionnelle est publique. Un lot vers des
    inconnus qui ne s'ouvrent pas fait chuter la réputation de tout le domaine.
-6. **Si les invitations restent en spam** malgré tout : les envoyer par un service d'emailing
-   (Brevo — 300 emails par jour gratuits —, Mailjet, Amazon SES…). Le site n'a rien à changer : il
-   suffit de remplacer dans `config.php` l'hôte, le port (587, `IMPACT_SMTP_SECURE` = `tls`),
-   l'utilisateur et le mot de passe SMTP par ceux du service, et d'ajouter dans cPanel → **Zone
-   Editor** les enregistrements DKIM et SPF que le service fournit.
+6. **Si les emails restent en spam** (même vers d'autres boîtes Gmail) : c'est la réputation du serveur
+   mutualisé chez Gmail, que le code ne peut pas changer. Envoyer alors par **Brevo**, un service
+   d'emailing dont les serveurs ont une bonne réputation (gratuit jusqu'à 300 emails par jour). Le site
+   passe par son API en HTTPS, ce qui marche même quand l'hébergeur bloque le SMTP sortant :
+   1. Créer un compte sur brevo.com.
+   2. **Expéditeurs, domaines et IP dédiées → Domaines → Ajouter un domaine** : `dehini.com`. Brevo
+      affiche des enregistrements DNS (code Brevo, DKIM, DMARC) : les ajouter dans cPanel → **Zone
+      Editor**, puis cliquer « Authentifier » dans Brevo. Ajouter aussi l'expéditeur `impact@dehini.com`.
+   3. **SMTP & API → Clés API → Générer une clé**, puis dans `~/public_html/impact/config.php` :
+      `define('IMPACT_BREVO_KEY', 'xkeysib-…');` (une seule ligne ; le SMTP n'est alors plus utilisé).
+   4. Tester : `php ~/public_html/impact/cron.php --test=une-autre-adresse@gmail.com --only=welcome`.
+      Le cron affiche « API Brevo » ; une erreur de Brevo s'affiche telle quelle (clé invalide…). Si
+      Brevo répond que l'adresse IP n'est pas reconnue, l'autoriser dans Brevo → **Sécurité → IP
+      autorisées** (157.90.66.110 et 157.90.66.113).
+   5. Avec le forfait gratuit (300 par jour), régler `IMPACT_MAIL_BATCH` à 10 dans `config.php` et les
+      invitations à 2 par heure dans l'onglet Emails ; au-delà, prendre un forfait Brevo payant.
 
 `php ~/public_html/impact/cron.php --test=ton-adresse@gmail.com` envoie un exemple de chaque email
 (avec une pause de 2 secondes entre deux envois) ; `--only=invite,onboard,pro_report…` n'envoie que
