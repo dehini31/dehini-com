@@ -1737,11 +1737,47 @@ switch ($action) {
             'automations' => $autos, 'domains' => $domains,
             'particulier' => ['fr' => cm('fr', 'p_subject'), 'ar' => cm('ar', 'p_subject'), 'en' => cm('en', 'p_subject')],
             'settings' => ['test_to' => setting('mail_test_to') !== '' ? setting('mail_test_to') : IMPACT_NOTIFY_EMAIL, 'inv_per_hour' => camp_per_hour(),
-                'inv_sign' => camp_sign(), 'from' => mail_from(), 'smtp' => IMPACT_SMTP_HOST !== '' || IMPACT_BREVO_KEY !== '', 'transport' => mail_transport()],
+                'inv_sign' => camp_sign(), 'from' => mail_from(), 'smtp' => IMPACT_SMTP_HOST !== '' || brevo_key() !== '', 'transport' => mail_transport(),
+                'brevo' => ['masked' => brevo_key_masked(brevo_key_raw()), 'ok' => brevo_key() !== '',
+                    'source' => trim(setting('brevo_key')) !== '' ? 'admin' : (trim((string) IMPACT_BREVO_KEY) !== '' ? 'config' : '')]],
             'campaigns' => camp_list(),
             'optouts' => (int) $pdo->query('SELECT COUNT(*) FROM email_optout')->fetchColumn(),
             'sent_hour' => (int) $pdo->query("SELECT COUNT(*) FROM campaign_rcpt WHERE status IN ('sent', 'failed') AND sent > " . (time() - 3600))->fetchColumn(),
         ]);
+        break;
+    }
+
+    case 'mod_brevo_save': {
+        // Clé API Brevo saisie dans l'onglet Emails : vérifiée auprès de Brevo avant d'être enregistrée.
+        if (!$isPost) fail('generic', 405);
+        require_admin();
+        $key = trim((string) ($b['key'] ?? ''));
+        if ($key === '') {
+            setting_set('brevo_key', '');
+            ok(['transport' => mail_transport()]);
+        }
+        if (strncmp($key, 'xsmtpsib-', 9) === 0) fail("C'est une clé SMTP (« xsmtpsib-… »). Il faut une clé API : dans Brevo, SMTP & API → onglet « Clés API » → « Générer une nouvelle clé API » (elle commence par « xkeysib- »).");
+        if (!preg_match('/^xkeysib-[A-Za-z0-9-]{20,200}$/', $key)) fail('Clé invalide : une clé API Brevo commence par « xkeysib- ».');
+        try {
+            $acc = brevo_account($key);
+        } catch (Throwable $e) {
+            fail(in_array($e->getCode(), [401, 403], true)
+                ? 'Brevo ne reconnaît pas cette clé (' . $e->getMessage() . '). Copiez-la en entier, ou générez-en une nouvelle dans Brevo.'
+                : 'Vérification auprès de Brevo impossible : ' . $e->getMessage(), 400);
+        }
+        setting_set('brevo_key', $key);
+        ok(['account' => $acc, 'transport' => mail_transport(), 'masked' => brevo_key_masked($key)]);
+        break;
+    }
+
+    case 'mod_brevo_check': {
+        require_admin();
+        if (brevo_key() === '') fail('Aucune clé API Brevo enregistrée.');
+        try {
+            ok(['account' => brevo_account(brevo_key())]);
+        } catch (Throwable $e) {
+            fail($e->getMessage(), 502);
+        }
         break;
     }
 

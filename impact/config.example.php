@@ -19,6 +19,7 @@ define('IMPACT_SMTP_USER', 'impact@dehini.com');
 define('IMPACT_SMTP_PASS', 'mot-de-passe-du-compte-email');
 
 // Recommandé pour arriver en boîte de réception (et pas en spam) : envoyer par Brevo.
+// Plus simple : coller la clé dans l'admin (onglet Emails → Brevo), qui est prioritaire sur celle-ci.
 // Clé API créée dans Brevo → SMTP & API → Clés API. Quand elle est renseignée, le SMTP ci-dessus
 // n'est plus utilisé (voir README, « 12. Emails »). Ne jamais committer la vraie clé.
 // define('IMPACT_BREVO_KEY', 'xkeysib-…');

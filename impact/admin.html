@@ -190,6 +190,12 @@
   .m-settings{display:grid;grid-template-columns:1fr 160px 1fr auto;gap:12px;align-items:end}
   .m-settings .fld{margin:0}
   @media(max-width:800px){.m-settings{grid-template-columns:1fr}}
+  .brevo-box{margin-top:18px;padding-top:16px;border-top:1px solid var(--paper-100)}
+  .brevo-box h3{font-size:1rem;margin-bottom:4px}
+  .brevo-box code{font-size:.85em;background:var(--paper-100);padding:1px 5px;border-radius:5px}
+  .brevo-form{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+  .brevo-form input{flex:1;min-width:220px;padding:10px 12px;border:1px solid var(--paper-200);border-radius:10px;font-family:ui-monospace,monospace;font-size:.88rem}
+  .brevo-st{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:.86rem;margin-top:8px}
   .auto-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-bottom:10px}
   .auto-card{background:#fff;border-radius:18px;padding:18px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:8px}
   .auto-card.off{opacity:.6}
@@ -365,6 +371,18 @@
         <label class="fld">Signature des invitations<input name="inv_sign" maxlength="80"></label>
         <button class="btn btn-ink" type="submit">Enregistrer</button>
       </form>
+      <div class="brevo-box">
+        <h3>Brevo — pour arriver en boîte de réception</h3>
+        <p class="summary">Brevo envoie vos emails depuis des serveurs que Gmail apprécie (gratuit jusqu'à 300 emails par jour). Dans Brevo : votre nom en haut à droite → <b>SMTP &amp; API</b> → onglet <b>« Clés API »</b> → « Générer une nouvelle clé API ». Collez ici la clé qui commence par <code>xkeysib-</code> (pas la clé SMTP <code>xsmtpsib-</code>).</p>
+        <div id="brevoState"></div>
+        <form class="brevo-form" id="brevoForm" autocomplete="off">
+          <input name="key" type="password" placeholder="xkeysib-…" dir="ltr" autocomplete="off" spellcheck="false" aria-label="Clé API Brevo">
+          <button class="btn btn-pos" type="submit">Enregistrer et vérifier</button>
+          <button class="btn btn-line" type="button" id="brevoCheck">Vérifier</button>
+          <button class="btn btn-neg" type="button" id="brevoDel">Retirer la clé</button>
+        </form>
+        <p class="err" id="brevoErr"></p>
+      </div>
     </div>
 
     <h2 class="sec-h">Emails automatiques</h2>
@@ -1105,7 +1123,8 @@ async function loadEmails() {
   try { d = await call("api.php?action=mod_mail"); } catch (e) { if (e.status !== 401) toast(e.message); return; }
   EM.data = d;
   const S = d.settings;
-  $("#mSender").replaceChildren("Expéditeur : ", el("b", { text: S.from }), " — envoi par ", el("b", { text: S.transport }), S.smtp ? "." : " (configurez Brevo ou le SMTP dans config.php pour une meilleure délivrabilité).",
+  renderBrevo(S.brevo, null);
+  $("#mSender").replaceChildren("Expéditeur : ", el("b", { text: S.from }), " — envoi par ", el("b", { text: S.transport }), S.smtp ? "." : " (ajoutez une clé Brevo ci-dessous pour une meilleure délivrabilité).",
     " Invitations envoyées dans l'heure : " + fmt(d.sent_hour) + " / " + fmt(S.inv_per_hour) + ".");
   const f = $("#mSettings");
   f.test_to.value = S.test_to || ""; f.inv_per_hour.value = S.inv_per_hour; f.inv_sign.value = S.inv_sign;
@@ -1118,6 +1137,48 @@ async function loadEmails() {
   $("#optCount").textContent = fmt(d.optouts);
   countRcpt();
 }
+/* Brevo : la clé n'est jamais renvoyée en entier, seulement « xkeysib-…a1b2 ». */
+function renderBrevo(b, acc) {
+  const st = [];
+  if (b && b.masked) {
+    st.push(el("span", { class: "badge " + (b.ok ? "b-ok" : "b-hidden"), text: b.ok ? "Clé enregistrée" : "Clé ignorée : ce n'est pas une clé API" }),
+      el("code", { text: b.masked }), el("span", { class: "u-sub", text: b.source === "config" ? "(dans config.php)" : "(enregistrée ici)" }));
+  } else st.push(el("span", { class: "badge b-off", text: "Aucune clé : les emails partent par le serveur" }));
+  if (acc) {
+    st.push(el("span", { text: "Compte " + (acc.email || "Brevo") + (acc.plan ? " · forfait " + acc.plan.type + ", " + fmt(acc.plan.credits) + " crédits" : "") }));
+    const dom = acc.domain_ok === null ? null : el("span", { class: "badge " + (acc.domain_ok ? "b-ok" : "b-no"), text: (acc.domain_ok ? "✓ " : "✗ ") + "domaine " + acc.domain + (acc.domain_ok ? " authentifié" : " non authentifié dans Brevo") });
+    const snd = acc.sender_ok === null ? null : el("span", { class: "badge " + (acc.sender_ok ? "b-ok" : "b-no"), text: (acc.sender_ok ? "✓ " : "✗ ") + "expéditeur " + acc.from + (acc.sender_ok ? " validé" : " non ajouté dans Brevo") });
+    st.push(dom, snd);
+  }
+  $("#brevoState").replaceChildren(el("div", { class: "brevo-st" }, ...st));
+  $("#brevoDel").hidden = !(b && b.source === "admin");
+}
+$("#brevoForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const f = e.target, btn = f.querySelector("button[type=submit]");
+  $("#brevoErr").textContent = "";
+  if (!f.key.value.trim()) { $("#brevoErr").textContent = "Collez d'abord la clé API (xkeysib-…)."; return; }
+  btn.disabled = true;
+  try {
+    const d = await call("api.php?action=mod_brevo_save", { key: f.key.value.trim() });
+    f.reset();
+    toast("Clé Brevo enregistrée : les emails partent maintenant par Brevo.");
+    await loadEmails();
+    renderBrevo(EM.data.settings.brevo, d.account);
+  } catch (err) { $("#brevoErr").textContent = err.message; }
+  btn.disabled = false;
+});
+$("#brevoCheck").addEventListener("click", async e => {
+  const btn = e.currentTarget;
+  btn.disabled = true; $("#brevoErr").textContent = "";
+  try { const d = await call("api.php?action=mod_brevo_check"); renderBrevo(EM.data.settings.brevo, d.account); toast("Brevo répond : la clé fonctionne."); }
+  catch (err) { $("#brevoErr").textContent = err.message; }
+  btn.disabled = false;
+});
+$("#brevoDel").addEventListener("click", async () => {
+  if (!confirm("Retirer la clé Brevo ? Les emails repartiront par le serveur (souvent classés en spam).")) return;
+  try { await call("api.php?action=mod_brevo_save", { key: "" }); toast("Clé retirée."); loadEmails(); } catch (err) { toast(err.message); }
+});
 function autoCard(a) {
   const [lab, cls] = AUTO_LABEL[a.opt];
   const lang = el("select", { "aria-label": "Langue de l'aperçu" }, el("option", { value: "fr" }, "FR"), el("option", { value: "ar" }, "AR"), el("option", { value: "en" }, "EN"));

@@ -503,9 +503,16 @@ mutualisé doit encore **se faire une réputation** auprès de Gmail. Dans l'ord
    2. **Expéditeurs, domaines et IP dédiées → Domaines → Ajouter un domaine** : `dehini.com`. Brevo
       affiche des enregistrements DNS (code Brevo, DKIM, DMARC) : les ajouter dans cPanel → **Zone
       Editor**, puis cliquer « Authentifier » dans Brevo. Ajouter aussi l'expéditeur `impact@dehini.com`.
-   3. **SMTP & API → Clés API → Générer une clé**, puis dans `~/public_html/impact/config.php` :
-      `define('IMPACT_BREVO_KEY', 'xkeysib-…');` (une seule ligne ; le SMTP n'est alors plus utilisé).
-   4. Tester : `php ~/public_html/impact/cron.php --test=une-autre-adresse@gmail.com --only=welcome`.
+   3. **SMTP & API → onglet « Clés API » → Générer une nouvelle clé API** (elle commence par
+      `xkeysib-` ; la « clé SMTP » `xsmtpsib-` ne marche pas avec l'API). La coller dans l'admin :
+      **onglet Emails → Envoi → Brevo → « Enregistrer et vérifier »**. Le site demande à Brevo si la clé
+      est valide avant de l'enregistrer, puis affiche le compte, les crédits restants, si le domaine
+      est authentifié et si l'expéditeur est ajouté. La clé n'est plus jamais réaffichée en entier
+      (seulement `xkeysib-…` et ses 4 derniers caractères) ; « Retirer la clé » revient à l'envoi par
+      le serveur. Elle peut aussi être mise dans `config.php` (`define('IMPACT_BREVO_KEY', 'xkeysib-…');`),
+      mais celle de l'admin est prioritaire. Avec une clé, le SMTP n'est plus utilisé.
+   4. Tester : bouton « M'envoyer un test » d'un email de l'onglet Emails, ou
+      `php ~/public_html/impact/cron.php --test=une-autre-adresse@gmail.com --only=welcome`.
       Le cron affiche « API Brevo » ; une erreur de Brevo s'affiche telle quelle (clé invalide…). Si
       Brevo répond que l'adresse IP n'est pas reconnue, l'autoriser dans Brevo → **Sécurité → IP
       autorisées** (157.90.66.110 et 157.90.66.113).

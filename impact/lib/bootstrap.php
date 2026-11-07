@@ -408,16 +408,18 @@ function setting_set(string $k, string $v): void
  * Requête GET sortante (API Google, SofizPay) : [code HTTP, corps, en-têtes en minuscules].
  * curl si disponible, sinon les flux de PHP.
  */
-function http_get(string $url, array $query = [], int $timeout = 20): array
+function http_get(string $url, array $query = [], int $timeout = 20, array $send = []): array
 {
     if ($query) $url .= (strpos($url, '?') === false ? '?' : '&') . http_build_query($query);
     $headers = [];
+    $follow = !$send; // une clé (en-tête api-key…) n'est jamais renvoyée vers un autre site par une redirection
+    $send = array_merge(['Accept: application/json'], $send);
     if (function_exists('curl_init')) {
         $ch = curl_init($url);
         curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true, CURLOPT_FOLLOWLOCATION => true, CURLOPT_MAXREDIRS => 3,
+            CURLOPT_RETURNTRANSFER => true, CURLOPT_FOLLOWLOCATION => $follow, CURLOPT_MAXREDIRS => 3,
             CURLOPT_TIMEOUT => $timeout, CURLOPT_CONNECTTIMEOUT => 10,
-            CURLOPT_HTTPHEADER => ['Accept: application/json'],
+            CURLOPT_HTTPHEADER => $send,
             CURLOPT_HEADERFUNCTION => function ($ch, string $line) use (&$headers): int {
                 $p = explode(':', $line, 2);
                 if (count($p) === 2) $headers[strtolower(trim($p[0]))] = trim($p[1]);
@@ -428,7 +430,7 @@ function http_get(string $url, array $query = [], int $timeout = 20): array
         if ($body === false) throw new RuntimeException('HTTP ' . $url . ' : ' . curl_error($ch));
         return [(int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE), (string) $body, $headers];
     }
-    $ctx = stream_context_create(['http' => ['timeout' => $timeout, 'ignore_errors' => true, 'header' => "Accept: application/json\r\n"]]);
+    $ctx = stream_context_create(['http' => ['timeout' => $timeout, 'ignore_errors' => true, 'follow_location' => $follow ? 1 : 0, 'header' => implode("\r\n", $send) . "\r\n"]]);
     $body = @file_get_contents($url, false, $ctx);
     if ($body === false) throw new RuntimeException('HTTP ' . $url . ' : échec');
     $code = 0;
@@ -457,7 +459,7 @@ function http_post_json(string $url, array $data, array $headers = [], int $time
         if ($res === false) throw new RuntimeException('HTTP ' . $url . ' : ' . curl_error($ch));
         return [(int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE), (string) $res];
     }
-    $ctx = stream_context_create(['http' => ['method' => 'POST', 'timeout' => $timeout, 'ignore_errors' => true,
+    $ctx = stream_context_create(['http' => ['method' => 'POST', 'timeout' => $timeout, 'ignore_errors' => true, 'follow_location' => 0,
         'header' => implode("\r\n", $headers) . "\r\n", 'content' => $body]]);
     $res = @file_get_contents($url, false, $ctx);
     if ($res === false) throw new RuntimeException('HTTP ' . $url . ' : échec');
