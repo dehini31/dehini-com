@@ -22,7 +22,7 @@ const CAMPAIGN_REINVITE_DAYS = 90;
 const CAMP_STR = [
     'fr' => [
         'hello' => 'Bonjour {name},', 'hello0' => 'Bonjour,',
-        'p_label' => 'Invitation', 'p_subject' => 'Votre vie en 1000 expériences : quel impact ont-elles eu ?',
+        'p_label' => 'Invitation', 'p_subject' => 'Votre vie en 1000 expériences : découvrez leur impact sur vous',
         'p_pre' => 'Négatif, aucun ou positif : découvrez votre empreinte en quelques minutes, gratuitement.',
         'p_kicker' => 'Le Défi Impact', 'p_title' => 'Votre vie en 1000 expériences. Quel impact ont-elles eu sur vous ?',
         'p_sub' => 'Un défi gratuit pour faire le point, question après question, et découvrir comment les autres ont vécu les mêmes épreuves.',
@@ -56,7 +56,7 @@ const CAMP_STR = [
     ],
     'ar' => [
         'hello' => 'مرحباً {name}،', 'hello0' => 'مرحباً،',
-        'p_label' => 'دعوة', 'p_subject' => 'حياتك في 1000 تجربة: ما أثرها عليك؟',
+        'p_label' => 'دعوة', 'p_subject' => 'حياتك في 1000 تجربة: اكتشف أثرها عليك',
         'p_pre' => 'سلبي أو بلا أثر أو إيجابي: اكتشف بصمتك في دقائق، مجاناً.',
         'p_kicker' => 'تحدي الأثر', 'p_title' => 'حياتك في 1000 تجربة. ما الأثر الذي تركته فيك؟',
         'p_sub' => 'تحدٍّ مجاني لتقف مع نفسك، سؤالاً بعد سؤال، وتكتشف كيف عاش الآخرون المحن نفسها.',
@@ -90,7 +90,7 @@ const CAMP_STR = [
     ],
     'en' => [
         'hello' => 'Hi {name},', 'hello0' => 'Hi,',
-        'p_label' => 'Invitation', 'p_subject' => 'Your life in 1000 experiences: what impact did they have?',
+        'p_label' => 'Invitation', 'p_subject' => 'Your life in 1000 experiences: discover their impact on you',
         'p_pre' => 'Negative, none or positive: discover your footprint in a few minutes, for free.',
         'p_kicker' => 'The Impact Challenge', 'p_title' => 'Your life in 1000 experiences. What impact did they have on you?',
         'p_sub' => 'A free challenge to take stock, question after question, and see how others lived the same trials.',
@@ -218,7 +218,9 @@ function camp_particulier_data(string $l): array
     $ids = array_keys($qs);
     sort($ids);
     $q = $ids ? $qs[$ids[abs(crc32(date('Y-m-d'))) % count($ids)]] : null;
-    $story = $pdo->prepare("SELECT * FROM stories WHERE status = 'published' AND pro_id IS NULL ORDER BY (lang = ?) DESC, likes DESC, published DESC LIMIT 1");
+    // Un récit dans la langue de l'email seulement : mélanger les écritures (arabe dans un email français…)
+    // est un signal de spam pour plusieurs filtres.
+    $story = $pdo->prepare("SELECT * FROM stories WHERE status = 'published' AND pro_id IS NULL AND lang = ? ORDER BY likes DESC, published DESC LIMIT 1");
     $story->execute([$l]);
     return [
         'q' => $q,

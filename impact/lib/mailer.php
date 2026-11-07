@@ -11,10 +11,10 @@ const MAIL_STR = [
         'brand' => 'Défi Impact', 'tagline' => 'Le défi des expériences positives', 'address' => 'Alger, Algérie',
         'hello' => 'Bonjour {name},',
         'neg' => 'Impact négatif', 'none' => 'Aucun impact', 'pos' => 'Impact positif',
-        'daily_subject' => 'Question du jour : {q}',
+        'daily_subject' => 'Question du jour : « {q} »',
         'daily_intro' => 'Voici votre question du jour. Une seule touche suffit pour répondre :',
         'daily_progress' => 'Vous avez déjà répondu à {n} questions sur {t}.',
-        'story_subject' => 'Et si vous racontiez cet impact positif ?',
+        'story_subject' => 'Racontez cet impact positif en quelques lignes',
         'story_intro' => 'Vous avez répondu « impact positif » à cette question. Racontez en quelques lignes comment cette expérience vous a fait grandir : votre récit pourrait inspirer quelqu\'un qui l\'a vécue difficilement.',
         'story_cta' => 'Raconter mon expérience',
         'digest_subject_1' => '1 expérience positive qui pourrait vous inspirer',
@@ -64,10 +64,10 @@ const MAIL_STR = [
         'brand' => 'تحدي الأثر', 'tagline' => 'تحدّي التجارب الإيجابية', 'address' => 'الجزائر العاصمة، الجزائر',
         'hello' => 'مرحباً {name}،',
         'neg' => 'أثر سلبي', 'none' => 'بلا أثر', 'pos' => 'أثر إيجابي',
-        'daily_subject' => 'سؤال اليوم: {q}',
+        'daily_subject' => 'سؤال اليوم: «{q}»',
         'daily_intro' => 'إليك سؤال اليوم. لمسة واحدة تكفي للإجابة:',
         'daily_progress' => 'عدد الأسئلة التي أجبت عنها: {n} من {t}.',
-        'story_subject' => 'ما رأيك أن تروي هذا الأثر الإيجابي؟',
+        'story_subject' => 'احكِ هذا الأثر الإيجابي في بضعة أسطر',
         'story_intro' => 'أجبت بـ«أثر إيجابي» على هذا السؤال. احكِ في بضعة أسطر كيف ساعدتك هذه التجربة على النمو: قد تُلهم قصتك شخصاً عاشها بصعوبة.',
         'story_cta' => 'أروي تجربتي',
         'digest_subject_1' => 'تجربة إيجابية قد تلهمك',
@@ -117,10 +117,10 @@ const MAIL_STR = [
         'brand' => 'Impact Challenge', 'tagline' => 'The positive experiences challenge', 'address' => 'Algiers, Algeria',
         'hello' => 'Hi {name},',
         'neg' => 'Negative impact', 'none' => 'No impact', 'pos' => 'Positive impact',
-        'daily_subject' => 'Question of the day: {q}',
+        'daily_subject' => 'Question of the day: “{q}”',
         'daily_intro' => 'Here is your question of the day. One tap is all it takes:',
         'daily_progress' => 'You have answered {n} of {t} questions so far.',
-        'story_subject' => 'Why not tell the story of this positive impact?',
+        'story_subject' => 'Tell the story of this positive impact in a few lines',
         'story_intro' => 'You answered “positive impact” to this question. Tell us in a few lines how this experience helped you grow: your story could inspire someone who went through it the hard way.',
         'story_cta' => 'Tell my story',
         'digest_subject_1' => '1 positive experience that might inspire you',
@@ -267,7 +267,7 @@ function m_h(string $l, string $text): string
 /** Séparateur fin. */
 function m_hr(): string
 {
-    return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td class="em-line" style="border-top:1px solid ' . MAIL_UI['line'] . ';font-size:0;line-height:0;height:1px;padding:0">&nbsp;</td></tr></table>';
+    return '<hr class="em-line" style="border:0;border-top:1px solid ' . MAIL_UI['line'] . ';margin:22px 0">';
 }
 
 /** Mot personnel (invitation) : texte libre, avec signature. */
@@ -346,7 +346,7 @@ function m_checks(string $l, array $items): string
     foreach ($items as [$done, $text]) {
         $mark = $done
             ? '<td bgcolor="#07854b" width="22" height="22" style="width:22px;height:22px;border-radius:50%;background:#07854b;text-align:center;font:700 13px/22px Arial,sans-serif;color:#ffffff">&#10003;</td>'
-            : '<td><div style="width:18px;height:18px;border-radius:11px;border:2px solid #c3c8d4;font-size:1px;line-height:1px">&nbsp;</div></td>';
+            : '<td><div style="width:18px;height:18px;border-radius:11px;border:2px solid #c3c8d4"></div></td>';
         $rows .= '<tr><td width="34" style="vertical-align:top;padding:0 0 12px"><table role="presentation" cellpadding="0" cellspacing="0"><tr>' . $mark . '</tr></table></td>'
             . '<td class="' . ($done ? 'em-m' : 'em-t') . '" style="vertical-align:top;padding:1px 0 12px;font:' . ($done ? '400' : '700') . ' 15px/1.5 ' . $f . ';color:' . ($done ? MAIL_UI['muted'] : MAIL_UI['title']) . ($done ? ';text-decoration:line-through' : '') . '">' . h($text) . '</td></tr>';
     }
@@ -360,7 +360,7 @@ function m_bullets(string $l, array $items, string $tone = 'pos'): string
     $c = MAIL_BTN[$tone] ?? $tone;
     $rows = '';
     foreach ($items as [$title, $text]) {
-        $rows .= '<tr><td width="26" style="vertical-align:top;padding:7px 0 12px"><div style="width:9px;height:9px;border-radius:5px;background:' . $c . ';font-size:1px;line-height:1px">&nbsp;</div></td>'
+        $rows .= '<tr><td width="26" style="vertical-align:top;padding:7px 0 12px"><div style="width:9px;height:9px;border-radius:5px;background:' . $c . '"></div></td>'
             . '<td style="vertical-align:top;padding:0 0 12px"><p class="em-t" style="margin:0;font:400 15px/1.55 ' . $f . ';color:' . MAIL_UI['text'] . '"><b class="em-t" style="color:' . MAIL_UI['title'] . '">' . h($title) . '</b>'
             . ($text !== '' ? ' — ' . h($text) : '') . '</p></td></tr>';
     }
@@ -397,7 +397,7 @@ function mail_layout(string $lang, string $title, string $preheader, string $inn
     $f = mail_font($lang);
     $dots = '';
     foreach (['neg', 'none', 'pos'] as $c) {
-        $dots .= '<td style="padding:0 5px 0 0;vertical-align:middle"><div style="width:10px;height:10px;border-radius:5px;background:' . MAIL_COLORS[$c] . ';font-size:1px;line-height:1px">&nbsp;</div></td>';
+        $dots .= '<td style="padding:0 5px 0 0;vertical-align:middle"><div style="width:10px;height:10px;border-radius:5px;background:' . MAIL_COLORS[$c] . '"></div></td>';
     }
     $links = [];
     foreach ($unsub as $label => $url) {
@@ -425,8 +425,8 @@ function mail_layout(string $lang, string $title, string $preheader, string $inn
         . '<meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="supported-color-schemes" content="light dark">'
         . '<meta name="x-apple-disable-message-reformatting"><title>' . h($title) . '</title>' . $css . '</head>'
         . '<body class="em-bg" style="margin:0;padding:0;background:' . MAIL_UI['page'] . ';-webkit-text-size-adjust:100%;word-spacing:normal">'
-        // Aperçu affiché par la messagerie à côté du sujet (puis des espaces pour ne pas laisser apparaître le début du texte).
-        . '<div style="display:none;max-height:0;overflow:hidden;mso-hide:all">' . h($preheader) . str_repeat('&nbsp;&zwnj;', 30) . '</div>'
+        // Pas de texte caché (« preheader » invisible) : les filtres anti-spam comptent le texte invisible.
+        // La messagerie affiche en aperçu le début du bandeau, qui résume déjà l'email.
         . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="em-bg" style="background:' . MAIL_UI['page'] . '"><tr><td align="center" class="em-wrap" style="padding:32px 12px">'
         . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" dir="' . $dir . '" class="em-shell" style="max-width:600px;border-radius:24px;overflow:hidden;background:' . MAIL_COLORS['ink'] . '">'
         // En-tête : marque à gauche, étiquette (ex. « Invitation ») à droite.
@@ -434,7 +434,7 @@ function mail_layout(string $lang, string $title, string $preheader, string $inn
         . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>'
         . '<td class="em-pad" style="padding:26px 36px 22px;text-align:' . $align . '">'
         . '<a href="' . h($site) . '" style="text-decoration:none"><table role="presentation" cellpadding="0" cellspacing="0" style="display:inline-table"><tr>' . $dots
-        . '<td width="6" style="font-size:0">&nbsp;</td><td style="font:800 18px/1 ' . $f . ';color:#ffffff;white-space:nowrap">' . h(ms($lang, 'brand')) . '</td></tr></table></a>'
+        . '<td style="padding:0 0 0 4px;font:800 18px/1 ' . $f . ';color:#ffffff;white-space:nowrap">' . h(ms($lang, 'brand')) . '</td></tr></table></a>'
         . '</td>'
         . ($label !== '' ? '<td class="em-pad" style="padding:26px 36px 22px;text-align:' . $end . '"><span style="display:inline-block;padding:5px 12px;border-radius:999px;border:1px solid #2d3756;font:700 12px/1.3 ' . $f . ';color:#c4cadb;white-space:nowrap">' . h($label) . '</span></td>' : '')
         . '</tr></table></td></tr>'
@@ -698,7 +698,6 @@ function build_mime(string $html, string $text, ?string $unsubUrl): array
     $b = 'b_' . token(12);
     $headers = [
         'From: ' . encode_header(IMPACT_MAIL_FROM_NAME) . ' <' . $from . '>',
-        'Reply-To: ' . $from,
         'Date: ' . date('r'),
         'Message-ID: <' . token(16) . '@' . $domain . '>',
         'MIME-Version: 1.0',

@@ -476,7 +476,10 @@ des listes noires courantes. Un nouveau domaine qui envoie des emails illustrés
 mutualisé doit encore **se faire une réputation** auprès de Gmail. Dans l'ordre :
 
 1. **Vérifier que l'email est bien authentifié** : dans Gmail, ouvrir un email du défi, menu « ⋮ » →
-   « Afficher l'original ». Les trois lignes SPF, DKIM et DMARC doivent indiquer **PASS**. Si DKIM
+   « Afficher l'original ». Les trois lignes SPF, DKIM et DMARC doivent indiquer **PASS** (c'est le cas
+   depuis le 7 novembre 2026, par SMTP avec `impact@dehini.com`). Les emails eux-mêmes évitent les
+   signaux que notent les filtres : pas de texte caché, pas de « Reply-To » en double, pas d'objet
+   finissant par « ? », un seul alphabet par email d'invitation. Si DKIM
    n'est pas « PASS », dans cPanel → **Email Deliverability**, cliquer « Repair » sur `dehini.com`.
 2. **Envoyer par SMTP avec le compte `impact@dehini.com`** (`IMPACT_SMTP_HOST`, `IMPACT_SMTP_USER`,
    `IMPACT_SMTP_PASS` dans `~/public_html/impact/config.php`) plutôt que par la fonction `mail()` :
