@@ -186,6 +186,57 @@
   .p-contacts a{color:var(--social);text-decoration:none;word-break:break-all}
   .p-item .actions{grid-column:1 / -1;margin-top:0}
   .b-vf{background:var(--social-50);color:var(--social)} .b-ft{background:var(--warn-50);color:var(--warn)}
+  /* -------------------------------------------------------------- Emails */
+  .m-settings{display:grid;grid-template-columns:1fr 160px 1fr auto;gap:12px;align-items:end}
+  .m-settings .fld{margin:0}
+  @media(max-width:800px){.m-settings{grid-template-columns:1fr}}
+  .auto-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-bottom:10px}
+  .auto-card{background:#fff;border-radius:18px;padding:18px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:8px}
+  .auto-card.off{opacity:.6}
+  .auto-top{display:flex;align-items:flex-start;gap:10px}
+  .auto-top b{flex:1;font-size:1rem}
+  .auto-card p{font-size:.86rem;color:var(--ink-soft)}
+  .auto-meta{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:.78rem;color:var(--muted)}
+  .auto-acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto;align-items:center}
+  .auto-acts select{padding:6px 8px;border:1px solid var(--paper-200);border-radius:999px;background:#fff;font-size:.8rem}
+  .tg{position:relative;width:42px;height:24px;flex-shrink:0}
+  .tg input{appearance:none;-webkit-appearance:none;width:42px;height:24px;border-radius:999px;background:var(--paper-200);cursor:pointer;transition:background .2s;margin:0}
+  .tg input::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:left .2s}
+  .tg input:checked{background:var(--pos)}
+  .tg input:checked::after{left:21px}
+  .b-tips{background:var(--perso-50);color:var(--perso)} .b-pro{background:var(--pro-50);color:var(--pro)} .b-svc{background:var(--paper-100);color:var(--ink-soft)}
+  .camp-form{display:grid;gap:12px}
+  .camp-form .fld{margin:0}
+  .camp-form textarea{width:100%;padding:10px 12px;border:1px solid var(--paper-200);border-radius:10px;font:inherit;font-weight:400;color:var(--ink);resize:vertical}
+  .camp-row{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+  .camp-row .fld{min-width:180px}
+  .seg{display:inline-flex;gap:4px;padding:4px;border-radius:999px;background:var(--paper-100)}
+  .seg button{padding:7px 14px;border-radius:999px;font-weight:700;font-size:.84rem;color:var(--muted)}
+  .seg button[aria-pressed=true]{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(11,16,32,.12)}
+  .file-btn{position:relative;overflow:hidden;cursor:pointer}
+  .file-btn input{position:absolute;inset:0;opacity:0;cursor:pointer}
+  .check-l{display:flex;gap:10px;align-items:flex-start;font-size:.88rem;color:var(--ink-soft)}
+  .check-l input{margin-top:3px;width:16px;height:16px;flex-shrink:0}
+  .camp-table{width:100%;border-collapse:collapse;font-size:.85rem;min-width:860px}
+  .camp-table th,.camp-table td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--paper-100);vertical-align:top}
+  .camp-table th{color:var(--muted);font-weight:700;font-size:.74rem;text-transform:uppercase;letter-spacing:.02em;white-space:nowrap}
+  .camp-table td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .camp-table .sub{font-size:.76rem;color:var(--muted)}
+  .camp-table .acts{display:flex;flex-wrap:wrap;gap:6px}
+  .prog{height:6px;border-radius:4px;background:var(--paper-100);overflow:hidden;margin-top:6px;min-width:90px}
+  .prog i{display:block;height:100%;background:var(--pos)}
+  .b-draft{background:var(--paper-100);color:var(--ink-soft)} .b-sending{background:var(--pos-50);color:var(--pos-600)} .b-paused{background:var(--warn-50);color:var(--warn)} .b-done{background:#eef2ff;color:var(--social)}
+  .optout textarea{width:100%;padding:10px 12px;border:1px solid var(--paper-200);border-radius:10px;font:inherit;margin:8px 0}
+  .optout summary{cursor:pointer;font-weight:700}
+  .mail-dlg{border:0;padding:0;border-radius:20px;width:min(760px,calc(100vw - 20px));height:calc(100dvh - 30px);max-height:none;box-shadow:0 30px 80px -20px rgba(11,16,32,.5)}
+  .mail-dlg[open]{display:flex;flex-direction:column}
+  .mail-dlg::backdrop{background:rgba(11,16,32,.55)}
+  .mail-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--paper-200)}
+  .mail-subj{flex:1;min-width:200px;display:grid}
+  .mail-subj small{font-size:.72rem;color:var(--muted)}
+  .mail-subj b{font-size:.92rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mail-stage{flex:1;background:#d9dce3;display:flex;justify-content:center;overflow:auto}
+  .mail-stage iframe{border:0;width:680px;max-width:100%;height:100%;background:#fff;transition:width .25s}
   .toast{position:fixed;bottom:20px;left:50%;translate:-50% 0;background:var(--ink);color:#fff;padding:12px 18px;border-radius:14px;font-size:.9rem;box-shadow:var(--shadow);z-index:9}
 </style>
 </head>
@@ -213,6 +264,7 @@
     <a href="#stats" data-tab="stats">Statistiques</a>
     <a href="#inscrits" data-tab="inscrits">Inscrits</a>
     <a href="#pros" data-tab="pros">Pros</a>
+    <a href="#emails" data-tab="emails">Emails</a>
     <a href="#questions" data-tab="questions">Questions</a>
     <a href="#recits" data-tab="recits">Récits</a>
     <a href="#soutiens" data-tab="soutiens">Soutiens</a>
@@ -303,6 +355,61 @@
     <p class="summary"><b>Mettre en avant</b> = emplacement sponsorisé (la publicité que vous vendez) : la page passe en tête à côté de ses questions, dans le défi et dans l'annuaire, avec la mention « Sponsorisé » ; ses liens portent <code>rel="sponsored"</code> comme l'exige Google. <b>Vérifier</b> ajoute le badge « Vérifié » après contrôle de l'activité, et rend le lien vers son site suivi par les moteurs de recherche. <b>Masquer</b> retire la page du site sans la supprimer.</p>
   </section>
 
+  <section id="tab-emails" hidden>
+    <div class="panel">
+      <h2>Envoi</h2>
+      <p id="mSender"></p>
+      <form class="m-settings" id="mSettings">
+        <label class="fld">Adresse pour les tests<input name="test_to" type="email" placeholder="vous@exemple.com" dir="ltr"></label>
+        <label class="fld">Invitations par heure<input name="inv_per_hour" type="number" min="1" max="500"></label>
+        <label class="fld">Signature des invitations<input name="inv_sign" maxlength="80"></label>
+        <button class="btn btn-ink" type="submit">Enregistrer</button>
+      </form>
+    </div>
+
+    <h2 class="sec-h">Emails automatiques</h2>
+    <p class="summary">Ils partent tout seuls, par la tâche cron de chaque heure, dans la langue de chaque compte et avec le même design. Un même email ne part jamais deux fois pour la même raison ; chacun contient son lien de désabonnement.</p>
+    <div class="auto-grid" id="autoList"></div>
+
+    <h2 class="sec-h">Invitations</h2>
+    <p class="summary">Invitez de nouvelles personnes à essayer le défi : des particuliers, ou des professionnels avec un message propre à leur domaine. Les liens sont suivis (clics, inscriptions, pages pro créées) et chaque email contient « Ne plus jamais recevoir d'invitation ».</p>
+    <form class="panel camp-form" id="campForm" novalidate>
+      <div class="camp-row">
+        <div class="fld"><span>Public</span>
+          <div class="seg" role="group" id="campAud">
+            <button type="button" data-aud="particulier" aria-pressed="true">Particuliers</button>
+            <button type="button" data-aud="pro" aria-pressed="false">Professionnels</button>
+          </div>
+        </div>
+        <label class="fld" id="campDomWrap" hidden>Domaine<select name="domain" id="campDomain"></select></label>
+        <label class="fld">Langue<select name="lang" id="campLang"><option value="fr">Français</option><option value="ar">Arabe</option><option value="en">Anglais</option></select></label>
+      </div>
+      <label class="fld">Objet <small class="hint-s">— « {name} » est remplacé par le prénom</small><input name="subject" id="campSubject" maxlength="160"></label>
+      <label class="fld">Mot personnel (facultatif)<textarea name="note" rows="3" maxlength="1200" placeholder="Ex. : Je lance ce projet pour aider chacun à voir le positif dans ce qu'il a vécu. Votre avis compterait beaucoup."></textarea></label>
+      <label class="fld">Signature<input name="sign" id="campSign" maxlength="80"></label>
+      <label class="fld">Destinataires — une personne par ligne : « email », « Prénom &lt;email&gt; » ou « email;Prénom » (copier-coller depuis Excel possible)
+        <textarea name="recipients" id="campRcpt" rows="6" dir="ltr" placeholder="amina@exemple.com&#10;Karim &lt;karim@exemple.dz&gt;&#10;contact@cabinet.dz;Nadia"></textarea></label>
+      <div class="camp-row">
+        <label class="btn btn-line btn-sm file-btn">Importer un fichier (CSV, TXT)<input type="file" id="campFile" accept=".csv,.txt,text/csv,text/plain"></label>
+        <span class="summary" id="campCount" style="margin:0"></span>
+      </div>
+      <label class="check-l"><input type="checkbox" name="consent"> Ces personnes me connaissent, ou ont rendu publique leur adresse professionnelle : elles peuvent recevoir une invitation.</label>
+      <div class="actions">
+        <button class="btn btn-line" type="button" id="campPreview">Aperçu</button>
+        <button class="btn btn-line" type="button" id="campTest">M'envoyer un test</button>
+        <button class="btn btn-pos" type="submit">Créer la campagne</button>
+      </div>
+      <p class="err" id="campErr"></p>
+    </form>
+    <div id="campList"></div>
+    <details class="panel optout">
+      <summary>Ne jamais contacter (<span id="optCount">0</span>)</summary>
+      <p class="summary">Ces adresses ne recevront plus jamais d'invitation (elles s'ajoutent toutes seules quand quelqu'un clique « Ne plus jamais recevoir d'invitation »). Ajoutez ici celles qui vous l'ont demandé autrement.</p>
+      <textarea id="optInput" rows="3" dir="ltr" placeholder="une adresse par ligne"></textarea>
+      <div class="actions"><button class="btn btn-line btn-sm" type="button" id="optAdd">Ajouter</button></div>
+    </details>
+  </section>
+
   <section id="tab-questions" hidden>
     <div class="toolbar">
       <input type="search" id="qSearch" placeholder="Rechercher (français, arabe ou anglais) ou #numéro…">
@@ -368,6 +475,20 @@
     </form>
   </section>
 </div>
+
+<dialog class="mail-dlg" id="mailDlg">
+  <div class="mail-bar">
+    <div class="mail-subj"><small>Objet</small><b id="mailSubj"></b></div>
+    <div class="seg" role="group" id="mailWidth">
+      <button type="button" data-w="680" aria-pressed="true">Ordinateur</button>
+      <button type="button" data-w="380" aria-pressed="false">Téléphone</button>
+    </div>
+    <button class="btn btn-line btn-sm" type="button" id="mailCopy">Copier le HTML</button>
+    <button class="btn btn-line btn-sm" type="button" id="mailDl">Télécharger .html</button>
+    <button class="btn btn-ink btn-sm" type="button" id="mailClose">Fermer</button>
+  </div>
+  <div class="mail-stage"><iframe id="mailFrame" title="Aperçu de l'email" sandbox="allow-popups"></iframe></div>
+</dialog>
 
 <script>
 (() => {
@@ -814,7 +935,7 @@ function userRow(u) {
     el("td", {}, el("div", { class: "u-badges" },
       el("span", { class: "badge " + (u.verified ? "b-ok" : "b-no"), text: u.verified ? "Confirmée" : "Non confirmée" }),
       u.online ? el("span", { class: "badge b-on", text: "En ligne" }) : null)),
-    el("td", {}, el("div", { class: "u-opts" }, opt("opt_daily", "Question du jour"), opt("opt_digest", "Impacts positifs"), opt("opt_msg", "Avis de messages"))),
+    el("td", {}, el("div", { class: "u-opts" }, opt("opt_daily", "Question du jour"), opt("opt_digest", "Impacts positifs"), opt("opt_msg", "Avis de messages"), opt("opt_tips", "Conseils et paliers"), opt("opt_pro", "Emails de sa page pro"))),
     el("td", { text: when(u.created) }),
     el("td", { text: ago(u.last) }),
     el("td", { class: "n", text: fmt(u.answers) }),
@@ -975,8 +1096,195 @@ async function deletePro(p) {
 let pSearchTimer;
 $("#pSearch").addEventListener("input", () => { clearTimeout(pSearchTimer); pSearchTimer = setTimeout(() => { PR.q = $("#pSearch").value.trim(); loadPros(); }, 250); });
 
+/* ---------------------------------------------------------------- Emails */
+const EM = { data: null, aud: "particulier", subjTouched: false };
+const AUTO_LABEL = { tips: ["Conseils", "b-tips"], pro: ["Pros", "b-pro"], "": ["Service", "b-svc"] };
+const STATUS = { draft: "Brouillon", sending: "Envoi en cours", paused: "En pause", done: "Terminée" };
+async function loadEmails() {
+  let d;
+  try { d = await call("api.php?action=mod_mail"); } catch (e) { if (e.status !== 401) toast(e.message); return; }
+  EM.data = d;
+  const S = d.settings;
+  $("#mSender").replaceChildren("Expéditeur : ", el("b", { text: S.from }), S.smtp ? " — envoi par SMTP." : " — fonction mail() de PHP (configurez le SMTP dans config.php pour une meilleure délivrabilité).",
+    " Invitations envoyées dans l'heure : " + fmt(d.sent_hour) + " / " + fmt(S.inv_per_hour) + ".");
+  const f = $("#mSettings");
+  f.test_to.value = S.test_to || ""; f.inv_per_hour.value = S.inv_per_hour; f.inv_sign.value = S.inv_sign;
+  if (!$("#campSign").value) $("#campSign").value = S.inv_sign;
+  $("#autoList").replaceChildren(...d.automations.map(autoCard));
+  const dom = $("#campDomain");
+  if (!dom.options.length) dom.replaceChildren(...d.domains.map(x => el("option", { value: x.key }, x.label)));
+  if (!EM.subjTouched) $("#campSubject").value = defaultSubject();
+  renderCampaigns();
+  $("#optCount").textContent = fmt(d.optouts);
+  countRcpt();
+}
+function autoCard(a) {
+  const [lab, cls] = AUTO_LABEL[a.opt];
+  const lang = el("select", { "aria-label": "Langue de l'aperçu" }, el("option", { value: "fr" }, "FR"), el("option", { value: "ar" }, "AR"), el("option", { value: "en" }, "EN"));
+  const box = el("input", { type: "checkbox", checked: a.on, "aria-label": "Activer « " + a.title + " »" });
+  box.addEventListener("change", async () => {
+    try { await call("api.php?action=mod_auto_set", { kind: a.kind, on: box.checked }); a.on = box.checked; card.classList.toggle("off", !a.on); toast(a.on ? "« " + a.title + " » activé." : "« " + a.title + " » coupé."); }
+    catch (e) { toast(e.message); box.checked = !box.checked; }
+  });
+  const card = el("article", { class: "auto-card" + (a.on ? "" : " off") },
+    el("div", { class: "auto-top" }, el("b", { text: a.title }), el("span", { class: "badge " + cls, text: lab }), el("label", { class: "tg" }, box)),
+    el("p", { text: a.when }),
+    el("div", { class: "auto-meta" }, el("span", { text: fmt(a.d30) + " envoyé(s) sur 30 jours" }), el("span", { text: fmt(a.total) + " au total" })),
+    el("div", { class: "auto-acts" }, lang,
+      el("button", { class: "btn btn-line btn-sm", type: "button", onclick: () => previewMail({ type: "auto", kind: a.kind, lang: lang.value }) }, "Aperçu"),
+      el("button", { class: "btn btn-line btn-sm", type: "button", onclick: e => testMail({ type: "auto", kind: a.kind, lang: lang.value }, e.currentTarget) }, "M'envoyer un test")));
+  return card;
+}
+function defaultSubject() {
+  const d = EM.data, l = $("#campLang").value;
+  if (!d) return "";
+  if (EM.aud === "pro") { const x = d.domains.find(x => x.key === $("#campDomain").value) || d.domains[0]; return x.subject[l]; }
+  return d.particulier[l];
+}
+function campParams() {
+  const f = $("#campForm");
+  return { type: "inv", audience: EM.aud, domain: $("#campDomain").value, lang: $("#campLang").value, subject: f.subject.value.trim(), note: f.note.value.trim(), sign: f.sign.value.trim(), name: "Amina" };
+}
+let PREV = null;
+async function previewMail(params) {
+  try {
+    const d = await call("api.php?action=mod_mail_preview", params);
+    PREV = d;
+    $("#mailSubj").textContent = d.subject;
+    $("#mailFrame").srcdoc = d.html;
+    if (!$("#mailDlg").open) $("#mailDlg").showModal();
+  } catch (e) { toast(e.message); }
+}
+async function testMail(params, btn) {
+  const to = $("#mSettings").test_to.value.trim();
+  if (!to) { toast("Indiquez d'abord l'adresse pour les tests (en haut de l'onglet)."); $("#mSettings").test_to.focus(); return; }
+  btn.disabled = true;
+  try { await call("api.php?action=mod_mail_test", Object.assign({ to }, params)); toast("Test envoyé à " + to + "."); }
+  catch (e) { toast(e.message); }
+  btn.disabled = false;
+}
+function setWidth(w) {
+  $("#mailFrame").style.width = w + "px";
+  document.querySelectorAll("#mailWidth button").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.w === w)));
+}
+$("#mailWidth").addEventListener("click", e => { const b = e.target.closest("button"); if (b) setWidth(+b.dataset.w); });
+$("#mailClose").addEventListener("click", () => $("#mailDlg").close());
+$("#mailCopy").addEventListener("click", () => { if (PREV) navigator.clipboard.writeText(PREV.html).then(() => toast("HTML copié : collez-le dans votre outil d'emailing."), () => toast("Copie impossible.")); });
+$("#mailDl").addEventListener("click", () => {
+  if (!PREV) return;
+  const a = el("a", { href: URL.createObjectURL(new Blob([PREV.html], { type: "text/html" })), download: (PREV.subject || "email").replace(/[^\p{L}\p{N}]+/gu, "-").slice(0, 60) + ".html" });
+  document.body.append(a); a.click(); a.remove();
+});
+$("#mSettings").addEventListener("submit", async e => {
+  e.preventDefault();
+  const f = e.target;
+  try { await call("api.php?action=mod_mail_settings", { test_to: f.test_to.value.trim(), inv_per_hour: +f.inv_per_hour.value, inv_sign: f.inv_sign.value.trim() }); toast("Réglages enregistrés."); loadEmails(); }
+  catch (err) { toast(err.message); }
+});
+$("#campAud").addEventListener("click", e => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  EM.aud = b.dataset.aud;
+  document.querySelectorAll("#campAud button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+  $("#campDomWrap").hidden = EM.aud !== "pro";
+  if (!EM.subjTouched) $("#campSubject").value = defaultSubject();
+});
+["#campDomain", "#campLang"].forEach(s => $(s).addEventListener("change", () => { if (!EM.subjTouched) $("#campSubject").value = defaultSubject(); }));
+$("#campSubject").addEventListener("input", () => (EM.subjTouched = $("#campSubject").value.trim() !== ""));
+const EMAIL_RE = /[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}/i;
+function countRcpt() {
+  const lines = $("#campRcpt").value.split(/\r?\n/).filter(x => x.trim());
+  const ok = new Set(lines.map(x => (x.match(EMAIL_RE) || [""])[0].toLowerCase()).filter(Boolean));
+  $("#campCount").textContent = lines.length ? fmt(ok.size) + " adresse(s) valide(s)" + (lines.length > ok.size ? " · " + fmt(lines.length - ok.size) + " ligne(s) ignorée(s)" : "") : "";
+}
+$("#campRcpt").addEventListener("input", countRcpt);
+$("#campFile").addEventListener("change", async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const txt = await file.text();
+  const ta = $("#campRcpt");
+  ta.value = (ta.value.trim() ? ta.value.trim() + "\n" : "") + txt.trim();
+  e.target.value = "";
+  countRcpt();
+});
+$("#campPreview").addEventListener("click", () => previewMail(campParams()));
+$("#campTest").addEventListener("click", e => testMail(campParams(), e.currentTarget));
+$("#campForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const f = e.target, p = campParams();
+  $("#campErr").textContent = "";
+  try {
+    const d = await call("api.php?action=mod_campaign_create", Object.assign(p, { recipients: f.recipients.value, consent: f.consent.checked }));
+    const sk = d.skipped, parts = [];
+    if (sk.user) parts.push(sk.user + (EM.aud === "pro" ? " déjà pro" : " déjà inscrite(s)"));
+    if (sk.recent) parts.push(sk.recent + " déjà invitée(s) depuis moins de 90 jours");
+    if (sk.optout) parts.push(sk.optout + " dans « Ne jamais contacter »");
+    if (d.bad) parts.push(d.bad + " ligne(s) sans adresse valide");
+    toast("Campagne créée : " + d.queued + " invitation(s) à envoyer" + (parts.length ? " (ignorées : " + parts.join(", ") + ")" : "") + ". Lancez l'envoi dans la liste.");
+    f.recipients.value = ""; f.consent.checked = false; countRcpt();
+    loadEmails();
+  } catch (err) { $("#campErr").textContent = err.message; }
+});
+function renderCampaigns() {
+  const list = EM.data.campaigns;
+  if (!list.length) { $("#campList").replaceChildren(el("div", { class: "empty", text: "Aucune campagne pour l'instant." })); return; }
+  const dom = Object.fromEntries(EM.data.domains.map(x => [x.key, x.label]));
+  const pct = (a, b) => (b ? Math.round(a / b * 100) + " %" : "—");
+  $("#campList").replaceChildren(el("div", { class: "panel", style: "padding:8px 14px" }, el("table", { class: "camp-table" },
+    el("tr", {}, ...["Campagne", "Statut", "Envoyés", "Clics", "Inscrits", "Pages pro", "Désinscrits", ""].map(h => el("th", { text: h }))),
+    ...list.map(c => {
+      const todo = c.sent + c.failed + c.queued;
+      return el("tr", {},
+        el("td", {}, el("b", { text: c.audience === "pro" ? "Pros · " + (dom[c.domain] || c.domain) : "Particuliers" }), " · " + (LANG[c.lang] || c.lang),
+          el("div", { class: "sub", dir: "auto", text: c.subject }), el("div", { class: "sub", text: "créée le " + when(c.created) + (c.skipped ? " · " + c.skipped + " adresse(s) ignorée(s)" : "") })),
+        el("td", {}, el("span", { class: "badge b-" + c.status, text: STATUS[c.status] || c.status })),
+        el("td", { class: "n" }, fmt(c.sent) + " / " + fmt(todo), c.failed ? el("div", { class: "sub", text: c.failed + " échec(s)" }) : null,
+          el("div", { class: "prog" }, el("i", { style: "width:" + (todo ? (c.sent + c.failed) / todo * 100 : 0) + "%" }))),
+        el("td", { class: "n" }, fmt(c.clicked), el("div", { class: "sub", text: pct(c.clicked, c.sent) })),
+        el("td", { class: "n" }, fmt(c.signups), el("div", { class: "sub", text: pct(c.signups, c.sent) })),
+        el("td", { class: "n", text: c.audience === "pro" ? fmt(c.pros) : "—" }),
+        el("td", { class: "n", text: fmt(c.optouts) }),
+        el("td", {}, el("div", { class: "acts" },
+          c.status === "draft" || c.status === "paused" ? el("button", { class: "btn btn-pos btn-sm", type: "button", onclick: () => setCamp(c, "sending") }, c.status === "draft" ? "Lancer l'envoi" : "Reprendre") : null,
+          c.status === "sending" ? el("button", { class: "btn btn-line btn-sm", type: "button", onclick: e => sendNow(c, e.currentTarget) }, "Envoyer un lot maintenant") : null,
+          c.status === "sending" ? el("button", { class: "btn btn-line btn-sm", type: "button", onclick: () => setCamp(c, "paused") }, "Pause") : null,
+          el("button", { class: "btn btn-line btn-sm", type: "button", onclick: () => previewMail({ type: "inv", audience: c.audience, domain: c.domain, lang: c.lang, subject: c.subject, note: c.note, sign: c.sign, name: "Amina" }) }, "Aperçu"),
+          el("button", { class: "btn btn-line btn-sm", type: "button", onclick: () => exportRcpts(c) }, "Destinataires (CSV)"),
+          el("button", { class: "btn btn-neg btn-sm", type: "button", onclick: () => delCamp(c) }, "Supprimer"))));
+    }))));
+}
+async function setCamp(c, status) {
+  if (status === "sending" && c.status === "draft" && !confirm(`Lancer l'envoi de ${c.queued} invitation(s) ?\n\nElles partent peu à peu (${EM.data.settings.inv_per_hour} par heure au plus).`)) return;
+  try { await call("api.php?action=mod_campaign_set", { id: c.id, status }); toast(status === "sending" ? "Envoi lancé : la tâche cron envoie la suite chaque heure." : "Campagne en pause."); loadEmails(); }
+  catch (e) { toast(e.message); }
+}
+async function sendNow(c, btn) {
+  btn.disabled = true;
+  try { const d = await call("api.php?action=mod_campaign_send", { id: c.id }); toast(d.sent ? d.sent + " invitation(s) envoyée(s)." : "Rien à envoyer pour l'instant (limite par heure atteinte ?)."); loadEmails(); }
+  catch (e) { toast(e.message); btn.disabled = false; }
+}
+async function delCamp(c) {
+  if (!confirm("Supprimer cette campagne et ses chiffres ? Les invitations déjà envoyées ne sont pas rappelées.")) return;
+  try { await call("api.php?action=mod_campaign_delete", { id: c.id }); toast("Campagne supprimée."); loadEmails(); } catch (e) { toast(e.message); }
+}
+async function exportRcpts(c) {
+  let d;
+  try { d = await call("api.php?action=mod_campaign_rcpts&id=" + c.id); } catch (e) { toast(e.message); return; }
+  const st = { queued: "à envoyer", sent: "envoyé", failed: "échec", skipped: "ignoré" };
+  const why = { user: "déjà inscrit", recent: "invité récemment", optout: "ne jamais contacter" };
+  const cell = v => { v = String(v ?? ""); if (/^[=+\-@]/.test(v)) v = "'" + v; return /[";\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+  const rows = [["Email", "Prénom", "Statut", "Envoyé le", "Clic le", "Inscrit", "Détail"]].concat(d.items.map(r => [r.email, r.name, st[r.status] || r.status,
+    r.sent ? new Date(r.sent * 1000).toLocaleString("fr-FR") : "", r.clicked ? new Date(r.clicked * 1000).toLocaleString("fr-FR") : "", r.signup ? "oui" : "", why[r.error] || r.error]));
+  const a = el("a", { href: URL.createObjectURL(new Blob(["﻿" + rows.map(r => r.map(cell).join(";")).join("\r\n")], { type: "text/csv" })), download: "invitations-" + c.id + ".csv" });
+  document.body.append(a); a.click(); a.remove();
+}
+$("#optAdd").addEventListener("click", async () => {
+  try { const d = await call("api.php?action=mod_optout_add", { emails: $("#optInput").value }); $("#optInput").value = ""; toast(d.added + " adresse(s) ajoutée(s)."); loadEmails(); }
+  catch (e) { toast(e.message); }
+});
+
 /* ------------------------------------------------------------ Navigation */
-const TABS = ["stats", "inscrits", "pros", "questions", "recits", "soutiens", "reglages"];
+const TABS = ["stats", "inscrits", "pros", "emails", "questions", "recits", "soutiens", "reglages"];
 function showTab() {
   const tab = TABS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "stats";
   document.querySelectorAll(".main-tabs a").forEach(a => a.classList.toggle("on", a.dataset.tab === tab));
@@ -986,6 +1294,7 @@ function showTab() {
   if (tab === "stats") { loadStats(); statsTimer = setInterval(loadStats, 20000); }
   if (tab === "inscrits") { loadUsers(); loadSubs(); }
   if (tab === "pros") loadPros();
+  if (tab === "emails") loadEmails();
 }
 addEventListener("hashchange", showTab);
 

@@ -8,7 +8,7 @@ declare(strict_types=1);
 
 const MAIL_STR = [
     'fr' => [
-        'brand' => 'Défi Impact', 'tagline' => 'Le défi des expériences positives',
+        'brand' => 'Défi Impact', 'tagline' => 'Le défi des expériences positives', 'address' => 'Alger, Algérie',
         'hello' => 'Bonjour {name},',
         'neg' => 'Impact négatif', 'none' => 'Aucun impact', 'pos' => 'Impact positif',
         'daily_subject' => 'Question du jour : {q}',
@@ -36,6 +36,7 @@ const MAIL_STR = [
         'unsub_q_daily' => 'Ne plus recevoir la question du jour ?',
         'unsub_q_digest' => 'Ne plus recevoir les impacts positifs de la communauté ?',
         'unsub_q_all' => 'Ne plus recevoir aucun email du défi Impact ?',
+        'unsub_q_tips' => 'Ne plus recevoir les conseils, paliers et relances ?', 'unsub_q_pro' => 'Ne plus recevoir les emails de votre page pro (bienvenue, rappels, rapport mensuel) ?',
         'unsub_confirm' => 'Confirmer',
         'unsub_done' => 'C\'est fait : vous ne recevrez plus ces emails. Vous pouvez les réactiver à tout moment depuis « Mon compte ».',
         'unsub_bad' => 'Ce lien n\'est plus valide.', 'back' => 'Retour au défi',
@@ -60,7 +61,7 @@ const MAIL_STR = [
         'sub_unsub_done' => 'C\'est fait : vous ne recevrez plus ces emails, et votre adresse a été effacée.',
     ],
     'ar' => [
-        'brand' => 'تحدي الأثر', 'tagline' => 'تحدّي التجارب الإيجابية',
+        'brand' => 'تحدي الأثر', 'tagline' => 'تحدّي التجارب الإيجابية', 'address' => 'الجزائر العاصمة، الجزائر',
         'hello' => 'مرحباً {name}،',
         'neg' => 'أثر سلبي', 'none' => 'بلا أثر', 'pos' => 'أثر إيجابي',
         'daily_subject' => 'سؤال اليوم: {q}',
@@ -88,6 +89,7 @@ const MAIL_STR = [
         'unsub_q_daily' => 'إيقاف رسائل سؤال اليوم؟',
         'unsub_q_digest' => 'إيقاف رسائل الآثار الإيجابية من المجتمع؟',
         'unsub_q_all' => 'إيقاف كل رسائل تحدي الأثر؟',
+        'unsub_q_tips' => 'إيقاف النصائح والمراحل والتذكيرات؟', 'unsub_q_pro' => 'إيقاف رسائل صفحتك المهنية (الترحيب، التذكيرات، التقرير الشهري)؟',
         'unsub_confirm' => 'تأكيد',
         'unsub_done' => 'تمّ: لن تصلك هذه الرسائل بعد الآن. يمكنك إعادة تفعيلها في أي وقت من «حسابي».',
         'unsub_bad' => 'هذا الرابط لم يعد صالحاً.', 'back' => 'العودة إلى التحدي',
@@ -112,7 +114,7 @@ const MAIL_STR = [
         'sub_unsub_done' => 'تمّ: لن تصلك هذه الرسائل بعد الآن، وحُذف عنوانك.',
     ],
     'en' => [
-        'brand' => 'Impact Challenge', 'tagline' => 'The positive experiences challenge',
+        'brand' => 'Impact Challenge', 'tagline' => 'The positive experiences challenge', 'address' => 'Algiers, Algeria',
         'hello' => 'Hi {name},',
         'neg' => 'Negative impact', 'none' => 'No impact', 'pos' => 'Positive impact',
         'daily_subject' => 'Question of the day: {q}',
@@ -140,6 +142,7 @@ const MAIL_STR = [
         'unsub_q_daily' => 'Stop receiving the question of the day?',
         'unsub_q_digest' => 'Stop receiving the community\'s positive impacts?',
         'unsub_q_all' => 'Stop receiving all Impact Challenge emails?',
+        'unsub_q_tips' => 'Stop tips, milestones and reminders?', 'unsub_q_pro' => 'Stop your pro page emails (welcome, reminders, monthly report)?',
         'unsub_confirm' => 'Confirm',
         'unsub_done' => 'Done: you won\'t receive these emails anymore. You can turn them back on anytime from “My account”.',
         'unsub_bad' => 'This link is no longer valid.', 'back' => 'Back to the challenge',
@@ -193,56 +196,258 @@ function h(string $s): string
 
 /* ------------------------------------------------------------------ gabarit */
 
-const MAIL_COLORS = ['neg' => '#ff5d5d', 'none' => '#8b93a7', 'pos' => '#17b26a', 'ink' => '#0b1020', 'cobalt' => '#2f5bff'];
+const MAIL_COLORS = ['neg' => '#ff5d5d', 'none' => '#8b93a7', 'pos' => '#17b26a', 'ink' => '#0b1020', 'cobalt' => '#2f5bff', 'pro' => '#e8860c'];
+/** Couleurs des boutons : un ton plus foncé, pour un texte blanc lisible (contraste ≥ 4,5:1). */
+const MAIL_BTN = ['#17b26a' => '#07854b', '#ff5d5d' => '#d93b3b', '#8b93a7' => '#5f677c', '#e8860c' => '#b25f00',
+    'pos' => '#07854b', 'neg' => '#d93b3b', 'none' => '#5f677c', 'ink' => '#0b1020', 'cobalt' => '#2f5bff', 'pro' => '#b25f00'];
+/** Couleurs du gabarit (texte, fonds) : versions claires ; le mode sombre est géré par les classes em-*. */
+const MAIL_UI = ['page' => '#eef0f4', 'card' => '#ffffff', 'text' => '#20283f', 'title' => '#0b1020', 'muted' => '#6b7185',
+    'soft' => '#f5f6f8', 'line' => '#e6e8ee'];
 
 function mail_font(string $lang): string
 {
     return $lang === 'ar'
         ? "Tahoma,'Segoe UI',Arial,sans-serif"
-        : "-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
+        : "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
 }
 
+/** Pourcentage arrondi : « 42 % » en français, « 42% » sinon. */
+function mail_pct(string $l, float $x): string
+{
+    $n = (string) (int) round($x);
+    return $l === 'fr' ? $n . "\u{00A0}%" : $n . '%';
+}
+
+/** Nombre avec séparateur de milliers (espace fine en français). */
+function mail_num(string $l, int $n): string
+{
+    return $l === 'fr' ? number_format($n, 0, ',', "\u{202F}") : number_format($n);
+}
+
+/** Sens du texte : début / fin de ligne selon la langue. */
+function mail_align(string $lang): string
+{
+    return $lang === 'ar' ? 'right' : 'left';
+}
+
+/** Bouton « à toute épreuve » (table + lien : fonctionne aussi dans Outlook). */
+function m_btn(string $l, string $href, string $label, string $tone = 'pos', bool $center = false): string
+{
+    $bg = MAIL_BTN[$tone] ?? $tone;
+    $f = mail_font($l);
+    return '<table role="presentation" cellpadding="0" cellspacing="0" class="em-btn" style="margin:24px ' . ($center ? 'auto' : '0') . ' 6px"' . ($center ? ' align="center"' : '') . '><tr>'
+        . '<td bgcolor="' . $bg . '" style="border-radius:999px;background:' . $bg . ';text-align:center">'
+        . '<a href="' . h($href) . '" style="display:inline-block;padding:15px 30px;font:700 16px/1.2 ' . $f . ';color:#ffffff;text-decoration:none;border-radius:999px">' . h($label) . '</a>'
+        . '</td></tr></table>';
+}
+
+/** Ancien nom, gardé pour les emails existants. */
 function mail_button(string $href, string $label, string $bg = MAIL_COLORS['ink'], string $lang = 'fr'): string
 {
-    $f = mail_font($lang);
-    return '<table role="presentation" cellpadding="0" cellspacing="0" style="margin:22px 0"><tr><td style="border-radius:999px;background:' . $bg . '">'
-        . '<a href="' . h($href) . '" style="display:inline-block;padding:14px 26px;font:700 15px/1 ' . $f . ';color:#ffffff;text-decoration:none;border-radius:999px">' . h($label) . '</a>'
+    return m_btn($lang, $href, $label, $bg);
+}
+
+function m_p(string $l, string $text, string $style = ''): string
+{
+    return '<p class="em-t" style="margin:0 0 16px;font:400 16px/1.65 ' . mail_font($l) . ';color:' . MAIL_UI['text'] . ';' . $style . '">' . h($text) . '</p>';
+}
+
+/** Paragraphe en gris (précisions, mentions). */
+function m_small(string $l, string $text, string $style = ''): string
+{
+    return '<p class="em-m" style="margin:0 0 12px;font:400 13px/1.6 ' . mail_font($l) . ';color:' . MAIL_UI['muted'] . ';' . $style . '">' . h($text) . '</p>';
+}
+
+/** Intertitre de section. */
+function m_h(string $l, string $text): string
+{
+    return '<p class="em-t" style="margin:28px 0 12px;font:800 18px/1.35 ' . mail_font($l) . ';color:' . MAIL_UI['title'] . '">' . h($text) . '</p>';
+}
+
+/** Séparateur fin. */
+function m_hr(): string
+{
+    return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td class="em-line" style="border-top:1px solid ' . MAIL_UI['line'] . ';font-size:0;line-height:0;height:1px;padding:0">&nbsp;</td></tr></table>';
+}
+
+/** Mot personnel (invitation) : texte libre, avec signature. */
+function m_note(string $l, string $text, string $sign = ''): string
+{
+    $f = mail_font($l);
+    $side = $l === 'ar' ? 'right' : 'left';
+    return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 22px"><tr>'
+        . '<td class="em-soft" style="background:' . MAIL_UI['soft'] . ';border-' . $side . ':4px solid #17b26a;border-radius:14px;padding:16px 18px">'
+        . '<p class="em-t" style="margin:0;font:400 15px/1.65 ' . $f . ';color:' . MAIL_UI['text'] . '">' . nl2br(h($text)) . '</p>'
+        . ($sign !== '' ? '<p class="em-m" style="margin:10px 0 0;font:700 13px/1.4 ' . $f . ';color:' . MAIL_UI['muted'] . '">— ' . h($sign) . '</p>' : '')
         . '</td></tr></table>';
 }
 
 /**
- * @param array<string,string> $unsub libellé => url (pied de page)
+ * Carte « question » avec trois boutons de réponse directe (un clic enregistre la réponse sur le site).
+ * $href(int $v) donne le lien de chaque réponse (-1, 0, 1).
  */
-function mail_layout(string $lang, string $title, string $preheader, string $inner, array $unsub = []): string
+function m_question(string $l, array $q, callable $href, string $label = ''): string
+{
+    $f = mail_font($l);
+    $cells = '';
+    foreach (['neg' => -1, 'none' => 0, 'pos' => 1] as $k => $v) {
+        $bg = MAIL_BTN[$k];
+        $cells .= '<td class="em-col" width="33%" style="padding:4px">'
+            . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td bgcolor="' . $bg . '" style="border-radius:12px;background:' . $bg . ';text-align:center">'
+            . '<a href="' . h($href($v)) . '" style="display:block;padding:13px 6px;font:700 14px/1.25 ' . $f . ';color:#ffffff;text-decoration:none">' . h(ms($l, $k)) . '</a>'
+            . '</td></tr></table></td>';
+    }
+    return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:6px 0 22px"><tr>'
+        . '<td class="em-soft" style="background:' . MAIL_UI['soft'] . ';border:1px solid ' . MAIL_UI['line'] . ';border-radius:18px;padding:20px 18px 16px">'
+        . ($label !== '' ? '<p style="margin:0 0 8px;font:800 11px/1.4 ' . $f . ';letter-spacing:.06em;text-transform:uppercase;color:#07854b">' . h($label) . '</p>' : '')
+        . '<p class="em-t" style="margin:0 0 14px;font:800 21px/1.35 ' . $f . ';color:' . MAIL_UI['title'] . '">' . h(typo($l, qtext($q, $l))) . '</p>'
+        . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>' . $cells . '</tr></table>'
+        . '</td></tr></table>';
+}
+
+/** Rangée de chiffres clés : [[valeur, libellé, (couleur)], …] — 2 à 4 cases. */
+function m_stats(string $l, array $items): string
+{
+    $f = mail_font($l);
+    $w = (int) floor(100 / max(1, count($items)));
+    $cells = '';
+    foreach ($items as $it) {
+        $cells .= '<td class="em-col" width="' . $w . '%" style="padding:5px;vertical-align:top">'
+            . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td class="em-soft" style="background:' . MAIL_UI['soft'] . ';border-radius:14px;padding:14px 14px 12px;text-align:' . mail_align($l) . '">'
+            . '<p class="em-t" style="margin:0;font:800 24px/1.15 ' . $f . ';color:' . ($it[2] ?? MAIL_UI['title']) . '">' . h((string) $it[0]) . '</p>'
+            . '<p class="em-m" style="margin:4px 0 0;font:400 12px/1.4 ' . $f . ';color:' . MAIL_UI['muted'] . '">' . h((string) $it[1]) . '</p>'
+            . '</td></tr></table></td>';
+    }
+    return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:4px -5px 18px;width:calc(100% + 10px)"><tr>' . $cells . '</tr></table>';
+}
+
+/** Étapes numérotées : [[titre, texte], …]. */
+function m_steps(string $l, array $items, string $tone = 'pos'): string
+{
+    $f = mail_font($l);
+    $bg = MAIL_BTN[$tone] ?? $tone;
+    $rows = '';
+    foreach (array_values($items) as $i => [$title, $text]) {
+        $rows .= '<tr><td width="40" style="vertical-align:top;padding:0 0 14px">'
+            . '<table role="presentation" cellpadding="0" cellspacing="0"><tr><td bgcolor="' . $bg . '" width="28" height="28" style="width:28px;height:28px;border-radius:50%;background:' . $bg . ';text-align:center;font:800 14px/28px ' . $f . ';color:#ffffff">' . ($i + 1) . '</td></tr></table></td>'
+            . '<td style="vertical-align:top;padding:0 0 14px">'
+            . '<p class="em-t" style="margin:3px 0 2px;font:700 15px/1.4 ' . $f . ';color:' . MAIL_UI['title'] . '">' . h($title) . '</p>'
+            . ($text !== '' ? '<p class="em-m" style="margin:0;font:400 14px/1.55 ' . $f . ';color:' . MAIL_UI['muted'] . '">' . h($text) . '</p>' : '')
+            . '</td></tr>';
+    }
+    return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" dir="' . ($l === 'ar' ? 'rtl' : 'ltr') . '" style="margin:4px 0 10px">' . $rows . '</table>';
+}
+
+/** Liste à cocher : [[fait (bool), texte], …] — ✓ vert si fait, cercle vide sinon. */
+function m_checks(string $l, array $items): string
+{
+    $f = mail_font($l);
+    $rows = '';
+    foreach ($items as [$done, $text]) {
+        $mark = $done
+            ? '<td bgcolor="#07854b" width="22" height="22" style="width:22px;height:22px;border-radius:50%;background:#07854b;text-align:center;font:700 13px/22px Arial,sans-serif;color:#ffffff">&#10003;</td>'
+            : '<td><div style="width:18px;height:18px;border-radius:11px;border:2px solid #c3c8d4;font-size:1px;line-height:1px">&nbsp;</div></td>';
+        $rows .= '<tr><td width="34" style="vertical-align:top;padding:0 0 12px"><table role="presentation" cellpadding="0" cellspacing="0"><tr>' . $mark . '</tr></table></td>'
+            . '<td class="' . ($done ? 'em-m' : 'em-t') . '" style="vertical-align:top;padding:1px 0 12px;font:' . ($done ? '400' : '700') . ' 15px/1.5 ' . $f . ';color:' . ($done ? MAIL_UI['muted'] : MAIL_UI['title']) . ($done ? ';text-decoration:line-through' : '') . '">' . h($text) . '</td></tr>';
+    }
+    return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" dir="' . ($l === 'ar' ? 'rtl' : 'ltr') . '" style="margin:4px 0 8px">' . $rows . '</table>';
+}
+
+/** Avantages : [[titre, texte], …] avec une pastille de couleur. */
+function m_bullets(string $l, array $items, string $tone = 'pos'): string
+{
+    $f = mail_font($l);
+    $c = MAIL_BTN[$tone] ?? $tone;
+    $rows = '';
+    foreach ($items as [$title, $text]) {
+        $rows .= '<tr><td width="26" style="vertical-align:top;padding:7px 0 12px"><div style="width:9px;height:9px;border-radius:5px;background:' . $c . ';font-size:1px;line-height:1px">&nbsp;</div></td>'
+            . '<td style="vertical-align:top;padding:0 0 12px"><p class="em-t" style="margin:0;font:400 15px/1.55 ' . $f . ';color:' . MAIL_UI['text'] . '"><b class="em-t" style="color:' . MAIL_UI['title'] . '">' . h($title) . '</b>'
+            . ($text !== '' ? ' — ' . h($text) : '') . '</p></td></tr>';
+    }
+    return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" dir="' . ($l === 'ar' ? 'rtl' : 'ltr') . '" style="margin:4px 0 10px">' . $rows . '</table>';
+}
+
+/** Un récit (expérience positive) : question, texte, impact, auteur, lien. */
+function m_story(string $l, array $st, ?array $q, string $who = '', string $link = '', string $linkLabel = ''): string
+{
+    $f = mail_font($l);
+    $side = $l === 'ar' ? 'right' : 'left';
+    $exp = mb_strimwidth((string) $st['exp'], 0, 320, '…');
+    $imp = mb_strimwidth((string) $st['imp'], 0, 240, '…');
+    return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 14px"><tr>'
+        . '<td class="em-soft" style="background:' . MAIL_UI['soft'] . ';border-radius:16px;padding:18px 20px">'
+        . ($q ? '<p class="em-m" style="margin:0 0 10px;font:700 13px/1.45 ' . $f . ';color:' . MAIL_UI['muted'] . '">' . h(typo($l, qtext($q, $l))) . '</p>' : '')
+        . '<p class="em-t" style="margin:0 0 10px;font:400 15px/1.65 ' . $f . ';color:' . MAIL_UI['title'] . ';border-' . $side . ':3px solid #17b26a;padding-' . $side . ':12px">' . ugc($exp) . '</p>'
+        . '<p style="margin:0 0 8px;font:400 14px/1.6 ' . $f . ';color:#07854b"><b>' . h(ms($l, 'digest_impact')) . '</b> ' . ugc($imp) . '</p>'
+        . ($who !== '' ? '<p class="em-m" style="margin:0;font:400 12px/1.4 ' . $f . ';color:' . MAIL_UI['muted'] . '">' . $who . '</p>' : '')
+        . ($link !== '' ? '<p style="margin:10px 0 0"><a href="' . h($link) . '" style="font:700 14px ' . $f . ';color:#07854b;text-decoration:none">' . h($linkLabel) . ' &rarr;</a></p>' : '')
+        . '</td></tr></table>';
+}
+
+/**
+ * Gabarit commun : en-tête de marque (avec un bandeau titre optionnel), carte blanche, pied de page.
+ * @param array<string,string> $unsub libellé => url (pied de page)
+ * @param array{hero?:array{kicker?:string,title:string,sub?:string},label?:string,why?:string} $opts
+ */
+function mail_layout(string $lang, string $title, string $preheader, string $inner, array $unsub = [], array $opts = []): string
 {
     $dir = $lang === 'ar' ? 'rtl' : 'ltr';
-    $align = $lang === 'ar' ? 'right' : 'left';
+    $align = mail_align($lang);
+    $end = $lang === 'ar' ? 'left' : 'right';
     $f = mail_font($lang);
     $dots = '';
     foreach (['neg', 'none', 'pos'] as $c) {
-        $dots .= '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' . MAIL_COLORS[$c] . ';margin:0 3px"></span>';
+        $dots .= '<td style="padding:0 5px 0 0;vertical-align:middle"><div style="width:10px;height:10px;border-radius:5px;background:' . MAIL_COLORS[$c] . ';font-size:1px;line-height:1px">&nbsp;</div></td>';
     }
     $links = [];
     foreach ($unsub as $label => $url) {
-        $links[] = '<a href="' . h($url) . '" style="color:#6b7185;text-decoration:underline">' . h($label) . '</a>';
+        $links[] = '<a href="' . h($url) . '" class="em-m" style="color:' . MAIL_UI['muted'] . ';text-decoration:underline">' . h($label) . '</a>';
     }
     $site = site_url();
+    $label = $opts['label'] ?? '';
+    $hero = $opts['hero'] ?? null;
+    $heroHtml = '';
+    if ($hero) {
+        $heroHtml = '<tr><td class="em-pad" style="padding:6px 36px 36px;text-align:' . $align . '">'
+            . (!empty($hero['kicker']) ? '<p style="margin:0 0 10px;font:800 12px/1.4 ' . $f . ';letter-spacing:.08em;text-transform:uppercase;color:#5ef0a6">' . h($hero['kicker']) . '</p>' : '')
+            . '<h1 class="em-h1" style="margin:0;font:800 30px/1.22 ' . $f . ';color:#ffffff;letter-spacing:-.01em">' . h($hero['title']) . '</h1>'
+            . (!empty($hero['sub']) ? '<p style="margin:12px 0 0;font:400 16px/1.6 ' . $f . ';color:#c4cadb">' . h($hero['sub']) . '</p>' : '')
+            . '</td></tr>';
+    }
+    $css = '<style>'
+        . ':root{color-scheme:light dark;supported-color-schemes:light dark}'
+        . 'a{text-decoration:none}'
+        . '@media (max-width:620px){.em-pad{padding-left:22px!important;padding-right:22px!important}.em-h1{font-size:25px!important}.em-col{display:block!important;width:100%!important;box-sizing:border-box}.em-wrap{padding:0!important}.em-shell{border-radius:0!important}}'
+        . '@media (prefers-color-scheme:dark){.em-bg{background:#05070f!important}.em-card{background:#121829!important}.em-t{color:#e9ecf4!important}.em-m{color:#9aa3b5!important}'
+        . '.em-soft{background:#1b2238!important;border-color:#2a3350!important}.em-line{border-color:#2a3350!important}}'
+        . '</style>';
     return '<!DOCTYPE html><html lang="' . $lang . '" dir="' . $dir . '"><head><meta charset="utf-8">'
-        . '<meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light">'
-        . '<title>' . h($title) . '</title></head>'
-        . '<body style="margin:0;padding:0;background:#f0f1f4;-webkit-text-size-adjust:100%">'
-        . '<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent">' . h($preheader) . '</div>'
-        . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f0f1f4"><tr><td align="center" style="padding:28px 12px">'
-        . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" dir="' . $dir . '" style="max-width:560px;background:#ffffff;border-radius:22px;overflow:hidden">'
-        . '<tr><td style="background:' . MAIL_COLORS['ink'] . ';padding:22px 28px;text-align:' . $align . '">'
-        . '<a href="' . h($site) . '" style="text-decoration:none">' . $dots
-        . '<span style="font:800 18px/1 ' . $f . ';color:#ffffff;vertical-align:middle;margin:0 8px">' . h(ms($lang, 'brand')) . '</span></a>'
-        . '<div style="font:400 13px/1.4 ' . $f . ';color:#9aa3b5;margin-top:8px">' . h(ms($lang, 'tagline')) . '</div>'
-        . '</td></tr>'
-        . '<tr><td style="padding:30px 28px 26px;font:400 16px/1.6 ' . $f . ';color:#20283f;text-align:' . $align . '">' . $inner . '</td></tr>'
+        . '<meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="supported-color-schemes" content="light dark">'
+        . '<meta name="x-apple-disable-message-reformatting"><title>' . h($title) . '</title>' . $css . '</head>'
+        . '<body class="em-bg" style="margin:0;padding:0;background:' . MAIL_UI['page'] . ';-webkit-text-size-adjust:100%;word-spacing:normal">'
+        // Aperçu affiché par la messagerie à côté du sujet (puis des espaces pour ne pas laisser apparaître le début du texte).
+        . '<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;mso-hide:all">' . h($preheader) . str_repeat('&#847;&zwnj;&nbsp;', 60) . '</div>'
+        . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="em-bg" style="background:' . MAIL_UI['page'] . '"><tr><td align="center" class="em-wrap" style="padding:32px 12px">'
+        . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" dir="' . $dir . '" class="em-shell" style="max-width:600px;border-radius:24px;overflow:hidden;background:' . MAIL_COLORS['ink'] . '">'
+        // En-tête : marque à gauche, étiquette (ex. « Invitation ») à droite.
+        . '<tr><td bgcolor="' . MAIL_COLORS['ink'] . '" style="background:' . MAIL_COLORS['ink'] . '">'
+        . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>'
+        . '<td class="em-pad" style="padding:26px 36px 22px;text-align:' . $align . '">'
+        . '<a href="' . h($site) . '" style="text-decoration:none"><table role="presentation" cellpadding="0" cellspacing="0" style="display:inline-table"><tr>' . $dots
+        . '<td width="6" style="font-size:0">&nbsp;</td><td style="font:800 18px/1 ' . $f . ';color:#ffffff;white-space:nowrap">' . h(ms($lang, 'brand')) . '</td></tr></table></a>'
+        . '</td>'
+        . ($label !== '' ? '<td class="em-pad" style="padding:26px 36px 22px;text-align:' . $end . '"><span style="display:inline-block;padding:5px 12px;border-radius:999px;border:1px solid #2d3756;font:700 12px/1.3 ' . $f . ';color:#c4cadb;white-space:nowrap">' . h($label) . '</span></td>' : '')
+        . '</tr></table></td></tr>'
+        . $heroHtml
+        // Carte blanche du contenu.
+        . '<tr><td class="em-card em-pad" bgcolor="' . MAIL_UI['card'] . '" style="background:' . MAIL_UI['card'] . ';padding:34px 36px 30px;text-align:' . $align . ';font:400 16px/1.65 ' . $f . ';color:' . MAIL_UI['text'] . '">' . $inner . '</td></tr>'
         . '</table>'
-        . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px"><tr><td dir="' . $dir . '" style="padding:18px 20px;font:400 12px/1.6 ' . $f . ';color:#6b7185;text-align:center">'
-        . h(ms($lang, 'footer_why')) . ($links ? '<br>' . implode(' · ', $links) : '')
+        // Pied de page.
+        . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px"><tr><td dir="' . $dir . '" class="em-pad" style="padding:22px 28px 8px;text-align:center">'
+        . '<p class="em-m" style="margin:0 0 6px;font:700 13px/1.5 ' . $f . ';color:#4b5470">' . h(ms($lang, 'brand')) . ' · ' . h(ms($lang, 'tagline')) . '</p>'
+        . '<p class="em-m" style="margin:0 0 8px;font:400 12px/1.6 ' . $f . ';color:' . MAIL_UI['muted'] . '">' . h($opts['why'] ?? ms($lang, 'footer_why')) . '</p>'
+        . ($links ? '<p class="em-m" style="margin:0 0 8px;font:400 12px/1.8 ' . $f . ';color:' . MAIL_UI['muted'] . '">' . implode(' &nbsp;·&nbsp; ', $links) . '</p>' : '')
+        . '<p class="em-m" style="margin:0;font:400 12px/1.6 ' . $f . ';color:#9aa3b5">dehini.com · ' . h(ms($lang, 'address')) . '</p>'
         . '</td></tr></table>'
         . '</td></tr></table></body></html>';
 }
@@ -271,23 +476,14 @@ function compose_daily(array $user, array $q, int $answered, int $total): array
 {
     $l = $user['lang'];
     $site = site_url();
-    $f = mail_font($l);
-    $cells = '';
-    foreach (['neg' => -1, 'none' => 0, 'pos' => 1] as $k => $v) {
-        $href = $site . '?lang=' . $l . '&q=' . $q['id'] . '&a=' . $v . '#resultat/' . $q['id'];
-        $cells .= '<td width="33%" style="padding:4px"><a href="' . h($href) . '" style="display:block;padding:14px 6px;border-radius:14px;background:'
-            . MAIL_COLORS[$k] . ';color:#ffffff;text-decoration:none;text-align:center;font:700 14px/1.25 ' . $f . '">' . h(ms($l, $k)) . '</a></td>';
-    }
+    $link = function (int $v) use ($site, $l, $q): string { return $site . '?lang=' . $l . '&q=' . $q['id'] . '&a=' . $v . '#resultat/' . $q['id']; };
     $qt = typo($l, qtext($q, $l));
-    $inner = '<p style="margin:0 0 14px">' . h(ms($l, 'hello', ['name' => $user['name']])) . '</p>'
-        . '<p style="margin:0 0 18px;color:#4b5470">' . h(ms($l, 'daily_intro')) . '</p>'
-        . '<p style="margin:0 0 20px;font:800 23px/1.35 ' . $f . ';color:#0b1020">' . h($qt) . '</p>'
-        . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>' . $cells . '</tr></table>'
-        . '<p style="margin:20px 0 0;font-size:13px;color:#6b7185">' . h(ms($l, 'daily_progress', ['n' => $answered, 't' => $total])) . '</p>';
+    $inner = m_p($l, ms($l, 'hello', ['name' => $user['name']]))
+        . m_p($l, ms($l, 'daily_intro'), 'color:#4b5470')
+        . m_question($l, $q, $link)
+        . m_small($l, ms($l, 'daily_progress', ['n' => $answered, 't' => $total]), 'margin:0');
     $text = ms($l, 'hello', ['name' => $user['name']]) . "\n\n" . ms($l, 'daily_intro') . "\n\n" . $qt . "\n\n";
-    foreach (['neg' => -1, 'none' => 0, 'pos' => 1] as $k => $v) {
-        $text .= '- ' . ms($l, $k) . ' : ' . $site . '?lang=' . $l . '&q=' . $q['id'] . '&a=' . $v . '#resultat/' . $q['id'] . "\n";
-    }
+    foreach (['neg' => -1, 'none' => 0, 'pos' => 1] as $k => $v) $text .= '- ' . ms($l, $k) . ' : ' . $link($v) . "\n";
     $text .= "\n" . ms($l, 'daily_progress', ['n' => $answered, 't' => $total]);
     $subject = ms($l, 'daily_subject', ['q' => $qt]);
     return [$subject, mail_layout($l, $subject, $qt, $inner, unsub_links($user)), $text . mail_text_footer($user)];
@@ -324,18 +520,12 @@ function compose_digest(array $user, array $stories): array
         $author = $s['author'] !== '' ? $s['author'] : ms($l, 'anon');
         $exp = mb_strimwidth((string) $s['exp'], 0, 320, '…');
         $imp = mb_strimwidth((string) $s['imp'], 0, 240, '…');
-        $blocks .= '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 14px;border-radius:16px;background:#f7f7f9"><tr><td style="padding:18px 20px">'
-            . '<p style="margin:0 0 10px;font:700 14px/1.4 ' . $f . ';color:#4b5470">' . h(typo($l, qtext($q, $l))) . '</p>'
-            . '<p style="margin:0 0 10px;font:400 15px/1.6 ' . $f . ';color:#0b1020;border-inline-start:3px solid #17b26a;padding-inline-start:12px">' . ugc($exp) . '</p>'
-            . '<p style="margin:0 0 8px;font:400 14px/1.6 ' . $f . ';color:#079455"><b>' . h(ms($l, 'digest_impact')) . '</b> ' . ugc($imp) . '</p>'
-            . '<p style="margin:0;font:400 12px/1.4 ' . $f . ';color:#6b7185">— ' . ugc($author) . '</p>'
-            . '</td></tr></table>';
+        $blocks .= m_story($l, $s, $q, '— ' . ugc($author));
         $text .= '* ' . qtext($q, $l) . "\n  « " . $exp . " »\n  " . ms($l, 'digest_impact') . ' ' . $imp . "\n  — " . $author . "\n\n";
     }
     $href = site_url() . '?lang=' . $l . '#resultat';
-    $inner = '<p style="margin:0 0 14px">' . h(ms($l, 'hello', ['name' => $user['name']])) . '</p>'
-        . '<p style="margin:0 0 20px;color:#4b5470">' . h(ms($l, 'digest_intro')) . '</p>'
-        . $blocks . mail_button($href, ms($l, 'digest_cta'), MAIL_COLORS['cobalt'], $l);
+    $inner = m_p($l, ms($l, 'hello', ['name' => $user['name']])) . m_p($l, ms($l, 'digest_intro'), 'color:#4b5470')
+        . $blocks . m_btn($l, $href, ms($l, 'digest_cta'), 'cobalt');
     $text .= ms($l, 'digest_cta') . ' : ' . $href;
     $subject = $n === 1 ? ms($l, 'digest_subject_1') : ms($l, 'digest_subject_n', ['n' => $n]);
     return [$subject, mail_layout($l, $subject, ms($l, 'digest_intro'), $inner, unsub_links($user)), $text . mail_text_footer($user)];
@@ -435,17 +625,11 @@ function compose_alert(array $to, array $stories, string $unsubUrl): array
         $imp = mb_strimwidth((string) $s['imp'], 0, 240, '…');
         $url = q_url($q, $l);
         $who = '— ' . ugc($author) . ($pro ? ' · <a href="' . h(pro_url($pro, $l)) . '" style="color:#2f5bff">' . h(ms($l, 'alert_pro')) . '</a>' : '');
-        $blocks .= '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 14px;border-radius:16px;background:#f7f7f9"><tr><td style="padding:18px 20px">'
-            . '<p style="margin:0 0 10px;font:700 14px/1.4 ' . $f . ';color:#4b5470">' . h(typo($l, qtext($q, $l))) . '</p>'
-            . '<p style="margin:0 0 10px;font:400 15px/1.6 ' . $f . ';color:#0b1020;border-inline-start:3px solid #17b26a;padding-inline-start:12px">' . ugc($exp) . '</p>'
-            . '<p style="margin:0 0 8px;font:400 14px/1.6 ' . $f . ';color:#079455"><b>' . h(ms($l, 'digest_impact')) . '</b> ' . ugc($imp) . '</p>'
-            . '<p style="margin:0 0 10px;font:400 12px/1.4 ' . $f . ';color:#6b7185">' . $who . '</p>'
-            . '<a href="' . h($url) . '" style="font:700 14px ' . $f . ';color:#07854b">' . h(ms($l, 'alert_read')) . ' →</a>'
-            . '</td></tr></table>';
+        $blocks .= m_story($l, $s, $q, $who, $url, ms($l, 'alert_read'));
         $text .= '* ' . qtext($q, $l) . "\n  « " . $exp . " »\n  " . ms($l, 'digest_impact') . ' ' . $imp . "\n  — " . $author
             . ($pro ? ' (' . pro_url($pro, $l) . ')' : '') . "\n  " . $url . "\n\n";
     }
-    $inner = '<p style="margin:0 0 14px">' . h($hello) . '</p><p style="margin:0 0 20px;color:#4b5470">' . h(ms($l, 'alert_intro')) . '</p>' . $blocks;
+    $inner = m_p($l, $hello) . m_p($l, ms($l, 'alert_intro'), 'color:#4b5470') . $blocks;
     $n = count($stories);
     $first = $qs[(int) $stories[0]['qid']] ?? [];
     $subject = $n === 1 ? ms($l, 'alert_subject_1', ['q' => mb_strimwidth(qtext($first, $l), 0, 70, '…')]) : ms($l, 'alert_subject_n', ['n' => $n]);

@@ -127,10 +127,14 @@ déduit du fuseau horaire du navigateur (jamais de l'adresse IP).
   français et anglais.
 - `impact/admin.html` — l'administration du défi, avec **le même mot de passe que `/admin`**
   (lien « Défi Impact » en bas du menu de `/admin`) : statistiques (dont qui est en ligne en ce
-  moment), inscrits et abonnés aux alertes, pages pro (mise en avant, vérification), questions
+  moment), inscrits et abonnés aux alertes, pages pro (mise en avant, vérification), emails (automatisations,
+  invitations), questions
   (ajouter, modifier, masquer, supprimer), récits, soutiens et connexion Google.
 - `impact/lib/pros.php` — pages pro : types de profils, domaines (et les mots qui servent à proposer
   des questions), logo.
+- `impact/lib/automations.php` — emails automatiques (premiers pas, paliers, relances, emails des pros) ;
+  `impact/lib/campaigns.php` — invitations (modèles particuliers et 10 domaines pro, envoi, suivi) ;
+  `impact/lib/mailer.php` — design commun de tous les emails et envoi SMTP. Voir « 12 ».
 - `impact/uploads/pros/` — les logos envoyés par les pros (voir « 11 »).
 - `impact/questions.json` — les 1000 questions de départ (340 personnelles, 330 sociales, 330
   professionnelles) dans les trois langues. Elles sont copiées dans la base au premier passage ;
@@ -195,6 +199,7 @@ Dans **cPanel → Tâches Cron**, **une fois par heure** :
 - **Impacts positifs des autres** — au plus une fois par semaine : jusqu'à 3 récits publiés par
   d'autres sur les questions où la personne a répondu « négatif » ou « aucun impact » (jamais deux
   fois le même).
+- **Emails automatiques** et **invitations** — voir « 12. Emails : automatisations et invitations ».
 - **Alertes « nouvelle expérience positive »** — dès qu'une personne ou une page pro publie une
   expérience sur une question à laquelle quelqu'un a répondu « négatif », cette personne la reçoit
   (au plus un email toutes les 6 heures, 3 expériences maximum, jamais deux fois la même) : les
@@ -408,6 +413,68 @@ copie du déploiement (`cp -rf impact ~/public_html/`) ne supprime jamais de fic
 d'une mise à jour à l'autre ; ils ne sont pas dans Git : pour une sauvegarde complète, copier ce
 dossier avec `~/impact-data/`. `impact/uploads/.htaccess` interdit l'exécution de scripts dans ce
 dossier.
+
+### 12. Emails : automatisations et invitations
+
+Onglet **« Emails »** de `https://dehini.com/impact/admin.html`. Tous les emails du défi (rappels, alertes,
+automatisations, invitations) partagent le même design : en-tête de marque avec bandeau titre, carte
+blanche, boutons lisibles, version téléphone, mode sombre là où la messagerie le permet, arabe de droite
+à gauche, version texte et lien de désabonnement en un clic (en-tête `List-Unsubscribe` reconnu par Gmail).
+
+**Emails automatiques** — ils partent tout seuls avec la tâche cron de chaque heure, dans la langue du
+compte. Chacun s'active ou se coupe d'un clic, avec son nombre d'envois, un **aperçu** (FR / AR / EN,
+ordinateur / téléphone) et **« M'envoyer un test »** :
+
+| Email | Quand | Pour qui |
+|---|---|---|
+| Premiers pas | le lendemain de l'inscription, si moins de 10 réponses | comptes confirmés |
+| Rappel de confirmation | 2 jours après l'inscription, une seule fois | adresses non confirmées |
+| Paliers de réponses | à 100, 250, 500 et 1000 réponses (son bilan + inviter à raconter) | comptes confirmés |
+| Relance des absents | après 21 jours sans visite, au plus tous les 60 jours | comptes confirmés |
+| Récit apprécié | un récit atteint 1, 5, 10, 25 ou 50 « j'aime » (au plus un par jour) | auteurs |
+| Bienvenue pro | dans l'heure qui suit la création d'une page pro (étapes à cocher) | pros |
+| Page pro incomplète | 3 jours après, s'il manque logo, présentation, questions ou expérience | pros |
+| Rapport mensuel | le 1er du mois : affichages, personnes touchées, visites, clics, questions | pros |
+
+Un email ne part jamais deux fois pour la même raison. À la mise en service (et quand on réactive un
+scénario), les paliers et « j'aime » déjà atteints sont notés sans envoi : personne ne reçoit d'emails
+pour le passé. Chacun peut couper ces emails depuis « Mon compte » (« Conseils, paliers et nouvelles »,
+« Emails de ma page pro ») ou par le lien en bas de l'email ; l'admin voit et modifie ces choix dans
+« Inscrits ».
+
+**Invitations** — pour faire découvrir le défi à de nouvelles personnes :
+
+1. Choisir le **public** : *Particuliers* (la question du jour à essayer en un clic, les chiffres du
+   site, une expérience positive partagée) ou *Professionnels* avec un des **10 domaines** (psychologie,
+   santé, coaching, éducation, emploi/RH, entrepreneuriat, finance, immobilier, famille, droit) : une
+   accroche propre au domaine, trois vraies questions du domaine avec la part de réponses « négatif »,
+   ce que la page pro leur apporte et le bouton « Créer ma page pro gratuite ».
+2. Choisir la **langue**, ajuster l'**objet** (`{name}` = prénom), ajouter un **mot personnel** et la
+   **signature**.
+3. Coller les **destinataires** (une personne par ligne : `email`, `Prénom <email>`, `email;Prénom`, ou
+   une colonne copiée depuis Excel) ou importer un fichier CSV / TXT.
+4. **Aperçu** (ordinateur / téléphone, « Copier le HTML » ou « Télécharger .html » pour l'utiliser dans
+   un autre outil), **« M'envoyer un test »**, puis **« Créer la campagne »** et **« Lancer l'envoi »**.
+
+Les invitations partent peu à peu, au plus le nombre réglé **par heure** (30 par défaut, à adapter à la
+limite de l'hébergeur), par la tâche cron ; « Envoyer un lot maintenant » en envoie jusqu'à 20 tout de
+suite. Sont ignorées automatiquement : les adresses déjà inscrites (déjà pro pour le modèle pro), déjà
+invitées depuis moins de 90 jours, et celles de la liste **« Ne jamais contacter »** (elles y entrent
+toutes seules quand quelqu'un clique « Ne plus jamais recevoir d'invitation »). Pour chaque campagne :
+envoyés, **clics**, **inscriptions** et **pages pro créées** par les invités, désinscriptions, et la
+liste des destinataires en CSV.
+
+**Pour arriver en boîte de réception (et pas en spam)** :
+
+- Dans **cPanel → Email Deliverability**, cliquer « Repair » sur `dehini.com` pour activer **SPF** et
+  **DKIM** (et ajouter un enregistrement DMARC si cPanel le propose).
+- Envoyer par **SMTP** avec le compte `impact@dehini.com` (`IMPACT_SMTP_*` dans `config.php`) plutôt que
+  par la fonction `mail()`.
+- N'inviter que des personnes qui vous connaissent ou dont l'adresse professionnelle est publique, et
+  commencer doucement (20 à 30 par heure les premiers jours) : un volume soudain vers des inconnus fait
+  classer le domaine en spam.
+- `php ~/public_html/impact/cron.php --test=ton-adresse@gmail.com` envoie un exemple de chaque email
+  (automatisations et invitations comprises) pour vérifier le rendu dans Gmail et Outlook.
 
 ## Stats Meta KPIs (`/metakpis/`)
 
