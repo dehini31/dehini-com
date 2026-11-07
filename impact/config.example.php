@@ -18,6 +18,11 @@ define('IMPACT_SMTP_SECURE', 'ssl');            // ssl (465) | tls (587) | none
 define('IMPACT_SMTP_USER', 'impact@dehini.com');
 define('IMPACT_SMTP_PASS', 'mot-de-passe-du-compte-email');
 
+// Recommandé pour arriver en boîte de réception (et pas en spam) : envoyer par Brevo.
+// Clé API créée dans Brevo → SMTP & API → Clés API. Quand elle est renseignée, le SMTP ci-dessus
+// n'est plus utilisé (voir README, « 12. Emails »). Ne jamais committer la vraie clé.
+// define('IMPACT_BREVO_KEY', 'xkeysib-…');
+
 // Modération des récits : 'auto' (publiés tout de suite, les liens/numéros
 // passent en attente) ou 'manual' (tout récit est validé dans admin.html).
 define('IMPACT_MODERATION', 'auto');
