@@ -27,6 +27,9 @@
  *   --dry-run               affiche ce qui partirait, sans rien envoyer ni modifier
  *   --test=adresse@x.com    envoie un exemple de chaque email à cette adresse
  *   --lang=ar|fr|en         langue des exemples de --test (fr par défaut)
+ *   --only=invite,onboard   seulement ces exemples (liste affichée si un nom est inconnu) ;
+ *                           ex. pour noter un email sur mail-tester.com : --test=<adresse donnée> --only=invite
+ *   --domain=finance        domaine de l'exemple « invite_pro » (psy par défaut)
  */
 declare(strict_types=1);
 
@@ -43,7 +46,7 @@ require __DIR__ . '/lib/views.php';
 require __DIR__ . '/lib/automations.php';
 require __DIR__ . '/lib/campaigns.php';
 
-$opts = getopt('', ['dry-run', 'test:', 'lang:']);
+$opts = getopt('', ['dry-run', 'test:', 'lang:', 'only:', 'domain:']);
 $dry = isset($opts['dry-run']);
 $pdo = db();
 $qs = questions();
@@ -101,30 +104,47 @@ if (isset($opts['test'])) {
         exit(1);
     }
     $lang = impact_lang($opts['lang'] ?? 'fr');
+    $only = isset($opts['only']) ? array_filter(array_map('trim', explode(',', (string) $opts['only']))) : [];
+    $domain = in_array($opts['domain'] ?? '', CAMPAIGN_DOMAINS, true) ? (string) $opts['domain'] : 'psy';
     $u = ['id' => 0, 'email' => $to, 'name' => 'Test', 'lang' => $lang, 'utoken' => str_repeat('0', 48), 'vtoken' => str_repeat('0', 48)];
-    say("Envoi des exemples à $to (" . (IMPACT_SMTP_HOST !== '' ? 'SMTP ' . IMPACT_SMTP_HOST : 'mail()') . ", expéditeur " . mail_from() . ')');
+    say("Envoi des exemples à $to (" . (IMPACT_SMTP_HOST !== '' ? 'SMTP ' . IMPACT_SMTP_HOST : 'mail()') . ", expéditeur " . IMPACT_MAIL_FROM_NAME . ' <' . mail_from() . '>)');
     $q = $qs[pick(array_keys($qs), $today)];
-    deliver($u, compose_daily($u, $q, 37, $total), 'daily', $dry);
-    deliver($u, compose_story_prompt($u, $q), 'daily', $dry);
     $stories = $pdo->query("SELECT * FROM stories WHERE status = 'published' ORDER BY created DESC LIMIT 3")->fetchAll();
     if (!$stories) {
         $stories = [['qid' => $q['id'], 'author' => '', 'lang' => $lang,
             'exp' => '(exemple) Aucun récit publié pour l\'instant : voici à quoi ressemblera un récit partagé par un participant.',
             'imp' => '(exemple) Et ici, ce que cette expérience lui a apporté de positif.']];
     }
-    deliver($u, compose_digest($u, $stories), 'digest', $dry);
-    deliver($u, compose_welcome($u), 'all', $dry);
-    deliver($u, compose_reset($u, str_repeat('0', 48)), 'all', $dry);
     $sample = ['fr' => '(exemple) Votre récit m\'a beaucoup touché, merci de l\'avoir partagé.',
         'ar' => '(مثال) أثّرت فيّ قصتك كثيراً، شكراً لأنك شاركتها.', 'en' => '(example) Your story really moved me, thank you for sharing it.'][$lang];
-    deliver($u, compose_message($u, 'Nadia', qtext($q, $lang), $sample, 0, true), 'msg', $dry);
-    deliver($u, compose_thanks(['lang' => $lang, 'name' => 'Test', 'amount' => 1000]), 'all', $dry);
-    deliver($u, compose_sub_confirm(['lang' => $lang, 'token' => str_repeat('0', 48)]), 'all', $dry);
-    deliver($u, compose_alert(['email' => $to, 'lang' => $lang, 'name' => ''], $stories, site_url() . 'api.php?action=sub_unsub&token=' . str_repeat('0', 48)), 'all', $dry);
-    foreach (array_keys(AUTOMATIONS) as $k) deliver($u, auto_sample($k, $lang, $to), 'all', $dry);
     $inv = ['lang' => $lang, 'subject' => '', 'note' => '', 'sign' => ''];
-    deliver($u, array_slice(camp_compose($inv + ['audience' => 'particulier', 'domain' => ''], ['name' => 'Test', 'token' => '']), 0, 3), 'all', $dry);
-    deliver($u, array_slice(camp_compose($inv + ['audience' => 'pro', 'domain' => 'psy'], ['name' => 'Test', 'token' => '']), 0, 3), 'all', $dry);
+    // Chaque exemple n'est composé que s'il est demandé (--only=invite,onboard…).
+    $samples = [
+        'daily' => function () use ($u, $q, $total) { return compose_daily($u, $q, 37, $total); },
+        'story' => function () use ($u, $q) { return compose_story_prompt($u, $q); },
+        'digest' => function () use ($u, $stories) { return compose_digest($u, $stories); },
+        'welcome' => function () use ($u) { return compose_welcome($u); },
+        'reset' => function () use ($u) { return compose_reset($u, str_repeat('0', 48)); },
+        'message' => function () use ($u, $q, $lang, $sample) { return compose_message($u, 'Nadia', qtext($q, $lang), $sample, 0, true); },
+        'thanks' => function () use ($lang) { return compose_thanks(['lang' => $lang, 'name' => 'Test', 'amount' => 1000]); },
+        'sub_confirm' => function () use ($lang) { return compose_sub_confirm(['lang' => $lang, 'token' => str_repeat('0', 48)]); },
+        'alert' => function () use ($to, $lang, $stories) { return compose_alert(['email' => $to, 'lang' => $lang, 'name' => ''], $stories, site_url() . 'api.php?action=sub_unsub&token=' . str_repeat('0', 48)); },
+    ];
+    foreach (array_keys(AUTOMATIONS) as $k) $samples[$k] = function () use ($k, $lang, $to) { return auto_sample($k, $lang, $to); };
+    $samples['invite'] = function () use ($inv) { return array_slice(camp_compose($inv + ['audience' => 'particulier', 'domain' => ''], ['name' => 'Test', 'token' => '']), 0, 3); };
+    $samples['invite_pro'] = function () use ($inv, $domain) { return array_slice(camp_compose($inv + ['audience' => 'pro', 'domain' => $domain], ['name' => 'Test', 'token' => '']), 0, 3); };
+    if ($only && array_diff($only, array_keys($samples))) {
+        say('Exemples possibles : ' . implode(', ', array_keys($samples)));
+        exit(1);
+    }
+    $first = true;
+    foreach ($samples as $k => $make) {
+        if ($only && !in_array($k, $only, true)) continue;
+        // Une petite pause entre deux envois : une rafale d'emails vers une même boîte ressemble à du spam.
+        if (!$first && !$dry) sleep(2);
+        $first = false;
+        deliver($u, $make(), 'all', $dry);
+    }
     Smtp::close();
     exit(0);
 }
