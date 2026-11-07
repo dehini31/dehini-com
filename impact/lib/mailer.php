@@ -732,10 +732,18 @@ function mail_transport(): string
 {
     if (brevo_key() !== '') return 'API Brevo';
     $t = IMPACT_SMTP_HOST !== '' ? 'SMTP ' . IMPACT_SMTP_HOST : 'fonction mail() de PHP';
-    if (trim((string) IMPACT_BREVO_KEY) !== '') {
-        $t .= " — ATTENTION : la clé Brevo de config.php est ignorée, ce n'est pas une clé API (elle doit commencer par « xkeysib- » ; « xsmtpsib- » est une clé SMTP)";
+    if (brevo_key_raw() !== '') {
+        $t .= " — ATTENTION : la clé Brevo est ignorée, ce n'est pas une clé API (elle doit commencer par « xkeysib- » ; « xsmtpsib- » est une clé SMTP)";
     }
     return $t;
+}
+
+/** Clé Brevo telle qu'enregistrée : celle de l'admin (onglet Emails), sinon celle de config.php. */
+function brevo_key_raw(): string
+{
+    $k = '';
+    try { $k = trim(setting('brevo_key')); } catch (Throwable $e) {}
+    return $k !== '' ? $k : trim((string) IMPACT_BREVO_KEY);
 }
 
 /**
@@ -744,8 +752,57 @@ function mail_transport(): string
  */
 function brevo_key(): string
 {
-    $k = trim((string) IMPACT_BREVO_KEY);
+    $k = brevo_key_raw();
     return strncmp($k, 'xkeysib-', 8) === 0 ? $k : '';
+}
+
+/** « xkeysib-…a1b2 » : la clé n'est jamais renvoyée en entier au navigateur. */
+function brevo_key_masked(string $k): string
+{
+    return $k === '' ? '' : substr($k, 0, 8) . '…' . substr($k, -4);
+}
+
+/** Adresse de base de l'API Brevo (https://api.brevo.com/v3), déduite de IMPACT_BREVO_URL. */
+function brevo_base(): string
+{
+    return (string) preg_replace('~/smtp/email$~', '', IMPACT_BREVO_URL);
+}
+
+/**
+ * État du compte Brevo pour l'admin : compte, forfait, domaine d'envoi authentifié, expéditeur validé.
+ * Lève une exception si Brevo refuse la clé.
+ */
+function brevo_account(string $key): array
+{
+    $h = ['api-key: ' . $key];
+    [$code, $body] = http_get(brevo_base() . '/account', [], 15, $h);
+    $a = json_decode($body, true) ?: [];
+    if ($code !== 200) throw new RuntimeException('Brevo ' . $code . ' : ' . ($a['message'] ?? 'réponse inattendue'), $code);
+    $credits = null;
+    foreach ((array) ($a['plan'] ?? []) as $p) if (isset($p['credits'])) $credits = ['type' => (string) ($p['type'] ?? ''), 'credits' => (int) $p['credits'], 'unit' => (string) ($p['creditsType'] ?? '')];
+    $from = mail_from();
+    $domain = substr((string) strrchr($from, '@'), 1);
+    $out = ['email' => (string) ($a['email'] ?? ''), 'company' => (string) ($a['companyName'] ?? ''), 'plan' => $credits,
+        'from' => $from, 'domain' => $domain, 'domain_ok' => null, 'sender_ok' => null];
+    // Domaine authentifié (DKIM de Brevo pour dehini.com) et expéditeur validé : sans eux, Gmail se méfie.
+    try {
+        [$c, $b] = http_get(brevo_base() . '/senders/domains', [], 15, $h);
+        if ($c === 200) {
+            $out['domain_ok'] = false;
+            foreach ((array) (json_decode($b, true)['domains'] ?? []) as $d) {
+                if (strtolower((string) ($d['domain_name'] ?? '')) === strtolower($domain)) $out['domain_ok'] = !empty($d['authenticated']);
+            }
+        }
+        [$c, $b] = http_get(brevo_base() . '/senders', [], 15, $h);
+        if ($c === 200) {
+            $out['sender_ok'] = false;
+            foreach ((array) (json_decode($b, true)['senders'] ?? []) as $s) {
+                if (strtolower((string) ($s['email'] ?? '')) === strtolower($from)) $out['sender_ok'] = !empty($s['active']);
+            }
+        }
+    } catch (Throwable $e) {
+    }
+    return $out;
 }
 
 /**
