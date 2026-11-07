@@ -730,8 +730,22 @@ function mime_qp(string $s): string
 /** Comment partent les emails (affiché par le cron et l'admin). */
 function mail_transport(): string
 {
-    if (IMPACT_BREVO_KEY !== '') return 'API Brevo';
-    return IMPACT_SMTP_HOST !== '' ? 'SMTP ' . IMPACT_SMTP_HOST : 'fonction mail() de PHP';
+    if (brevo_key() !== '') return 'API Brevo';
+    $t = IMPACT_SMTP_HOST !== '' ? 'SMTP ' . IMPACT_SMTP_HOST : 'fonction mail() de PHP';
+    if (trim((string) IMPACT_BREVO_KEY) !== '') {
+        $t .= " — ATTENTION : la clé Brevo de config.php est ignorée, ce n'est pas une clé API (elle doit commencer par « xkeysib- » ; « xsmtpsib- » est une clé SMTP)";
+    }
+    return $t;
+}
+
+/**
+ * Clé API Brevo utilisable, ou '' : une clé SMTP (« xsmtpsib-… ») ne marche pas avec l'API. Plutôt que
+ * de bloquer tous les emails, elle est ignorée (le cron et l'onglet Emails le signalent).
+ */
+function brevo_key(): string
+{
+    $k = trim((string) IMPACT_BREVO_KEY);
+    return strncmp($k, 'xkeysib-', 8) === 0 ? $k : '';
 }
 
 /**
@@ -744,7 +758,7 @@ function brevo_send(string $to, string $subject, string $html, string $text, ?st
     $data = ['sender' => ['name' => IMPACT_MAIL_FROM_NAME, 'email' => mail_from()], 'to' => [['email' => $to]],
         'subject' => $subject, 'htmlContent' => $html, 'textContent' => $text];
     if ($unsubUrl) $data['headers'] = ['List-Unsubscribe' => '<' . $unsubUrl . '>', 'List-Unsubscribe-Post' => 'List-Unsubscribe=One-Click'];
-    [$code, $body] = http_post_json(IMPACT_BREVO_URL, $data, ['api-key: ' . IMPACT_BREVO_KEY]);
+    [$code, $body] = http_post_json(IMPACT_BREVO_URL, $data, ['api-key: ' . brevo_key()]);
     if ($code < 200 || $code >= 300) {
         $msg = (string) (json_decode($body, true)['message'] ?? mb_substr($body, 0, 200));
         throw new RuntimeException('Brevo ' . $code . ' : ' . $msg);
@@ -754,7 +768,7 @@ function brevo_send(string $to, string $subject, string $html, string $text, ?st
 /** Envoie un email. Lève une exception en cas d'échec. */
 function send_mail(string $to, string $subject, string $html, string $text, ?string $unsubUrl = null): void
 {
-    if (IMPACT_BREVO_KEY !== '') {
+    if (brevo_key() !== '') {
         brevo_send($to, $subject, $html, $text, $unsubUrl);
         return;
     }
