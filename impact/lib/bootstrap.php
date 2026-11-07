@@ -88,6 +88,7 @@ function migrate(PDO $pdo): void
     if ($v < 4) migrate_v4($pdo);
     if ($v < 5) migrate_v5($pdo);
     if ($v < 6) migrate_v6($pdo);
+    if ($v < 7) migrate_v7($pdo);
 }
 
 function migrate_v1(PDO $pdo): void
@@ -575,5 +576,61 @@ function migrate_v6(PDO $pdo): void
         PRIMARY KEY (day, pid)
     );
     PRAGMA user_version = 6;
+    SQL);
+}
+
+/**
+ * v7 : emails automatiques et campagnes d'invitation.
+ * - users.opt_tips (conseils, paliers, relances) et users.opt_pro (emails de la page pro, rapport mensuel) ;
+ * - auto_log : ce qui a déjà été envoyé (un scénario ne part jamais deux fois pour la même raison) ;
+ * - campaigns / campaign_rcpt : invitations à découvrir le défi, envoyées peu à peu par le cron ;
+ * - email_optout : adresses qui ne veulent plus aucune invitation (jamais recontactées).
+ */
+function migrate_v7(PDO $pdo): void
+{
+    add_column($pdo, 'users', 'opt_tips', 'INTEGER NOT NULL DEFAULT 1');
+    add_column($pdo, 'users', 'opt_pro', 'INTEGER NOT NULL DEFAULT 1');
+    $pdo->exec(<<<SQL
+    CREATE TABLE IF NOT EXISTS auto_log (
+        kind TEXT NOT NULL,
+        uid INTEGER NOT NULL,
+        ref TEXT NOT NULL DEFAULT '',
+        sent INTEGER NOT NULL,
+        mailed INTEGER NOT NULL DEFAULT 1,
+        PRIMARY KEY (kind, uid, ref)
+    );
+    CREATE INDEX IF NOT EXISTS auto_log_sent ON auto_log(kind, sent);
+    CREATE TABLE IF NOT EXISTS campaigns (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        audience TEXT NOT NULL,
+        domain TEXT NOT NULL DEFAULT '',
+        lang TEXT NOT NULL DEFAULT 'fr',
+        subject TEXT NOT NULL,
+        note TEXT NOT NULL DEFAULT '',
+        sign TEXT NOT NULL DEFAULT '',
+        status TEXT NOT NULL DEFAULT 'draft',
+        created INTEGER NOT NULL,
+        started INTEGER NOT NULL DEFAULT 0
+    );
+    CREATE TABLE IF NOT EXISTS campaign_rcpt (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        cid INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+        email TEXT NOT NULL,
+        name TEXT NOT NULL DEFAULT '',
+        token TEXT NOT NULL UNIQUE,
+        status TEXT NOT NULL DEFAULT 'queued',
+        sent INTEGER NOT NULL DEFAULT 0,
+        clicked INTEGER NOT NULL DEFAULT 0,
+        error TEXT NOT NULL DEFAULT '',
+        UNIQUE (cid, email)
+    );
+    CREATE INDEX IF NOT EXISTS campaign_rcpt_q ON campaign_rcpt(status, cid);
+    CREATE INDEX IF NOT EXISTS campaign_rcpt_email ON campaign_rcpt(email);
+    CREATE TABLE IF NOT EXISTS email_optout (
+        email TEXT PRIMARY KEY,
+        at INTEGER NOT NULL,
+        source TEXT NOT NULL DEFAULT ''
+    );
+    PRAGMA user_version = 7;
     SQL);
 }

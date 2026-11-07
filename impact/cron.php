@@ -17,6 +17,11 @@
  *      reçoivent : comptes confirmés (emails « impacts positifs ») et abonnés sans compte
  *      confirmés. Au plus un email toutes les IMPACT_ALERT_HOURS heures par personne,
  *      jusqu'à 3 récits, jamais deux fois le même.
+ *   4. Emails automatiques (lib/automations.php) — premiers pas, rappel de confirmation,
+ *      paliers, relance des absents, récit apprécié, et pour les pros : bienvenue, page
+ *      incomplète, rapport mensuel. Chacun s'active ou se coupe dans l'admin (onglet Emails).
+ *   5. Invitations (lib/campaigns.php) — la suite des campagnes « en cours », au plus le
+ *      nombre réglé par heure dans l'admin.
  *
  * Options :
  *   --dry-run               affiche ce qui partirait, sans rien envoyer ni modifier
@@ -34,6 +39,9 @@ require __DIR__ . '/lib/bootstrap.php';
 require __DIR__ . '/lib/mailer.php';
 require __DIR__ . '/lib/seo.php';
 require __DIR__ . '/lib/pros.php';
+require __DIR__ . '/lib/views.php';
+require __DIR__ . '/lib/automations.php';
+require __DIR__ . '/lib/campaigns.php';
 
 $opts = getopt('', ['dry-run', 'test:', 'lang:']);
 $dry = isset($opts['dry-run']);
@@ -113,6 +121,10 @@ if (isset($opts['test'])) {
     deliver($u, compose_thanks(['lang' => $lang, 'name' => 'Test', 'amount' => 1000]), 'all', $dry);
     deliver($u, compose_sub_confirm(['lang' => $lang, 'token' => str_repeat('0', 48)]), 'all', $dry);
     deliver($u, compose_alert(['email' => $to, 'lang' => $lang, 'name' => ''], $stories, site_url() . 'api.php?action=sub_unsub&token=' . str_repeat('0', 48)), 'all', $dry);
+    foreach (array_keys(AUTOMATIONS) as $k) deliver($u, auto_sample($k, $lang, $to), 'all', $dry);
+    $inv = ['lang' => $lang, 'subject' => '', 'note' => '', 'sign' => ''];
+    deliver($u, array_slice(camp_compose($inv + ['audience' => 'particulier', 'domain' => ''], ['name' => 'Test', 'token' => '']), 0, 3), 'all', $dry);
+    deliver($u, array_slice(camp_compose($inv + ['audience' => 'pro', 'domain' => 'psy'], ['name' => 'Test', 'token' => '']), 0, 3), 'all', $dry);
     Smtp::close();
     exit(0);
 }
@@ -270,6 +282,18 @@ if ($left > 0) {
         }
     }
 }
+
+/* ------------------------------------------------ 4. emails automatiques */
+
+// Ce qui reste du lot après les alertes (elles ont décompté leurs envois de $left).
+$left = max(0, $left);
+$autoSent = run_automations($left, $dry, function (array $u, array $mail, string $type) use ($dry): bool {
+    return deliver($u, $mail, $type, $dry);
+}, 'say');
+
+/* ------------------------------------------------------- 5. invitations */
+
+camp_send(camp_per_hour(), $dry, 'say');
 
 Smtp::close();
 say('Terminé.');

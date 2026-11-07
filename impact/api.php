@@ -46,6 +46,8 @@ require __DIR__ . '/lib/google.php';
 require __DIR__ . '/lib/sofizpay.php';
 require __DIR__ . '/lib/pros.php';
 require __DIR__ . '/lib/views.php';
+require __DIR__ . '/lib/automations.php';
+require __DIR__ . '/lib/campaigns.php';
 
 header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: same-origin');
@@ -72,6 +74,8 @@ if ($action === 'verify') page_verify();
 if ($action === 'unsub') page_unsub($isPost);
 if ($action === 'sub_confirm') page_sub_confirm();
 if ($action === 'sub_unsub') page_sub_unsub($isPost);
+if ($action === 'go') page_go();
+if ($action === 'inv_unsub') page_inv_unsub($isPost);
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -207,7 +211,8 @@ function public_user(array $u): array
     return [
         'name' => $u['name'], 'email' => $u['email'], 'lang' => $u['lang'],
         'verified' => (bool) $u['verified'], 'opt_daily' => (bool) $u['opt_daily'], 'opt_digest' => (bool) $u['opt_digest'],
-        'opt_msg' => (bool) $u['opt_msg'], 'google' => !empty($u['google_sub']), 'has_pass' => (string) $u['pass'] !== '',
+        'opt_msg' => (bool) $u['opt_msg'], 'opt_tips' => (bool) $u['opt_tips'], 'opt_pro' => (bool) $u['opt_pro'],
+        'google' => !empty($u['google_sub']), 'has_pass' => (string) $u['pass'] !== '',
     ];
 }
 
@@ -237,6 +242,7 @@ function delete_user(int $uid): void
     $pdo->prepare('DELETE FROM presence WHERE pid = ?')->execute([$pid]);
     $pdo->prepare('UPDATE donations SET uid = NULL WHERE uid = ?')->execute([$uid]);
     $pdo->prepare('DELETE FROM subscribers WHERE pid = ?')->execute([$pid]);
+    $pdo->prepare('DELETE FROM auto_log WHERE uid = ?')->execute([$uid]);
     $s = $pdo->prepare('SELECT logo FROM pros WHERE uid = ?');
     $s->execute([$uid]);
     if ($logo = $s->fetchColumn()) pro_delete_logo((string) $logo);
@@ -501,7 +507,7 @@ function page_unsub(bool $isPost): void
 {
     header('Content-Type: text/html; charset=utf-8');
     $tok = (string) ($_GET['token'] ?? '');
-    $type = in_array($_GET['type'] ?? '', ['daily', 'digest', 'msg', 'all'], true) ? $_GET['type'] : 'all';
+    $type = in_array($_GET['type'] ?? '', ['daily', 'digest', 'msg', 'tips', 'pro', 'all'], true) ? $_GET['type'] : 'all';
     $u = null;
     if (preg_match('/^[a-f0-9]{48}$/', $tok)) {
         $s = db()->prepare('SELECT * FROM users WHERE utoken = ?');
@@ -511,8 +517,8 @@ function page_unsub(bool $isPost): void
     $l = $u ? impact_lang($u['lang']) : impact_lang($_GET['lang'] ?? 'fr');
     $done = false;
     if ($u && $isPost) {
-        $sql = ['daily' => 'opt_daily = 0', 'digest' => 'opt_digest = 0', 'msg' => 'opt_msg = 0',
-            'all' => 'opt_daily = 0, opt_digest = 0, opt_msg = 0'][$type];
+        $sql = ['daily' => 'opt_daily = 0', 'digest' => 'opt_digest = 0', 'msg' => 'opt_msg = 0', 'tips' => 'opt_tips = 0', 'pro' => 'opt_pro = 0',
+            'all' => 'opt_daily = 0, opt_digest = 0, opt_msg = 0, opt_tips = 0, opt_pro = 0'][$type];
         db()->prepare("UPDATE users SET $sql WHERE id = ?")->execute([$u['id']]);
         $done = true;
     }
@@ -532,6 +538,58 @@ function page_unsub(bool $isPost): void
         . '<p style="margin:22px 0 0"><a href="./?lang=' . $l . '" style="color:#2f5bff">' . h(ms($l, 'back')) . '</a></p>'
         . '</main></body></html>';
     exit;
+}
+
+/* ---------------------------------------- invitations (campagnes) */
+
+/** Lien d'une invitation : le clic est noté, puis la personne arrive sur le défi (jamais ailleurs). */
+function page_go(): void
+{
+    $t = (string) ($_GET['t'] ?? '');
+    $to = (string) ($_GET['to'] ?? '');
+    if (!preg_match('~^[?#][^\r\n\\\\]*$~', $to)) $to = '';
+    if (preg_match('/^[a-f0-9]{48}$/', $t)) {
+        db()->prepare('UPDATE campaign_rcpt SET clicked = ? WHERE token = ? AND clicked = 0')->execute([time(), $t]);
+    }
+    header('Location: ' . site_url() . $to, true, 302);
+    exit;
+}
+
+/** Petite page HTML (désabonnements) dans le style des emails. */
+function mail_page(string $l, string $title, string $body): void
+{
+    $font = mail_font($l);
+    echo '<!DOCTYPE html><html lang="' . $l . '" dir="' . ($l === 'ar' ? 'rtl' : 'ltr') . '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+        . '<meta name="robots" content="noindex"><title>' . h($title) . ' — ' . h(ms($l, 'brand')) . '</title></head>'
+        . '<body style="margin:0;min-height:100vh;display:grid;place-items:center;background:#eef0f4;font:16px/1.6 ' . $font . ';color:#20283f;padding:16px;box-sizing:border-box">'
+        . '<main style="max-width:460px;width:100%;background:#fff;border-radius:24px;padding:32px;box-shadow:0 8px 30px -12px rgba(11,16,32,.2)">'
+        . '<p style="margin:0 0 6px;font-weight:800;color:#0b1020">' . h(ms($l, 'brand')) . '</p>'
+        . '<h1 style="margin:0 0 16px;font-size:1.4rem;color:#0b1020">' . h($title) . '</h1>' . $body . '</main></body></html>';
+    exit;
+}
+
+/** « Ne plus jamais recevoir d'invitation » : confirmation par un bouton (les robots de messagerie ouvrent les liens). */
+function page_inv_unsub(bool $isPost): void
+{
+    header('Content-Type: text/html; charset=utf-8');
+    $t = (string) ($_GET['t'] ?? '');
+    $r = null;
+    if (preg_match('/^[a-f0-9]{48}$/', $t)) {
+        $s = db()->prepare('SELECT r.*, c.lang FROM campaign_rcpt r JOIN campaigns c ON c.id = r.cid WHERE r.token = ?');
+        $s->execute([$t]);
+        $r = $s->fetch() ?: null;
+    }
+    $l = $r ? impact_lang($r['lang']) : impact_lang($_GET['lang'] ?? 'fr');
+    $back = '<p style="margin:22px 0 0"><a href="./?lang=' . $l . '" style="color:#2f5bff">' . h(cm($l, 'back')) . '</a></p>';
+    if (!$r) mail_page($l, cm($l, 'u_title'), '<p>' . h(cm($l, 'u_bad')) . '</p>' . $back);
+    if ($isPost) {
+        db()->prepare('INSERT OR IGNORE INTO email_optout (email, at, source) VALUES (?, ?, ?)')->execute([$r['email'], time(), 'inv']);
+        db()->prepare("UPDATE campaign_rcpt SET status = 'skipped', error = 'optout' WHERE email = ? AND status = 'queued'")->execute([$r['email']]);
+        mail_page($l, cm($l, 'u_title'), '<p>' . h(cm($l, 'u_done')) . '</p>' . $back);
+    }
+    mail_page($l, cm($l, 'u_title'), '<p style="font-size:1.1rem;font-weight:700">' . h(cm($l, 'u_q', ['email' => $r['email']])) . '</p>'
+        . '<form method="post"><button style="margin-top:8px;padding:13px 26px;border:0;border-radius:999px;background:#0b1020;color:#fff;font:700 15px ' . mail_font($l) . ';cursor:pointer">'
+        . h(cm($l, 'u_ok')) . '</button></form>' . $back);
 }
 
 /* -------------------------------------------- abonnés sans compte */
@@ -667,7 +725,7 @@ function users_where(string $filter, string $q): array
 /** Inscrits avec leur activité : réponses, récits et dernière visite connue. */
 function users_query(string $where, array $args, int $limit, int $offset): array
 {
-    $sql = "SELECT u.id, u.name, u.email, u.lang, u.created, u.verified, u.opt_daily, u.opt_digest, u.opt_msg,
+    $sql = "SELECT u.id, u.name, u.email, u.lang, u.created, u.verified, u.opt_daily, u.opt_digest, u.opt_msg, u.opt_tips, u.opt_pro,
             u.google_sub IS NOT NULL AS google, u.pass != '' AS has_pass,
             (SELECT COUNT(*) FROM answers a WHERE a.pid = 'u' || u.id) AS answers,
             (SELECT COUNT(*) FROM stories s WHERE s.uid = u.id) AS stories,
@@ -686,6 +744,7 @@ function users_query(string $where, array $args, int $limit, int $offset): array
             'created' => (int) $r['created'], 'last' => min($last, time()), 'verified' => (bool) $r['verified'],
             'google' => (bool) $r['google'], 'has_pass' => (bool) $r['has_pass'],
             'opt_daily' => (bool) $r['opt_daily'], 'opt_digest' => (bool) $r['opt_digest'], 'opt_msg' => (bool) $r['opt_msg'],
+            'opt_tips' => (bool) $r['opt_tips'], 'opt_pro' => (bool) $r['opt_pro'],
             'answers' => (int) $r['answers'], 'stories' => (int) $r['stories'],
             'online' => (int) $r['rseen'] > time() - ONLINE_WINDOW,
         ];
@@ -967,7 +1026,7 @@ switch ($action) {
             $vals[] = $n;
         }
         if (isset($b['lang'])) { $sets[] = 'lang = ?'; $vals[] = impact_lang($b['lang']); }
-        foreach (['opt_daily', 'opt_digest', 'opt_msg'] as $k) {
+        foreach (['opt_daily', 'opt_digest', 'opt_msg', 'opt_tips', 'opt_pro'] as $k) {
             if (array_key_exists($k, $b)) { $sets[] = "$k = ?"; $vals[] = empty($b[$k]) ? 0 : 1; }
         }
         if ($sets) {
@@ -1658,6 +1717,160 @@ switch ($action) {
         break;
     }
 
+    /* ------------------------------------- emails : automatisations et invitations */
+
+    case 'mod_mail': {
+        require_admin();
+        $d30 = $pdo->prepare('SELECT COUNT(*) FROM auto_log WHERE kind = ? AND mailed = 1 AND sent > ?');
+        $all = $pdo->prepare('SELECT COUNT(*) FROM auto_log WHERE kind = ? AND mailed = 1');
+        $autos = [];
+        foreach (AUTOMATIONS as $k => [$title, $when, $opt]) {
+            $d30->execute([$k, time() - 30 * 86400]);
+            $all->execute([$k]);
+            $autos[] = ['kind' => $k, 'title' => $title, 'when' => $when, 'opt' => $opt, 'on' => auto_on($k), 'd30' => (int) $d30->fetchColumn(), 'total' => (int) $all->fetchColumn()];
+        }
+        $domains = [];
+        foreach (CAMPAIGN_DOMAINS as $d) {
+            $domains[] = ['key' => $d, 'label' => pro_label('domain', $d, 'fr'), 'subject' => ['fr' => camp_dom($d, 'fr', 0), 'ar' => camp_dom($d, 'ar', 0), 'en' => camp_dom($d, 'en', 0)]];
+        }
+        ok([
+            'automations' => $autos, 'domains' => $domains,
+            'particulier' => ['fr' => cm('fr', 'p_subject'), 'ar' => cm('ar', 'p_subject'), 'en' => cm('en', 'p_subject')],
+            'settings' => ['test_to' => setting('mail_test_to') !== '' ? setting('mail_test_to') : IMPACT_NOTIFY_EMAIL, 'inv_per_hour' => camp_per_hour(),
+                'inv_sign' => camp_sign(), 'from' => mail_from(), 'smtp' => IMPACT_SMTP_HOST !== ''],
+            'campaigns' => camp_list(),
+            'optouts' => (int) $pdo->query('SELECT COUNT(*) FROM email_optout')->fetchColumn(),
+            'sent_hour' => (int) $pdo->query("SELECT COUNT(*) FROM campaign_rcpt WHERE status IN ('sent', 'failed') AND sent > " . (time() - 3600))->fetchColumn(),
+        ]);
+        break;
+    }
+
+    case 'mod_auto_set': {
+        if (!$isPost) fail('generic', 405);
+        require_admin();
+        $k = (string) ($b['kind'] ?? '');
+        if (!isset(AUTOMATIONS[$k])) fail('Scénario inconnu.');
+        setting_set('auto_' . $k, empty($b['on']) ? '0' : '1');
+        // Réactivé : ce qui a été atteint pendant la pause est noté sans envoi au prochain passage.
+        if (!empty($b['on'])) setting_set('auto_base_' . $k, '');
+        ok();
+        break;
+    }
+
+    case 'mod_mail_preview':
+    case 'mod_mail_test': {
+        if (!$isPost) fail('generic', 405);
+        require_admin();
+        $l = impact_lang($b['lang'] ?? 'fr');
+        if (($b['type'] ?? '') === 'auto') {
+            if (!isset(AUTOMATIONS[(string) ($b['kind'] ?? '')])) fail('Scénario inconnu.');
+            [$subject, $html, $text] = auto_sample((string) $b['kind'], $l, (string) ($b['to'] ?? 'vous@example.com'));
+        } else {
+            $aud = ($b['audience'] ?? '') === 'pro' ? 'pro' : 'particulier';
+            $dom = (string) ($b['domain'] ?? '');
+            if ($aud === 'pro' && !in_array($dom, CAMPAIGN_DOMAINS, true)) fail('Choisissez un domaine.');
+            [$subject, $html, $text] = camp_compose(['audience' => $aud, 'domain' => $dom, 'lang' => $l, 'subject' => mb_substr((string) ($b['subject'] ?? ''), 0, 160),
+                'note' => mb_substr((string) ($b['note'] ?? ''), 0, 1200), 'sign' => mb_substr((string) ($b['sign'] ?? ''), 0, 80)],
+                ['email' => '', 'name' => mb_substr(trim((string) ($b['name'] ?? '')), 0, 40), 'token' => '']);
+        }
+        if ($action === 'mod_mail_preview') ok(['subject' => $subject, 'html' => $html, 'text' => $text]);
+        $to = strtolower(trim((string) ($b['to'] ?? '')));
+        if (!filter_var($to, FILTER_VALIDATE_EMAIL)) fail('Adresse de test invalide.');
+        setting_set('mail_test_to', $to);
+        try {
+            send_mail($to, '[Test] ' . $subject, $html, $text);
+        } catch (Throwable $e) {
+            fail("L'email n'est pas parti : " . $e->getMessage(), 502);
+        }
+        ok(['to' => $to]);
+        break;
+    }
+
+    case 'mod_mail_settings': {
+        if (!$isPost) fail('generic', 405);
+        require_admin();
+        if (array_key_exists('inv_per_hour', $b)) setting_set('inv_per_hour', (string) max(1, min(500, (int) $b['inv_per_hour'])));
+        if (array_key_exists('inv_sign', $b)) setting_set('inv_sign', mb_substr(trim((string) $b['inv_sign']), 0, 80));
+        if (array_key_exists('test_to', $b)) {
+            $to = strtolower(trim((string) $b['test_to']));
+            if ($to !== '' && !filter_var($to, FILTER_VALIDATE_EMAIL)) fail('Adresse de test invalide.');
+            setting_set('mail_test_to', $to);
+        }
+        ok();
+        break;
+    }
+
+    case 'mod_campaign_create': {
+        if (!$isPost) fail('generic', 405);
+        require_admin();
+        if (empty($b['consent'])) fail('Cochez la case : ces personnes peuvent être contactées.');
+        try {
+            $res = camp_create($b);
+        } catch (InvalidArgumentException $e) {
+            fail($e->getMessage());
+        }
+        ok($res);
+        break;
+    }
+
+    case 'mod_campaign_set': {
+        if (!$isPost) fail('generic', 405);
+        require_admin();
+        $st = (string) ($b['status'] ?? '');
+        if (!in_array($st, ['sending', 'paused'], true)) fail('Statut invalide.');
+        $s = $pdo->prepare("UPDATE campaigns SET status = ?, started = CASE WHEN started = 0 AND ? = 'sending' THEN ? ELSE started END WHERE id = ? AND status != 'done'");
+        $s->execute([$st, $st, time(), (int) ($b['id'] ?? 0)]);
+        if (!$s->rowCount()) fail('Campagne introuvable ou terminée.', 404);
+        ok();
+        break;
+    }
+
+    case 'mod_campaign_send': {
+        if (!$isPost) fail('generic', 405);
+        require_admin();
+        $id = (int) ($b['id'] ?? 0);
+        $s = $pdo->prepare('SELECT status FROM campaigns WHERE id = ?');
+        $s->execute([$id]);
+        if ($s->fetchColumn() !== 'sending') fail("Lancez d'abord l'envoi de cette campagne.");
+        @set_time_limit(120);
+        $n = camp_send(20, false, function () {}, $id);
+        Smtp::close();
+        ok(['sent' => $n]);
+        break;
+    }
+
+    case 'mod_campaign_delete': {
+        if (!$isPost) fail('generic', 405);
+        require_admin();
+        $pdo->prepare('DELETE FROM campaigns WHERE id = ?')->execute([(int) ($b['id'] ?? 0)]);
+        ok();
+        break;
+    }
+
+    case 'mod_campaign_rcpts': {
+        require_admin();
+        $s = $pdo->prepare("SELECT r.email, r.name, r.status, r.sent, r.clicked, r.error,
+                EXISTS (SELECT 1 FROM users u WHERE u.email = r.email AND r.sent > 0 AND u.created >= r.sent) AS signup
+            FROM campaign_rcpt r WHERE r.cid = ? ORDER BY r.id LIMIT 3000");
+        $s->execute([(int) ($_GET['id'] ?? 0)]);
+        ok(['items' => array_map(function ($r) {
+            return ['email' => $r['email'], 'name' => $r['name'], 'status' => $r['status'], 'sent' => (int) $r['sent'], 'clicked' => (int) $r['clicked'],
+                'error' => $r['error'], 'signup' => (bool) $r['signup']];
+        }, $s->fetchAll())]);
+        break;
+    }
+
+    case 'mod_optout_add': {
+        if (!$isPost) fail('generic', 405);
+        require_admin();
+        [$list] = camp_parse((string) ($b['emails'] ?? ''));
+        $ins = $pdo->prepare('INSERT OR IGNORE INTO email_optout (email, at, source) VALUES (?, ?, ?)');
+        foreach ($list as [$email]) $ins->execute([$email, time(), 'admin']);
+        $pdo->exec("UPDATE campaign_rcpt SET status = 'skipped', error = 'optout' WHERE status = 'queued' AND email IN (SELECT email FROM email_optout)");
+        ok(['added' => count($list)]);
+        break;
+    }
+
     case 'mod_settings_save': {
         if (!$isPost) fail('generic', 405);
         require_admin();
@@ -1911,7 +2124,7 @@ switch ($action) {
         if (array_key_exists('verified', $b) && !in_array('verified = 0', $sets, true)) {
             $sets[] = empty($b['verified']) ? 'verified = 0' : 'verified = 1, vtoken = NULL';
         }
-        foreach (['opt_daily', 'opt_digest', 'opt_msg'] as $k) {
+        foreach (['opt_daily', 'opt_digest', 'opt_msg', 'opt_tips', 'opt_pro'] as $k) {
             if (array_key_exists($k, $b)) { $sets[] = "$k = ?"; $vals[] = empty($b[$k]) ? 0 : 1; }
         }
         if ($sets) {

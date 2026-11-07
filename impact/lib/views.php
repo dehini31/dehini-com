@@ -216,3 +216,22 @@ function site_views_view(): array
         'top_pros' => array_slice($top, 0, 8),
     ];
 }
+
+/** Totaux d'une page pro entre deux jours inclus (rapport mensuel) et ses 3 questions les plus affichées. */
+function pro_stats_between(int $proId, string $from, string $to, string $lang): array
+{
+    $pdo = db();
+    $tot = array_fill_keys(PRO_EVENTS, 0);
+    $s = $pdo->prepare('SELECT kind, SUM(n) AS n FROM pro_stats WHERE pro_id = ? AND day BETWEEN ? AND ? GROUP BY kind');
+    $s->execute([$proId, $from, $to]);
+    foreach ($s as $r) if (isset($tot[$r['kind']])) $tot[$r['kind']] = (int) $r['n'];
+    $s = $pdo->prepare('SELECT COUNT(DISTINCT pid) FROM pro_seen WHERE pro_id = ? AND day BETWEEN ? AND ?');
+    $s->execute([$proId, $from, $to]);
+    $reach = (int) $s->fetchColumn();
+    $s = $pdo->prepare("SELECT qid, SUM(n) AS n FROM pro_stats WHERE pro_id = ? AND kind = 'imp' AND qid > 0 AND day BETWEEN ? AND ? GROUP BY qid ORDER BY n DESC LIMIT 3");
+    $s->execute([$proId, $from, $to]);
+    $qs = questions();
+    $top = [];
+    foreach ($s as $r) if (isset($qs[(int) $r['qid']])) $top[] = [(int) $r['qid'], (int) $r['n'], qtext($qs[(int) $r['qid']], $lang)];
+    return ['totals' => $tot + ['clicks' => array_sum(array_intersect_key($tot, array_flip(PRO_CLICKS))), 'reach' => $reach], 'top' => $top];
+}

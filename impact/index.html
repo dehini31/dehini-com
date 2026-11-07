@@ -1464,6 +1464,8 @@
           <label class="switch"><input type="checkbox" name="opt_daily"><span data-i18n="au.optDaily"></span></label>
           <label class="switch"><input type="checkbox" name="opt_digest"><span data-i18n="au.optDigest"></span></label>
           <label class="switch"><input type="checkbox" name="opt_msg"><span data-i18n="au.optMsg"></span></label>
+          <label class="switch"><input type="checkbox" name="opt_tips"><span data-i18n="au.optTips"></span></label>
+          <label class="switch"><input type="checkbox" name="opt_pro"><span data-i18n="au.optPro"></span></label>
         </div>
       </fieldset>
       <p class="me-lang" id="meLang"></p>
@@ -1817,6 +1819,8 @@ const T = {
   "au.or": ["ou", "أو", "or"],
   "au.toWrite": ["Créez votre compte, ou connectez-vous, pour écrire à l'auteur : seuls vous deux verrez la conversation.", "أنشئ حسابك أو سجّل الدخول لمراسلة الكاتب: لن يرى المحادثة أحد سواكما.", "Create your account, or sign in, to write to the author: only the two of you will see the conversation."],
   "au.optMsg": ["Être prévenu par email quand quelqu'un m'écrit", "إعلامي عبر البريد عندما يراسلني أحد", "Email me when someone writes to me"],
+  "au.optTips": ["Conseils, paliers et nouvelles du défi", "النصائح والمراحل وأخبار التحدي", "Tips, milestones and challenge news"],
+  "au.optPro": ["Emails de ma page pro (rapport mensuel)", "رسائل صفحتي المهنية (التقرير الشهري)", "My pro page emails (monthly report)"],
 
   "msg.title": ["Vos <em>conversations</em>.", "<em>محادثاتك</em>.", "Your <em>conversations</em>."],
   "msg.sub": ["Les échanges privés autour des récits : seuls vous et l'autre personne pouvez les lire.", "المراسلات الخاصة حول القصص: لا يقرؤها أحد سواك والطرف الآخر.", "Private exchanges around stories: only you and the other person can read them."],
@@ -3303,6 +3307,8 @@ function showMe() {
   f.elements.namedItem("opt_daily").checked = !!user.opt_daily;
   f.elements.namedItem("opt_digest").checked = !!user.opt_digest;
   f.elements.namedItem("opt_msg").checked = user.opt_msg !== false;
+  f.elements.namedItem("opt_tips").checked = user.opt_tips !== false;
+  f.elements.namedItem("opt_pro").checked = user.opt_pro !== false;
   $("#meLang").textContent = t("me.lang", { l: LANG_NAMES[lang] }) + (user.google ? " · " + t("me.google") : "");
   // Compte créé avec Google : pas de mot de passe à saisir pour le supprimer, une simple confirmation.
   const noPass = user.has_pass === false;
@@ -3400,7 +3406,7 @@ bindForm($("#resetForm"), async (v, form) => {
   afterSignIn(d, t("au.reset.ok"));
 });
 bindForm($("#prefsForm"), async v => {
-  const d = await api("prefs", { name: v.name.trim(), opt_daily: !!v.opt_daily, opt_digest: !!v.opt_digest, opt_msg: !!v.opt_msg, lang });
+  const d = await api("prefs", { name: v.name.trim(), opt_daily: !!v.opt_daily, opt_digest: !!v.opt_digest, opt_msg: !!v.opt_msg, opt_tips: !!v.opt_tips, opt_pro: !!v.opt_pro, lang });
   applyServer(d);
   renderAccount();
   $("#meDlg").close();
