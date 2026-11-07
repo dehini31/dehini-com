@@ -464,17 +464,39 @@ toutes seules quand quelqu'un clique « Ne plus jamais recevoir d'invitation »)
 envoyés, **clics**, **inscriptions** et **pages pro créées** par les invités, désinscriptions, et la
 liste des destinataires en CSV.
 
-**Pour arriver en boîte de réception (et pas en spam)** :
+**Pour arriver en boîte de réception (et pas en spam)** — le domaine est déjà bien configuré
+(vérifié le 7 novembre 2026) : SPF (`v=spf1 +a +mx +ip4:157.90.66.113 +ip4:157.90.66.110 ~all`), clé DKIM
+`default._domainkey`, DMARC `p=none`, DNS inverse du serveur correct, et ses deux adresses IP absentes
+des listes noires courantes. Un nouveau domaine qui envoie des emails illustrés depuis un serveur
+mutualisé doit encore **se faire une réputation** auprès de Gmail. Dans l'ordre :
 
-- Dans **cPanel → Email Deliverability**, cliquer « Repair » sur `dehini.com` pour activer **SPF** et
-  **DKIM** (et ajouter un enregistrement DMARC si cPanel le propose).
-- Envoyer par **SMTP** avec le compte `impact@dehini.com` (`IMPACT_SMTP_*` dans `config.php`) plutôt que
-  par la fonction `mail()`.
-- N'inviter que des personnes qui vous connaissent ou dont l'adresse professionnelle est publique, et
-  commencer doucement (20 à 30 par heure les premiers jours) : un volume soudain vers des inconnus fait
-  classer le domaine en spam.
-- `php ~/public_html/impact/cron.php --test=ton-adresse@gmail.com` envoie un exemple de chaque email
-  (automatisations et invitations comprises) pour vérifier le rendu dans Gmail et Outlook.
+1. **Vérifier que l'email est bien authentifié** : dans Gmail, ouvrir un email du défi, menu « ⋮ » →
+   « Afficher l'original ». Les trois lignes SPF, DKIM et DMARC doivent indiquer **PASS**. Si DKIM
+   n'est pas « PASS », dans cPanel → **Email Deliverability**, cliquer « Repair » sur `dehini.com`.
+2. **Envoyer par SMTP avec le compte `impact@dehini.com`** (`IMPACT_SMTP_HOST`, `IMPACT_SMTP_USER`,
+   `IMPACT_SMTP_PASS` dans `~/public_html/impact/config.php`) plutôt que par la fonction `mail()` :
+   les emails sont alors signés DKIM à coup sûr.
+3. **Noter un email** sur [mail-tester.com](https://www.mail-tester.com) : copier l'adresse que le site
+   affiche, puis lancer
+   `php ~/public_html/impact/cron.php --test=ADRESSE_DONNEE --only=invite` et cliquer « Ensuite,
+   vérifiez votre score ». Viser 9/10 ou plus ; la page explique chaque point perdu.
+4. **Apprendre à Gmail** : dans le dossier Spam, ouvrir les emails du défi et cliquer « Signaler comme
+   non-spam », et ajouter `impact@dehini.com` aux contacts. Inscrire `dehini.com` sur
+   [Google Postmaster Tools](https://postmaster.google.com) pour suivre la réputation du domaine.
+5. **Monter en charge doucement** : d'abord les emails des comptes inscrits (attendus, donc ouverts),
+   puis les invitations par petits lots (10 à 20 par heure la première semaine), uniquement vers des
+   personnes qui vous connaissent ou dont l'adresse professionnelle est publique. Un lot vers des
+   inconnus qui ne s'ouvrent pas fait chuter la réputation de tout le domaine.
+6. **Si les invitations restent en spam** malgré tout : les envoyer par un service d'emailing
+   (Brevo — 300 emails par jour gratuits —, Mailjet, Amazon SES…). Le site n'a rien à changer : il
+   suffit de remplacer dans `config.php` l'hôte, le port (587, `IMPACT_SMTP_SECURE` = `tls`),
+   l'utilisateur et le mot de passe SMTP par ceux du service, et d'ajouter dans cPanel → **Zone
+   Editor** les enregistrements DKIM et SPF que le service fournit.
+
+`php ~/public_html/impact/cron.php --test=ton-adresse@gmail.com` envoie un exemple de chaque email
+(avec une pause de 2 secondes entre deux envois) ; `--only=invite,onboard,pro_report…` n'envoie que
+ceux-là (la liste des noms s'affiche si un nom est inconnu), `--lang=ar` ou `--lang=en` change la langue
+et `--domain=finance` le domaine de l'invitation pro.
 
 ## Stats Meta KPIs (`/metakpis/`)
 

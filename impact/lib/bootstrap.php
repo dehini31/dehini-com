@@ -15,7 +15,7 @@ $defaults = [
     'IMPACT_DB_PATH'        => dirname(__DIR__, 3) . '/impact-data/impact.sqlite', // hors public_html
     'IMPACT_TIMEZONE'       => 'Africa/Algiers',
     'IMPACT_MAIL_FROM'      => '',          // ex. impact@dehini.com — par défaut impact@<domaine>
-    'IMPACT_MAIL_FROM_NAME' => 'Défi Impact · dehini.com',
+    'IMPACT_MAIL_FROM_NAME' => 'Défi Impact',  // nom d'expéditeur (sans nom de domaine : les filtres anti-spam s'en méfient)
     'IMPACT_SMTP_HOST'      => '',          // vide = fonction mail() de PHP
     'IMPACT_SMTP_PORT'      => 465,
     'IMPACT_SMTP_SECURE'    => 'ssl',       // ssl (465) | tls (587, STARTTLS) | none

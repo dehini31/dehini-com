@@ -426,7 +426,7 @@ function mail_layout(string $lang, string $title, string $preheader, string $inn
         . '<meta name="x-apple-disable-message-reformatting"><title>' . h($title) . '</title>' . $css . '</head>'
         . '<body class="em-bg" style="margin:0;padding:0;background:' . MAIL_UI['page'] . ';-webkit-text-size-adjust:100%;word-spacing:normal">'
         // Aperçu affiché par la messagerie à côté du sujet (puis des espaces pour ne pas laisser apparaître le début du texte).
-        . '<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;mso-hide:all">' . h($preheader) . str_repeat('&#847;&zwnj;&nbsp;', 60) . '</div>'
+        . '<div style="display:none;max-height:0;overflow:hidden;mso-hide:all">' . h($preheader) . str_repeat('&nbsp;&zwnj;', 30) . '</div>'
         . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="em-bg" style="background:' . MAIL_UI['page'] . '"><tr><td align="center" class="em-wrap" style="padding:32px 12px">'
         . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" dir="' . $dir . '" class="em-shell" style="max-width:600px;border-radius:24px;overflow:hidden;background:' . MAIL_COLORS['ink'] . '">'
         // En-tête : marque à gauche, étiquette (ex. « Invitation ») à droite.
@@ -670,9 +670,21 @@ function mail_from(): string
     return 'impact@' . preg_replace('/^www\./', '', (string) $host);
 }
 
-function encode_header(string $s): string
+/**
+ * En-tête non ASCII (sujet, nom) en « encoded-words » RFC 2047 courts (lignes de moins de 78 caractères), repliés
+ * sur plusieurs lignes ($fold) : un seul long bloc est mal noté par certains filtres anti-spam.
+ */
+function encode_header(string $s, string $fold = "\r\n "): string
 {
-    return preg_match('/[^\x20-\x7E]/', $s) ? '=?UTF-8?B?' . base64_encode($s) . '?=' : $s;
+    if (!preg_match('/[^\x20-\x7E]/', $s)) return $s;
+    $words = [];
+    $chunk = '';
+    foreach (preg_split('//u', $s, -1, PREG_SPLIT_NO_EMPTY) as $ch) {
+        if (strlen($chunk . $ch) > 39) { $words[] = $chunk; $chunk = ''; }
+        $chunk .= $ch;
+    }
+    if ($chunk !== '') $words[] = $chunk;
+    return implode($fold, array_map(function ($w) { return '=?UTF-8?B?' . base64_encode($w) . '?='; }, $words));
 }
 
 /**
@@ -697,13 +709,23 @@ function build_mime(string $html, string $text, ?string $unsubUrl): array
         $headers[] = 'List-Unsubscribe-Post: List-Unsubscribe=One-Click';
     }
     $body = '--' . $b . "\r\n"
-        . "Content-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n"
-        . chunk_split(base64_encode($text)) . "\r\n"
+        . "Content-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n"
+        . mime_qp($text) . "\r\n"
         . '--' . $b . "\r\n"
-        . "Content-Type: text/html; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n"
-        . chunk_split(base64_encode($html)) . "\r\n"
+        . "Content-Type: text/html; charset=UTF-8\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n"
+        . mime_qp($html) . "\r\n"
         . '--' . $b . "--\r\n";
     return [implode("\r\n", $headers), $body];
+}
+
+/**
+ * Corps en « quoted-printable » (lisible, lignes de 76 caractères) : l'encodage attendu des emails
+ * courants. Le base64 sur du texte est un signal (faible) de spam pour plusieurs filtres.
+ */
+function mime_qp(string $s): string
+{
+    $s = str_replace(["\r\n", "\r"], "\n", $s);
+    return quoted_printable_encode(str_replace("\n", "\r\n", $s));
 }
 
 /** Envoie un email. Lève une exception en cas d'échec. */
@@ -711,7 +733,8 @@ function send_mail(string $to, string $subject, string $html, string $text, ?str
 {
     [$headers, $body] = build_mime($html, $text, $unsubUrl);
     if (IMPACT_SMTP_HOST === '') {
-        if (!@mail($to, encode_header($subject), $body, $headers, '-f' . mail_from())) {
+        // mail() : le sujet reste sur une ligne (segments séparés par une espace).
+        if (!@mail($to, encode_header($subject, ' '), $body, $headers, '-f' . mail_from())) {
             throw new RuntimeException('mail() a échoué');
         }
         return;
