@@ -5,6 +5,7 @@ Disallow: /impact/admin.html
 Disallow: /impact/support.php
 Disallow: /impact/page.php
 Disallow: /swanbida/admin/
+Disallow: /marketing/
 Disallow: /swanbida/api.php
 Disallow: /swanbida/commande/
 Disallow: /swanbida/fr/commande/

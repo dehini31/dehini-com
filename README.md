@@ -27,6 +27,10 @@ Site personnel de Mohammed Dehini.
   arabe (RTL) : catalogue, fiche produit avec commande en paiement à la livraison, administration (commandes,
   produits, stock, contenus, livraison, statistiques), Meta Pixel + Conversions API et référencement. Voir la section
   « SWANBIDA » plus bas.
+- `marketing/` — **Marketing Dashboard** (`https://dehini.com/marketing/`), réservé à l'administration (même mot de
+  passe que `/admin`) : suivi marketing de YINVESTI saisi à la main (leads, questions, projets, social media, publicité,
+  site, emails, funnels) et rapports générés automatiquement chaque jour, chaque semaine et chaque mois. Voir la
+  section « Marketing Dashboard » plus bas.
 - `robots.txt` — robots du domaine (déclare les plans du site ; Google ne lit que celui de la racine).
 - `sitemap.xml` — plan des pages principales de dehini.com (les questions du défi Impact ont le leur :
   `/impact/sitemap.xml`). Voir « Référencement (SEO) » plus bas.
@@ -48,6 +52,7 @@ cp -rf dehini-com/elbahiferti ~/public_html/
 cp -rf dehini-com/impact ~/public_html/
 cp -rf dehini-com/metakpis ~/public_html/
 cp -rf dehini-com/swanbida ~/public_html/
+cp -rf dehini-com/marketing ~/public_html/
 cp -f dehini-com/robots.txt dehini-com/sitemap.xml ~/public_html/
 ```
 
@@ -78,13 +83,13 @@ depuis `/admin`, jamais depuis ce dépôt.
 Dans **cPanel → Tâches Cron**, toutes les 5 minutes :
 
 ```bash
-cd ~/dehini-com && git pull -q && cp -f index.html ~/public_html/index.html && cp -f admin/index.html admin/api.php admin/.htaccess admin/.user.ini ~/public_html/admin/ && cp -f uploads/.htaccess ~/public_html/uploads/.htaccess && cp -rf img ~/public_html/ && cp -rf elbahiferti ~/public_html/ && cp -rf impact ~/public_html/ && cp -rf metakpis ~/public_html/ && cp -rf swanbida ~/public_html/ && cp -f robots.txt sitemap.xml ~/public_html/
+cd ~/dehini-com && git pull -q && cp -f index.html ~/public_html/index.html && cp -f admin/index.html admin/api.php admin/.htaccess admin/.user.ini ~/public_html/admin/ && cp -f uploads/.htaccess ~/public_html/uploads/.htaccess && cp -rf img ~/public_html/ && cp -rf elbahiferti ~/public_html/ && cp -rf impact ~/public_html/ && cp -rf metakpis ~/public_html/ && cp -rf swanbida ~/public_html/ && cp -rf marketing ~/public_html/ && cp -f robots.txt sitemap.xml ~/public_html/
 ```
 
 Cette commande ne touche jamais `data.json`, `admin/config.php`, `impact/config.php`,
-`metakpis/config.php`, `swanbida/config.php`, les bases du défi Impact, de Stats Meta KPIs et de SWANBIDA, ni les
-images envoyées dans `uploads/` et `swanbida/media/` : seul le code (`index.html`, `admin/*.php`, `elbahiferti/`,
-`impact/`, `metakpis/`, `swanbida/`) est mis à jour.
+`metakpis/config.php`, `swanbida/config.php`, `marketing/config.php`, les bases du défi Impact, de Stats Meta KPIs,
+de SWANBIDA et du Marketing Dashboard, ni les images envoyées dans `uploads/` et `swanbida/media/` : seul le code
+(`index.html`, `admin/*.php`, `elbahiferti/`, `impact/`, `metakpis/`, `swanbida/`, `marketing/`) est mis à jour.
 
 ## Défi Impact (`/impact/`)
 
@@ -825,6 +830,62 @@ Si le Terminal n'est pas proposé sur le forfait, la même publication se fait a
 les identifiants FTP reçus par email, en envoyant le contenu du dossier `swanbida/` du dépôt (fichiers cachés
 comme `.htaccess` compris) dans `public_html/` ; les étapes 3 à 7 restent identiques.
 
+## Marketing Dashboard (`/marketing/`)
+
+Tableau de bord du suivi marketing de **YINVESTI** : on y saisit l'activité à la main, et il en tire tout seul les
+rapports quotidiens, hebdomadaires et mensuels, avec une analyse (« Analyse & décisions ») pour décider vite.
+Ouvrir `https://dehini.com/marketing/` (lien « 📈 Marketing Dashboard » dans le menu de `/admin`) et se connecter avec le
+**mot de passe de `/admin`** (même session). Rien à installer de plus : la base SQLite se crée toute seule **hors de
+`public_html`**, dans `~/marketing-data/marketing.sqlite` (pour sauvegarder, copier ce dossier).
+
+- `marketing/index.html` + `marketing/assets/app.js` — l'interface (français, ordinateur et téléphone, thème clair /
+  sombre).
+- `marketing/api.php` — l'API (réservée à la session de `/admin`, jeton anti-CSRF sur chaque écriture).
+- `marketing/lib/core.php` — base, **schéma des données** (le même schéma crée les tables, valide chaque saisie et
+  construit les formulaires : ajouter un champ = une ligne, la colonne est ajoutée toute seule), réglages, emails.
+- `marketing/lib/report.php` — calcul des rapports, comparaisons, constats et email du rapport.
+- `marketing/cron.php` — envoi automatique des rapports (voir plus bas).
+
+### Organisation
+
+Un seul tableau de bord, trois niveaux de suivi : **Daily Monitoring** (gérer la journée), **Weekly / Monthly
+Reports** (analyser la semaine ou le mois, générés automatiquement) et **analyse par campagne** (objectifs, budget,
+résultats et funnel de chaque campagne, quel que soit le canal). Chaque donnée n'est saisie qu'une fois, dans sa
+section ; l'Overview et les rapports la reprennent automatiquement.
+
+| Menu | Contenu |
+| --- | --- |
+| 🏠 Overview | **Daily Monitoring** : nouveaux leads & contacts, questions & inquiries, activité social media et demandes de projets du jour, ce qui reste à traiter (leads sans contact depuis 48 h, non assignés, questions sans réponse), constats du jour. **Weekly Reports** et **Monthly Reports** : 16 indicateurs comparés à la période précédente, analyse & décisions, leads (évolution, sources, qualité, commerciaux, raisons de non-qualification), questions, projets en cours de financement et montants levés, website, social media, publicité (résultats, budgets, objectifs), emails et funnels. Envoi par email, archivage, CSV, impression / PDF. **Archives** : rapports figés. |
+| 📊 Funnel Analytics | Création d'un funnel (modèle Publicité → Landing Page → Inscription → Investissement), étapes avec objectif chiffré et tags, association aux campagnes publicitaires, réseaux sociaux, landing pages et emails. Chaque étape prend ses chiffres dans une **saisie manuelle** ou **automatiquement** dans les éléments associés (clics des campagnes, visites ou inscriptions des pages, ouvertures d'emails, leads liés…). Prospects par étape, taux de conversion, taux d'abandon, étape où l'on perd le plus. |
+| 📱 Social Media | Facebook, Instagram, LinkedIn, TikTok : **Leads & Contacts** (filtre par réseau), **Questions & Inquiries**, **Activité** (publications), **Performances** (portée, impressions, engagement, abonnés, clics — à saisir chaque semaine). |
+| 📢 Ads Manager | **Campagnes** (liste et fiche de chaque campagne : objectifs, budget, résultats, funnel, leads), **Objectifs** (avancement comparé au temps écoulé), **Budgets** (prévu, dépensé, restant, rythme), **Résultats** (dépense, impressions, clics, leads, conversions, CTR, coût par lead / conversion). |
+| 🌐 Website Analytics | **Website** (site principal), **Landing Pages** (visites et conversion par page), **Inscriptions** (investisseurs et porteurs de projets), **Leads & Contacts** venus du site. Chiffres de Google Analytics saisis par jour ou par semaine. |
+| ✉️ Email Marketing | **Campagnes**, **Emails envoyés**, **Ouvertures & clics** (ouvertures estimées : certaines messageries bloquent leur mesure), **Objectifs atteints**, chaque campagne pouvant être associée à un funnel. |
+| 👥 Leads & Contacts | **Contacts** (recherche, filtres, export), **Investisseurs / Porteurs**, **Sources** (volume et qualité), **Assignation** au commercial responsable (ou non), **Traitement** : à traiter, contacté, qualifié, non qualifié (avec la raison : injoignable, pas intéressé, budget, hors cible…), converti. Statut et commercial se changent directement dans les tableaux. |
+| 📁 Projets | **Demandes de projets** et **Projets en cours de financement** (montant levé, investisseurs, fin de la levée). Mettre à jour le montant levé avec sa date : le montant levé chaque semaine et chaque mois en est déduit. |
+| ⚙️ Réglages | Nom de l'organisation, devise, liste des commerciaux, destinataires et fréquence des rapports, email de test, exports CSV de toutes les données. |
+
+Les semaines vont du lundi au dimanche. Une semaine ou un mois en cours est comparé au même nombre de jours de la
+période précédente (du 1er au 7 novembre contre du 1er au 7 octobre), jamais à une période entière.
+
+### Rapports automatiques par email
+
+1. Dans le tableau de bord → **Réglages** : saisir les destinataires et cocher les rapports voulus (quotidien,
+   hebdomadaire, mensuel), puis « Envoyer un test ». Les emails partent par le compte SMTP du défi Impact
+   (`impact/config.php`) s'il est configuré, sinon par la fonction `mail()` du serveur ; un autre compte peut être
+   réglé dans `marketing/config.php` (modèle : `marketing/config.example.php`).
+2. Dans **cPanel → Tâches Cron**, **une fois par jour** (par exemple Minute `5`, Heure `7`, autres champs `*`) :
+
+   ```bash
+   /usr/local/bin/php ~/public_html/marketing/cron.php > /dev/null 2>&1
+   ```
+
+Chaque matin : rapport de la veille ; le lundi : rapport de la semaine écoulée ; le 1er : rapport du mois écoulé.
+Chaque rapport est aussi **archivé** (Overview → Archives), même sans destinataire. Si la tâche repasse le même jour,
+rien n'est envoyé deux fois ; si l'envoi a échoué pour tous les destinataires, il est retenté au passage suivant. `php cron.php --dry-run` affiche ce qui partirait (avec les constats) sans rien envoyer ;
+`--date=2026-11-09` rattrape un jour manqué ; `--force=week` produit un rapport hors de son jour ;
+`--test=adresse@exemple.com` envoie les trois rapports à cette adresse.
+
 ## Référencement (SEO)
 
 Ce que fait le code :
@@ -937,3 +998,7 @@ pas mis à jour automatiquement après coup.
   pages publiques ; jeton Conversions API chiffré (AES-256-GCM, clé hors `public_html`) ;
   `lib/`, `templates/`, `config.php`, `cron.php` bloqués en accès direct ; aucun script exécutable dans `media/` ;
   IP et navigateur des commandes effacés au bout de 45 jours ; exports CSV protégés contre les formules Excel.
+- Marketing Dashboard : réservé à la session de `/admin` (expiration après 12 h), jeton anti-CSRF sur chaque écriture,
+  toutes les saisies validées côté serveur à partir du schéma, requêtes SQL préparées, base hors de `public_html` ;
+  `config.php`, `cron.php` et `lib/` bloqués en accès direct, page exclue des moteurs de recherche (`noindex` et
+  `robots.txt`) ; exports CSV protégés contre les formules Excel.

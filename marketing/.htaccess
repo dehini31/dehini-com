@@ -1,0 +1,15 @@
+Options -Indexes
+
+# Seuls la page du tableau de bord, son API et les fichiers statiques sont accessibles.
+<FilesMatch "^(config\.php|config\.example\.php|cron\.php|\.user\.ini)$">
+  Require all denied
+</FilesMatch>
+
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  Header set X-Frame-Options "DENY"
+  Header set Referrer-Policy "same-origin"
+  <FilesMatch "\.(html|json|js)$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+</IfModule>
