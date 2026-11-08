@@ -195,12 +195,13 @@ function mk_collect(string $from, string $to): array
     }
     $P['funded'] = array_values(array_unique($P['funded']));
 
-    /* ---- Social media : activité (publications) et performances par réseau */
-    $SOC = ['posts' => 0, 'posts_by_platform' => [], 'posts_by_format' => [], 'platforms' => [], 'totals' => [], 'entries' => 0];
+    /* ---- Social media : actions sur les réseaux sociaux et performances par réseau */
+    $SOC = ['posts' => 0, 'posts_by_platform' => [], 'posts_by_support' => [], 'platforms' => [], 'totals' => [], 'entries' => 0];
     foreach (q('SELECT platform, format FROM posts WHERE date BETWEEN ? AND ?', [$from, $to]) as $r) {
+        if (!isset($E['platforms'][$r['platform']])) continue;
         $SOC['posts']++;
         mk_inc($SOC['posts_by_platform'], $r['platform']);
-        mk_inc($SOC['posts_by_format'], $r['format']);
+        mk_inc($SOC['posts_by_support'], $r['format']);
     }
     $metrics = ['reach', 'impressions', 'engagement', 'clicks', 'new_followers'];
     $SOC['totals'] = array_fill_keys($metrics, 0);
@@ -388,6 +389,7 @@ function mk_report(string $type, string $date, string $to = ''): array
         'ads' => $cur['ads'] + ['budgets' => mk_campaign_snapshot($p['from'], $p['to'])],
         'email' => $cur['email'],
         'funnels' => $funnels,
+        'comm' => mk_comm_performance($p['from'], $p['to']),
         'backlog' => mk_backlog($p['type'] === 'day'),
         'prev' => [
             'leads' => $prv['leads'], 'inquiries' => ['total' => $prv['inquiries']['total']],
@@ -407,6 +409,110 @@ function mk_report(string $type, string $date, string $to = ''): array
     }
     $r['insights'] = mk_insights($r, $cur, $prv);
     return $r;
+}
+
+/**
+ * Niveau 3 — performance de la communication sur une période, par catégorie → canal → support.
+ * Sources : actions de communication saisies, résultats d'Ads Manager (canaux « Publicité
+ * digitale »), campagnes email envoyées (canal Email : portée = emails envoyés) et leads
+ * suivis dans Leads & Contacts (« leads suivis », à côté des leads déclarés dans les actions).
+ */
+function mk_comm_performance(string $from, string $to): array
+{
+    $keys = ['actions', 'reach', 'impressions', 'engagement', 'clicks', 'leads', 'conversions', 'cost', 'tracked', 'qualified'];
+    $zero = array_fill_keys($keys, 0);
+    $ch = []; // canal => ['m' => métriques, 'sup' => support => métriques]
+    $add = function (string $c, string $sp, array $v) use (&$ch, $zero, $keys): void {
+        if ($c === '') return;
+        $ch[$c] = $ch[$c] ?? ['m' => $zero, 'sup' => []];
+        $ch[$c]['sup'][$sp] = $ch[$c]['sup'][$sp] ?? $zero;
+        foreach ($keys as $k) {
+            if (!isset($v[$k])) continue;
+            $n = $k === 'cost' ? round((float) $v[$k], 2) : (int) $v[$k];
+            $ch[$c]['m'][$k] += $n;
+            $ch[$c]['sup'][$sp][$k] += $n;
+        }
+    };
+    foreach (q('SELECT platform c, format s, COUNT(*) actions, SUM(reach) reach, SUM(impressions) impressions, SUM(engagement) engagement, SUM(clicks) clicks, SUM(leads) leads, SUM(conversions) conversions, SUM(cost) cost FROM posts WHERE date BETWEEN ? AND ? GROUP BY platform, format', [$from, $to]) as $r) $add((string) $r['c'], (string) $r['s'], $r);
+    foreach (q('SELECT c.platform c, SUM(r.spend) cost, SUM(r.impressions) impressions, SUM(r.clicks) clicks, SUM(r.leads) leads, SUM(r.conversions) conversions FROM ad_results r JOIN campaigns c ON c.id = r.campaign_id WHERE r.date BETWEEN ? AND ? GROUP BY c.platform', [$from, $to]) as $r) $add((string) $r['c'], '', $r);
+    foreach (q("SELECT support s, COUNT(*) actions, SUM(sent) reach, SUM(clicks) engagement, SUM(clicks) clicks, SUM(conversions) conversions FROM emails WHERE status = 'envoyee' AND date BETWEEN ? AND ? GROUP BY support", [$from, $to]) as $r) $add('email', (string) $r['s'], $r);
+    foreach (q("SELECT source c, support s, COUNT(*) tracked, SUM(CASE WHEN status IN ('qualifie','converti') THEN 1 ELSE 0 END) qualified FROM contacts WHERE date BETWEEN ? AND ? GROUP BY source, support", [$from, $to]) as $r) $add((string) $r['c'], (string) $r['s'], $r);
+
+    $rates = function (array $m): array {
+        $m['eng_rate'] = mk_ratio($m['engagement'], $m['reach']);
+        $m['ctr'] = mk_ratio($m['clicks'], $m['impressions']);
+        $m['cpl'] = mk_ratio($m['cost'], $m['leads']);
+        $m['cpa'] = mk_ratio($m['cost'], $m['conversions']);
+        $m['qual_rate'] = mk_ratio($m['qualified'], $m['tracked']);
+        return $m;
+    };
+    $rank = fn (array $x) => [max($x['leads'], $x['tracked']), $x['conversions'], $x['reach'], $x['actions']];
+    $order = array_column(mk_channels(), 'category', 'key');
+    $cats = [];
+    foreach (array_keys(MK_CHANNEL_CATEGORIES) as $c) $cats[$c] = ['m' => $zero, 'channels' => []];
+    $cats['other'] = ['m' => $zero, 'channels' => []];
+    $total = $zero;
+    foreach (array_merge(array_keys(array_intersect_key($order, $ch)), array_keys(array_diff_key($ch, $order))) as $k) {
+        $cat = $order[$k] ?? 'other';
+        foreach ($keys as $kk) { $cats[$cat]['m'][$kk] += $ch[$k]['m'][$kk]; $total[$kk] += $ch[$k]['m'][$kk]; }
+        $sups = [];
+        foreach ($ch[$k]['sup'] as $sk => $sm) $sups[] = ['key' => (string) $sk, 'label' => $sk === '' ? 'Support non précisé' : mk_label('supports', $sk)] + $rates($sm);
+        usort($sups, fn ($a, $b) => $rank($b) <=> $rank($a));
+        $cats[$cat]['channels'][] = ['key' => (string) $k, 'label' => mk_label('sources', $k), 'category' => $cat, 'supports' => $sups] + $rates($ch[$k]['m']);
+    }
+    $out = [];
+    foreach ($cats as $c => $v) {
+        if (!$v['channels']) continue;
+        usort($v['channels'], fn ($a, $b) => $rank($b) <=> $rank($a));
+        $out[] = ['key' => $c, 'label' => $c === 'other' ? 'Canaux retirés' : MK_CHANNEL_CATEGORIES[$c][1], 'icon' => $c === 'other' ? '🗂️' : MK_CHANNEL_CATEGORIES[$c][0], 'channels' => $v['channels']] + $rates($v['m']);
+    }
+    usort($out, fn ($a, $b) => $rank($b) <=> $rank($a));
+    $res = ['categories' => $out, 'totals' => $rates($total)];
+    $res['insights'] = mk_comm_insights($res);
+    return $res;
+}
+
+/** Constats sur les canaux et les supports : où concentrer les efforts. */
+function mk_comm_insights(array $p): array
+{
+    $out = [];
+    $all = [];
+    foreach ($p['categories'] as $c) foreach ($c['channels'] as $ch) $all[] = $ch;
+    if (!$all) return [];
+    $lead = fn (array $c) => max($c['leads'], $c['tracked']);
+    $byLead = $all;
+    usort($byLead, fn ($a, $b) => $lead($b) <=> $lead($a));
+    $totalLeads = array_sum(array_map($lead, $all));
+    if ($lead($byLead[0]) > 0 && count($all) >= 2) {
+        $out[] = ['level' => 'good', 'section' => 'comm', 'text' => "Canal qui apporte le plus de leads : « {$byLead[0]['label']} » (" . mk_num($lead($byLead[0])) . ', ' . mk_pct($lead($byLead[0]) / $totalLeads) . ' du total).'];
+    }
+    // Dans un canal : quel support engage le plus (ex. Reels contre carrousels sur Instagram).
+    $n = 0;
+    foreach ($all as $c) {
+        $s = array_values(array_filter($c['supports'], fn ($x) => $x['key'] !== '' && $x['reach'] >= 50 && $x['eng_rate'] !== null));
+        if (count($s) < 2) continue;
+        usort($s, fn ($a, $b) => $b['eng_rate'] <=> $a['eng_rate']);
+        $b = $s[0];
+        $w = $s[count($s) - 1];
+        if ($b['eng_rate'] <= $w['eng_rate'] * 1.3) continue;
+        $out[] = ['level' => 'info', 'section' => 'comm', 'text' => "Sur « {$c['label']} », le support « {$b['label']} » obtient " . mk_pct($b['eng_rate'], 1) . " d'engagement contre " . mk_pct($w['eng_rate'], 1) . " pour « {$w['label']} »."];
+        if (++$n >= 2) break;
+    }
+    $eng = array_values(array_filter($all, fn ($c) => $c['reach'] >= 100 && $c['eng_rate'] !== null));
+    if (count($eng) >= 2) {
+        usort($eng, fn ($a, $b) => $b['eng_rate'] <=> $a['eng_rate']);
+        $out[] = ['level' => 'good', 'section' => 'comm', 'text' => "Meilleur taux d'engagement : « {$eng[0]['label']} » (" . mk_pct($eng[0]['eng_rate'], 1) . ' de la portée).'];
+    }
+    $cpl = array_values(array_filter($all, fn ($c) => $c['cost'] > 0 && $c['leads'] > 0));
+    if (count($cpl) >= 2) {
+        usort($cpl, fn ($a, $b) => $a['cpl'] <=> $b['cpl']);
+        $hi = $cpl[count($cpl) - 1];
+        if ($hi['cpl'] > 1.5 * $cpl[0]['cpl']) $out[] = ['level' => 'info', 'section' => 'comm', 'text' => "Coût par lead le plus bas : « {$cpl[0]['label']} » (" . mk_money($cpl[0]['cpl']) . "). Le plus élevé : « {$hi['label']} » (" . mk_money($hi['cpl']) . ').'];
+    }
+    foreach ($all as $c) {
+        if ($c['cost'] > 0 && $lead($c) === 0 && $c['conversions'] === 0) $out[] = ['level' => 'warning', 'section' => 'comm', 'text' => "« {$c['label']} » a coûté " . mk_money($c['cost']) . ' sans lead ni conversion sur la période.'];
+    }
+    return $out;
 }
 
 /** Indicateurs principaux avec la valeur de la période précédente. */
@@ -587,6 +693,9 @@ function mk_insights(array $r, array $cur, array $prv): array
         if ($cur['ads']['entries'] === 0 && array_filter($r['ads']['budgets'], fn ($c) => $c['status'] === 'active')) $add('info', 'Des campagnes sont actives mais aucun résultat publicitaire n\'est saisi pour cette période.', 'ads');
     }
 
+    // Communication : quel canal, quel support fonctionne le mieux (les plus utiles seulement).
+    foreach (array_slice($r['comm']['insights'] ?? [], 0, 4) as $i) $out[] = $i;
+
     $rank = ['critical' => 0, 'warning' => 1, 'good' => 2, 'info' => 3];
     usort($out, fn ($a, $b) => $rank[$a['level']] <=> $rank[$b['level']]);
     return $out;
@@ -701,6 +810,16 @@ function mk_report_email(array $r, string $link = ''): array
     $reqRows = [];
     foreach ($r['projects']['requests_list'] as $p) $reqRows[] = [mk_fdate($p['date'], false), $p['name'], $p['sector'], mk_money((float) $p['amount_target']), mk_label('project_status', $p['status'])];
 
+    // Niveau 3 : les canaux qui ont donné des résultats, avec leur meilleur support.
+    $commRows = [];
+    $chs = [];
+    foreach ($r['comm']['categories'] ?? [] as $c) foreach ($c['channels'] as $ch) $chs[] = ['cat' => $c['label']] + $ch;
+    usort($chs, fn ($a, $b) => [max($b['leads'], $b['tracked']), $b['reach']] <=> [max($a['leads'], $a['tracked']), $a['reach']]);
+    foreach (array_slice($chs, 0, 10) as $ch) {
+        $best = '—';
+        foreach ($ch['supports'] as $sp) if ($sp['key'] !== '') { $best = $sp['label']; break; }
+        $commRows[] = [$ch['label'], $ch['cat'], mk_num($ch['actions']), mk_num($ch['reach']), mk_pct($ch['eng_rate'], 1), mk_num($ch['clicks']), mk_num(max($ch['leads'], $ch['tracked'])), mk_money($ch['cost'] ?: null), $best];
+    }
     $funnelHtml = '';
     foreach ($r['funnels'] as $f) {
         $rows = [];
@@ -731,6 +850,7 @@ function mk_report_email(array $r, string $link = ''): array
         . ($budRows ? '<p style="font-weight:bold;margin:12px 0 4px;font-size:14px">Budgets et objectifs (cumul)</p>' . $table(['Campagne', 'Statut', 'Budget', 'Dépensé', 'Restant', 'Objectif'], $budRows, [2, 3, 4]) : '')
         . $h2('Email Marketing') . $table(['Campagne', 'Envoyés', 'Ouverture*', 'Clics', 'Objectifs'], $emRows, [1, 2, 3, 4])
         . ($emRows ? '<p style="font-size:11px;color:#98A2B3;margin:4px 0 0">* Ouvertures estimées : certaines messageries bloquent leur mesure.</p>' : '')
+        . $h2('Communication : canaux & supports') . $table(['Canal', 'Catégorie', 'Actions', 'Portée', 'Engagement', 'Clics', 'Leads', 'Coût', 'Meilleur support'], $commRows, [2, 3, 4, 5, 6, 7])
         . ($funnelHtml !== '' ? $h2('Funnel Analytics') . $funnelHtml : '')
         . ($link !== '' ? '<p style="margin:26px 0 0"><a href="' . mk_h($link) . '" style="display:inline-block;background:#0B1B33;color:#fff;text-decoration:none;padding:10px 18px;border-radius:8px;font-weight:bold;font-size:14px">Ouvrir le tableau de bord</a></p>' : '');
 
