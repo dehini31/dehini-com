@@ -859,8 +859,8 @@ Ouvrir `https://dehini.com/marketing/` (lien « 📈 Marketing Dashboard » dans
 **mot de passe de `/admin`** (même session). Rien à installer de plus : la base SQLite se crée toute seule **hors de
 `public_html`**, dans `~/marketing-data/marketing.sqlite` (pour sauvegarder, copier ce dossier).
 
-- `marketing/index.html` + `marketing/assets/app.js` — l'interface (français, ordinateur et téléphone, thème clair /
-  sombre).
+- `marketing/index.html` + `marketing/assets/app.js` + `marketing/assets/app.css` — l'interface (français,
+  ordinateur et téléphone, thème clair / sombre, icônes dessinées en SVG, sans dépendance).
 - `marketing/api.php` — l'API (réservée à la session de `/admin`, jeton anti-CSRF sur chaque écriture).
 - `marketing/lib/core.php` — base, **schéma des données** (le même schéma crée les tables, valide chaque saisie et
   construit les formulaires : ajouter un champ = une ligne, la colonne est ajoutée toute seule), réglages, emails.
@@ -875,27 +875,41 @@ Ouvrir `https://dehini.com/marketing/` (lien « 📈 Marketing Dashboard » dans
 Un seul tableau de bord, trois niveaux de suivi : **Daily Monitoring** (gérer la journée), **Weekly / Monthly
 Reports** (analyser la semaine ou le mois, générés automatiquement) et **analyse par campagne** (objectifs, budget,
 résultats et funnel de chaque campagne, quel que soit le canal). Chaque donnée n'est saisie qu'une fois, dans sa
-section ; l'Overview et les rapports la reprennent automatiquement.
+section ; l'Overview et les rapports la reprennent automatiquement. Le menu est rangé en trois groupes :
+**Pilotage** (Overview), **Marketing** (Communication, Social Media, Ads Manager, Website, Email, Funnels) et
+**Commercial** (Leads & Contacts, Projets).
 
 | Menu | Contenu |
 | --- | --- |
-| 🏠 Overview | **Daily Monitoring** : nouveaux leads & contacts, questions & inquiries, actions de communication et demandes de projets du jour, ce qui reste à traiter (leads sans contact depuis 48 h, non assignés, questions sans réponse), constats du jour. **Weekly Reports** et **Monthly Reports** : 16 indicateurs comparés à la période précédente, analyse & décisions, leads (évolution, sources, qualité, commerciaux, raisons de non-qualification), questions, projets en cours de financement et montants levés, website, social media, publicité (résultats, budgets, objectifs), emails, communication par canal et support, et funnels. Envoi par email, archivage, CSV, impression / PDF. **Archives** : rapports figés. |
+| 🏠 Overview | **Daily Monitoring** (page d'accueil) : « Bonjour, *prénom* », les 5 indicateurs du jour comparés à la veille, l'analyse du jour (les 5 points les plus urgents, les autres sur demande), ce qui a été saisi ce jour-là (onglets Leads, Questions, Actions, Projets), les leads en attente, la liste « À traiter maintenant » (leads sans contact depuis 48 h, à traiter, sans commercial, questions sans réponse, projets à étudier), la saisie rapide, un calendrier du mois (un point sous chaque jour où quelque chose a été saisi ; cliquer un jour ouvre son suivi) et l'activité récente. **Weekly Reports** et **Monthly Reports** : 16 indicateurs comparés à la période précédente, analyse & décisions, leads (évolution, sources, qualité, commerciaux, raisons de non-qualification), questions, projets en cours de financement et montants levés, website, social media, publicité (résultats, budgets, objectifs), emails, communication par canal et support, et funnels. Envoi par email, archivage, CSV, impression / PDF. **Archives** : rapports figés. |
 | 📣 Communication | **Actions** : chaque action de communication, saisie avec un assistant pas à pas (voir plus bas). **Performance** (niveau 3) : comparer les canaux, puis les supports à l'intérieur d'un canal (ex. Reels contre carrousels sur Instagram), tableau dépliable catégorie ▸ canal ▸ support, constats « où concentrer les efforts ». **Canaux & supports** (niveaux 1 et 2) : gérer les canaux par catégorie et les supports par type. |
-| 📊 Funnel Analytics | Création d'un funnel (modèle Publicité → Landing Page → Inscription → Investissement), étapes avec objectif chiffré, tags et **canaux de communication** (cochés pour chaque étape, par catégorie), association aux campagnes publicitaires, réseaux sociaux, landing pages et emails. Chaque étape prend ses chiffres dans une **saisie manuelle** ou **automatiquement** dans les éléments associés (clics des campagnes, visites ou inscriptions des pages, ouvertures d'emails, leads liés…), ou dans **les canaux de l'étape** (actions de communication, portée, engagement, clics et conversions de ces actions, leads, leads qualifiés, questions reçues par ces canaux). Prospects par étape, taux de conversion, taux d'abandon, étape où l'on perd le plus. |
-| 📱 Social Media | Les canaux de la catégorie « Réseaux sociaux » : **Leads & Contacts** (filtre par réseau), **Questions & Inquiries**, **Activité** (actions de communication sur les réseaux, par support), **Performances** des comptes (portée, impressions, engagement, abonnés, clics — à saisir chaque semaine). |
-| 📢 Ads Manager | Chaque campagne est rattachée à un canal de la catégorie « Publicité digitale » (Meta Ads, Google Ads…). **Campagnes** (liste et fiche de chaque campagne : objectifs, budget, résultats, funnel, leads), **Objectifs** (avancement comparé au temps écoulé), **Budgets** (prévu, dépensé, restant, rythme), **Résultats** (dépense, impressions, clics, leads, conversions, CTR, coût par lead / conversion). |
-| 🌐 Website Analytics | **Website** (site principal), **Landing Pages** (visites et conversion par page), **Inscriptions** (investisseurs et porteurs de projets), **Leads & Contacts** venus du site. Chiffres de Google Analytics saisis par jour ou par semaine. |
-| ✉️ Email Marketing | **Campagnes**, **Emails envoyés**, **Ouvertures & clics** (ouvertures estimées : certaines messageries bloquent leur mesure), **Objectifs atteints**, chaque campagne pouvant être associée à un funnel. |
-| 👥 Leads & Contacts | **Contacts** (recherche, filtres, export), **Investisseurs / Porteurs**, **Sources** (canal de communication d'origine, et support s'il est connu : volume et qualité), **Assignation** au commercial responsable (ou non), **Traitement** : à traiter, contacté, qualifié, non qualifié (avec la raison : injoignable, pas intéressé, budget, hors cible…), converti. Statut et commercial se changent directement dans les tableaux. |
+| 📊 Funnel Analytics | Création d'un funnel (modèle Publicité → Landing Page → Inscription → Investissement), étapes avec objectif chiffré, tags et **canaux de communication** (cochés pour chaque étape, par catégorie : c'est le seul endroit où l'on relie un funnel à des canaux, réseaux sociaux compris), association aux campagnes publicitaires, landing pages et emails. Chaque étape prend ses chiffres dans une **saisie manuelle** ou **automatiquement** dans les éléments associés (clics des campagnes, visites ou inscriptions des pages, ouvertures d'emails, leads liés…), ou dans **les canaux de l'étape** (actions de communication, portée, engagement, clics et conversions de ces actions, leads, leads qualifiés, questions reçues par ces canaux, et relevés des comptes sociaux de ces canaux). Prospects par étape, taux de conversion, taux d'abandon, étape où l'on perd le plus. |
+| 📱 Social Media | Les canaux de la catégorie « Réseaux sociaux » : **Vue d'ensemble** (portée, engagement, abonnés comparés à la période précédente, résultats par réseau, formats qui engagent le plus, dernières actions, liens vers les leads et les actions des réseaux) et **Relevés des comptes** (portée, impressions, engagement, abonnés, clics — à saisir chaque semaine). Les leads, questions et actions des réseaux ne sont pas dupliqués ici : ils sont dans Leads & Contacts et Communication, filtrés sur les réseaux sociaux. |
+| 📢 Ads Manager | Chaque campagne est rattachée à un canal de la catégorie « Publicité digitale » (Meta Ads, Google Ads…). **Campagnes** (liste et fiche de chaque campagne : objectifs, budget, résultats, funnel, leads), **Budgets & objectifs** (prévu, dépensé, restant, rythme, et avancement de chaque objectif comparé au temps écoulé), **Résultats** (dépense, impressions, clics, leads, conversions, CTR, coût par lead / conversion). |
+| 🌐 Website Analytics | **Site** (site principal), **Landing pages** (visites et conversion par page), **Inscriptions** (investisseurs et porteurs de projets). Chiffres de Google Analytics saisis par jour ou par semaine. Les leads venus du site sont dans Leads & Contacts (filtre « Web »). |
+| ✉️ Email Marketing | **Campagnes** et **Performance** (envois, ouvertures, clics, clics / ouvertures, objectif atteint, désabonnements, dans un seul tableau ; ouvertures estimées : certaines messageries bloquent leur mesure), chaque campagne pouvant être associée à un funnel. |
+| 👥 Leads & Contacts | **Leads** (recherche, filtres par profil, canal, traitement et commercial, pastilles par catégorie de canaux, export, **import d'un fichier CSV** : modèle à télécharger, aperçu ligne par ligne avant l'import), **Questions** (questions & inquiries de tous les canaux), **Profils** (investisseurs / porteurs), **Qualité par canal** (canal de communication d'origine, et support s'il est connu : volume et qualité), **Assignation** au commercial responsable (ou non), **Traitement** : à traiter, contacté, qualifié, non qualifié (avec la raison : injoignable, pas intéressé, budget, hors cible…), converti. Statut et commercial se changent directement dans les tableaux. |
 | 📁 Projets | **Demandes de projets** et **Projets en cours de financement** (montant levé, investisseurs, fin de la levée). Mettre à jour le montant levé avec sa date : le montant levé chaque semaine et chaque mois en est déduit. |
-| ⚙️ Réglages | Nom de l'organisation, devise, liste des commerciaux, lien vers les canaux & supports, destinataires et fréquence des rapports, email de test, exports CSV de toutes les données. |
+| ⚙️ Réglages | Votre prénom (pour l'accueil), nom de l'organisation, devise, liste des commerciaux, destinataires et fréquence des rapports, email de test, exports CSV de toutes les données. |
+
+En haut de chaque page : la **recherche globale** (`Ctrl K` ou `/`) dans les leads, questions, actions, projets,
+campagnes, emails, funnels, canaux et supports (résultats par section, flèches et Entrée pour ouvrir), la cloche
+(leads et questions en retard) et le bouton **Nouveau** (saisie de tout élément, import de leads). Les anciennes
+adresses (`#social/leads`, `#email/sent`, `#ads/objectives`…) redirigent vers leur nouvelle place.
+
+**Importer des leads (CSV).** Leads & Contacts → « Importer un fichier » (ou Nouveau → Importer des leads) :
+télécharger le modèle, ou enregistrer son fichier Excel / Google Sheets au format CSV (séparateur `;` ou `,`), avec
+une ligne de titres (Nom complet, Téléphone, Email, Ville, Profil, Canal, Support, Commercial, Traitement, Notes,
+Date). Les titres et les valeurs sont reconnus sans tenir compte des accents ni des majuscules (« porteur de projet »,
+« Instagram », « 03/11/2026 »…). L'aperçu indique les lignes prêtes, celles où une valeur inconnue est remplacée par
+la valeur par défaut, et celles ignorées (sans nom ou sans canal reconnu). 1 000 lignes au maximum par import.
 
 **Canaux, supports, performance.** La communication est organisée en trois niveaux pour ne pas mélanger les notions :
 
-1. **Canal** — le moyen utilisé pour transmettre le message (*où ?*), rangé dans l'une des 10 catégories : 📱 Réseaux
-   sociaux (Facebook, Instagram, TikTok, LinkedIn, YouTube, X, Pinterest, Snapchat), 🌐 Web, ✉️ Messagerie directe,
-   📢 Publicité digitale (Meta Ads, Google Ads…), 📰 Médias traditionnels, 🏙️ Communication extérieure,
-   🤝 Communication directe, 🎤 Événementiel, 👥 Relations publiques, 📦 Points de vente.
+1. **Canal** — le moyen utilisé pour transmettre le message (*où ?*), rangé dans l'une des 10 catégories (chacune
+   avec son icône et sa couleur) : Réseaux sociaux (Facebook, Instagram, TikTok, LinkedIn, YouTube, X, Pinterest,
+   Snapchat), Web, Messagerie directe, Publicité digitale (Meta Ads, Google Ads…), Médias traditionnels,
+   Communication extérieure, Communication directe, Événementiel, Relations publiques, Points de vente.
 2. **Support** — la forme concrète du message (*sous quelle forme ?*), rangé par type : supports digitaux (Visuels,
    Publications, Vidéo, Documents, Email, Web, Audio, Interaction) et physiques (Documents imprimés, Publicité
    extérieure, Événementiel, Commercial, Packaging, Promotion, Objets publicitaires). Chaque canal a sa liste de
@@ -922,7 +936,16 @@ se choisit de la même façon : catégorie, puis canal, puis support.
 
 À la mise à jour, la liste des canaux de départ est installée ; les anciens réseaux et anciennes sources déjà
 utilisés dans des données (Facebook, Site web, Téléphone…) sont repris, et les plateformes d'Ads Manager deviennent
-les canaux Meta Ads, Google Ads, LinkedIn Ads, TikTok Ads.
+les canaux Meta Ads, Google Ads, LinkedIn Ads, TikTok Ads. L'ancien champ « Réseaux sociaux associés » d'un funnel
+(en double avec les canaux de chaque étape) disparaît : ses réseaux sont recopiés sur la première étape du funnel si
+aucune étape n'avait encore de canal.
+
+**Design.** Fond lavande, cartes blanches arrondies, couleur principale violette, icônes au trait dans des tuiles
+pastel (une couleur par domaine : leads bleu, questions turquoise, communication violet, publicité orange, projets
+rose…), police Plus Jakarta Sans, mêmes couleurs de graphiques en clair et en sombre. Les confirmations (supprimer,
+retirer, quitter sans enregistrer, envoyer un rapport) s'ouvrent dans une fenêtre du tableau de bord dont les boutons
+disent l'action (« Supprimer la campagne » / « Annuler ») ; `Échap` annule. Les messages vides expliquent ce que la
+section contient et comment la remplir.
 
 Les semaines vont du lundi au dimanche. Une semaine ou un mois en cours est comparé au même nombre de jours de la
 période précédente (du 1er au 7 novembre contre du 1er au 7 octobre), jamais à une période entière.

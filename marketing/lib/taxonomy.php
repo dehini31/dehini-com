@@ -196,9 +196,6 @@ function mk_used_channel_keys(): array
     foreach ([['posts', 'platform'], ['social_stats', 'platform'], ['contacts', 'source'], ['inquiries', 'source'], ['projects', 'source'], ['campaigns', 'platform']] as [$t, $c]) {
         foreach (q("SELECT DISTINCT $c AS v FROM $t WHERE $c != ''") as $r) $out[] = (string) $r['v'];
     }
-    foreach (q("SELECT social FROM funnels WHERE social != ''") as $r) {
-        foreach (explode(',', (string) $r['social']) as $k) $out[] = $k;
-    }
     foreach (q("SELECT channels FROM funnel_stages WHERE channels != ''") as $r) {
         foreach (explode(',', (string) $r['channels']) as $k) $out[] = $k;
     }
@@ -351,7 +348,6 @@ function mk_channel_usage(string $key): int
         + (int) qv('SELECT COUNT(*) FROM inquiries WHERE source = ?', [$key])
         + (int) qv('SELECT COUNT(*) FROM projects WHERE source = ?', [$key])
         + (int) qv('SELECT COUNT(*) FROM campaigns WHERE platform = ?', [$key])
-        + (int) qv("SELECT COUNT(*) FROM funnels WHERE ',' || social || ',' LIKE ?", [$like])
         + (int) qv("SELECT COUNT(*) FROM funnel_stages WHERE ',' || channels || ',' LIKE ?", [$like]);
 }
 

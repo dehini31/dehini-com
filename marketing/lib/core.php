@@ -102,8 +102,8 @@ function mk_enums(): array
                 'stage_inquiries' => "Questions reçues par les canaux de l'étape",
                 'ads_impressions' => 'Impressions des campagnes liées', 'ads_clicks' => 'Clics des campagnes liées',
                 'ads_leads' => 'Leads des campagnes liées', 'ads_conversions' => 'Conversions des campagnes liées',
-                'social_reach' => 'Portée des réseaux liés', 'social_engagement' => 'Engagement des réseaux liés',
-                'social_clicks' => 'Clics des réseaux liés',
+                'social_reach' => "Portée des comptes sociaux de l'étape (relevés)", 'social_engagement' => "Engagement des comptes sociaux de l'étape (relevés)",
+                'social_clicks' => "Clics des comptes sociaux de l'étape (relevés)",
                 'page_visits' => 'Visites des pages liées', 'page_registrations' => 'Inscriptions des pages liées',
                 'page_forms' => 'Formulaires des pages liées',
                 'email_sent' => 'Emails envoyés (liés)', 'email_opens' => 'Ouvertures (emails liés)',
@@ -303,7 +303,6 @@ function mk_schema(): array
             'objective'   => f('text', 'Objectif'),
             'audience'    => f('enum', 'Cible', ['opts' => 'audiences']),
             'status'      => f('enum', 'Statut', ['opts' => 'funnel_status', 'req' => 1, 'def' => 'actif']),
-            'social'      => f('multi', 'Réseaux sociaux associés', ['opts' => 'platforms']),
             'description' => f('longtext', 'Description'),
         ]],
         'funnel_entries' => ['label' => 'Chiffres de funnel', 'date' => 'date', 'title' => 'stage_id', 'fields' => [
@@ -425,6 +424,14 @@ function mk_migrate(PDO $pdo): void
     // Canaux de communication de chaque étape de funnel (ajouté après coup aux bases existantes).
     $stageCols = array_column($pdo->query('PRAGMA table_info(funnel_stages)')->fetchAll(), 'name');
     if (!in_array('channels', $stageCols, true)) $pdo->exec("ALTER TABLE funnel_stages ADD COLUMN channels TEXT NOT NULL DEFAULT ''");
+    // Les anciens « réseaux sociaux associés » au funnel (doublon des canaux d'étape) passent sur
+    // sa première étape quand aucune étape n'a encore de canal, puis la colonne est vidée.
+    $funnelCols = array_column($pdo->query('PRAGMA table_info(funnels)')->fetchAll(), 'name');
+    foreach (in_array('social', $funnelCols, true) ? $pdo->query("SELECT id, social FROM funnels WHERE social != ''")->fetchAll() : [] as $fu) {
+        $has = (int) $pdo->query('SELECT COUNT(*) FROM funnel_stages WHERE funnel_id = ' . (int) $fu['id'] . " AND channels != ''")->fetchColumn();
+        if (!$has) $pdo->prepare('UPDATE funnel_stages SET channels = ? WHERE id = (SELECT id FROM funnel_stages WHERE funnel_id = ? ORDER BY position, id LIMIT 1)')->execute([$fu['social'], (int) $fu['id']]);
+        $pdo->prepare("UPDATE funnels SET social = '' WHERE id = ?")->execute([(int) $fu['id']]);
+    }
     $pdo->prepare('INSERT OR REPLACE INTO settings (k, v) VALUES (?, ?)')->execute(['schema_hash', $hash]);
 }
 
@@ -479,6 +486,7 @@ function mk_settings_defaults(): array
 {
     return [
         'org'           => 'YINVESTI',
+        'owner_name'    => '', // prénom affiché dans le message d'accueil (« Bonjour, Mohammed »)
         'currency'      => 'DA',
         'commercials'   => [],
         'recipients'    => [],
@@ -525,6 +533,7 @@ function mk_settings_save(array $in): array
     $next = $cur;
     if (array_key_exists('org', $in)) $next['org'] = mk_str($in['org'], 60) ?: 'YINVESTI';
     if (array_key_exists('currency', $in)) $next['currency'] = mk_str($in['currency'], 8) ?: 'DA';
+    if (array_key_exists('owner_name', $in)) $next['owner_name'] = mk_str($in['owner_name'], 40);
     if (array_key_exists('commercials', $in)) $next['commercials'] = $lines($in['commercials']);
     if (array_key_exists('channels', $in) || array_key_exists('supports', $in)) $next = mk_taxonomy_apply($next, $in);
     if (array_key_exists('recipients', $in)) {
@@ -710,15 +719,22 @@ function mk_funnel_stages(int $fid): array
     return q('SELECT * FROM funnel_stages WHERE funnel_id = ? ORDER BY position, id', [$fid]);
 }
 
-/** Ce qui est associé au funnel : campagnes, pages, emails (par leur champ funnel_id) et réseaux. */
+/**
+ * Ce qui est associé au funnel : campagnes, pages, emails (par leur champ funnel_id), et les
+ * canaux de communication de ses étapes (une seule fois chacun).
+ */
 function mk_funnel_links(array $f): array
 {
     $fid = (int) $f['id'];
+    $chs = [];
+    foreach (q("SELECT channels FROM funnel_stages WHERE funnel_id = ? AND channels != ''", [$fid]) as $r) {
+        foreach (explode(',', (string) $r['channels']) as $c) if ($c !== '' && !in_array($c, $chs, true)) $chs[] = $c;
+    }
     return [
         'campaigns' => array_map('intval', array_column(q('SELECT id FROM campaigns WHERE funnel_id = ?', [$fid]), 'id')),
         'pages'     => array_map('intval', array_column(q('SELECT id FROM pages WHERE funnel_id = ?', [$fid]), 'id')),
         'emails'    => array_map('intval', array_column(q('SELECT id FROM emails WHERE funnel_id = ?', [$fid]), 'id')),
-        'social'    => array_values(array_filter(explode(',', (string) $f['social']))),
+        'channels'  => $chs,
     ];
 }
 
@@ -835,9 +851,9 @@ function mk_stage_value(array $st, array $f, array $links, string $from, string 
         case 'ads_clicks':      return $sumIn('ad_results', 'clicks', 'campaign_id', $links['campaigns']);
         case 'ads_leads':       return $sumIn('ad_results', 'leads', 'campaign_id', $links['campaigns']);
         case 'ads_conversions': return $sumIn('ad_results', 'conversions', 'campaign_id', $links['campaigns']);
-        case 'social_reach':      return $sumIn('social_stats', 'reach', 'platform', $links['social']);
-        case 'social_engagement': return $sumIn('social_stats', 'engagement', 'platform', $links['social']);
-        case 'social_clicks':     return $sumIn('social_stats', 'clicks', 'platform', $links['social']);
+        case 'social_reach':      return $sumIn('social_stats', 'reach', 'platform', $chs);
+        case 'social_engagement': return $sumIn('social_stats', 'engagement', 'platform', $chs);
+        case 'social_clicks':     return $sumIn('social_stats', 'clicks', 'platform', $chs);
         case 'page_visits':        return $sumIn('web_stats', 'visits', 'page_id', $links['pages']);
         case 'page_registrations': return $sumIn('web_stats', 'reg_investors + reg_owners', 'page_id', $links['pages']);
         case 'page_forms':         return $sumIn('web_stats', 'forms', 'page_id', $links['pages']);
@@ -850,7 +866,7 @@ function mk_stage_value(array $st, array $f, array $links, string $from, string 
         case 'contacts_converted':
             $or = ['funnel_id = ?'];
             $p = [(int) $f['id']];
-            foreach (['campaigns' => 'campaign_id', 'pages' => 'page_id', 'emails' => 'email_id', 'social' => 'source'] as $lk => $col) {
+            foreach (['campaigns' => 'campaign_id', 'pages' => 'page_id', 'emails' => 'email_id', 'channels' => 'source'] as $lk => $col) {
                 if ($links[$lk]) { $or[] = "$col IN (" . mk_in($links[$lk]) . ')'; array_push($p, ...$links[$lk]); }
             }
             $status = $src === 'contacts_qualified' ? " AND status IN ('qualifie','converti')" : ($src === 'contacts_converted' ? " AND status = 'converti'" : '');
@@ -898,7 +914,7 @@ function mk_funnel_compute(array $f, string $from, string $to): array
         'worst' => $worst, // index de l'étape où la perte depuis l'étape précédente est la plus forte
         'links' => [
             'campaigns' => count($links['campaigns']), 'pages' => count($links['pages']),
-            'emails' => count($links['emails']), 'social' => $links['social'],
+            'emails' => count($links['emails']), 'channels' => $links['channels'],
         ],
     ];
 }
