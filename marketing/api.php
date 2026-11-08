@@ -4,6 +4,11 @@
  * même mot de passe et même session que /admin (connexion via ../admin/api.php).
  *
  * GET  bootstrap                         réglages, schéma des formulaires, listes, référentiels
+ * GET  attention                         nombre de choses à traiter (cloche)
+ * GET  search    q                       recherche dans les leads, questions, actions, projets, campagnes…
+ * GET  activity_days  month=AAAA-MM      nombre de leads, questions, actions et projets par jour (calendrier)
+ * GET  recent                            dernières saisies, toutes sections confondues
+ * POST import    {entity: contacts, rows[]}  import CSV (une ligne refusée n'empêche pas les autres)
  * GET  taxonomy_usage                    nombre de données qui citent chaque canal / support
  * GET  performance  from, to            niveau 3 : performance par catégorie → canal → support
  * GET  list      entity, from?, to?      lignes d'une table (filtrées par date si la table en a une)
@@ -58,9 +63,9 @@ $action = (string) ($_GET['action'] ?? '');
 session_name('dehini_admin');
 session_start();
 $okAdmin = !empty($_SESSION['admin']) && !empty($_SESSION['login_at']) && (time() - (int) $_SESSION['login_at']) < 12 * 3600;
-if (!$okAdmin) fail('Session expirée, reconnecte-toi.', 401);
+if (!$okAdmin) fail('Votre session a expiré. Reconnectez-vous pour continuer.', 401);
 if ($isPost && (empty($_SESSION['csrf']) || !hash_equals((string) $_SESSION['csrf'], (string) ($_SERVER['HTTP_X_CSRF'] ?? '')))) {
-    fail('Jeton de sécurité invalide, recharge la page.', 403);
+    fail('La page a expiré pour des raisons de sécurité. Rechargez-la, puis recommencez.', 403);
 }
 session_write_close();
 
@@ -110,6 +115,7 @@ try {
                     'support_types' => array_map(fn ($k, $t) => ['key' => $k, 'group' => $t[0], 'label' => $t[1]], array_keys(MK_SUPPORT_TYPES), MK_SUPPORT_TYPES),
                     'category_supports' => array_combine(array_keys(MK_CHANNEL_CATEGORIES), array_map('mk_category_supports', array_keys(MK_CHANNEL_CATEGORIES))),
                 ],
+                'attention' => mk_backlog(false),
                 'mail' => ['smtp' => MK_SMTP_HOST !== '', 'from' => mk_mail_from()],
                 'url' => mk_site_url(),
             ]);
@@ -118,6 +124,103 @@ try {
 
         case 'refs': {
             ok(['refs' => refs(), 'enums' => mk_enums()]);
+            break;
+        }
+
+        case 'attention': {
+            ok(['attention' => mk_backlog(false)]);
+            break;
+        }
+
+        case 'search': {
+            $term = mk_str($_GET['q'] ?? '', 60);
+            if (mb_strlen($term) < 2) ok(['groups' => []]);
+            $like = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $term) . '%';
+            $find = function (string $sql, int $n) use ($like): array {
+                $s = db()->prepare($sql);
+                $s->execute(array_fill(0, $n, $like));
+                return $s->fetchAll();
+            };
+            $E = mk_enums();
+            $groups = [];
+            $add = function (string $key, string $label, array $rows, callable $map) use (&$groups) {
+                if ($rows) $groups[] = ['key' => $key, 'label' => $label, 'count' => count($rows), 'items' => array_map($map, array_slice($rows, 0, 6))];
+            };
+            $esc = " ESCAPE '\\'";
+            $add('contacts', 'Leads', $find("SELECT id, name, phone, email, date, source, status FROM contacts WHERE name LIKE ?$esc OR phone LIKE ?$esc OR email LIKE ?$esc OR city LIKE ?$esc ORDER BY date DESC, id DESC LIMIT 50", 4),
+                fn ($r) => ['id' => (int) $r['id'], 'title' => $r['name'], 'sub' => implode(' · ', array_filter([$r['phone'], mk_label('sources', $r['source']), mk_label('contact_status', $r['status'])])), 'type' => 'Lead']);
+            $add('inquiries', 'Questions', $find("SELECT id, name, question, date, source FROM inquiries WHERE name LIKE ?$esc OR question LIKE ?$esc OR contact LIKE ?$esc ORDER BY date DESC, id DESC LIMIT 50", 3),
+                fn ($r) => ['id' => (int) $r['id'], 'title' => mb_substr($r['question'], 0, 70), 'sub' => trim(($r['name'] ?: 'Anonyme') . ' · ' . mk_label('sources', $r['source'])), 'type' => 'Question']);
+            $add('posts', 'Actions', $find("SELECT id, topic, date, platform, format FROM posts WHERE topic LIKE ?$esc OR link LIKE ?$esc ORDER BY date DESC, id DESC LIMIT 50", 2),
+                fn ($r) => ['id' => (int) $r['id'], 'title' => $r['topic'], 'sub' => mk_label('sources', $r['platform']) . ($r['format'] ? ' · ' . mk_label('supports', $r['format']) : '') . ' · ' . $r['date'], 'type' => 'Action']);
+            $add('projects', 'Projets', $find("SELECT id, name, owner, sector, status FROM projects WHERE name LIKE ?$esc OR owner LIKE ?$esc OR sector LIKE ?$esc ORDER BY date DESC, id DESC LIMIT 50", 3),
+                fn ($r) => ['id' => (int) $r['id'], 'title' => $r['name'], 'sub' => implode(' · ', array_filter([$r['owner'], $r['sector'], mk_label('project_status', $r['status'])])), 'type' => 'Projet']);
+            $add('campaigns', 'Campagnes', $find("SELECT id, name, platform, status FROM campaigns WHERE name LIKE ?$esc ORDER BY start DESC LIMIT 50", 1),
+                fn ($r) => ['id' => (int) $r['id'], 'title' => $r['name'], 'sub' => mk_label('ad_channels', $r['platform']) . ' · ' . mk_label('campaign_status', $r['status']), 'type' => 'Campagne pub']);
+            $add('emails', 'Emails', $find("SELECT id, name, subject, date FROM emails WHERE name LIKE ?$esc OR subject LIKE ?$esc ORDER BY date DESC LIMIT 50", 2),
+                fn ($r) => ['id' => (int) $r['id'], 'title' => $r['name'], 'sub' => trim($r['subject'] . ' · ' . $r['date'], ' ·'), 'type' => 'Campagne email']);
+            $add('funnels', 'Funnels', $find("SELECT id, name, objective FROM funnels WHERE name LIKE ?$esc OR objective LIKE ?$esc LIMIT 50", 2),
+                fn ($r) => ['id' => (int) $r['id'], 'title' => $r['name'], 'sub' => $r['objective'], 'type' => 'Funnel']);
+            $low = mb_strtolower($term);
+            $tax = [];
+            foreach (mk_channels() as $c) if (mb_strpos(mb_strtolower($c['label']), $low) !== false) $tax[] = ['id' => $c['key'], 'title' => $c['label'], 'sub' => 'Canal · ' . MK_CHANNEL_CATEGORIES[$c['category']][1], 'type' => 'Canal'];
+            foreach (mk_supports() as $x) if (mb_strpos(mb_strtolower($x['label']), $low) !== false) $tax[] = ['id' => $x['key'], 'title' => $x['label'], 'sub' => 'Support · ' . MK_SUPPORT_TYPES[$x['type']][1], 'type' => 'Support'];
+            if ($tax) $groups[] = ['key' => 'taxonomy', 'label' => 'Canaux & supports', 'count' => count($tax), 'items' => array_slice($tax, 0, 6)];
+            ok(['groups' => $groups]);
+            break;
+        }
+
+        case 'activity_days': {
+            $m = (string) ($_GET['month'] ?? '');
+            if (!preg_match('/^\d{4}-\d{2}$/', $m)) $m = substr(mk_today(), 0, 7);
+            $days = [];
+            foreach (['contacts' => 'leads', 'inquiries' => 'questions', 'posts' => 'actions', 'projects' => 'projects'] as $t => $k) {
+                foreach (q("SELECT date, COUNT(*) n FROM $t WHERE date LIKE ? GROUP BY date", [$m . '-%']) as $r) $days[$r['date']][$k] = (int) $r['n'];
+            }
+            ok(['month' => $m, 'days' => $days]);
+            break;
+        }
+
+        case 'recent': {
+            // Dernières saisies (date d'enregistrement), toutes sections confondues.
+            $items = [];
+            $push = function (string $sql, callable $map) use (&$items) { foreach (q($sql) as $r) $items[] = $map($r) + ['created' => (int) $r['created']]; };
+            $push("SELECT id, name, source, created FROM contacts ORDER BY created DESC LIMIT 8", fn ($r) => ['kind' => 'contacts', 'id' => (int) $r['id'], 'text' => "Lead « {$r['name']} » ajouté", 'sub' => mk_label('sources', $r['source'])]);
+            $push("SELECT id, name, question, created FROM inquiries ORDER BY created DESC LIMIT 8", fn ($r) => ['kind' => 'inquiries', 'id' => (int) $r['id'], 'text' => 'Question de ' . ($r['name'] ?: 'quelqu\'un'), 'sub' => mb_substr($r['question'], 0, 60)]);
+            $push("SELECT id, topic, platform, format, created FROM posts ORDER BY created DESC LIMIT 8", fn ($r) => ['kind' => 'posts', 'id' => (int) $r['id'], 'text' => 'Action « ' . mb_substr($r['topic'], 0, 40) . ' »', 'sub' => mk_label('sources', $r['platform']) . ($r['format'] ? ' · ' . mk_label('supports', $r['format']) : '')]);
+            $push("SELECT id, name, status, created FROM projects ORDER BY created DESC LIMIT 6", fn ($r) => ['kind' => 'projects', 'id' => (int) $r['id'], 'text' => "Projet « {$r['name']} »", 'sub' => mk_label('project_status', $r['status'])]);
+            $push("SELECT id, name, created FROM campaigns ORDER BY created DESC LIMIT 4", fn ($r) => ['kind' => 'campaigns', 'id' => (int) $r['id'], 'text' => "Campagne « {$r['name']} » créée", 'sub' => 'Ads Manager']);
+            $push("SELECT id, name, created FROM emails ORDER BY created DESC LIMIT 4", fn ($r) => ['kind' => 'emails', 'id' => (int) $r['id'], 'text' => "Campagne email « {$r['name']} »", 'sub' => 'Email Marketing']);
+            usort($items, fn ($a, $b) => $b['created'] <=> $a['created']);
+            ok(['items' => array_slice($items, 0, 12)]);
+            break;
+        }
+
+        case 'import': {
+            if (!$isPost) fail('Méthode invalide.', 405);
+            $e = entity_param((string) ($b['entity'] ?? ''));
+            if ($e !== 'contacts') fail("L'import CSV n'est possible que pour les leads.");
+            $rows = is_array($b['rows'] ?? null) ? $b['rows'] : [];
+            if (!$rows) fail('Le fichier ne contient aucune ligne à importer.');
+            if (count($rows) > 1000) fail('1 000 lignes au maximum par import : découpez le fichier en plusieurs parties.');
+            $done = 0;
+            $errors = [];
+            db()->beginTransaction();
+            try {
+                foreach ($rows as $i => $row) {
+                    try {
+                        mk_save('contacts', is_array($row) ? $row : []);
+                        $done++;
+                    } catch (MkInputError $err) {
+                        $errors[] = ['line' => (int) ($row['_line'] ?? $i + 2), 'message' => $err->getMessage()];
+                    }
+                }
+                db()->commit();
+            } catch (Throwable $err) {
+                db()->rollBack();
+                throw $err;
+            }
+            ok(['imported' => $done, 'errors' => $errors]);
             break;
         }
 
@@ -362,5 +465,5 @@ try {
     fail($e->getMessage());
 } catch (Throwable $e) {
     error_log('[marketing] ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine());
-    fail('Erreur serveur : ' . $e->getMessage(), 500);
+    fail("Le serveur n'a pas pu terminer l'opération (" . $e->getMessage() . '). Réessayez dans un instant.', 500);
 }

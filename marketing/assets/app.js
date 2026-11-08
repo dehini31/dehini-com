@@ -31,7 +31,85 @@ const addMonths = (d, n) => { const t = new Date(d.slice(0, 8) + "01T12:00:00");
 const monday = d => { const t = new Date(d + "T12:00:00"); const wd = (t.getDay() + 6) % 7; return addDays(d, -wd); };
 const daysBetween = (a, b) => Math.round((new Date(b + "T12:00:00") - new Date(a + "T12:00:00")) / 864e5);
 
-function toast(m) { const n = document.createElement("div"); n.className = "toast"; n.textContent = m; document.body.append(n); setTimeout(() => n.remove(), 3200); }
+function toast(m, kind = "") {
+  const n = document.createElement("div");
+  const err = kind === "err" || kind === "error" || /impossible|invalide|erreur|introuvable|obligatoire|déjà|au maximum|existe|expiré/i.test(m);
+  n.className = "toast" + (err ? " err" : "");
+  n.innerHTML = ic(err ? "alert-c" : "check") + `<span>${esc(m)}</span>`;
+  document.body.append(n);
+  setTimeout(() => n.remove(), 3400);
+}
+
+/* ================================================================ icônes au trait (24 × 24) et couleurs par domaine */
+const ICONS = {
+  home: "M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z",
+  megaphone: "M3 11v2a1 1 0 0 0 1 1h2l6 4V6L6 10H4a1 1 0 0 0-1 1zM16 8.5a5 5 0 0 1 0 7M19 5.5a9 9 0 0 1 0 13",
+  users: "M16 20v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 20v-1a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8",
+  "user-plus": "M15 20v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M8.5 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM19 8v6M22 11h-6",
+  funnel: "M3 4h18l-7 8.5V19l-4 2v-8.5z",
+  share: "M18 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM18 22a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM8.6 13.5l6.8 4M15.4 6.5l-6.8 4",
+  target: "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12zM12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4z",
+  globe: "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20",
+  mail: "M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM3 7l9 6 9-6",
+  folder: "M3 6a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z",
+  settings: "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z",
+  search: "M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3",
+  bell: "M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 0 0 3.4 0",
+  plus: "M12 5v14M5 12h14",
+  calendar: "M4 5h16a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM16 3v4M8 3v4M3 10h18",
+  "chev-r": "M9 6l6 6-6 6", "chev-l": "M15 6l-6 6 6 6", "chev-d": "M6 9l6 6 6-6", "chev-u": "M6 15l6-6 6 6",
+  upload: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12",
+  download: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3",
+  check: "M20 6 9 17l-5-5", x: "M18 6 6 18M6 6l12 12",
+  trash: "M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6",
+  edit: "M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z",
+  alert: "M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01",
+  "alert-c": "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM12 8v4M12 16h.01",
+  info: "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM12 16v-4M12 8h.01",
+  sparkles: "M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z",
+  trend: "M3 17l6-6 4 4 8-8M14 7h7v7",
+  clock: "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM12 6v6l4 2",
+  message: "M21 11.5a8.4 8.4 0 0 1-9 8.4 8.6 8.6 0 0 1-3.8-.9L3 21l1.9-5.7A8.4 8.4 0 0 1 12 3a8.4 8.4 0 0 1 9 8.5z",
+  file: "M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8zM14 3v5h5",
+  layers: "M12 2 2 7l10 5 10-5zM2 17l10 5 10-5M2 12l10 5 10-5",
+  chart: "M3 3v18h18M7 16v-5M12 16V8M17 16v-3",
+  logout: "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9",
+  moon: "M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z",
+  menu: "M3 6h18M3 12h18M3 18h18",
+  link: "M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7",
+  eye: "M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z",
+  archive: "M3 4h18v4H3zM5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8M10 12h4",
+  printer: "M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z",
+  send: "M22 2 11 13M22 2l-7 20-4-9-9-4z",
+  coins: "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM15 9.5c-.5-1-1.6-1.5-3-1.5-1.7 0-3 .8-3 2s1.3 1.7 3 2 3 .8 3 2-1.3 2-3 2c-1.4 0-2.5-.5-3-1.5M12 6v2M12 16v2",
+  wallet: "M3 7a2 2 0 0 1 2-2h13v4M3 7v10a2 2 0 0 0 2 2h15V9H5a2 2 0 0 1-2-2zM16 14h.01",
+  heart: "M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8z",
+  "check-circle": "M22 11.1V12a10 10 0 1 1-5.9-9.1M22 4 12 14l-3-3",
+  zap: "M13 2 3 14h9l-1 8 10-12h-9z",
+  store: "M3 9l1-5h16l1 5M3 9h18v11H3zM9 20v-6h6v6",
+  mic: "M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3zM19 10a7 7 0 0 1-14 0M12 17v5",
+  news: "M4 4h13a1 1 0 0 1 1 1v15H6a2 2 0 0 1-2-2zM18 8h2a1 1 0 0 1 1 1v9a2 2 0 0 1-2 2M8 8h6M8 12h6M8 16h4",
+  billboard: "M3 4h18v10H3zM8 14v7M16 14v7",
+  phone: "M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z",
+  rocket: "M5 19c1-3 3-5 6-6M14 4c4 0 6 2 6 6-2 4-6 7-9 8l-5-5c1-3 4-7 8-9zM15 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2z",
+  inbox: "M22 12h-6l-2 3h-4l-2-3H2M5.5 5h13l3.5 7v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6z",
+  grid: "M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z",
+};
+document.body.insertAdjacentHTML("afterbegin", `<svg width="0" height="0" style="position:absolute" aria-hidden="true">${Object.entries(ICONS).map(([k, d]) => `<symbol id="i-${k}" viewBox="0 0 24 24"><path d="${d}"/></symbol>`).join("")}</svg>`);
+const ic = (n, cls = "") => `<svg class="i ${cls}" aria-hidden="true"><use href="#i-${n}"/></svg>`;
+const tile = (n, tint, cls = "") => `<span class="ti t-${tint} ${cls}">${ic(n)}</span>`;
+/** Icône et couleur de chaque catégorie de canaux. */
+const CAT_META = { social: ["share", "violet"], web: ["globe", "blue"], messaging: ["message", "teal"], ads: ["target", "orange"], media: ["news", "amber"], outdoor: ["billboard", "pink"], direct: ["phone", "green"], events: ["mic", "pink"], pr: ["users", "blue"], retail: ["store", "amber"], other: ["archive", "violet"] };
+const catTile = (cat, cls = "sm") => { const m = CAT_META[cat] || CAT_META.other; return tile(m[0], m[1], cls); };
+const catIc = (cat, cls = "sm") => { const m = CAT_META[cat] || CAT_META.other; return `<span style="color:var(--${m[1]})">${ic(m[0], cls)}</span>`; };
+/** Icône et couleur des indicateurs du rapport. */
+const KMETA = { leads: ["user-plus", "blue"], qualified: ["check-circle", "green"], qual_rate: ["check-circle", "green"], inquiries: ["message", "teal"], project_requests: ["folder", "pink"], raised: ["coins", "green"], visits: ["globe", "blue"], registrations: ["user-plus", "violet"], web_conv: ["trend", "violet"], ads_spend: ["wallet", "orange"], ads_leads: ["target", "orange"], cpl: ["coins", "orange"], posts: ["megaphone", "violet"], social_reach: ["share", "violet"], emails_sent: ["mail", "teal"], email_conversions: ["check-circle", "teal"] };
+/** Les titres de cartes commencent souvent par un emoji : on le remplace par une tuile d'icône. */
+const EMOJI_ICON = { "👥": ["users", "blue"], "💬": ["message", "teal"], "📁": ["folder", "pink"], "🌐": ["globe", "blue"], "📱": ["share", "violet"], "📢": ["target", "orange"], "✉️": ["mail", "teal"], "📊": ["funnel", "violet"], "📣": ["megaphone", "violet"], "🎯": ["target", "orange"], "💰": ["wallet", "orange"], "🗄": ["archive", "violet"], "🔔": ["bell", "amber"], "⏳": ["clock", "amber"], "💹": ["rocket", "green"], "✍️": ["edit", "violet"], "🔗": ["link", "blue"], "📤": ["send", "teal"], "👁": ["eye", "teal"], "📈": ["trend", "violet"] };
+function titleWithIcon(title) {
+  for (const [e, [n, t]] of Object.entries(EMOJI_ICON)) if (title.startsWith(e + " ")) return tile(n, t, "sm") + title.slice(e.length + 1);
+  return title;
+}
 
 /* ================================================================ API */
 async function call(url, body) {
@@ -88,15 +166,15 @@ const L = (n, k) => {
 const TX = () => S.boot.taxonomy;
 const CHANNELS = () => S.boot.settings.channels;
 const SUPPORTS = () => S.boot.settings.supports;
-const catInfo = k => TX().categories.find(c => c.key === k) || { key: k || "other", icon: "🗂️", label: "Canaux retirés" };
+const catInfo = k => TX().categories.find(c => c.key === k) || { key: k || "other", label: "Canaux retirés" };
 const channelOf = k => CHANNELS().find(c => c.key === k) || null;
 const catOf = k => (channelOf(k) || {}).category || "";
 const channelsIn = cat => CHANNELS().filter(c => c.category === cat);
 const supportOf = k => SUPPORTS().find(x => x.key === k) || null;
 const typeInfo = k => TX().support_types.find(t => t.key === k) || { key: k || "", group: "digital", label: "" };
 const supportsOfChannel = ch => (channelOf(ch) || {}).supports || [];
-/** « 📱 Instagram » */
-const chName = k => { const c = catOf(k); return (c ? catInfo(c).icon + " " : "") + L("sources", k); };
+/** Nom d'un canal (texte simple ; l'icône de catégorie s'affiche avec chCell). */
+const chName = k => L("sources", k);
 /** Clé stable dérivée d'un nom, comme côté serveur (mk_slug). */
 const slugify = v => {
   const m = { à: "a", â: "a", ä: "a", é: "e", è: "e", ê: "e", ë: "e", î: "i", ï: "i", ô: "o", ö: "o", ù: "u", û: "u", ü: "u", ç: "c", ñ: "n" };
@@ -179,18 +257,29 @@ for (const id of ["rangeFrom", "rangeTo"]) {
 
 /* ================================================================ navigation */
 const NAV = [
-  { id: "overview", ic: "🏠", label: "Overview", tabs: [["daily", "Daily Monitoring"], ["weekly", "Weekly Reports"], ["monthly", "Monthly Reports"], ["archives", "Archives"]] },
-  { id: "comm", ic: "📣", label: "Communication", tabs: [["actions", "Actions"], ["performance", "Performance"], ["taxonomy", "Canaux & supports"]] },
-  { id: "funnels", ic: "📊", label: "Funnel Analytics", tabs: [["list", "Funnels"], ["stages", "Étapes & tags"], ["conversions", "Conversions"]] },
-  { id: "social", ic: "📱", label: "Social Media", tabs: [["leads", "Leads & Contacts"], ["inquiries", "Questions & Inquiries"], ["activity", "Activité"], ["performance", "Performances"]] },
-  { id: "ads", ic: "📢", label: "Ads Manager", tabs: [["campaigns", "Campagnes"], ["objectives", "Objectifs"], ["budgets", "Budgets"], ["results", "Résultats"]] },
-  { id: "web", ic: "🌐", label: "Website Analytics", tabs: [["website", "Website"], ["pages", "Landing Pages"], ["registrations", "Inscriptions"], ["leads", "Leads & Contacts"]] },
-  { id: "email", ic: "✉️", label: "Email Marketing", tabs: [["campaigns", "Campagnes"], ["sent", "Emails envoyés"], ["engagement", "Ouvertures & clics"], ["objectives", "Objectifs atteints"]] },
-  { id: "leads", ic: "👥", label: "Leads & Contacts", tabs: [["contacts", "Contacts"], ["profiles", "Investisseurs / Porteurs"], ["sources", "Sources"], ["assignment", "Assignation"], ["treatment", "Traitement"]] },
-  { id: "projects", ic: "📁", label: "Projets", tabs: [["requests", "Demandes de projets"], ["funding", "En cours de financement"]] },
-  { id: "settings", ic: "⚙️", label: "Réglages", tabs: [], hidden: true },
+  { group: "Pilotage" },
+  { id: "overview", ic: "home", label: "Overview", tabs: [["daily", "Daily Monitoring"], ["weekly", "Weekly Reports"], ["monthly", "Monthly Reports"], ["archives", "Archives"]] },
+  { group: "Marketing" },
+  { id: "comm", ic: "megaphone", label: "Communication", tabs: [["actions", "Actions"], ["performance", "Performance"], ["taxonomy", "Canaux & supports"]] },
+  { id: "social", ic: "share", label: "Social Media", tabs: [["overview", "Vue d'ensemble"], ["stats", "Relevés des comptes"]] },
+  { id: "ads", ic: "target", label: "Ads Manager", tabs: [["campaigns", "Campagnes"], ["budgets", "Budgets & objectifs"], ["results", "Résultats"]] },
+  { id: "web", ic: "globe", label: "Website Analytics", tabs: [["website", "Site"], ["pages", "Landing pages"], ["registrations", "Inscriptions"]] },
+  { id: "email", ic: "mail", label: "Email Marketing", tabs: [["campaigns", "Campagnes"], ["performance", "Performance"]] },
+  { id: "funnels", ic: "funnel", label: "Funnel Analytics", tabs: [["list", "Funnels"], ["stages", "Étapes & canaux"], ["conversions", "Conversions"]] },
+  { group: "Commercial" },
+  { id: "leads", ic: "users", label: "Leads & Contacts", tabs: [["contacts", "Leads"], ["questions", "Questions"], ["profiles", "Profils"], ["sources", "Qualité par canal"], ["assignment", "Assignation"], ["treatment", "Traitement"]] },
+  { id: "projects", ic: "folder", label: "Projets", tabs: [["requests", "Demandes"], ["funding", "En financement"]] },
+  { id: "settings", ic: "settings", label: "Réglages", tabs: [], hidden: true },
 ];
+const SECTIONS = NAV.filter(n => n.id);
 const ALIAS = { "ads/campaign": "campaigns" }; // onglet surligné pour une page sans onglet propre
+/** Anciennes adresses (avant la suppression des doublons) → nouvelle place. */
+const REDIRECT = {
+  "social/leads": p => "leads/contacts/" + (p || "social"), "social/inquiries": p => "leads/questions" + (p && p !== "all" && p !== "social" ? "/" + p : ""),
+  "social/activity": p => "comm/actions/" + (p && p !== "social" ? p : "social"), "social/performance": () => "social/overview",
+  "web/leads": () => "leads/contacts/web", "email/sent": () => "email/campaigns", "email/engagement": () => "email/performance",
+  "email/objectives": () => "email/performance", "ads/objectives": () => "ads/budgets", "funnels/stages-tags": () => "funnels/stages",
+};
 
 function parseHash() {
   const h = decodeURIComponent(location.hash.replace(/^#\/?/, "")) || "overview/daily";
@@ -198,27 +287,34 @@ function parseHash() {
   return { sec, tab: tab || "", param: rest.join("/") };
 }
 function renderNav(sec, tab) {
-  $("#nav").innerHTML = NAV.filter(n => !n.hidden).map(n => `<a class="sec${n.id === sec ? " on" : ""}" href="#${n.id}"><span class="ic">${n.ic}</span>${esc(n.label)}</a>`
-    + (n.id === sec && n.tabs.length ? `<div class="subs">${n.tabs.map(([k, l]) => `<a href="#${n.id}/${k}" class="${k === tab ? "on" : ""}">${esc(l)}</a>`).join("")}</div>` : "")).join("");
+  $("#nav").innerHTML = NAV.filter(n => !n.hidden).map(n => n.group ? `<div class="nav-group">${esc(n.group)}</div>`
+    : `<a class="nav-item${n.id === sec ? " on" : ""}" href="#${n.id}">${ic(n.ic)}<span>${esc(n.label)}</span>${n.id === "overview" && S.attention ? `<span class="badge">${S.attention}</span>` : ""}</a>`
+      + (n.id === sec && n.tabs.length ? `<div class="nav-subs">${n.tabs.map(([k, l]) => `<a href="#${n.id}/${k}" class="${k === tab ? "on" : ""}">${esc(l)}</a>`).join("")}</div>` : "")).join("");
 }
 function renderTabs(def, tab) {
   $("#tabs").innerHTML = def.tabs.map(([k, l]) => `<a href="#${def.id}/${k}" class="${k === tab ? "on" : ""}">${esc(l)}</a>`).join("");
+  $("#tabs").hidden = !def.tabs.length;
 }
 async function route() {
   if (!S.boot) return;
   if (S.tx && S.tx.dirty && !location.hash.startsWith("#comm/taxonomy")) {
-    if (!confirm("Canaux & supports : des modifications ne sont pas enregistrées. Les abandonner ?")) { location.hash = "#comm/taxonomy"; return; }
+    const leave = await askDialog({ icon: ["alert", "amber"], title: "Quitter sans enregistrer ?", text: "Vos changements dans Canaux & supports ne sont pas enregistrés. Si vous quittez cette page, ils seront perdus.", ok: "Quitter sans enregistrer", cancel: "Rester sur la page", danger: true });
+    if (!leave) { location.hash = "#comm/taxonomy"; return; }
     S.tx = null;
   }
   const { sec, tab, param } = parseHash();
-  const def = NAV.find(n => n.id === sec) || NAV[0];
+  if (REDIRECT[sec + "/" + tab]) { location.replace("#" + REDIRECT[sec + "/" + tab](param)); return; }
+  const def = SECTIONS.find(n => n.id === sec) || SECTIONS[0];
   const t = tab || (def.tabs[0] ? def.tabs[0][0] : "");
   const view = VIEWS[def.id + "/" + t] || VIEWS[def.id] || VIEWS["overview/daily"];
   const shown = ALIAS[def.id + "/" + t] || t;
   renderNav(def.id, shown);
   renderTabs(def, shown);
   $("#title").textContent = def.label;
-  document.title = def.label + " — Marketing Dashboard";
+  const tabLabel = (def.tabs.find(x => x[0] === shown) || [])[1];
+  $("#crumb").textContent = tabLabel ? def.label + " · " + tabLabel : (S.boot.settings.org || "Marketing");
+  if (tabLabel) $("#title").textContent = tabLabel;
+  document.title = (tabLabel || def.label) + " — Marketing Dashboard";
   $("#rangeCtrl").hidden = !view.range;
   if (view.range) syncRangeCtrl();
   $("#side").classList.remove("open");
@@ -230,7 +326,7 @@ async function route() {
     if (typeof html === "string") V.innerHTML = html;
     if (view.after) view.after(param);
   } catch (e) {
-    if (tok === S.tok && e.status !== 401) V.innerHTML = `<div class="empty">${esc(e.message)}</div>`;
+    if (tok === S.tok && e.status !== 401) V.innerHTML = empty("Cette page n'a pas pu s'afficher. " + e.message, `<button type="button" class="btn" onclick="location.reload()">${ic("trend", "sm")} Recharger</button>`, { icon: ["alert-c", "pink"] });
   }
 }
 window.addEventListener("hashchange", route);
@@ -238,10 +334,15 @@ window.addEventListener("beforeunload", e => { if (S.tx && S.tx.dirty) { e.preve
 $("#burger").addEventListener("click", () => $("#side").classList.toggle("open"));
 
 /* ================================================================ briques d'affichage */
-const empty = (m, btn = "") => `<div class="empty">${esc(m)}${btn ? "<div style=\"margin-top:10px\">" + btn + "</div>" : ""}</div>`;
-const addBtn = (entity, label, preset, cls = "btn") => `<button type="button" class="${cls}" data-add="${entity}"${preset ? ` data-preset="${esc(JSON.stringify(preset))}"` : ""}>＋ ${esc(label)}</button>`;
-const card = (title, body, right = "", id = "") => `<section class="card"${id ? ` id="${id}"` : ""}><div class="card-h"><h2>${title}</h2><div class="ctrl">${right}</div></div>${body}</section>`;
-const actBtns = (entity, r) => `<button type="button" class="icon-btn" title="Modifier" data-edit="${entity}:${r.id}">✏️</button><button type="button" class="icon-btn del" title="Supprimer" data-del="${entity}:${r.id}">🗑</button>`;
+/** État vide : icône, titre (première phrase), explication, bouton pour commencer. */
+const empty = (m, btn = "", opt = {}) => {
+  const [t, rest] = String(m).split(/(?<=[.!?…])\s+(?=[A-ZÀ-Ý«])/u).length > 1 ? [String(m).split(/(?<=[.!?…])\s+(?=[A-ZÀ-Ý«])/u)[0], String(m).split(/(?<=[.!?…])\s+(?=[A-ZÀ-Ý«])/u).slice(1).join(" ")] : [String(m), ""];
+  const [n, tint] = opt.icon || ["inbox", "violet"];
+  return `<div class="empty">${tile(n, tint)}<b>${esc(t)}</b>${rest ? `<p>${esc(rest)}</p>` : ""}${btn ? `<div class="ctrl">${btn}</div>` : ""}</div>`;
+};
+const addBtn = (entity, label, preset, cls = "btn") => `<button type="button" class="${cls}" data-add="${entity}"${preset ? ` data-preset="${esc(JSON.stringify(preset))}"` : ""}>${ic("plus", "sm")} ${esc(label)}</button>`;
+const card = (title, body, right = "", id = "") => `<section class="card"${id ? ` id="${id}"` : ""}><div class="card-h"><h2>${titleWithIcon(title)}</h2><div class="ctrl">${right}</div></div>${body}</section>`;
+const actBtns = (entity, r) => `<button type="button" class="icon-btn" title="Modifier" aria-label="Modifier" data-edit="${entity}:${r.id}">${ic("edit", "sm")}</button><button type="button" class="icon-btn del" title="Supprimer" aria-label="Supprimer" data-del="${entity}:${r.id}">${ic("trash", "sm")}</button>`;
 
 /** Tableau générique. cols : [{l, k?, n?, h?(row)=>html, wrap?}] */
 function table(rows, cols, { entity = null, foot = null, max = 300, emptyMsg = "Aucune donnée sur la période.", more = "" } = {}) {
@@ -306,8 +407,8 @@ function stackChart(series, keys, labels, colors, aria) {
 
 /** Barres horizontales (une seule couleur), valeurs écrites. */
 function hbars(items, fmt = num) {
-  if (!items.length) return empty("Aucune donnée sur la période.");
-  const max = Math.max(1, ...items.map(i => i.value));
+  if (!items.length) return empty("Aucune donnée sur la période. Les barres apparaissent dès que des chiffres sont saisis.");
+  const max = Math.max(0, ...items.map(i => +i.value || 0)) || 1;
   return `<div class="hbars">${items.map(i => `<div class="hbar" data-tip="${esc("<b>" + esc(i.label) + "</b>" + (i.tip || fmt(i.value)))}"><span>${esc(i.label)}</span><span class="track"><i style="width:${(100 * i.value / max).toFixed(1)}%"></i></span><span class="v">${fmt(i.value)}${i.sub ? ` <span class="muted small">${i.sub}</span>` : ""}</span></div>`).join("")}</div>`;
 }
 const mapBars = (map, enumName, total) => hbars(Object.entries(map || {}).map(([k, v]) => ({ label: enumName ? (L(enumName, k) || "Non renseigné") : k, value: v, sub: total ? pct(v / total) : "" })));
@@ -323,23 +424,23 @@ function budgetCell(c) {
   const cls = p > 1 ? "crit" : p >= 0.9 ? "warn" : "";
   const tip = `<b>${esc(c.name)}</b>Dépensé : ${money(c.spent)}<br>Budget : ${money(c.budget)}${c.elapsed != null ? "<br>Durée écoulée : " + pct(c.elapsed) + " (repère)" : ""}`;
   return `<div class="mcell">${meter(p, cls, c.elapsed, tip)}<span>${pct(p)}</span></div>`
-    + (p > 1 ? '<span class="pill crit">⛔ Dépassé</span>' : p >= 0.9 ? '<span class="pill warn">⚠ Presque épuisé</span>' : "");
+    + (p > 1 ? '<span class="pill crit">Dépassé</span>' : p >= 0.9 ? '<span class="pill warn">Presque épuisé</span>' : "");
 }
 function targetCell(achieved, target, elapsed, unit = "") {
   if (!(target > 0)) return '<span class="muted">pas d\'objectif chiffré</span>';
   const p = achieved / target;
-  const verdict = p >= 1 ? '<span class="pill good">✅ Atteint</span>'
-    : elapsed != null && elapsed >= 0.5 && p < elapsed * 0.7 ? '<span class="pill warn">⚠ En retard</span>'
+  const verdict = p >= 1 ? '<span class="pill good">Atteint</span>'
+    : elapsed != null && elapsed >= 0.5 && p < elapsed * 0.7 ? '<span class="pill warn">En retard</span>'
     : elapsed != null && p >= elapsed ? '<span class="pill blue">En avance</span>' : "";
   return `<div class="mcell">${meter(p, p >= 1 ? "good" : "", elapsed, `${num(achieved)} / ${num(target)} ${esc(unit)}`)}<span>${pct(p)}</span></div><div class="sub">${num(achieved)} / ${num(target)} ${esc(unit)} ${verdict}</div>`;
 }
 
 /* ================================================================ rapport */
 const KHREF = {
-  leads: "#leads/contacts", qualified: "#leads/treatment", qual_rate: "#leads/treatment", inquiries: "#social/inquiries/all",
+  leads: "#leads/contacts", qualified: "#leads/treatment", qual_rate: "#leads/treatment", inquiries: "#leads/questions",
   project_requests: "#projects/requests", raised: "#projects/funding", visits: "#web/pages", registrations: "#web/registrations",
-  web_conv: "#web/pages", ads_spend: "#ads/budgets", ads_leads: "#ads/results", cpl: "#ads/results", posts: "#social/activity",
-  social_reach: "#social/performance", emails_sent: "#email/sent", email_conversions: "#email/objectives",
+  web_conv: "#web/pages", ads_spend: "#ads/budgets", ads_leads: "#ads/results", cpl: "#ads/results", posts: "#comm/actions/social",
+  social_reach: "#social/overview", emails_sent: "#email/campaigns", email_conversions: "#email/performance",
 };
 const kval = (k, v) => v == null ? "—" : k.fmt === "pct" ? pct(v, 1) : k.fmt === "money" ? money(v) : num(v);
 function kdelta(k) {
@@ -359,23 +460,24 @@ function kdelta(k) {
   const cls = k.better === "neutral" ? "" : (up !== (k.better === "down")) ? "up" : "down";
   return [txt, cls];
 }
-function kpiTile(k, extraCls = "") {
+function kpiTile(k, extraCls = "", meta = null) {
   const [d, cls] = kdelta(k);
-  const vs = d && d !== "nouveau" ? ` <span class="muted">vs ${kval(k, k.prev)}</span>` : "";
-  const inner = `<small>${esc(k.label)}</small><b>${kval(k, k.value)}</b><span class="d ${cls}">${d || "&nbsp;"}${vs}</span>`;
+  const vs = d && d !== "nouveau" ? `<span>vs ${kval(k, k.prev)}</span>` : "";
+  const m = meta || KMETA[k.key];
+  const inner = `${m ? tile(m[0], m[1]) : ""}<small>${esc(k.label)}</small><b>${kval(k, k.value)}</b><span class="d ${cls}">${d ? `<span class="dv">${esc(d.replace("▲ ", "↑ ").replace("▼ ", "↓ "))}</span>` : "&nbsp;"}${vs}</span>`;
   const href = KHREF[k.key];
   return href ? `<a class="kpi ${extraCls}" href="${href}">${inner}</a>` : `<div class="kpi ${extraCls}">${inner}</div>`;
 }
-const LV = { critical: ["⛔", "Urgent"], warning: ["⚠️", "Attention"], good: ["✅", "Positif"], info: ["ℹ️", "Info"] };
+const LV = { critical: ["alert-c", "Urgent"], warning: ["alert", "À surveiller"], good: ["trend", "Bonne nouvelle"], info: ["sparkles", "À savoir"] };
 function insightsCard(list, title = "Analyse & décisions") {
-  const body = list.length ? `<ul class="ins">${list.map(i => `<li class="${i.level}"><span class="lv">${LV[i.level][0]} ${LV[i.level][1]}</span><span>${esc(i.text)}</span></li>`).join("")}</ul>`
-    : '<p class="muted">Rien de particulier à signaler sur la période.</p>';
-  return card(title, body);
+  const body = list.length ? `<ul class="ins">${list.map(i => `<li class="${i.level}"><span class="lv">${ic(LV[i.level][0])}</span><span class="it"><small>${LV[i.level][1]}</small>${esc(i.text)}</span></li>`).join("")}</ul>`
+    : empty("Rien à signaler. Aucun point d'alerte sur la période : tout suit son cours.", "", { icon: ["check-circle", "green"] });
+  return `<section class="card"><div class="card-h"><h2>${tile("sparkles", "violet", "sm")}${esc(title)}</h2></div>${body}</section>`;
 }
 function backlogTiles(b) {
   const t = (label, v, href, cls = "") => `<a class="kpi ${v > 0 ? cls : ""}" href="${href}"><small>${esc(label)}</small><b>${num(v)}</b><span class="d">&nbsp;</span></a>`;
-  return t("Leads à traiter", b.untreated, "#leads/treatment", "warn") + t("Sans contact depuis 48 h", b.stale, "#leads/treatment", "alert")
-    + t("Leads non assignés", b.unassigned, "#leads/assignment", "warn") + t("Questions en attente", b.open_inquiries, "#social/inquiries/all", "warn")
+  return t("Leads à traiter", b.untreated, "#leads/treatment", "warn") + t("Sans contact depuis 48\u00a0h", b.stale, "#leads/treatment", "alert")
+    + t("Leads non assignés", b.unassigned, "#leads/assignment", "warn") + t("Questions en attente", b.open_inquiries, "#leads/questions", "warn")
     + t("Projets à étudier", b.pending_projects, "#projects/requests");
 }
 const TYPE_COLORS = { investisseur: "--s1", porteur: "--s2", partenaire: "--s3", autre: "--s4" };
@@ -399,7 +501,7 @@ const L_ = (n, k) => L(n, k) || "Non renseigné";
 function commercialTable(L) {
   const rows = Object.entries(L.by_commercial || {}).map(([c, v]) => ({ c, ...v }));
   return table(rows, [
-    { l: "Commercial", h: r => r.c ? esc(r.c) : '<span class="pill warn">⚠ Non assigné</span>' },
+    { l: "Commercial", h: r => r.c ? esc(r.c) : '<span class="pill warn">Non assigné</span>' },
     { l: "Leads", n: 1, h: r => num(r.total) },
     { l: "À traiter", n: 1, h: r => r.untreated ? `<b>${num(r.untreated)}</b>` : "0" },
     { l: "Qualifiés", n: 1, h: r => num(r.qualified) },
@@ -488,7 +590,7 @@ function funnelChart(f) {
   const ramp = ["--o1", "--o2", "--o3", "--o4", "--o5"];
   return `<div class="funnel">${f.stages.map((s, i) => {
     const color = ramp[Math.min(ramp.length - 1, Math.round(i * (ramp.length - 1) / Math.max(1, f.stages.length - 1)))];
-    const conv = i > 0 ? `<div class="fs-conv${f.worst === i ? " worst" : ""}">↓ ${pct(s.conv_prev, 1)} passent à l'étape suivante · abandon ${pct(s.drop, 1)}${s.lost ? " (" + num(s.lost) + " perdus)" : ""}${f.worst === i ? " · ⚠ plus forte perte" : ""}</div>` : "";
+    const conv = i > 0 ? `<div class="fs-conv${f.worst === i ? " worst" : ""}">↓ ${pct(s.conv_prev, 1)} passent à l'étape suivante · abandon ${pct(s.drop, 1)}${s.lost ? " (" + num(s.lost) + " perdus)" : ""}${f.worst === i ? " · <b>plus forte perte</b>" : ""}</div>` : "";
     const tip = `<b>${esc(s.name)}</b>${s.channels.length ? "Canaux : " + s.channels.map(k => esc(L("sources", k))).join(", ") + "<br>" : ""}Prospects : ${num(s.value)}${s.conv_start != null ? "<br>Depuis l'entrée : " + pct(s.conv_start, 1) : ""}${s.target ? "<br>Objectif : " + num(s.target) + " (" + pct(s.target_pct) + ")" : ""}<br>Source : ${esc(L("stage_sources", s.source))}`;
     return conv + `<div data-tip="${esc(tip)}"><div class="fs-h"><span class="n">${i + 1}. ${esc(s.name)} ${s.tags.map(t => `<span class="tag">#${esc(t)}</span>`).join("")} ${chanChips(s.channels)}</span><span class="v">${num(s.value)}${s.target ? ` <span class="muted small">/ ${num(s.target)}</span>` : ""}</span></div><div class="fs-bar"><i style="width:${(100 * s.value / max).toFixed(1)}%;background:var(${color})"></i></div></div>`;
   }).join("")}</div>`;
@@ -497,11 +599,11 @@ function funnelTable(f) {
   return table(f.stages, [
     { l: "Étape", h: s => `<b>${esc(s.name)}</b>${s.tags.length ? "<div>" + s.tags.map(t => `<span class="tag">#${esc(t)}</span>`).join("") + "</div>" : ""}` },
     { l: "Canaux de communication", wrap: 1, h: s => s.channels.length ? chanChips(s.channels) : '<span class="muted">—</span>' },
-    { l: "Source des chiffres", h: s => `<span class="small">${esc(L("stage_sources", s.source))}</span>` + (s.source.startsWith("stage_") && !s.channels.length ? '<div><span class="pill warn">⚠ aucun canal</span></div>' : "") },
+    { l: "Source des chiffres", h: s => `<span class="small">${esc(L("stage_sources", s.source))}</span>` + (needsCh(s.source) && !s.channels.length ? '<div><span class="pill warn">Aucun canal</span></div>' : "") },
     { l: "Prospects", n: 1, h: s => num(s.value) },
     { l: "Conv. étape préc.", n: 1, h: s => pct(s.conv_prev, 1) },
     { l: "Conv. depuis l'entrée", n: 1, h: s => pct(s.conv_start, 1) },
-    { l: "Abandon", n: 1, h: s => s.drop == null ? "—" : (s === f.stages[f.worst] ? `<span class="pill warn">⚠ ${pct(s.drop, 1)}</span>` : pct(s.drop, 1)) },
+    { l: "Abandon", n: 1, h: s => s.drop == null ? "—" : (s === f.stages[f.worst] ? `<span class="pill warn">${pct(s.drop, 1)}</span>` : pct(s.drop, 1)) },
     { l: "Objectif", h: s => s.target ? `<div class="mcell">${meter(s.target_pct, s.target_pct >= 1 ? "good" : "")}<span>${pct(s.target_pct)}</span></div>` : '<span class="muted">—</span>' },
   ]);
 }
@@ -510,7 +612,7 @@ function funnelCard(f, extra = "") {
   if (f.links.campaigns) links.push(f.links.campaigns + " campagne(s)");
   if (f.links.pages) links.push(f.links.pages + " page(s)");
   if (f.links.emails) links.push(f.links.emails + " email(s)");
-  if (f.links.social.length) links.push(f.links.social.map(p => L("platforms", p)).join(", "));
+  if ((f.links.channels || []).length) links.push(f.links.channels.length + " canal(aux)");
   const head = `<p class="sub" style="margin:-4px 0 12px">${f.objective ? esc(f.objective) + " · " : ""}${links.length ? "Associé à : " + esc(links.join(" · ")) : "Aucune association"}${f.overall != null ? ` · <b>conversion globale ${pct(f.overall, 1)}</b>` : ""}</p>`;
   return card(`📊 ${esc(f.name)}`, head + funnelChart(f) + extra, `<a class="btn sm" href="#funnels/stages/${f.id}">Ouvrir</a>`);
 }
@@ -519,20 +621,9 @@ function funnelCard(f, extra = "") {
 function periodHead(tab, type, r, date) {
   const p = r.period;
   const unit = { day: "jour", week: "semaine", month: "mois" }[type];
-  const cmp = p.partial ? `${unit === "jour" ? "" : "Période en cours, "}comparée au même nombre de jours : ${fdate(p.prev_from, false)} → ${fdate(p.prev_to)}` : `Comparé à : ${p.prev_from === p.prev_to ? fdate(p.prev_from) : fdate(p.prev_from, false) + " → " + fdate(p.prev_to)}`;
-  return `<div class="toolbar no-print-keep">
-      <button type="button" class="btn" data-shift="${tab}:${type}:${date}:-1" title="Précédent">◀</button>
-      <input type="date" value="${date}" data-pick="${tab}" aria-label="Date">
-      <button type="button" class="btn" data-shift="${tab}:${type}:${date}:1" title="Suivant">▶</button>
-      <a class="btn ghost" href="#overview/${tab}">Aujourd'hui</a>
-      <span class="grow"></span>
-      <button type="button" class="btn" data-report="send:${type}:${date}">📧 Envoyer par email</button>
-      <button type="button" class="btn" data-report="archive:${type}:${date}">🗄 Archiver</button>
-      <button type="button" class="btn" data-report="csv:${type}:${date}">⬇ CSV</button>
-      <button type="button" class="btn" data-report="print">🖨 Imprimer / PDF</button>
-    </div>
-    <div class="period"><h2>Rapport ${esc(r.type_label)} · ${esc(p.label)}</h2></div>
-    <p class="compare">${esc(cmp)} · généré automatiquement à partir de toutes les sections.</p>`;
+  const cmp = p.partial ? `${unit === "jour" ? "" : "période en cours, "}comparée au même nombre de jours (${fdate(p.prev_from, false)} → ${fdate(p.prev_to)})` : `comparé à ${p.prev_from === p.prev_to ? fdate(p.prev_from) : fdate(p.prev_from, false) + " → " + fdate(p.prev_to)}`;
+  return `<div class="hello"><div><h1>Rapport ${esc(r.type_label)}</h1><p>${esc(p.label)} · ${esc(cmp)}. Calculé automatiquement à partir de toutes les sections.</p></div>
+    <div class="rep-ctrl">${dateNav(tab, type, date, type === "week" ? "Semaine contenant le" : "Mois contenant le")}${reportActions(type, date)}</div></div>`;
 }
 function shiftDate(type, date, dir) {
   return type === "day" ? addDays(date, dir) : type === "week" ? addDays(date, 7 * dir) : addMonths(date, dir);
@@ -545,7 +636,7 @@ function reportBody(r) {
   const typeSub = Object.entries(LD.by_type).map(([t, n]) => esc(L_("contact_types", t)) + " : " + num(n)).join(" · ");
   return `<div class="kpis">${r.kpis.map(k => kpiTile(k)).join("")}</div>
     ${insightsCard(r.insights)}
-    <section class="card"><div class="card-h"><h2>À traiter maintenant</h2></div><div class="kpis" style="margin:0">${backlogTiles(r.backlog)}</div></section>
+    <section class="card"><div class="card-h"><h2>${tile("bell", "pink", "sm")}À traiter maintenant</h2></div><div class="kpis" style="margin:0">${backlogTiles(r.backlog)}</div></section>
     ${card("👥 Leads & Contacts", `<p class="sub" style="margin:-4px 0 10px">${num(LD.total)} nouveau(x) — ${typeSub || "aucun"} · ${num(LD.qualified)} qualifié(s), ${num(LD.non_qualified)} non qualifié(s), ${num(LD.converted)} converti(s)</p>
       ${leadsChart(LD)}
       <h3>Par source</h3>${sourceTable(LD)}
@@ -557,19 +648,68 @@ function reportBody(r) {
       <h3>Nouvelles demandes de projets</h3>${table(r.projects.requests_list, [{ l: "Date", h: p => fdate(p.date) }, { l: "Projet", h: p => `<b>${esc(p.name)}</b><div class="sub">${esc(p.owner || "")}</div>` }, { l: "Secteur", h: p => esc(p.sector || "—") }, { l: "Montant recherché", n: 1, h: p => money(p.amount_target) }, { l: "Statut", h: p => esc(L("project_status", p.status)) }], { emptyMsg: "Aucune nouvelle demande sur la période." })}`)}
     ${card("🌐 Website Analytics", webTable(r.web), `<a class="btn sm" href="#web/pages">Détails</a>`)}
     ${card("📣 Communication · canaux & supports", commSummary(r.comm), `<a class="btn sm" href="#comm/performance">Performance détaillée</a>`)}
-    ${card("📱 Social Media", socialTable(r.social), `<a class="btn sm" href="#social/performance">Détails</a>`)}
+    ${card("📱 Social Media", socialTable(r.social), `<a class="btn sm" href="#social/overview">Détails</a>`)}
     ${card("📢 Ads Manager", `<h3 style="margin-top:0">Résultats de la période</h3>${adsTable(r.ads)}<h3>Budgets & objectifs (cumul depuis le début de chaque campagne)</h3>${budgetsTable(r.ads.budgets)}`, `<a class="btn sm" href="#ads/campaigns">Campagnes</a>`)}
     ${card("✉️ Email Marketing", emailTable(r.email.list) + (r.email.list.length ? ESTIMATE : ""), `<a class="btn sm" href="#email/campaigns">Campagnes</a>`)}
-    ${r.funnels.length ? `<h2 style="margin:22px 0 12px">📊 Funnel Analytics</h2>` + r.funnels.map(f => funnelCard(f)).join("") : ""}`;
+    ${r.funnels.length ? `<h2 class="sec-h">${tile("funnel", "violet", "sm")}Funnel Analytics</h2>` + r.funnels.map(f => funnelCard(f)).join("") : ""}`;
 }
 
 /* ================================================================ vues : Overview */
 const VIEWS = {};
+const longDate = d => new Date(d + "T12:00:00").toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+const DOW = ["L", "M", "M", "J", "V", "S", "D"];
+/** Mini-calendrier du mois : un point sous chaque jour où quelque chose a été saisi. */
+function calHtml(month, days, sel) {
+  const first = month + "-01";
+  const start = monday(first);
+  const label = new Date(first + "T12:00:00").toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+  let cells = "";
+  for (let i = 0; i < 42; i++) {
+    const d = addDays(start, i);
+    if (i >= 35 && d.slice(0, 7) !== month) break;
+    const a = days[d], n = a ? Object.values(a).reduce((x, y) => x + y, 0) : 0;
+    const tip = a ? [a.leads && a.leads + " lead(s)", a.questions && a.questions + " question(s)", a.actions && a.actions + " action(s)", a.projects && a.projects + " projet(s)"].filter(Boolean).join(" · ") : "";
+    const cls = [d.slice(0, 7) !== month && "out", d === S.today && "today", d === sel && "sel", d > S.today && "future"].filter(Boolean).join(" ");
+    cells += `<button type="button" class="${cls}" data-day="${d}" aria-label="${esc(longDate(d) + (tip ? " — " + tip : ""))}"${tip ? ` data-tip="${esc("<b>" + fdate(d) + "</b>" + tip)}"` : ""}${d > S.today ? " disabled" : ""}>${+d.slice(8)}${n ? '<i class="dot"></i>' : ""}</button>`;
+  }
+  return `<div class="cal-h"><b>${ic("calendar", "sm")} ${esc(label.charAt(0).toUpperCase() + label.slice(1))}</b><span><button type="button" class="icon-btn" data-calm="-1" aria-label="Mois précédent">${ic("chev-l", "sm")}</button><button type="button" class="icon-btn" data-calm="1" aria-label="Mois suivant"${month >= S.today.slice(0, 7) ? " disabled" : ""}>${ic("chev-r", "sm")}</button></span></div>
+    <div class="cal">${DOW.map(x => `<span class="dow">${x}</span>`).join("")}${cells}</div>`;
+}
+const RECENT_META = { contacts: ["user-plus", "blue"], inquiries: ["message", "teal"], posts: ["megaphone", "violet"], projects: ["folder", "pink"], campaigns: ["target", "orange"], emails: ["mail", "green"] };
+function ago(ts) {
+  const s = Math.max(0, Date.now() / 1000 - ts), rt = new Intl.RelativeTimeFormat("fr", { numeric: "auto" });
+  if (s < 60) return "à l'instant";
+  if (s < 3600) return rt.format(-Math.round(s / 60), "minute");
+  if (s < 86400) return rt.format(-Math.round(s / 3600), "hour");
+  if (s < 86400 * 30) return rt.format(-Math.round(s / 86400), "day");
+  return new Date(ts * 1000).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+}
+function recentHtml(items) {
+  if (!items.length) return empty("Rien de saisi pour l'instant. Chaque lead, question ou action enregistré apparaîtra ici.", "", { icon: ["clock", "violet"] });
+  return `<ul class="tl">${items.map(x => {
+    const m = RECENT_META[x.kind] || ["file", "violet"];
+    const open = x.kind === "campaigns" ? `href="#ads/campaign/${x.id}"` : `href="javascript:void 0" data-edit="${x.kind}:${x.id}"`;
+    return `<li style="--dot:var(--${m[1]})"><a ${open}><b>${esc(x.text)}</b></a><span class="sub">${esc(x.sub || "")}${x.sub ? " · " : ""}${esc(ago(x.created))}</span></li>`;
+  }).join("")}</ul>`;
+}
+/** Boutons d'un rapport (envoyer, archiver, CSV, imprimer). */
+function reportActions(type, date) {
+  const b = (act, icon, label, txt = "") => `<button type="button" class="btn${txt ? "" : " icon"}" data-report="${act}:${type}:${date}" title="${esc(label)}" aria-label="${esc(label)}">${ic(icon, "sm")}${txt ? " " + esc(txt) : ""}</button>`;
+  return `<div class="rep-act">${b("send", "send", "Envoyer le rapport par email", "Envoyer")}${b("archive", "archive", "Archiver le rapport")}${b("csv", "download", "Télécharger le rapport (CSV)")}<button type="button" class="btn icon" data-report="print" title="Imprimer ou enregistrer en PDF" aria-label="Imprimer ou enregistrer en PDF">${ic("printer", "sm")}</button></div>`;
+}
+/** Navigation de date : précédent, sélecteur, suivant, retour à aujourd'hui. */
+function dateNav(tab, type, date, label) {
+  return `<div class="datebox"><button type="button" class="icon-btn" data-shift="${tab}:${type}:${date}:-1" aria-label="Période précédente">${ic("chev-l")}</button>
+    <label class="d"><small>${esc(label)}</small><input type="date" value="${date}" max="${S.today}" data-pick="${tab}" aria-label="Choisir la date"></label>
+    <button type="button" class="icon-btn" data-shift="${tab}:${type}:${date}:1" aria-label="Période suivante"${shiftDate(type, date, 1) > S.today ? " disabled" : ""}>${ic("chev-r")}</button></div>`
+    + (date !== S.today ? `<a class="btn ghost sm" href="#overview/${tab}">Revenir à aujourd'hui</a>` : "");
+}
 
 VIEWS["overview/daily"] = { fn: async (param, tok) => {
   const date = isDate(param) ? param : S.today;
-  const r = (await api("report", { type: "day", date })).report;
+  const [r, rec, cal] = await Promise.all([api("report", { type: "day", date }).then(d => d.report), api("recent").catch(() => ({ items: [] })), api("activity_days", { month: date.slice(0, 7) }).catch(() => ({ month: date.slice(0, 7), days: {} }))]);
   S.lastReport = r;
+  S.calMonth = cal.month;
   const k = Object.fromEntries(r.kpis.map(x => [x.key, x]));
   const d = r.day, b = r.backlog;
   remember("contacts", [...d.contacts, ...b.leads_list]);
@@ -577,31 +717,73 @@ VIEWS["overview/daily"] = { fn: async (param, tok) => {
   remember("posts", d.posts);
   remember("projects", d.projects);
   const leadCols = [
-    { l: "Reçu le", h: c => fdate(c.date) },
-    { l: "Contact", h: c => `<b>${esc(c.name)}</b><div class="sub">${esc([c.phone, c.email, c.city].filter(Boolean).join(" · "))}</div>` },
+    { l: "Lead", h: c => `<div class="who"><b>${esc(c.name)}</b><div class="sub">${esc(fdate(c.date))}${c.phone ? " · " + esc(c.phone) : ""}</div></div>` },
     { l: "Profil", h: c => esc(L("contact_types", c.type)) },
-    { l: "Source", h: c => esc(L("sources", c.source)) + (c.campaign_id ? `<div class="sub">${esc(refName("campaigns", c.campaign_id))}</div>` : "") },
+    { l: "Canal", h: c => chCell(c.source) + (c.campaign_id ? `<div class="sub">${esc(refName("campaigns", c.campaign_id))}</div>` : "") },
     { l: "Commercial", h: c => inlineSel("contacts", c, "assigned_to") },
     { l: "Traitement", h: c => inlineSel("contacts", c, "status") },
   ];
   const inqCols = [
-    { l: "Reçue le", h: q => fdate(q.date) },
-    { l: "Question", wrap: 1, h: q => `<b>${esc(q.name || "Anonyme")}</b> <span class="muted small">${esc(L("sources", q.source))} · ${esc(L("inq_categories", q.category))}</span><div class="sub">${esc(q.question)}</div>` },
+    { l: "Question", wrap: 1, h: q => `<b>${esc(q.name || "Anonyme")}</b> <span class="muted small">${esc(fdate(q.date))} · ${esc(L("inq_categories", q.category))}</span><div class="sub">${esc(q.question)}</div>` },
+    { l: "Canal", h: q => chCell(q.source) },
     { l: "Statut", h: q => inlineSel("inquiries", q, "status") },
   ];
-  return periodHead("daily", "day", r, date)
-    + `<div class="kpis">${["leads", "qualified", "inquiries", "posts", "project_requests"].map(x => kpiTile(k[x])).join("")}${backlogTiles(b)}</div>
-    <div class="toolbar">${addBtn("contacts", "Lead / contact", { date }, "btn pri")}${addBtn("inquiries", "Question", { date })}${addBtn("posts", "Action de communication", { date })}${addBtn("projects", "Demande de projet", { date })}</div>
-    ${insightsCard(r.insights, "Analyse du jour & décisions")}
-    ${card(`👥 Nouveaux leads & contacts du jour <span class="muted small">(${num(d.contacts.length)})</span>`, table(d.contacts, leadCols, { entity: "contacts", emptyMsg: "Aucun lead enregistré ce jour." }), addBtn("contacts", "Lead", { date }, "btn sm"))}
-    <div class="grid2">
-      ${card(`💬 Questions & inquiries du jour <span class="muted small">(${num(d.inquiries.length)})</span>`, table(d.inquiries, inqCols, { entity: "inquiries", emptyMsg: "Aucune question ce jour." }), addBtn("inquiries", "Question", { date }, "btn sm"))}
-      ${card(`📣 Actions de communication du jour <span class="muted small">(${num(d.posts.length)})</span>`, table(d.posts, [{ l: "Canal", h: p => `<b>${esc(chName(p.platform))}</b>` }, { l: "Support", h: p => p.format ? `<span class="chan">${esc(L("supports", p.format))}</span>` : "—" }, { l: "Contenu", wrap: 1, h: p => esc(p.topic) + (p.link ? ` <a href="${esc(p.link)}" target="_blank" rel="noopener">↗</a>` : "") }, { l: "Portée", n: 1, h: p => num(p.reach) }], { entity: "posts", emptyMsg: "Aucune action de communication ce jour." }), addBtn("posts", "Action", { date }, "btn sm"))}
-    </div>
-    ${card(`📁 Nouvelles demandes de projets <span class="muted small">(${num(d.projects.length)})</span>`, table(d.projects, [{ l: "Projet", h: p => `<b>${esc(p.name)}</b><div class="sub">${esc(p.owner || "")}</div>` }, { l: "Secteur", h: p => esc(p.sector || "—") }, { l: "Montant recherché", n: 1, h: p => money(p.amount_target) }, { l: "Source", h: p => esc(L("sources", p.source) || "—") }, { l: "Statut", h: p => inlineSel("projects", p, "status") }], { entity: "projects", emptyMsg: "Aucune demande de projet ce jour." }), addBtn("projects", "Demande", { date }, "btn sm"))}
-    <h2 style="margin:22px 0 12px">🔔 À traiter (tous jours confondus, du plus ancien au plus récent)</h2>
-    ${card(`Leads en attente de traitement ou d'assignation <span class="muted small">(${num(b.leads_list.length)}${b.leads_list.length >= 60 ? "+" : ""})</span>`, table(b.leads_list, leadCols, { entity: "contacts", max: 15, more: '<a href="#leads/treatment/nouveau">voir tous les leads à traiter</a>', emptyMsg: "Aucun lead en attente 🎉" }))}
-    ${card(`Questions en attente de réponse <span class="muted small">(${num(b.inquiries_list.length)})</span>`, table(b.inquiries_list, inqCols, { entity: "inquiries", max: 15, more: '<a href="#social/inquiries/all">voir toutes les questions</a>', emptyMsg: "Aucune question en attente 🎉" }))}`;
+  const isToday = date === S.today;
+  const hour = new Date().getHours();
+  const who = (S.boot.settings.owner_name || "").trim();
+  const hello = isToday ? `${hour < 18 ? "Bonjour" : "Bonsoir"}${who ? ", " + esc(who) : ""} 👋` : esc(longDate(date).replace(/^./, c => c.toUpperCase()));
+  const intro = isToday ? `Voici l'essentiel d'aujourd'hui, ${esc(longDate(date))}, comparé à hier.` : `Journée passée, comparée à la veille. Les chiffres se recalculent dès qu'une donnée change.`;
+  // Onglets du jour (divulgation progressive : un seul tableau visible à la fois).
+  const dayTabs = [
+    ["contacts", "Leads", "user-plus", d.contacts, table(d.contacts, leadCols, { entity: "contacts", emptyMsg: "Aucun lead ce jour. Ajoutez-le dès qu'un prospect vous contacte, quel que soit le canal." }), addBtn("contacts", "Ajouter un lead", { date }, "btn sm pri")],
+    ["inquiries", "Questions", "message", d.inquiries, table(d.inquiries, inqCols, { entity: "inquiries", emptyMsg: "Aucune question ce jour. Notez ici les questions reçues par message, téléphone ou commentaire." }), addBtn("inquiries", "Ajouter une question", { date }, "btn sm pri")],
+    ["posts", "Actions", "megaphone", d.posts, table(d.posts, [{ l: "Canal", h: p => chCell(p.platform, p.format) }, { l: "Contenu", wrap: 1, h: p => esc(p.topic) + (p.link ? ` <a href="${esc(p.link)}" target="_blank" rel="noopener" aria-label="Ouvrir la publication">${ic("link", "xs")}</a>` : "") }, { l: "Portée", n: 1, h: p => num(p.reach) }, { l: "Leads", n: 1, h: p => num(p.leads) }], { entity: "posts", emptyMsg: "Aucune action de communication ce jour. Enregistrez vos publications, emails ou événements pour suivre leur effet." }), addBtn("posts", "Enregistrer une action", { date }, "btn sm pri")],
+    ["projects", "Projets", "folder", d.projects, table(d.projects, [{ l: "Projet", h: p => `<b>${esc(p.name)}</b><div class="sub">${esc(p.owner || "")}</div>` }, { l: "Secteur", h: p => esc(p.sector || "—") }, { l: "Montant recherché", n: 1, h: p => money(p.amount_target) }, { l: "Statut", h: p => inlineSel("projects", p, "status") }], { entity: "projects", emptyMsg: "Aucune demande de projet ce jour." }), addBtn("projects", "Ajouter une demande", { date }, "btn sm pri")],
+  ];
+  const firstTab = (dayTabs.find(t => t[3].length) || dayTabs[0])[0];
+  const att = [
+    ["stale", "Sans contact depuis 48\u00a0h", "Leads à rappeler en priorité", "alert-c", "pink", b.stale, "#leads/treatment/nouveau"],
+    ["untreated", "Leads à traiter", "Nouveaux ou contactés, pas encore qualifiés", "users", "orange", b.untreated, "#leads/treatment/nouveau"],
+    ["unassigned", "Leads sans commercial", "À confier à un commercial", "user-plus", "blue", b.unassigned, "#leads/assignment"],
+    ["open_inquiries", "Questions sans réponse", "Nouvelles ou en cours", "message", "teal", b.open_inquiries, "#leads/questions"],
+    ["pending_projects", "Projets à étudier", "Demandes reçues ou en étude", "folder", "violet", b.pending_projects, "#projects/requests"],
+  ];
+  const quick = [["contacts", "Ajouter un lead", "user-plus", "blue"], ["inquiries", "Noter une question", "message", "teal"], ["posts", "Enregistrer une action", "megaphone", "violet"], ["ad_results", "Saisir des résultats pub", "target", "orange"], ["social_stats", "Relever un compte social", "share", "pink"], ["projects", "Ajouter une demande de projet", "folder", "green"]];
+  const insMax = 5;
+  const ins = r.insights;
+  const insBody = ins.length ? `<ul class="ins">${ins.slice(0, insMax).map(i => `<li class="${i.level}"><span class="lv">${ic(LV[i.level][0])}</span><span class="it"><small>${LV[i.level][1]}</small>${esc(i.text)}</span></li>`).join("")}</ul>`
+    + (ins.length > insMax ? `<details class="more"><summary>Voir les ${ins.length - insMax} autres points</summary><ul class="ins">${ins.slice(insMax).map(i => `<li class="${i.level}"><span class="lv">${ic(LV[i.level][0])}</span><span class="it"><small>${LV[i.level][1]}</small>${esc(i.text)}</span></li>`).join("")}</ul></details>` : "")
+    : empty("Rien à signaler. Aucun point d'alerte aujourd'hui : tout suit son cours.", "", { icon: ["check-circle", "green"] });
+  return `<div class="hello"><div><h1>${hello}</h1><p>${intro}</p></div><div class="rep-ctrl">${dateNav("daily", "day", date, isToday ? "Aujourd'hui" : "Jour affiché")}${reportActions("day", date)}</div></div>
+    <div class="kpis k5">${["leads", "qualified", "inquiries", "posts", "project_requests"].map(x => kpiTile(k[x])).join("")}</div>
+    <div class="dash"><div class="main-col">
+      <section class="card"><div class="card-h"><h2>${tile("sparkles", "violet", "sm")}Analyse du jour</h2><span class="muted small">${ins.length ? num(ins.length) + " point(s), du plus urgent au plus informatif" : ""}</span></div>${insBody}</section>
+      <section class="card"><div class="card-h"><h2>${tile("calendar", "blue", "sm")}${isToday ? "Saisi aujourd'hui" : "Saisi ce jour-là"}</h2><div class="seg" role="tablist" aria-label="Données du jour">${dayTabs.map(t => `<button type="button" role="tab" data-dtab="${t[0]}" aria-selected="${t[0] === firstTab}">${ic(t[2], "sm")} ${t[1]} <em>${num(t[3].length)}</em></button>`).join("")}</div></div>
+        ${dayTabs.map(t => `<div class="dpanel" data-dpanel="${t[0]}"${t[0] === firstTab ? "" : " hidden"}><div class="toolbar" style="justify-content:flex-end">${t[5]}</div>${t[4]}</div>`).join("")}</section>
+      ${card(`👥 Leads en attente <span class="muted small">(${num(b.leads_list.length)}${b.leads_list.length >= 60 ? "+" : ""})</span>`, table(b.leads_list, leadCols, { entity: "contacts", max: 8, more: '<a href="#leads/treatment/nouveau">Voir tous les leads à traiter</a>', emptyMsg: "Aucun lead en attente. Tous les leads ont été traités et assignés : bravo !" }), `<a class="btn sm" href="#leads/treatment/nouveau">Tout voir</a>`)}
+    </div><div class="side-col">
+      <section class="card"><div class="card-h"><h2>${tile("bell", "pink", "sm")}À traiter maintenant</h2></div><div class="alist">${att.map(a => `<a class="arow${a[5] ? "" : " zero"}" href="${a[6]}">${tile(a[3], a[4], "sm")}<span><b>${esc(a[1])}</b><small>${esc(a[2])}</small></span><span class="n">${num(a[5])}</span>${ic("chev-r", "sm chev")}</a>`).join("")}</div></section>
+      <section class="card"><div class="card-h"><h2>${tile("zap", "amber", "sm")}Saisie rapide</h2><button type="button" class="btn sm ghost" data-import="contacts">${ic("upload", "sm")} Importer</button></div><div class="qa">${quick.map(q => `<button type="button" data-add="${q[0]}" data-preset="${esc(JSON.stringify({ date }))}">${tile(q[2], q[3], "sm")}${esc(q[1])}${ic("plus", "sm chev")}</button>`).join("")}</div></section>
+      <section class="card" id="calCard">${calHtml(cal.month, cal.days, date)}</section>
+      <section class="card"><div class="card-h"><h2>${tile("clock", "teal", "sm")}Activité récente</h2></div>${recentHtml(rec.items)}</section>
+    </div></div>`;
+}, after: () => {
+  const card0 = V.querySelector(".seg");
+  if (card0) card0.addEventListener("click", e => {
+    const bt = e.target.closest("[data-dtab]");
+    if (!bt) return;
+    $$("[data-dtab]", card0).forEach(x => x.setAttribute("aria-selected", x === bt ? "true" : "false"));
+    $$("[data-dpanel]", V).forEach(p => { p.hidden = p.dataset.dpanel !== bt.dataset.dtab; });
+  });
+  const cc = $("#calCard");
+  if (cc) cc.addEventListener("click", async e => {
+    const day = e.target.closest("[data-day]"), m = e.target.closest("[data-calm]");
+    if (day) { location.hash = "#overview/daily/" + day.dataset.day; return; }
+    if (m && !m.disabled) {
+      const month = addMonths(S.calMonth + "-01", +m.dataset.calm).slice(0, 7);
+      try { const c = await api("activity_days", { month }); S.calMonth = c.month; cc.innerHTML = calHtml(c.month, c.days, parseHash().param || S.today); } catch (err) { toast(err.message, "err"); }
+    }
+  });
 } };
 
 for (const [tab, type] of [["weekly", "week"], ["monthly", "month"]]) {
@@ -618,20 +800,20 @@ VIEWS["overview/archives"] = { fn: async param => {
     const d = await api("archive", { id: param });
     const r = d.report;
     S.lastReport = r;
-    return `<div class="banner">🗄 Archive figée le ${fdate(new Date(d.meta.created * 1000).toISOString().slice(0, 10))}${d.meta.sent_to ? " · envoyée à " + esc(d.meta.sent_to) : ""} — les chiffres sont ceux du moment de l'archivage.</div>
-      <div class="toolbar"><a class="btn" href="#overview/archives">← Toutes les archives</a><span class="grow"></span><button type="button" class="btn" data-report="print">🖨 Imprimer / PDF</button></div>
-      <div class="period"><h2>Rapport ${esc(r.type_label)} · ${esc(r.period.label)}</h2></div><p class="compare">Comparé à ${fdate(r.period.prev_from, false)} → ${fdate(r.period.prev_to)}</p>` + reportBody(r);
+    return `<div class="toolbar"><a class="btn ghost" href="#overview/archives">${ic("chev-l", "sm")} Toutes les archives</a></div>
+      <div class="hello"><div><h1>Rapport ${esc(r.type_label)}</h1><p>${esc(r.period.label)} · comparé à ${fdate(r.period.prev_from, false)} → ${fdate(r.period.prev_to)}</p></div><div class="rep-ctrl"><button type="button" class="btn" data-report="print">${ic("printer", "sm")} Imprimer / PDF</button></div></div>
+      <div class="banner">${ic("archive", "sm")} Copie figée le ${fdate(new Date(d.meta.created * 1000).toISOString().slice(0, 10))}${d.meta.sent_to ? ", envoyée à " + esc(d.meta.sent_to) : ""} : les chiffres sont ceux du moment de l'archivage.</div>` + reportBody(r);
   }
   const rows = (await api("archives")).rows;
   const T = { day: "Quotidien", week: "Hebdomadaire", month: "Mensuel", custom: "Période" };
-  return `<p class="muted" style="margin-top:0">Chaque matin, la tâche automatique archive (et envoie par email) le rapport de la veille, le lundi celui de la semaine écoulée et le 1er celui du mois écoulé. Un rapport archivé garde les chiffres du moment où il a été produit.</p>`
+  return `<p class="muted" style="margin-top:0">Chaque matin, l'envoi automatique archive (et envoie par email) le rapport de la veille ; le lundi, celui de la semaine écoulée ; le 1er, celui du mois écoulé. Un rapport archivé garde les chiffres du moment où il a été produit.</p>`
     + card("🗄 Rapports archivés", table(rows, [
       { l: "Rapport", h: a => `<a href="#overview/archives/${a.id}"><b>${esc(a.label)}</b></a>` },
       { l: "Type", h: a => `<span class="pill blue">${T[a.type] || a.type}</span>` },
-      { l: "Produit le", h: a => fdate(new Date(a.created * 1000).toISOString().slice(0, 10)) + " · " + (a.origin === "cron" ? "automatique" : a.origin.endsWith("-echec") ? '<span class="pill warn">⚠ envoi échoué</span>' : "manuel") },
+      { l: "Produit le", h: a => fdate(new Date(a.created * 1000).toISOString().slice(0, 10)) + " · " + (a.origin === "cron" ? "automatique" : a.origin.endsWith("-echec") ? '<span class="pill warn">Envoi échoué</span>' : "manuel") },
       { l: "Envoyé à", wrap: 1, h: a => esc(a.sent_to || "—") },
-      { l: "", h: a => `<a class="btn sm" href="#overview/archives/${a.id}">Ouvrir</a> <button type="button" class="icon-btn del" data-archive-del="${a.id}" title="Supprimer">🗑</button>` },
-    ], { emptyMsg: "Aucun rapport archivé pour l'instant (le premier arrivera demain matin si la tâche automatique est installée)." }));
+      { l: "", h: a => `<a class="btn sm" href="#overview/archives/${a.id}">Ouvrir</a> <button type="button" class="icon-btn del" data-archive-del="${a.id}" title="Supprimer ce rapport archivé" aria-label="Supprimer ce rapport archivé">${ic("trash", "sm")}</button>` },
+    ], { emptyMsg: "Aucun rapport archivé pour l'instant. Le premier arrivera demain matin si l'envoi automatique est installé (Réglages), ou archivez un rapport vous-même depuis son en-tête." }));
 } };
 
 /* ================================================================ vues : Funnels */
@@ -639,7 +821,7 @@ function funnelPicker(selected, base) {
   const fs = REF("funnels");
   return `<select data-goto="${base}" aria-label="Funnel">${fs.map(f => `<option value="${f.id}"${+f.id === +selected ? " selected" : ""}>${esc(f.name)}${f.status !== "actif" ? " (" + esc(L("funnel_status", f.status)) + ")" : ""}</option>`).join("")}</select>`;
 }
-const NEW_FUNNEL = `<button type="button" class="btn pri" data-funnel-edit="0">＋ Créer un funnel</button>`;
+const NEW_FUNNEL = `<button type="button" class="btn pri" data-funnel-edit="0">${ic("plus", "sm")} Créer un funnel</button>`;
 
 VIEWS["funnels/list"] = { range: true, fn: async () => {
   const fs = REF("funnels");
@@ -648,7 +830,7 @@ VIEWS["funnels/list"] = { range: true, fn: async () => {
   const [from, to] = curRange();
   const data = await Promise.all(fs.map(f => cached("funnel", { id: f.id, from, to })));
   return intro + `<div class="toolbar">${NEW_FUNNEL}</div>` + data.map(d => funnelCard(d.data,
-    `<div class="toolbar" style="margin:12px 0 0"><span class="pill ${d.funnel.status === "actif" ? "good" : ""}">${esc(L("funnel_status", d.funnel.status))}</span><span class="grow"></span><button type="button" class="btn sm" data-funnel-edit="${d.funnel.id}">✏️ Modifier</button><button type="button" class="btn sm del" data-del="funnels:${d.funnel.id}">🗑 Supprimer</button></div>`)).join("");
+    `<div class="toolbar" style="margin:12px 0 0"><span class="pill ${d.funnel.status === "actif" ? "good" : ""}">${esc(L("funnel_status", d.funnel.status))}</span><span class="grow"></span><button type="button" class="btn sm" data-funnel-edit="${d.funnel.id}">${ic("edit", "sm")} Modifier</button><button type="button" class="btn sm del" data-del="funnels:${d.funnel.id}">${ic("trash", "sm")} Supprimer</button></div>`)).join("");
 } };
 
 VIEWS["funnels/stages"] = { range: true, fn: async param => {
@@ -661,14 +843,13 @@ VIEWS["funnels/stages"] = { range: true, fn: async param => {
   remember("funnel_entries", d.entries);
   const manual = f.stages.filter(s => s.source === "manual");
   const L_links = [
-    ...REF("campaigns").filter(c => f.links.campaigns.includes(+c.id)).map(c => `<a class="tag" href="#ads/campaign/${c.id}">📢 ${esc(c.name)}</a>`),
-    ...REF("pages").filter(p => f.links.pages.includes(+p.id)).map(p => `<span class="tag">🌐 ${esc(p.name)}</span>`),
-    ...REF("emails").filter(e => f.links.emails.includes(+e.id)).map(e => `<span class="tag">✉️ ${esc(e.name)}</span>`),
-    ...f.links.social.map(p => `<span class="tag">📱 ${esc(L("platforms", p))}</span>`),
+    ...REF("campaigns").filter(c => f.links.campaigns.includes(+c.id)).map(c => `<a class="tag" href="#ads/campaign/${c.id}">${ic("target", "xs")} ${esc(c.name)}</a>`),
+    ...REF("pages").filter(p => f.links.pages.includes(+p.id)).map(p => `<span class="tag">${ic("globe", "xs")} ${esc(p.name)}</span>`),
+    ...REF("emails").filter(e => f.links.emails.includes(+e.id)).map(e => `<span class="tag">${ic("mail", "xs")} ${esc(e.name)}</span>`),
   ];
-  return `<div class="toolbar">${funnelPicker(id, "funnels/stages")}<span class="grow"></span><button type="button" class="btn" data-funnel-edit="${f.id}">✏️ Étapes, tags & associations</button>${NEW_FUNNEL}</div>`
+  return `<div class="toolbar">${funnelPicker(id, "funnels/stages")}<span class="grow"></span><button type="button" class="btn" data-funnel-edit="${f.id}">${ic("edit", "sm")} Modifier le funnel</button>${NEW_FUNNEL}</div>`
     + card(`📊 ${esc(f.name)}`, `<p class="sub" style="margin:-4px 0 10px">${esc(f.objective || "")} · ${esc(L("audiences", f.audience) || "Toutes cibles")} · ${esc(L("funnel_status", f.status))}${f.description ? "<br>" + esc(f.description) : ""}</p>
-      <h3>Associé à</h3><div>${L_links.join(" ") || '<span class="muted">Rien pour l\'instant : associez des campagnes, pages, emails ou réseaux dans « Étapes, tags & associations ».</span>'}</div>
+      <h3>Associé à</h3><div>${L_links.join(" ") || '<span class="muted">Aucune campagne, page ou email associé. Les canaux de communication se choisissent étape par étape, dans « Modifier le funnel ».</span>'}</div>
       <h3>Étapes (${esc(rangeLabel())})</h3>${funnelTable(d.data)}`)
     + card("Évolution des prospects par étape", funnelChart(d.data))
     + card("✍️ Chiffres saisis à la main", (manual.length ? `<p class="sub" style="margin:-4px 0 10px">Étapes en saisie manuelle : ${manual.map(s => "« " + esc(s.name) + " »").join(", ")}. Les autres étapes se remplissent toutes seules.</p>` : '<p class="sub">Toutes les étapes se remplissent automatiquement.</p>')
@@ -690,9 +871,9 @@ VIEWS["funnels/conversions"] = { range: true, fn: async param => {
 /** Colonnes d'une action de communication : Canal → Support → Contenu (objectif · cible) → KPI. */
 const actionCols = (withCat = true) => [
   { l: "Date", h: r => fdate(r.date) },
-  { l: "Canal", h: r => `<b>${esc(chName(r.platform))}</b>${withCat ? `<div class="sub">${esc(catInfo(catOf(r.platform)).label)}</div>` : ""}` },
+  { l: "Canal", h: r => `<span class="chan-cat">${catIc(catOf(r.platform) || "other")}<b>${esc(chName(r.platform))}</b></span>${withCat ? `<div class="sub">${esc(catInfo(catOf(r.platform)).label)}</div>` : ""}` },
   { l: "Support", h: r => r.format ? `<span class="chan">${esc(L("supports", r.format))}</span>` : '<span class="muted">—</span>' },
-  { l: "Contenu", wrap: 1, h: r => esc(r.topic) + (r.link ? ` <a href="${esc(r.link)}" target="_blank" rel="noopener">↗</a>` : "") + `<div class="sub">${[r.objective ? L("ad_objectives", r.objective) : "", L("audiences", r.audience)].filter(Boolean).map(esc).join(" · ")}</div>` },
+  { l: "Contenu", wrap: 1, h: r => esc(r.topic) + (r.link ? ` <a href="${esc(r.link)}" target="_blank" rel="noopener" aria-label="Ouvrir le lien">${ic("link", "xs")}</a>` : "") + `<div class="sub">${[r.objective ? L("ad_objectives", r.objective) : "", L("audiences", r.audience)].filter(Boolean).map(esc).join(" · ")}</div>` },
   { l: "Portée", n: 1, h: r => num(r.reach) },
   { l: "Engagement", n: 1, h: r => num(r.engagement) + (+r.reach > 0 ? `<div class="sub">${pct(r.engagement / r.reach, 1)}</div>` : "") },
   { l: "Clics", n: 1, h: r => num(r.clicks) },
@@ -700,14 +881,16 @@ const actionCols = (withCat = true) => [
   { l: "Coût", n: 1, h: r => +r.cost ? money(r.cost) : '<span class="muted">—</span>' },
 ];
 
-/* ================================================================ vues : leads & questions (réutilisées par Social / Website) */
+/* ================================================================ vues : leads, questions, réseaux sociaux */
 const socialKeys = () => Object.keys(EN("platforms"));
+/** Canal d'une ligne : petite icône de catégorie + nom (+ support s'il est connu). */
+const chCell = (k, sup = "") => k ? `<span class="chan-cat">${catIc(catOf(k) || "other")}<b>${esc(L("sources", k))}</b></span>${sup ? `<div class="sub">${esc(L("supports", sup))}</div>` : ""}` : '<span class="muted">—</span>';
 function contactCols() {
   return [
-    { l: "Date", h: c => fdate(c.date) },
-    { l: "Contact", h: c => `<b>${esc(c.name)}</b><div class="sub">${esc([c.phone, c.email, c.city].filter(Boolean).join(" · "))}</div>` },
+    { l: "Reçu le", h: c => fdate(c.date) },
+    { l: "Lead", h: c => `<div class="who"><b>${esc(c.name)}</b><div class="sub">${esc([c.phone, c.email, c.city].filter(Boolean).join(" · "))}</div></div>` },
     { l: "Profil", h: c => esc(L("contact_types", c.type)) },
-    { l: "Source", h: c => esc(L("sources", c.source)) + `<div class="sub">${esc([refName("campaigns", c.campaign_id), refName("pages", c.page_id), refName("emails", c.email_id)].filter(Boolean).join(" · "))}</div>` },
+    { l: "Canal", h: c => chCell(c.source, c.support) + (c.campaign_id || c.page_id || c.email_id ? `<div class="sub">${esc([refName("campaigns", c.campaign_id), refName("pages", c.page_id), refName("emails", c.email_id)].filter(Boolean).join(" · "))}</div>` : "") },
     { l: "Commercial", h: c => inlineSel("contacts", c, "assigned_to") },
     { l: "Traitement", h: c => inlineSel("contacts", c, "status") + (c.status === "non_qualifie" && c.reason ? `<div class="sub">${esc(L("reasons", c.reason))}${c.reason_note ? " — " + esc(c.reason_note) : ""}</div>` : "") },
     { l: "Notes", wrap: 1, h: c => c.notes ? `<span class="small">${esc(c.notes.slice(0, 120))}</span>` : "" },
@@ -715,69 +898,62 @@ function contactCols() {
 }
 function inquiryCols() {
   return [
-    { l: "Date", h: q => fdate(q.date) },
-    { l: "Canal", h: q => esc(L("sources", q.source)) },
+    { l: "Reçue le", h: q => fdate(q.date) },
+    { l: "Canal", h: q => chCell(q.source) },
     { l: "De", h: q => `<b>${esc(q.name || "Anonyme")}</b><div class="sub">${esc(q.contact || "")}${q.type ? " · " + esc(L("contact_types", q.type)) : ""}</div>` },
     { l: "Question", wrap: 1, h: q => `<span class="pill">${esc(L("inq_categories", q.category))}</span><div class="sub">${esc(q.question)}</div>${q.answer ? `<div class="sub">↳ ${esc(q.answer.slice(0, 160))}</div>` : ""}` },
     { l: "Pris en charge", h: q => inlineSel("inquiries", q, "assigned_to") },
     { l: "Statut", h: q => inlineSel("inquiries", q, "status") },
   ];
 }
-/** Filtre de canal : social (tous les réseaux), un réseau, all, other. */
-function channelChips(base, sel, withAll = true) {
-  const opts = [["social", "Tous les réseaux sociaux"], ...socialKeys().map(p => [p, L("platforms", p)])];
-  if (withAll) opts.push(["other", "Autres canaux"], ["all", "Tous les canaux"]);
-  const none = socialKeys().length ? "" : `<div class="banner">Aucun canal n'est marqué « réseau social » : cochez-en dans <a href="#settings">Réglages → Canaux de communication</a>.</div>`;
-  return none + `<div class="chips">${opts.map(([k, l]) => `<a class="chip${k === sel ? " on" : ""}" href="#${base}/${k}">${esc(l)}</a>`).join("")}<a class="chip" href="#settings" style="margin-left:auto">⚙️ Gérer les canaux</a></div>`;
+/** Pastilles de catégories de canaux (avec le nombre de lignes de chacune). */
+function catChips(base, sel, rows, key) {
+  const counts = {};
+  for (const r of rows) { const c = catOf(r[key]) || "other"; counts[c] = (counts[c] || 0) + 1; }
+  return `<div class="chips"><a class="chip${!sel || sel === "all" ? " on" : ""}" href="#${base}">Tous les canaux (${num(rows.length)})</a>${TX().categories.filter(c => counts[c.key]).map(c => `<a class="chip${sel === c.key ? " on" : ""}" href="#${base}/${c.key}">${catIc(c.key)} ${esc(c.label)} (${num(counts[c.key])})</a>`).join("")}${counts.other ? `<a class="chip${sel === "other" ? " on" : ""}" href="#${base}/other">Canaux retirés (${num(counts.other)})</a>` : ""}</div>`;
 }
-const chanFilter = sel => r => sel === "all" ? true : sel === "social" ? socialKeys().includes(r.source) : sel === "other" ? !socialKeys().includes(r.source) : r.source === sel;
+const inCat = (sel, key) => r => !sel || sel === "all" ? true : (catOf(r[key]) || "other") === sel;
 
-VIEWS["social/leads"] = { range: true, fn: async param => {
-  const sel = param || "social";
-  const rows = (await rangeList("contacts")).filter(chanFilter(sel));
-  const by = {};
-  for (const r of rows) by[r.source] = (by[r.source] || 0) + 1;
-  const q = rows.filter(r => ["qualifie", "converti"].includes(r.status)).length;
-  const preset = socialKeys().includes(sel) ? { source: sel } : {};
-  return channelChips("social/leads", sel)
-    + `<div class="kpis"><div class="kpi"><small>Leads & contacts</small><b>${num(rows.length)}</b><span class="d">${esc(rangeLabel())}</span></div><div class="kpi"><small>Qualifiés</small><b>${num(q)}</b><span class="d">${pct(ratio(q, rows.length))}</span></div><div class="kpi"><small>À traiter</small><b>${num(rows.filter(r => r.status === "nouveau").length)}</b><span class="d">&nbsp;</span></div><div class="kpi"><small>Non assignés</small><b>${num(rows.filter(r => !r.assigned_to).length)}</b><span class="d">&nbsp;</span></div></div>`
-    + (sel === "social" || sel === "all" || sel === "other" ? card("Répartition par source", mapBars(by, "sources", rows.length)) : "")
-    + card("Leads & contacts", table(rows, contactCols(), { entity: "contacts", emptyMsg: "Aucun lead sur ce canal pour la période." }), addBtn("contacts", "Lead", preset, "btn sm pri") + exportBtn("contacts"));
-} };
-
-VIEWS["social/inquiries"] = { range: true, fn: async param => {
-  const sel = param || "social";
-  const rows = (await rangeList("inquiries")).filter(chanFilter(sel));
+VIEWS["leads/questions"] = { range: true, fn: async param => {
+  const all = await rangeList("inquiries");
+  const sel = param || "all";
+  const rows = all.filter(inCat(sel, "source"));
   const open = rows.filter(r => ["nouveau", "en_cours"].includes(r.status)).length;
   const cat = {};
   for (const r of rows) cat[r.category] = (cat[r.category] || 0) + 1;
-  return channelChips("social/inquiries", sel)
-    + `<div class="kpis"><div class="kpi"><small>Questions reçues</small><b>${num(rows.length)}</b><span class="d">${esc(rangeLabel())}</span></div><div class="kpi ${open ? "warn" : ""}"><small>En attente</small><b>${num(open)}</b><span class="d">&nbsp;</span></div><div class="kpi"><small>Taux de réponse</small><b>${pct(ratio(rows.length - open, rows.length))}</b><span class="d">&nbsp;</span></div></div>`
-    + card("Sujets des questions", mapBars(cat, "inq_categories", rows.length))
-    + card("Questions & inquiries", table(rows, inquiryCols(), { entity: "inquiries", emptyMsg: "Aucune question sur ce canal pour la période." }), addBtn("inquiries", "Question", socialKeys().includes(sel) ? { source: sel } : {}, "btn sm pri") + exportBtn("inquiries"));
+  const t = (l, v, sub, m, cls = "") => `<div class="kpi ${cls}">${tile(m[0], m[1])}<small>${esc(l)}</small><b>${v}</b><span class="d">${sub}</span></div>`;
+  return catChips("leads/questions", sel, all, "source")
+    + `<div class="kpis">${t("Questions reçues", num(rows.length), esc(rangeLabel()), ["message", "teal"])}${t("En attente de réponse", num(open), open ? "à traiter en priorité" : "tout est traité", ["clock", "amber"], open ? "warn" : "")}${t("Taux de réponse", pct(ratio(rows.length - open, rows.length)), "&nbsp;", ["check-circle", "green"])}</div>`
+    + `<div class="grid2">${card("💬 Sujets des questions", mapBars(cat, "inq_categories", rows.length))}${card("📣 Canaux d'arrivée", mapBars(rows.reduce((a, r) => (a[r.source] = (a[r.source] || 0) + 1, a), {}), "sources", rows.length))}</div>`
+    + card("💬 Questions", table(rows, inquiryCols(), { entity: "inquiries", emptyMsg: "Aucune question sur la période. Les questions reçues par message, téléphone ou formulaire apparaîtront ici dès que vous les enregistrez." }), addBtn("inquiries", "Nouvelle question", null, "btn sm pri") + exportBtn("inquiries"));
 } };
 
-VIEWS["social/activity"] = { range: true, fn: async param => {
-  const sel = param || "social";
+VIEWS["social/overview"] = { range: true, fn: async () => {
+  const [from, to] = curRange();
+  const [r, perf, posts, leads] = await Promise.all([rangeReport(), cached("performance", { from, to }), rangeList("posts"), rangeList("contacts")]);
   const soc = socialKeys();
-  const rows = (await rangeList("posts")).filter(r => soc.includes(r.platform) && (sel === "social" || r.platform === sel));
-  const byP = {}, byS = {};
-  let reach = 0, eng = 0;
-  for (const r of rows) { byP[r.platform] = (byP[r.platform] || 0) + 1; byS[r.format] = (byS[r.format] || 0) + 1; reach += +r.reach; eng += +r.engagement; }
-  return channelChips("social/activity", sel, false)
-    + `<div class="kpis"><div class="kpi"><small>Actions sur les réseaux</small><b>${num(rows.length)}</b><span class="d">${esc(rangeLabel())}</span></div><div class="kpi"><small>Portée</small><b>${num(reach)}</b><span class="d">&nbsp;</span></div><div class="kpi"><small>Engagement</small><b>${num(eng)}</b><span class="d">${pct(ratio(eng, reach), 1)} de la portée</span></div></div>`
-    + `<div class="grid2">${card("Par réseau social", mapBars(byP, "platforms", rows.length))}${card("Par support", mapBars(byS, "supports", rows.length))}</div>`
-    + card("Actions sur les réseaux sociaux", table(rows, actionCols(false), { entity: "posts", emptyMsg: "Aucune action sur les réseaux sociaux sur la période." }), addBtn("posts", "Action (assistant)", soc.includes(sel) ? { platform: sel } : { category: "social" }, "btn sm pri") + `<a class="btn sm" href="#comm/performance">Performance</a>`);
+  const t = r.social.totals, p = r.prev.social.totals;
+  const sp = posts.filter(x => soc.includes(x.platform));
+  const sl = leads.filter(x => soc.includes(x.source));
+  const k = (label, v, pv, m, fmt = "int") => kpiTile({ key: "", label, value: v, prev: pv, fmt, better: "up" }, "", m);
+  const socCat = perf.perf.categories.find(c => c.key === "social");
+  const sups = {};
+  for (const ch of socCat ? socCat.channels : []) for (const x of ch.supports) if (x.key) { const s = sups[x.key] = sups[x.key] || { label: x.label, reach: 0, engagement: 0 }; s.reach += x.reach; s.engagement += x.engagement; }
+  const supBars = hbars(Object.values(sups).filter(x => x.reach > 0).map(x => ({ label: x.label, value: x.engagement / x.reach, tip: `Portée ${num(x.reach)} · Engagement ${num(x.engagement)}` })).sort((a, b) => b.value - a.value).slice(0, 8), v => pct(v, 1));
+  if (!soc.length) return empty("Aucun réseau social configuré. Ajoutez des canaux dans la catégorie Réseaux sociaux pour suivre leurs résultats ici.", `<a class="btn pri" href="#comm/taxonomy">${ic("layers", "sm")} Gérer les canaux</a>`, { icon: ["share", "violet"] });
+  return `<div class="kpis">${k("Portée des comptes", t.reach, p.reach, ["eye", "violet"])}${k("Engagement", t.engagement, p.engagement, ["heart", "pink"])}${k("Taux d'engagement", t.eng_rate, p.eng_rate, ["trend", "green"], "pct")}${k("Nouveaux abonnés", t.new_followers, p.new_followers, ["user-plus", "blue"])}`
+    + `<div class="kpi">${tile("users", "teal")}<small>Abonnés (total)</small><b>${num(t.followers)}</b><span class="d">dernier relevé</span></div>`
+    + `<a class="kpi" href="#comm/actions/social">${tile("megaphone", "violet")}<small>Actions sur les réseaux</small><b>${num(sp.length)}</b><span class="d">voir les actions</span></a>`
+    + `<a class="kpi" href="#leads/contacts/social">${tile("target", "orange")}<small>Leads venus des réseaux</small><b>${num(sl.length)}</b><span class="d">voir les leads</span></a></div>`
+    + card("📱 Résultats par réseau social", socialTable(r.social) + `<p class="small muted" style="margin:10px 0 0">Chiffres des comptes, relevés chaque semaine dans les statistiques de chaque plateforme (onglet Relevés des comptes).</p>`, addBtn("social_stats", "Saisir un relevé", null, "btn sm pri"))
+    + `<div class="grid2">${card("📈 Formats qui engagent le plus", Object.keys(sups).length ? supBars : empty("Aucun support renseigné. Indiquez le support de vos actions (Reel, carrousel…) pour savoir lequel engage le plus."), `<a class="btn sm" href="#comm/performance">Performance</a>`)}`
+    + `${card("📣 Dernières actions sur les réseaux", table(sp.slice(0, 6), [{ l: "Date", h: x => fdate(x.date) }, { l: "Réseau", h: x => chCell(x.platform, x.format) }, { l: "Contenu", wrap: 1, h: x => esc(x.topic) }, { l: "Portée", n: 1, h: x => num(x.reach) }], { entity: "posts", emptyMsg: "Aucune action sur les réseaux. Enregistrez votre première publication avec l'assistant." }), addBtn("posts", "Nouvelle action", { category: "social" }, "btn sm"))}</div>`;
 } };
 
-VIEWS["social/performance"] = { range: true, fn: async () => {
-  const [r, rows] = await Promise.all([rangeReport(), rangeList("social_stats")]);
-  const t = r.social.totals, p = r.prev.social.totals;
-  const k = (label, v, pv, fmt = "int") => kpiTile({ key: "", label, value: v, prev: pv, fmt, better: "up" });
-  return `<p class="muted" style="margin-top:0">Saisissez chaque semaine (ou chaque jour) les chiffres de compte de chaque réseau social (abonnés, portée…), relevés dans les statistiques de chaque plateforme. Les résultats de chaque publication se saisissent dans les actions de communication. ${esc(rangeLabel())}, comparé à la période précédente.</p>`
-    + `<div class="kpis">${k("Portée", t.reach, p.reach)}${k("Impressions", t.impressions, p.impressions)}${k("Engagement", t.engagement, p.engagement)}${k("Taux d'engagement", t.eng_rate, p.eng_rate, "pct")}${k("Clics", t.clicks, p.clicks)}${k("Nouveaux abonnés", t.new_followers, p.new_followers)}<div class="kpi"><small>Abonnés (total)</small><b>${num(t.followers)}</b><span class="d">dernier relevé</span></div></div>`
-    + card("Performances par réseau social", socialTable(r.social))
-    + card("Relevés saisis", table(rows, [col("social_stats", "date", { h: x => fdate(x.date) }), { l: "Réseau social", h: x => `<b>${esc(L("platforms", x.platform))}</b>` }, col("social_stats", "followers"), col("social_stats", "new_followers"), col("social_stats", "reach"), col("social_stats", "impressions"), { l: "Engagement", n: 1, h: x => num(x.engagement) }, col("social_stats", "clicks")], { entity: "social_stats", emptyMsg: "Aucun relevé sur la période." }), addBtn("social_stats", "Relevé", null, "btn sm pri") + exportBtn("social_stats"));
+VIEWS["social/stats"] = { range: true, fn: async () => {
+  const rows = await rangeList("social_stats");
+  return `<p class="muted" style="margin-top:0">Une ligne = les chiffres d'un compte sur un jour ou une semaine, datés du dernier jour couvert · ${esc(rangeLabel())}.</p>`
+    + card("📈 Relevés des comptes", table(rows, [col("social_stats", "date", { h: x => fdate(x.date) }), { l: "Réseau social", h: x => chCell(x.platform) }, col("social_stats", "followers"), col("social_stats", "new_followers"), col("social_stats", "reach"), col("social_stats", "impressions"), { l: "Engagement", n: 1, h: x => num(x.engagement) }, col("social_stats", "clicks")], { entity: "social_stats", emptyMsg: "Aucun relevé sur la période. Saisissez chaque semaine les abonnés, la portée et l'engagement de chaque compte pour suivre leur évolution." }), addBtn("social_stats", "Saisir un relevé", null, "btn sm pri") + exportBtn("social_stats"));
 } };
 
 /* ================================================================ vues : Ads Manager */
@@ -803,25 +979,21 @@ VIEWS["ads/campaigns"] = { fn: async () => {
     ], { entity: "campaigns", emptyMsg: "Aucune campagne pour l'instant." }));
 } };
 
-VIEWS["ads/objectives"] = { fn: async () => {
-  const rows = (await cached("campaigns_overview")).rows.filter(c => c.status !== "brouillon");
-  return `<p class="muted" style="margin-top:0">Objectif marketing et objectif chiffré de chaque campagne, comparés au temps écoulé (le repère vertical sur la jauge).</p>`
-    + card("🎯 Objectifs des campagnes", table(rows, [
-      { l: "Campagne", h: c => `<a href="#ads/campaign/${c.id}"><b>${esc(c.name)}</b></a><div class="sub">${esc(L("campaign_status", c.status))}</div>` },
-      { l: "Objectif marketing", h: c => esc(L("ad_objectives", c.objective)) },
-      { l: "Indicateur", h: c => esc(L("target_metrics", c.target_metric)) },
-      { l: "Avancement (repère = durée écoulée)", h: c => targetCell(c.achieved, c.target_value, c.elapsed, L("target_metrics", c.target_metric).toLowerCase()) },
-      { l: "Durée écoulée", n: 1, h: c => c.elapsed == null ? "—" : pct(c.elapsed) + (c.days_left != null && c.status === "active" ? `<div class="sub">${c.days_left} j restant(s)</div>` : "") },
-      { l: "", h: c => `<button type="button" class="btn sm" data-edit="campaigns:${c.id}">Modifier l'objectif</button>` },
-    ], { emptyMsg: "Aucune campagne." }), NEW_CAMPAIGN);
-} };
-
 VIEWS["ads/budgets"] = { fn: async () => {
   const rows = (await cached("campaigns_overview")).rows.filter(c => c.status !== "brouillon");
   const act = rows.filter(c => c.status === "active");
   const b = act.reduce((a, c) => a + c.budget, 0), s = act.reduce((a, c) => a + c.spent, 0);
-  return `<div class="kpis"><div class="kpi"><small>Budget prévu (actives)</small><b>${money(b)}</b><span class="d">&nbsp;</span></div><div class="kpi"><small>Dépensé</small><b>${money(s)}</b><span class="d">${pct(ratio(s, b))}</span></div><div class="kpi ${b - s < 0 ? "alert" : ""}"><small>Restant</small><b>${money(b - s)}</b><span class="d">&nbsp;</span></div></div>`
-    + card("💰 Budgets", budgetsTable(rows) + `<p class="small muted" style="margin:8px 0 0">La jauge montre la part du budget dépensée ; le repère vertical, la part de la durée de la campagne déjà écoulée. Une jauge très en avance sur le repère = la campagne dépense trop vite.</p>`, addBtn("ad_results", "Saisir une dépense", null, "btn sm pri"));
+  const late = act.filter(c => c.target_value > 0 && c.elapsed != null && ratio(c.achieved, c.target_value) < c.elapsed * 0.7).length;
+  const t = (l, v, sub, m, cls = "") => `<div class="kpi ${cls}">${tile(m[0], m[1])}<small>${esc(l)}</small><b>${v}</b><span class="d">${sub}</span></div>`;
+  return `<div class="kpis">${t("Budget prévu (actives)", money(b), num(act.length) + " campagne(s) active(s)", ["wallet", "violet"])}${t("Dépensé", money(s), pct(ratio(s, b)) + " du budget", ["coins", "orange"])}${t("Reste à dépenser", money(b - s), b - s < 0 ? "budget dépassé" : "&nbsp;", ["chart", "green"], b - s < 0 ? "alert" : "")}${t("Objectifs en retard", num(late), late ? "à regarder de près" : "tout est dans les temps", ["target", late ? "amber" : "teal"], late ? "warn" : "")}</div>`
+    + card("💰 Budgets", budgetsTable(rows) + `<p class="small muted" style="margin:8px 0 0">La jauge montre la part du budget dépensée ; le repère vertical, la part de la durée déjà écoulée. Une jauge très en avance sur le repère : la campagne dépense trop vite.</p>`, addBtn("ad_results", "Saisir une dépense", null, "btn sm pri"))
+    + card("🎯 Objectifs des campagnes", table(rows, [
+      { l: "Campagne", h: c => `<a href="#ads/campaign/${c.id}"><b>${esc(c.name)}</b></a><div class="sub">${esc(L("ad_objectives", c.objective))}</div>` },
+      { l: "Indicateur suivi", h: c => esc(L("target_metrics", c.target_metric)) },
+      { l: "Avancement (repère = durée écoulée)", h: c => targetCell(c.achieved, c.target_value, c.elapsed, L("target_metrics", c.target_metric).toLowerCase()) },
+      { l: "Durée écoulée", n: 1, h: c => c.elapsed == null ? "—" : pct(c.elapsed) + (c.days_left != null && c.status === "active" ? `<div class="sub">${c.days_left} j restant(s)</div>` : "") },
+      { l: "", h: c => `<button type="button" class="btn sm ghost" data-edit="campaigns:${c.id}">${ic("edit", "sm")} Modifier l'objectif</button>` },
+    ], { emptyMsg: "Aucune campagne lancée. Créez une campagne et fixez-lui un objectif chiffré pour suivre son avancement ici." }), NEW_CAMPAIGN.replace('class="btn pri"', 'class="btn sm pri"'));
 } };
 
 VIEWS["ads/results"] = { range: true, fn: async () => {
@@ -842,10 +1014,10 @@ VIEWS["ads/campaign"] = { fn: async param => {
   const st = Object.fromEntries(d.leads_stats.map(x => [x.status, +x.n]));
   const tile = (l, v, sub = "&nbsp;") => `<div class="kpi"><small>${esc(l)}</small><b>${v}</b><span class="d">${sub}</span></div>`;
   const info = [["Canal publicitaire", L("ad_channels", c.platform)], ["Objectif marketing", L("ad_objectives", c.objective)], ["Cible", L("audiences", c.audience) || "—"], ["Dates", fdate(c.start) + " → " + (c.end ? fdate(c.end) : "sans fin")], ["Landing page", refName("pages", c.page_id) || "—"], ["Funnel", refName("funnels", c.funnel_id) || "—"]];
-  return `<div class="toolbar"><a class="btn" href="#ads/campaigns">← Campagnes</a><span class="grow"></span><button type="button" class="btn" data-edit="campaigns:${c.id}">✏️ Modifier la campagne</button>${addBtn("ad_results", "Saisir des résultats", { campaign_id: c.id }, "btn pri")}</div>`
+  return `<div class="toolbar"><a class="btn ghost" href="#ads/campaigns">${ic("chev-l", "sm")} Campagnes</a><span class="grow"></span><button type="button" class="btn" data-edit="campaigns:${c.id}">${ic("edit", "sm")} Modifier la campagne</button>${addBtn("ad_results", "Saisir des résultats", { campaign_id: c.id }, "btn pri")}</div>`
     + card(`📢 ${esc(c.name)} <span class="pill ${c.status === "active" ? "good" : c.status === "pause" ? "warn" : ""}">${esc(L("campaign_status", c.status))}</span>`,
       `<div class="kpis" style="margin-bottom:8px">${info.map(([l, v]) => `<div class="kpi txt"><small>${esc(l)}</small><b>${esc(v)}</b></div>`).join("")}</div>${c.notes ? `<p class="sub">${esc(c.notes)}</p>` : ""}
-      <div class="grid2"><div><h3>🎯 Objectif</h3>${targetCell(s.achieved, s.target_value, s.elapsed, L("target_metrics", s.target_metric).toLowerCase())}</div><div><h3>💰 Budget</h3>${budgetCell(Object.assign({ name: c.name }, s))}<div class="sub">${money(s.spent)} dépensés sur ${money(s.budget)} · reste ${money(s.remaining)}</div></div></div>`)
+      <div class="grid2"><div><h3>Objectif</h3>${targetCell(s.achieved, s.target_value, s.elapsed, L("target_metrics", s.target_metric).toLowerCase())}</div><div><h3>Budget</h3>${budgetCell(Object.assign({ name: c.name }, s))}<div class="sub">${money(s.spent)} dépensés sur ${money(s.budget)} · reste ${money(s.remaining)}</div></div></div>`)
     + `<div class="kpis">${tile("Impressions", num(t.impressions))}${tile("Clics", num(t.clicks), "CTR " + pct(t.ctr, 2))}${tile("Coût par clic", money(t.cpc))}${tile("Leads (déclarés)", num(t.leads))}${tile("Coût par lead", money(t.cpl))}${tile("Conversions", num(t.conversions))}${tile("Coût par conversion", money(t.cpa))}${tile("Leads suivis", num(d.leads.length), `${num((st.qualifie || 0) + (st.converti || 0))} qualifiés · ${num(st.converti || 0)} convertis`)}</div>`
     + (d.funnel ? funnelCard(d.funnel) : card("📊 Funnel", empty("Aucun funnel associé à cette campagne.", `<button type="button" class="btn sm" data-edit="campaigns:${c.id}">Associer un funnel</button>`)))
     + card("Résultats saisis", table(d.results, [col("ad_results", "date", { h: x => fdate(x.date) }), col("ad_results", "spend"), col("ad_results", "impressions"), col("ad_results", "clicks"), col("ad_results", "leads"), col("ad_results", "conversions")], { entity: "ad_results", emptyMsg: "Aucun résultat saisi." }))
@@ -896,15 +1068,6 @@ VIEWS["web/registrations"] = { range: true, fn: async () => {
     + card("Statistiques saisies", table(rows.filter(x => +x.reg_investors + +x.reg_owners > 0), statCols(), { entity: "web_stats", emptyMsg: "Aucune inscription saisie." }), addBtn("web_stats", "Saisir des statistiques", null, "btn sm pri"));
 } };
 
-VIEWS["web/leads"] = { range: true, fn: async () => {
-  const rows = (await rangeList("contacts")).filter(c => ["site", "landing"].includes(c.source) || c.page_id);
-  const byPage = {};
-  for (const c of rows) { const k = c.page_id ? refName("pages", c.page_id) : L("sources", c.source); byPage[k] = (byPage[k] || 0) + 1; }
-  return `<p class="muted" style="margin-top:0">Contacts et formulaires reçus depuis le site et les landing pages (source « Site web » ou « Landing page », ou page renseignée) · ${esc(rangeLabel())}.</p>`
-    + card("Par page", mapBars(byPage, null, rows.length))
-    + card("Leads & contacts du site", table(rows, contactCols(), { entity: "contacts", emptyMsg: "Aucun contact venu du site sur la période." }), addBtn("contacts", "Lead", { source: "landing" }, "btn sm pri"));
-} };
-
 /* ================================================================ vues : Email */
 async function emailRows() {
   const rows = await rangeList("emails");
@@ -929,40 +1092,34 @@ VIEWS["email/campaigns"] = { range: true, fn: async () => {
     { l: "Funnel", h: e => e.funnel_id ? `<a href="#funnels/stages/${e.funnel_id}">${esc(refName("funnels", e.funnel_id))}</a>` : '<span class="muted">—</span>' },
   ], { entity: "emails", emptyMsg: "Aucune campagne email sur la période." }) + ESTIMATE, NEW_EMAIL + exportBtn("emails"));
 } };
-VIEWS["email/sent"] = { range: true, fn: async () => {
-  const rows = await emailRows();
-  return emailKpis(rows) + card("📤 Emails envoyés", table(rows, [
-    { l: "Campagne", h: emailName }, { l: "Statut", h: emailStatus }, { l: "Liste / segment", h: e => esc(e.segment || "—") },
-    { l: "Envoyés", n: 1, h: e => num(e.sent) }, { l: "Désabonnements", n: 1, h: e => num(e.unsubscribes) }, { l: "Taux de désabonnement", n: 1, h: e => pct(e.unsub_rate, 2) },
-  ], { entity: "emails", emptyMsg: "Aucun envoi sur la période." }), NEW_EMAIL);
-} };
-VIEWS["email/engagement"] = { range: true, fn: async () => {
+VIEWS["email/performance"] = { range: true, fn: async () => {
   const rows = (await emailRows()).filter(e => e.status === "envoyee");
-  return emailKpis(rows) + card("👁 Ouvertures & clics", table(rows, [
-    { l: "Campagne", h: emailName }, { l: "Envoyés", n: 1, h: e => num(e.sent) },
-    { l: "Ouvertures*", n: 1, h: e => num(e.opens) }, { l: "Taux d'ouverture*", h: e => `<div class="mcell">${meter(e.open_rate)}<span>${pct(e.open_rate)}</span></div>` + (e.sent >= 50 && e.open_rate != null && e.open_rate < 0.15 ? '<span class="pill warn">⚠ Faible</span>' : "") },
-    { l: "Clics", n: 1, h: e => num(e.clicks) }, { l: "Taux de clic", n: 1, h: e => pct(e.click_rate, 1) }, { l: "Clics / ouvertures", n: 1, h: e => pct(e.ctor, 1) },
-  ], { entity: "emails", emptyMsg: "Aucun envoi sur la période." }) + ESTIMATE);
-} };
-VIEWS["email/objectives"] = { range: true, fn: async () => {
-  const rows = (await emailRows()).filter(e => e.status === "envoyee");
-  return emailKpis(rows) + card("🎯 Objectifs atteints", table(rows, [
-    { l: "Campagne", h: emailName }, { l: "Objectif", wrap: 1, h: e => esc(e.objective || "—") },
-    { l: "Atteints", n: 1, h: e => num(e.conversions) }, { l: "Avancement", h: e => targetCell(+e.conversions, +e.target, null, "") },
-    { l: "Taux de conversion", n: 1, h: e => pct(e.conv_rate, 2) },
-    { l: "Funnel", h: e => e.funnel_id ? `<a href="#funnels/stages/${e.funnel_id}">${esc(refName("funnels", e.funnel_id))}</a>` : '<span class="muted">—</span>' },
-  ], { entity: "emails", emptyMsg: "Aucun envoi sur la période." }));
+  const weak = e => e.sent >= 50 && e.open_rate != null && e.open_rate < 0.15;
+  return emailKpis(rows) + card("📈 Performance des envois", table(rows, [
+    { l: "Campagne", h: emailName },
+    { l: "Envoyés", n: 1, h: e => num(e.sent) },
+    { l: "Ouverture*", h: e => `<div class="mcell">${meter(e.open_rate)}<span>${pct(e.open_rate)}</span></div>` + (weak(e) ? '<span class="pill warn">Ouverture faible</span>' : "") },
+    { l: "Clic", n: 1, h: e => pct(e.click_rate, 1) + `<div class="sub">${num(e.clicks)} clics</div>` },
+    { l: "Clics / ouvertures", n: 1, h: e => pct(e.ctor, 1) },
+    { l: "Objectif", wrap: 1, h: e => (e.objective ? `<div class="small">${esc(e.objective)}</div>` : "") + targetCell(+e.conversions, +e.target, null, "") },
+    { l: "Désabonnements", n: 1, h: e => num(e.unsubscribes) + `<div class="sub">${pct(e.unsub_rate, 2)}</div>` },
+  ], { entity: "emails", emptyMsg: "Aucun email envoyé sur la période. Les résultats apparaissent ici dès qu'une campagne passe au statut « Envoyée »." }) + ESTIMATE, NEW_EMAIL.replace('class="btn pri"', 'class="btn sm pri"'));
 } };
 
 /* ================================================================ vues : Leads & Contacts */
-const exportBtn = (entity) => { const [from, to] = curRange(); return `<a class="btn sm" href="api.php?action=export&entity=${entity}${SC(entity).date ? "&from=" + from + "&to=" + to : ""}">⬇ CSV</a>`; };
+const exportBtn = (entity) => { const [from, to] = curRange(); return `<a class="btn sm" href="api.php?action=export&entity=${entity}${SC(entity).date ? "&from=" + from + "&to=" + to : ""}" title="Télécharger la liste de la période (CSV)">${ic("download", "sm")} Exporter</a>`; };
 
-VIEWS["leads/contacts"] = { range: true, fn: async () => {
-  const rows = await rangeList("contacts");
-  const sel = (id, label, opts) => `<select id="${id}" aria-label="${esc(label)}"><option value="">${esc(label)} : tous</option>${Object.entries(opts).map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join("")}</select>`;
-  S.contactRows = rows;
-  return `<div class="toolbar">${addBtn("contacts", "Lead / contact", null, "btn pri")}<input type="search" id="fQ" placeholder="Rechercher (nom, téléphone, email…)" style="min-width:220px">
-      ${sel("fType", "Profil", EN("contact_types"))}${sel("fSource", "Source", EN("sources"))}${sel("fStatus", "Traitement", EN("contact_status"))}${sel("fCom", "Commercial", Object.assign({ "-": "Non assigné" }, EN("commercials")))}
+VIEWS["leads/contacts"] = { range: true, fn: async param => {
+  const all = await rangeList("contacts");
+  // Filtre de l'adresse : une catégorie de canaux (#leads/contacts/social) ou un canal précis (#leads/contacts/instagram).
+  const isCat = param && (param === "other" || TX().categories.some(c => c.key === param));
+  const sel = (id, label, opts, v = "") => `<select id="${id}" aria-label="${esc(label)}"><option value="">${esc(label)} : tous</option>${Object.entries(opts).map(([k, l]) => `<option value="${esc(k)}"${k === v ? " selected" : ""}>${esc(l)}</option>`).join("")}</select>`;
+  const chOpts = `<option value="">Canal : tous</option>` + TX().categories.map(c => { const chs = channelsIn(c.key); return chs.length ? `<optgroup label="${esc(c.label)}">${chs.map(x => `<option value="${esc(x.key)}"${x.key === param ? " selected" : ""}>${esc(x.label)}</option>`).join("")}</optgroup>` : ""; }).join("");
+  S.contactRows = isCat ? all.filter(inCat(param, "source")) : all;
+  return catChips("leads/contacts", isCat ? param : (param ? "" : "all"), all, "source")
+    + `<div class="toolbar">${addBtn("contacts", "Nouveau lead", null, "btn pri")}<button type="button" class="btn" data-import="contacts">${ic("upload", "sm")} Importer un fichier</button>
+      <label class="field-search">${ic("search", "sm")}<input type="search" id="fQ" placeholder="Nom, téléphone, email…" aria-label="Rechercher un lead"></label>
+      ${sel("fType", "Profil", EN("contact_types"))}<select id="fSource" aria-label="Canal">${chOpts}</select>${sel("fStatus", "Traitement", EN("contact_status"))}${sel("fCom", "Commercial", Object.assign({ "-": "Non assigné" }, EN("commercials")))}
       <span class="grow"></span>${exportBtn("contacts")}</div><div id="contactsOut"></div>`;
 }, after: () => {
   const draw = () => {
@@ -971,7 +1128,8 @@ VIEWS["leads/contacts"] = { range: true, fn: async () => {
     const rows = S.contactRows.filter(c => (!f.type || c.type === f.type) && (!f.source || c.source === f.source) && (!f.status || c.status === f.status)
       && (!f.com || (f.com === "-" ? !c.assigned_to : c.assigned_to === f.com))
       && (!q || [c.name, c.phone, c.email, c.city, c.notes].join(" ").toLowerCase().includes(q)));
-    $("#contactsOut").innerHTML = card(`👥 Contacts <span class="muted small">(${num(rows.length)} · ${esc(rangeLabel())})</span>`, table(rows, contactCols(), { entity: "contacts", emptyMsg: "Aucun contact ne correspond." }));
+    const filtered = q || f.type || f.source || f.status || f.com;
+    $("#contactsOut").innerHTML = card(`👥 Leads <span class="muted small">(${num(rows.length)} · ${esc(rangeLabel())})</span>`, table(rows, contactCols(), { entity: "contacts", emptyMsg: filtered ? "Aucun lead ne correspond à ces filtres. Retirez un filtre ou élargissez la période." : "Aucun lead sur la période. Ajoutez votre premier lead, ou importez votre fichier Excel/CSV existant." }));
   };
   for (const id of ["fQ", "fType", "fSource", "fStatus", "fCom"]) $("#" + id).addEventListener("input", draw);
   draw();
@@ -1003,7 +1161,7 @@ VIEWS["leads/assignment"] = { range: true, fn: async () => {
   const un = rows.filter(c => !c.assigned_to && !["non_qualifie", "converti"].includes(c.status));
   const hint = Object.keys(EN("commercials")).length ? "" : `<div class="banner">Ajoutez les commerciaux dans <a href="#settings">Réglages</a> pour pouvoir leur assigner des leads.</div>`;
   return hint + card("Par commercial · " + esc(rangeLabel()), commercialTable(r.leads))
-    + card(`⚠ Leads non assignés <span class="muted small">(${num(un.length)})</span>`, table(un, contactCols(), { entity: "contacts", emptyMsg: "Tous les leads de la période sont assignés 🎉" }));
+    + card(`🔔 Leads sans commercial <span class="muted small">(${num(un.length)})</span>`, table(un, contactCols(), { entity: "contacts", emptyMsg: "Tous les leads de la période ont un commercial. Rien à assigner pour l'instant." }));
 } };
 
 VIEWS["leads/treatment"] = { range: true, fn: async param => {
@@ -1043,9 +1201,9 @@ VIEWS["projects/funding"] = { range: true, fn: async () => {
 VIEWS.settings = { fn: async () => {
   const s = S.boot.settings;
   const cronCmd = "/usr/local/bin/php ~/public_html/marketing/cron.php > /dev/null 2>&1";
-  return `${card("📣 Canaux & supports de communication", `<p style="margin-top:0">Les <b>canaux</b> (niveau 1, rangés par catégorie : Réseaux sociaux, Web, Messagerie…) et les <b>supports</b> (niveau 2 : Reel, carrousel, newsletter, brochure…) se gèrent dans Communication.</p><a class="btn pri" href="#comm/taxonomy">Gérer les canaux & supports</a> <a class="btn" href="#comm/performance">Voir la performance</a>`)}
+  return `<p class="muted" style="margin-top:0">Les canaux et supports de communication se gèrent dans <a href="#comm/taxonomy">Communication › Canaux & supports</a>.</p>
   <div class="set-grid">
-    ${card("Organisation", `<div class="form" style="grid-template-columns:1fr 1fr"><div class="fld"><label for="sOrg">Nom</label><input type="text" id="sOrg" value="${esc(s.org)}"></div><div class="fld"><label for="sCur">Devise</label><input type="text" id="sCur" value="${esc(s.currency)}"></div>
+    ${card("Vous & votre organisation", `<div class="form" style="grid-template-columns:1fr 1fr"><div class="fld full"><label for="sOwner">Votre prénom</label><input type="text" id="sOwner" maxlength="40" value="${esc(s.owner_name || "")}" placeholder="ex. Mohammed"><small>Pour vous saluer sur la page d'accueil.</small></div><div class="fld"><label for="sOrg">Nom de l'organisation</label><input type="text" id="sOrg" value="${esc(s.org)}"></div><div class="fld"><label for="sCur">Devise</label><input type="text" id="sCur" value="${esc(s.currency)}"></div>
       <div class="fld full"><label for="sCom">Commerciaux (un par ligne)</label><textarea id="sCom" rows="5">${esc(s.commercials.join("\n"))}</textarea><small>Proposés dans « Commercial responsable » des leads et des questions.</small></div></div>`)}
     ${card("Rapports automatiques par email", `<div class="form" style="grid-template-columns:1fr"><div class="fld"><label for="sRec">Destinataires (une adresse par ligne)</label><textarea id="sRec" rows="4">${esc(s.recipients.join("\n"))}</textarea></div>
       <div class="checks"><label><input type="checkbox" id="sD"${s.send_daily ? " checked" : ""}> Quotidien (chaque matin, la veille)</label><label><input type="checkbox" id="sW"${s.send_weekly ? " checked" : ""}> Hebdomadaire (le lundi)</label><label><input type="checkbox" id="sM"${s.send_monthly ? " checked" : ""}> Mensuel (le 1er)</label></div>
@@ -1056,20 +1214,20 @@ VIEWS.settings = { fn: async () => {
   <div class="toolbar"><button type="button" class="btn pri" id="sSave">Enregistrer les réglages</button></div>
   ${card("Installer l'envoi automatique (une seule fois)", `<p style="margin-top:0">Dans <b>cPanel → Tâches Cron</b>, ajouter une tâche <b>une fois par jour</b> (par exemple Minute <code>5</code>, Heure <code>7</code>, autres champs <code>*</code>) avec la commande :</p><pre class="code">${esc(cronCmd)}</pre>
     <p class="small muted">Chaque matin : rapport de la veille ; le lundi : rapport de la semaine écoulée ; le 1er : rapport du mois écoulé. Les rapports sont archivés dans Overview → Archives, même sans destinataire.</p>`)}
-  ${card("Exporter les données (CSV / Excel)", `<div class="ctrl">${Object.keys(S.boot.schema).map(e => `<a class="btn sm" href="api.php?action=export&entity=${e}">⬇ ${esc(S.boot.schema[e].label)}</a>`).join("")}</div>`)}`;
+  ${card("Exporter les données (CSV / Excel)", `<p class="muted" style="margin-top:0">Un fichier par section, lisible dans Excel ou Google Sheets.</p><div class="ctrl">${Object.keys(S.boot.schema).map(e => `<a class="btn sm" href="api.php?action=export&entity=${e}">${ic("download", "sm")} ${esc(S.boot.schema[e].label)}</a>`).join("")}</div>`)}`;
 }, after: () => {
   $("#sSave").addEventListener("click", async () => {
     try {
-      const d = await api("settings_save", {}, { org: $("#sOrg").value, currency: $("#sCur").value, commercials: $("#sCom").value, recipients: $("#sRec").value, send_daily: $("#sD").checked, send_weekly: $("#sW").checked, send_monthly: $("#sM").checked, dashboard_url: $("#sUrl").value });
+      const d = await api("settings_save", {}, { owner_name: $("#sOwner").value, org: $("#sOrg").value, currency: $("#sCur").value, commercials: $("#sCom").value, recipients: $("#sRec").value, send_daily: $("#sD").checked, send_weekly: $("#sW").checked, send_monthly: $("#sM").checked, dashboard_url: $("#sUrl").value });
       S.boot.settings = d.settings; S.boot.enums = d.enums;
-      $("#orgName").textContent = d.settings.org;
+      paintUser();
       S.cache.clear();
-      toast("Réglages enregistrés ✓");
+      toast("Réglages enregistrés");
       route();
-    } catch (e) { toast(e.message); }
+    } catch (e) { toast(e.message, "err"); }
   });
   $("#sTestBtn").addEventListener("click", async () => {
-    try { const d = await api("test_mail", {}, { email: $("#sTest").value }); toast("Email de test envoyé à " + d.to); } catch (e) { toast(e.message); }
+    try { const d = await api("test_mail", {}, { email: $("#sTest").value }); toast("Email de test envoyé à " + d.to); } catch (e) { toast(e.message, "err"); }
   });
 } };
 
@@ -1104,8 +1262,8 @@ function openWizard(cfg) {
       <div class="wiz-body">${step.question ? `<p class="wiz-q">${esc(step.question)}</p>` : ""}<div id="wizStep">${step.render(st)}</div></div>
       <p class="form-err" id="wizErr"></p>
       <div class="wiz-foot">${cfg.foot ? cfg.foot(st) : ""}<span class="grow"></span><button type="button" class="btn ghost" data-close>Annuler</button>
-        ${at > 0 ? '<button type="button" class="btn" data-wiz="prev">← Précédent</button>' : ""}
-        ${at < last ? '<button type="button" class="btn pri" data-wiz="next">Suivant →</button>' : ""}
+        ${at > 0 ? `<button type="button" class="btn" data-wiz="prev">${ic("chev-l", "sm")} Précédent</button>` : ""}
+        ${at < last ? `<button type="button" class="btn pri" data-wiz="next">Suivant ${ic("chev-r", "sm")}</button>` : ""}
         ${at === last && cfg.again ? `<button type="button" class="btn" data-wiz="again">${esc(cfg.again)}</button>` : ""}
         ${at === last || reached === last ? `<button type="button" class="btn${at === last ? " pri" : ""}" data-wiz="finish">${esc(cfg.finish || "Enregistrer")}</button>` : ""}</div></div>`);
     const r = root();
@@ -1163,7 +1321,8 @@ const choice = (attr, key, label, { icon = "", sub = "", on = false } = {}) => `
 const supportGroups = keys => TX().support_types.map(t => [t, keys.filter(k => (supportOf(k) || {}).type === t.key)]).filter(g => g[1].length);
 
 /* ---------- action de communication : Catégorie → Canal → Support → Contenu → Cible → Objectif → KPI */
-const OBJ_ICONS = { notoriete: "📣", trafic: "🔗", engagement: "💬", leads: "🎯", inscriptions: "📝", conversions: "💰", messages: "✉️" };
+const OBJ_ICONS = { notoriete: ["megaphone", "violet"], trafic: ["link", "blue"], engagement: ["heart", "pink"], leads: ["target", "orange"], inscriptions: ["user-plus", "green"], conversions: ["coins", "green"], messages: ["message", "teal"] };
+const objTile = (k, cls = "") => { const m = OBJ_ICONS[k] || ["target", "orange"]; return tile(m[0], m[1], cls); };
 const OBJ_KPI = { notoriete: ["reach", "impressions"], trafic: ["clicks", "impressions"], engagement: ["engagement", "reach"], leads: ["leads", "cost"], inscriptions: ["conversions", "clicks"], conversions: ["conversions", "cost"], messages: ["leads", "engagement"] };
 const KPI_L = { reach: "Portée", impressions: "Impressions", engagement: "Engagement", clicks: "Clics", leads: "Leads", conversions: "Conversions", cost: "Coût" };
 const KPI_KEYS = Object.keys(KPI_L);
@@ -1178,7 +1337,7 @@ function actionReview(s) {
   const cat = catOf(s.platform);
   const t = typeInfo((supportOf(s.format) || {}).type);
   const kpis = KPI_KEYS.filter(k => +s[k] > 0).map(k => `${KPI_L[k]} <b>${kpiFmt(k, s[k])}</b>`).join(" · ");
-  return `<div class="review">${line("Catégorie", cat ? esc(catInfo(cat).icon + " " + catInfo(cat).label) : "", 0)}${line("Canal", esc(L("sources", s.platform)), 0)}`
+  return `<div class="review">${line("Catégorie", cat ? catIc(cat) + " " + esc(catInfo(cat).label) : "", 0)}${line("Canal", esc(L("sources", s.platform)), 0)}`
     + `${line("Support", s.format ? esc(L("supports", s.format)) + (t.label ? ` <span class="muted small">· ${esc(t.label)}</span>` : "") : "", 1)}`
     + `${line("Contenu", esc(s.topic), 2)}${line("Date", fdate(s.date), 2)}${line("Cible", esc(L("audiences", s.audience)), 2)}`
     + `${line("Objectif", s.objective ? esc((OBJ_ICONS[s.objective] || "") + " " + L("ad_objectives", s.objective)) : "", 2)}${line("KPI", kpis, 3)}</div>`
@@ -1193,11 +1352,11 @@ function openActionWizard(row = null, preset = {}) {
     { label: "Canal", question: "Par quel canal allons-nous toucher notre cible ?",
       summary: s => s.platform ? L("sources", s.platform) : "",
       render: s => {
-        const cats = TX().categories.map(c => choice("data-cat", c.key, c.label, { icon: c.icon, sub: channelsIn(c.key).length + " canal(aux)", on: s.category === c.key })).join("");
+        const cats = TX().categories.map(c => choice("data-cat", c.key, c.label, { icon: catTile(c.key), sub: channelsIn(c.key).length + " canal(aux)", on: s.category === c.key })).join("");
         let chs = "";
         if (s.category) {
           const list = channelsIn(s.category), c = catInfo(s.category);
-          chs = `<h3>${c.icon} ${esc(c.label)} · choisissez le canal</h3>` + (list.length
+          chs = `<h3 class="ih">${catIc(c.key)} ${esc(c.label)} · choisissez le canal</h3>` + (list.length
             ? `<div class="choices">${list.map(x => choice("data-ch", x.key, x.label, { sub: x.supports.length + " support(s)", on: s.platform === x.key })).join("")}</div>`
             : `<p class="muted">Aucun canal dans cette catégorie : ajoutez-en dans <a href="#comm/taxonomy" data-close>Canaux & supports</a>.</p>`);
         }
@@ -1218,7 +1377,7 @@ function openActionWizard(row = null, preset = {}) {
         const all = s._allSup || !own.length || (s.format && !own.includes(s.format));
         const rest = ["digital", "physical"].map(g => { const ks = others.filter(k => typeInfo((supportOf(k) || {}).type).group === g); return ks.length ? `<p class="grp-h">${g === "digital" ? "A · Supports digitaux" : "B · Supports physiques"}</p>${block(ks)}` : ""; }).join("");
         return (own.length ? `<h3>Supports de ${esc(L("sources", s.platform))}</h3>${block(own)}` : `<p class="muted">Ce canal n'a pas encore de supports associés : choisissez parmi tous les supports (et associez-les dans Canaux & supports).</p>`)
-          + (others.length ? (all ? `<h3>${own.length ? "Autres supports" : "Tous les supports"}</h3>${rest}` : `<button type="button" class="linkbtn" data-allsup>＋ Afficher les autres supports (${others.length})</button>`) : "");
+          + (others.length ? (all ? `<h3>${own.length ? "Autres supports" : "Tous les supports"}</h3>${rest}` : `<button type="button" class="linkbtn" data-allsup>${ic("plus", "xs")} Afficher les autres supports (${others.length})</button>`) : "");
       },
       onClick: (e, s) => {
         if (e.target.closest("[data-allsup]")) { s._allSup = true; return true; }
@@ -1233,7 +1392,7 @@ function openActionWizard(row = null, preset = {}) {
         <div class="fld"><label for="w_date">Date <span class="req">*</span></label><input type="date" id="w_date" data-f="date" value="${esc(s.date || S.today)}"></div>
         <div class="fld"><label for="w_link">Lien (facultatif)</label><input type="url" id="w_link" data-f="link" value="${esc(s.link || "")}" placeholder="https://"></div>
         <div class="fld full"><label>Cible</label><div class="choices sm">${Object.entries(EN("audiences")).map(([k, l]) => choice("data-aud", k, l, { on: s.audience === k })).join("")}</div></div>
-        <div class="fld full"><label>Objectif</label><div class="choices obj">${Object.entries(EN("ad_objectives")).map(([k, l]) => choice("data-obj", k, l, { icon: OBJ_ICONS[k] || "🎯", sub: "KPI : " + (OBJ_KPI[k] || []).map(x => KPI_L[x]).join(", "), on: s.objective === k })).join("")}</div></div></div>`,
+        <div class="fld full"><label>Objectif</label><div class="choices obj">${Object.entries(EN("ad_objectives")).map(([k, l]) => choice("data-obj", k, l, { icon: objTile(k), sub: "KPI : " + (OBJ_KPI[k] || []).map(x => KPI_L[x]).join(", "), on: s.objective === k })).join("")}</div></div></div>`,
       collect: (root, s) => { for (const el of $$("#wizStep [data-f]", root)) s[el.dataset.f] = el.value; },
       onClick: (e, s) => {
         const a = e.target.closest("[data-aud]"), o = e.target.closest("[data-obj]");
@@ -1248,7 +1407,7 @@ function openActionWizard(row = null, preset = {}) {
         const rest = KPI_KEYS.filter(k => !main.includes(k));
         const inp = (k, big) => `<div class="fld${big ? " big" : ""}"><label for="w_${k}">${KPI_L[k]}${k === "cost" ? " (" + esc(cur()) + ")" : ""}</label><input type="number" min="0" step="${k === "cost" ? "any" : "1"}" inputmode="${k === "cost" ? "decimal" : "numeric"}" id="w_${k}" data-f="${k}" value="${s[k] === "" || s[k] == null ? "" : esc(s[k])}" placeholder="—"></div>`;
         const open = s._moreKpi || rest.some(k => +s[k] > 0);
-        return `<p class="kpi-main">${s.objective ? `${OBJ_ICONS[s.objective] || ""} Objectif <b>${esc(L("ad_objectives", s.objective))}</b> → ${main.length > 1 ? "KPI principaux" : "KPI principal"}` : "Indicateurs principaux"}</p>
+        return `<p class="kpi-main">${s.objective ? `${objTile(s.objective, "sm")} Objectif <b>${esc(L("ad_objectives", s.objective))}</b> → ${main.length > 1 ? "KPI principaux" : "KPI principal"}` : "Indicateurs principaux"}</p>
           <div class="form">${main.map(k => inp(k, true)).join("")}</div>
           <details class="more"${open ? " open" : ""}><summary>Autres indicateurs (${rest.length})</summary><div class="form">${rest.map(k => inp(k, false)).join("")}</div></details>
           <div class="rates" id="wRates">${ratesHtml(s)}</div>`;
@@ -1268,7 +1427,7 @@ function openActionWizard(row = null, preset = {}) {
       for (const k of Object.keys(SC("posts").fields)) data[k] = s[k] == null ? "" : s[k];
       for (const k of KPI_KEYS) if (data[k] === "") data[k] = 0;
       await api("save", {}, { entity: "posts", id: row ? +row.id : 0, row: data });
-      toast(row ? "Action modifiée ✓" : "Action enregistrée ✓");
+      toast(row ? "Action modifiée" : "Action enregistrée");
       afterMutation("posts");
       if (again) openActionWizard(null, { date: s.date, platform: s.platform, category: s.category, audience: s.audience, objective: s.objective });
       else closeModal();
@@ -1298,12 +1457,12 @@ function openChannelWizard(presetCat) {
     state: st,
     steps: [
       { label: "Catégorie", question: "Dans quelle famille de canaux ?", summary: s => s.category ? catInfo(s.category).label : "",
-        render: s => `<div class="choices cats">${TX().categories.map(c => choice("data-cat", c.key, c.label, { icon: c.icon, sub: tx.channels.filter(x => x.category === c.key).length + " canal(aux)", on: s.category === c.key })).join("")}</div>`,
+        render: s => `<div class="choices cats">${TX().categories.map(c => choice("data-cat", c.key, c.label, { icon: catTile(c.key), sub: tx.channels.filter(x => x.category === c.key).length + " canal(aux)", on: s.category === c.key })).join("")}</div>`,
         onClick: (e, s) => { const c = e.target.closest("[data-cat]"); if (c) { if (s.category !== c.dataset.cat) s.supports = null; s.category = c.dataset.cat; return true; } },
         validate: s => s.category ? "" : "Choisissez une catégorie." },
       { label: "Canal", question: "Quel est le nom du canal ?", summary: s => s.label,
         render: s => `<div class="fld"><label for="w_label">Nom du canal <span class="req">*</span></label><input type="text" id="w_label" value="${esc(s.label)}" maxlength="50" placeholder="ex. ${esc(examples[s.category] || "Nouveau canal")}"></div>
-          <p class="small muted">Déjà dans ${esc(catInfo(s.category).icon + " " + catInfo(s.category).label)} : ${tx.channels.filter(x => x.category === s.category).map(x => esc(x.label)).join(", ") || "aucun canal"}.</p>`,
+          <p class="small muted">Déjà dans ${catIc(s.category) + " " + esc(catInfo(s.category).label)} : ${tx.channels.filter(x => x.category === s.category).map(x => esc(x.label)).join(", ") || "aucun canal"}.</p>`,
         collect: (root, s) => { const i = $("#w_label", root); if (i) s.label = i.value.trim(); },
         validate: s => !s.label ? "Donnez un nom au canal." : tx.channels.some(x => x.label.toLowerCase() === s.label.toLowerCase()) ? "Un canal porte déjà ce nom." : "" },
       { label: "Supports", question: "Sous quelles formes communiquerez-vous sur ce canal ?", summary: s => (s.supports || []).length + " support(s)",
@@ -1313,7 +1472,7 @@ function openChannelWizard(presetCat) {
         },
         collect: (root, s) => { if ($("[data-supck]", root)) s.supports = $$("[data-supck]:checked", root).map(i => i.value); } },
       { label: "Vérifier", question: "On ajoute ce canal ?",
-        render: s => `<div class="review"><div class="rv"><span class="rv-l">Catégorie</span><span class="rv-v">${esc(catInfo(s.category).icon + " " + catInfo(s.category).label)}</span><button type="button" class="linkbtn" data-wiz="goto:0">Modifier</button></div>`
+        render: s => `<div class="review"><div class="rv"><span class="rv-l">Catégorie</span><span class="rv-v">${catIc(s.category) + " " + esc(catInfo(s.category).label)}</span><button type="button" class="linkbtn" data-wiz="goto:0">Modifier</button></div>`
           + `<div class="rv"><span class="rv-l">Canal</span><span class="rv-v"><b>${esc(s.label)}</b></span><button type="button" class="linkbtn" data-wiz="goto:1">Modifier</button></div>`
           + `<div class="rv"><span class="rv-l">Supports</span><span class="rv-v">${(s.supports || []).map(k => `<span class="chan">${esc(L("supports", k))}</span>`).join("") || '<span class="muted">aucun</span>'}</span><button type="button" class="linkbtn" data-wiz="goto:2">Modifier</button></div></div>` },
     ],
@@ -1338,7 +1497,7 @@ async function saveTaxonomy() {
   S.cache.clear();
   S.tx = Object.assign(taxFresh(), { open: tx.open, level: tx.level, q: tx.q, openCh: tx.openCh });
   S.tx.usage = await api("taxonomy_usage");
-  toast("Canaux & supports enregistrés ✓");
+  toast("Canaux & supports enregistrés");
   drawTax();
 }
 function drawTax() {
@@ -1349,8 +1508,8 @@ function drawTax() {
     <button type="button" class="lvl${tx.level === "channels" ? " on" : ""}" data-lvl="channels"><span class="n">1</span><span><b>Canaux</b><small>Où, par quel moyen ? · ex. Instagram</small></span><em>${tx.channels.length}</em></button>
     <button type="button" class="lvl${tx.level === "supports" ? " on" : ""}" data-lvl="supports"><span class="n">2</span><span><b>Supports</b><small>Sous quelle forme ? · ex. Reel, carrousel</small></span><em>${tx.supports.length}</em></button>
     <a class="lvl" href="#comm/performance"><span class="n">3</span><span><b>Performance</b><small>Quel canal, quel support fonctionne ?</small></span><em>→</em></a></div>`;
-  const toolbar = `<div class="toolbar"><input type="search" id="txQ" placeholder="${tx.level === "channels" ? "Rechercher un canal…" : "Rechercher un support…"}" value="${esc(tx.q)}" style="min-width:220px"><span class="grow"></span>${tx.level === "channels" ? '<button type="button" class="btn pri" data-tx="newch">＋ Nouveau canal (assistant)</button>' : ""}</div>`;
-  const ctrl = (i, kind) => `<span class="ctrl"><button type="button" class="icon-btn" data-tx="up:${kind}:${i}" title="Monter">↑</button><button type="button" class="icon-btn" data-tx="down:${kind}:${i}" title="Descendre">↓</button><button type="button" class="icon-btn del" data-tx="del:${kind}:${i}" title="Retirer">✕</button></span>`;
+  const toolbar = `<div class="toolbar"><label class="field-search">${ic("search", "sm")}<input type="search" id="txQ" placeholder="${tx.level === "channels" ? "Rechercher un canal…" : "Rechercher un support…"}" value="${esc(tx.q)}" aria-label="Rechercher"></label><span class="grow"></span>${tx.level === "channels" ? `<button type="button" class="btn pri" data-tx="newch">${ic("plus", "sm")} Nouveau canal</button>` : ""}</div>`;
+  const ctrl = (i, kind) => `<span class="ctrl"><button type="button" class="icon-btn" data-tx="up:${kind}:${i}" title="Monter" aria-label="Monter">${ic("chev-u", "sm")}</button><button type="button" class="icon-btn" data-tx="down:${kind}:${i}" title="Descendre" aria-label="Descendre">${ic("chev-d", "sm")}</button><button type="button" class="icon-btn del" data-tx="del:${kind}:${i}" title="Retirer" aria-label="Retirer">${ic("trash", "sm")}</button></span>`;
   let body;
   if (tx.level === "channels") {
     body = TX().categories.map(c => {
@@ -1360,14 +1519,14 @@ function drawTax() {
       const rows = shown.map(([ch, i]) => {
         const n = tx.usage.channels[ch.key] || 0, open = tx.openCh === ch.key;
         return `<div class="tx-row${open ? " open" : ""}"><input type="text" class="lbl" data-chlabel="${i}" value="${esc(ch.label)}" maxlength="50" aria-label="Nom du canal">
-          <button type="button" class="pillbtn" data-tx="sup:${i}" aria-expanded="${open}">🧩 ${ch.supports.length} support(s) ${open ? "▴" : "▾"}</button>
-          <select data-chcat="${i}" aria-label="Catégorie">${TX().categories.map(x => `<option value="${x.key}"${x.key === ch.category ? " selected" : ""}>${x.icon} ${esc(x.label)}</option>`).join("")}</select>
+          <button type="button" class="pillbtn" data-tx="sup:${i}" aria-expanded="${open}">${ic("layers", "xs")} ${ch.supports.length} support(s) ${ic(open ? "chev-u" : "chev-d", "xs")}</button>
+          <select data-chcat="${i}" aria-label="Catégorie">${TX().categories.map(x => `<option value="${x.key}"${x.key === ch.category ? " selected" : ""}>${esc(x.label)}</option>`).join("")}</select>
           <span class="usage">${n ? num(n) + " donnée(s)" : ""}</span>${ctrl(i, "ch")}
           ${open ? `<div class="tx-sup" data-chsup="${i}"><p class="small muted" style="margin:0 0 4px">Supports utilisés sur <b>${esc(ch.label)}</b> :</p>${supportChecklist(tx.supports, ch.supports)}</div>` : ""}</div>`;
       }).join("");
-      return `<details class="tx-grp" data-grp="${c.key}"${q || tx.open[c.key] ? " open" : ""}><summary><span class="ic">${c.icon}</span><b>${esc(c.label)}</b><span class="cnt">${list.length} canal(aux)</span></summary>
+      return `<details class="tx-grp" data-grp="${c.key}"${q || tx.open[c.key] ? " open" : ""}><summary>${catTile(c.key)}<b>${esc(c.label)}</b><span class="cnt">${list.length} canal(aux)</span></summary>
         <div class="tx-rows">${rows || '<p class="muted small" style="margin:6px 0">Aucun canal dans cette catégorie.</p>'}</div>
-        <div class="tx-add"><input type="text" data-addch="${c.key}" placeholder="Nouveau canal dans ${esc(c.label)}…" maxlength="50" aria-label="Nouveau canal"><button type="button" class="btn sm" data-tx="addch:${c.key}">＋ Ajouter</button></div></details>`;
+        <div class="tx-add"><input type="text" data-addch="${c.key}" placeholder="Nouveau canal dans ${esc(c.label)}…" maxlength="50" aria-label="Nouveau canal"><button type="button" class="btn sm" data-tx="addch:${c.key}">${ic("plus", "sm")} Ajouter</button></div></details>`;
     }).join("") || '<div class="empty">Aucun canal ne correspond.</div>';
   } else {
     body = ["digital", "physical"].map(g => `<h3>${g === "digital" ? "A · Supports digitaux" : "B · Supports physiques"}</h3>` + TX().support_types.filter(t => t.group === g).map(t => {
@@ -1377,13 +1536,13 @@ function drawTax() {
       const rows = shown.map(([x, i]) => {
         const n = tx.usage.supports[x.key] || 0, on = tx.channels.filter(c => c.supports.includes(x.key)).length;
         return `<div class="tx-row"><input type="text" class="lbl" data-suplabel="${i}" value="${esc(x.label)}" maxlength="50" aria-label="Nom du support">
-          <span class="pillbtn static" title="Canaux qui proposent ce support">📣 ${on} canal(aux)</span>
+          <span class="pillbtn static" title="Canaux qui proposent ce support">${ic("megaphone", "xs")} ${on} canal(aux)</span>
           <select data-suptype="${i}" aria-label="Type de support">${TX().support_types.map(y => `<option value="${y.key}"${y.key === x.type ? " selected" : ""}>${esc(y.label)}</option>`).join("")}</select>
           <span class="usage">${n ? num(n) + " donnée(s)" : ""}</span>${ctrl(i, "sup")}</div>`;
       }).join("");
       return `<details class="tx-grp" data-grp="t_${t.key}"${q || tx.open["t_" + t.key] ? " open" : ""}><summary><b>${esc(t.label)}</b><span class="cnt">${list.length} support(s)</span></summary>
         <div class="tx-rows">${rows || '<p class="muted small" style="margin:6px 0">Aucun support de ce type.</p>'}</div>
-        <div class="tx-add"><input type="text" data-addsup="${t.key}" placeholder="Nouveau support (${esc(t.label)})…" maxlength="50" aria-label="Nouveau support"><button type="button" class="btn sm" data-tx="addsup:${t.key}">＋ Ajouter</button></div></details>`;
+        <div class="tx-add"><input type="text" data-addsup="${t.key}" placeholder="Nouveau support (${esc(t.label)})…" maxlength="50" aria-label="Nouveau support"><button type="button" class="btn sm" data-tx="addsup:${t.key}">${ic("plus", "sm")} Ajouter</button></div></details>`;
     }).join("")).join("");
   }
   root.innerHTML = levels + toolbar + body
@@ -1416,7 +1575,7 @@ function bindTax() {
       tx().channels[+box.dataset.chsup].supports = $$("[data-supck]:checked", box).map(i => i.value);
       dirty();
       const btn = $(`[data-tx="sup:${box.dataset.chsup}"]`, root);
-      if (btn) btn.innerHTML = `🧩 ${tx().channels[+box.dataset.chsup].supports.length} support(s) ▴`;
+      if (btn) btn.innerHTML = `${ic("layers", "xs")} ${tx().channels[+box.dataset.chsup].supports.length} support(s) ${ic("chev-u", "xs")}`;
     }
   });
   const add = (kind, key) => {
@@ -1457,14 +1616,14 @@ function bindTax() {
     }
     if (a === "del" && k === "ch") {
       const c = T.channels[+i], n = T.usage.channels[c.key] || 0;
-      if (T.channels.length <= 1) return toast("Gardez au moins un canal.");
-      if (n && !confirm(`« ${c.label} » est cité par ${n} donnée(s) (actions, leads, campagnes…). Le retirer ? Les données déjà saisies garderont son nom.`)) return;
+      if (T.channels.length <= 1) return toast("Impossible de retirer le dernier canal : gardez-en au moins un.", "err");
+      if (n && !(await askDialog({ icon: ["trash", "pink"], title: `Retirer le canal « ${c.label} » ?`, text: `${n} donnée(s) le citent (actions, leads, campagnes…). Elles garderont son nom, mais vous ne pourrez plus le choisir pour de nouvelles saisies.`, ok: "Retirer le canal", cancel: "Garder le canal", danger: true }))) return;
       T.channels.splice(+i, 1); dirty(); return drawTax();
     }
     if (a === "del" && k === "sup") {
       const x = T.supports[+i], n = T.usage.supports[x.key] || 0, on = T.channels.filter(c => c.supports.includes(x.key)).length;
-      if (T.supports.length <= 1) return toast("Gardez au moins un support.");
-      if ((n || on) && !confirm(`« ${x.label} » est ${on ? `proposé par ${on} canal(aux)` : ""}${on && n ? " et " : ""}${n ? `cité par ${n} donnée(s)` : ""}. Le retirer ? Les données déjà saisies garderont son nom.`)) return;
+      if (T.supports.length <= 1) return toast("Impossible de retirer le dernier support : gardez-en au moins un.", "err");
+      if ((n || on) && !(await askDialog({ icon: ["trash", "pink"], title: `Retirer le support « ${x.label} » ?`, text: `Il est ${on ? `proposé par ${on} canal(aux)` : ""}${on && n ? " et " : ""}${n ? `cité par ${n} donnée(s)` : ""}. Les données déjà saisies garderont son nom.`, ok: "Retirer le support", cancel: "Garder le support", danger: true }))) return;
       T.supports.splice(+i, 1);
       for (const c of T.channels) c.supports = c.supports.filter(s2 => s2 !== x.key);
       dirty(); return drawTax();
@@ -1484,10 +1643,10 @@ const PERF_HEAD = ["Actions", "Portée", "Engagement", "Taux eng.", "Clics", "CT
 /** Tableau dépliable : catégorie ▸ canaux ▸ supports. */
 function perfTable(perf, open) {
   if (!perf.categories.length) return empty("Aucune donnée de communication sur la période : enregistrez des actions (assistant), des résultats publicitaires ou des leads.");
-  const row = (cls, name, x, toggle, depth) => `<tr class="pt ${cls}">${`<td class="pt-name" style="padding-left:${10 + depth * 18}px">${toggle ? `<button type="button" class="tgl" data-pt="${esc(toggle)}" aria-expanded="${!!open[toggle]}">${open[toggle] ? "▾" : "▸"}</button>` : '<span class="tgl-sp"></span>'}${name}</td>`}${perfCells(x).map(c => `<td class="n">${c}</td>`).join("")}</tr>`;
+  const row = (cls, name, x, toggle, depth) => `<tr class="pt ${cls}">${`<td class="pt-name" style="padding-left:${10 + depth * 18}px">${toggle ? `<button type="button" class="tgl" data-pt="${esc(toggle)}" aria-expanded="${!!open[toggle]}" aria-label="Déplier">${ic(open[toggle] ? "chev-d" : "chev-r", "xs")}</button>` : '<span class="tgl-sp"></span>'}${name}</td>`}${perfCells(x).map(c => `<td class="n">${c}</td>`).join("")}</tr>`;
   let body = "";
   for (const c of perf.categories) {
-    body += row("pt-cat", `${c.icon} <b>${esc(c.label)}</b> <span class="muted small">${c.channels.length} canal(aux)</span>`, c, "c:" + c.key, 0);
+    body += row("pt-cat", `${catIc(c.key)} <b>${esc(c.label)}</b> <span class="muted small">${c.channels.length} canal(aux)</span>`, c, "c:" + c.key, 0);
     if (!open["c:" + c.key]) continue;
     for (const ch of c.channels) {
       const real = ch.supports.filter(x => x.key !== "");
@@ -1506,7 +1665,7 @@ function commSummary(perf) {
   if (!perf || !perf.categories.length) return empty("Aucune action de communication sur la période.");
   const rows = perf.categories.flatMap(c => c.channels.map(ch => Object.assign({ cat: c }, ch))).sort((a, b) => leadsOf(b) - leadsOf(a) || b.reach - a.reach).slice(0, 10);
   return table(rows, [
-    { l: "Canal", h: x => `<b>${esc(x.cat.icon + " " + x.label)}</b><div class="sub">${esc(x.cat.label)}</div>` },
+    { l: "Canal", h: x => `<span class="chan-cat">${catIc(x.cat.key)}<b>${esc(x.label)}</b></span><div class="sub">${esc(x.cat.label)}</div>` },
     { l: "Actions", n: 1, h: x => num(x.actions) }, { l: "Portée", n: 1, h: x => num(x.reach) }, { l: "Taux eng.", n: 1, h: x => pct(x.eng_rate, 1) },
     { l: "Clics", n: 1, h: x => num(x.clicks) }, { l: "Leads", n: 1, h: x => num(leadsOf(x)) }, { l: "Coût", n: 1, h: x => +x.cost ? money(x.cost) : "—" },
     { l: "Meilleur support", h: x => { const b = x.supports.find(y => y.key !== ""); return b ? `<span class="chan">${esc(b.label)}</span>` : '<span class="muted">—</span>'; } },
@@ -1535,7 +1694,7 @@ function drawPerf() {
   const chips = `<div class="chips">${PERF_METRICS.map(([key, l]) => `<button type="button" class="chip${ui.metric === key ? " on" : ""}" data-pm="${key}">${esc(l)}</button>`).join("")}</div>`;
   const all = perf.categories.flatMap(c => c.channels.map(ch => Object.assign({ cat: c }, ch)));
   const bars = list => hbars(list.filter(x => metricOf(x, ui.metric) != null && (metricOf(x, ui.metric) > 0)).sort((a, b) => ui.metric === "cpl" ? metricOf(a, ui.metric) - metricOf(b, ui.metric) : metricOf(b, ui.metric) - metricOf(a, ui.metric)).slice(0, 15)
-    .map(x => ({ label: x.cat ? x.cat.icon + " " + x.label : x.label, value: metricOf(x, ui.metric), tip: `${esc(mLabel)} : ${metricFmt(ui.metric, metricOf(x, ui.metric))}<br>Portée ${num(x.reach)} · Leads ${num(leadsOf(x))}` })), v => metricFmt(ui.metric, v));
+    .map(x => ({ label: x.label, value: metricOf(x, ui.metric), tip: `${esc(mLabel)} : ${metricFmt(ui.metric, metricOf(x, ui.metric))}<br>Portée ${num(x.reach)} · Leads ${num(leadsOf(x))}` })), v => metricFmt(ui.metric, v));
   const withSup = all.filter(x => x.supports.filter(y => y.key !== "").length >= 1);
   if (!withSup.some(x => x.key === ui.ch)) ui.ch = (withSup.slice().sort((a, b) => b.supports.length - a.supports.length)[0] || {}).key || "";
   const chSel = withSup.find(x => x.key === ui.ch);
@@ -1557,12 +1716,12 @@ VIEWS["comm/actions"] = { range: true, fn: async param => {
   for (const r of rows) { const c = catOf(r.platform) || "other"; counts[c] = (counts[c] || 0) + 1; }
   const list = sel === "all" ? rows : rows.filter(r => (catOf(r.platform) || "other") === sel);
   const sum = key => list.reduce((a, r) => a + (+r[key] || 0), 0);
-  const chips = `<div class="chips"><a class="chip${sel === "all" ? " on" : ""}" href="#comm/actions">Toutes (${num(rows.length)})</a>${TX().categories.filter(c => counts[c.key]).map(c => `<a class="chip${sel === c.key ? " on" : ""}" href="#comm/actions/${c.key}">${c.icon} ${esc(c.label)} (${num(counts[c.key])})</a>`).join("")}${counts.other ? `<a class="chip${sel === "other" ? " on" : ""}" href="#comm/actions/other">🗂️ Canaux retirés (${num(counts.other)})</a>` : ""}</div>`;
-  const tile = (l, v, sub = "&nbsp;") => `<div class="kpi"><small>${esc(l)}</small><b>${v}</b><span class="d">${sub}</span></div>`;
+  const chips = `<div class="chips"><a class="chip${sel === "all" ? " on" : ""}" href="#comm/actions">Toutes (${num(rows.length)})</a>${TX().categories.filter(c => counts[c.key]).map(c => `<a class="chip${sel === c.key ? " on" : ""}" href="#comm/actions/${c.key}">${catIc(c.key)} ${esc(c.label)} (${num(counts[c.key])})</a>`).join("")}${counts.other ? `<a class="chip${sel === "other" ? " on" : ""}" href="#comm/actions/other">Canaux retirés (${num(counts.other)})</a>` : ""}</div>`;
+  const kt = (l, v, m, sub = "&nbsp;") => `<div class="kpi">${tile(m[0], m[1])}<small>${esc(l)}</small><b>${v}</b><span class="d">${sub}</span></div>`;
   return `<p class="muted" style="margin-top:0">Chaque action suit <b>Catégorie → Canal → Support → Contenu → Cible → Objectif → KPI</b> · ${esc(rangeLabel())}.</p>
-    <div class="toolbar">${addBtn("posts", "Nouvelle action (assistant)", TX().categories.some(c => c.key === sel) ? { category: sel } : null, "btn pri")}<a class="btn" href="#comm/performance">📊 Performance</a><span class="grow"></span>${exportBtn("posts")}</div>${chips}
-    <div class="kpis">${tile("Actions", num(list.length))}${tile("Portée", num(sum("reach")))}${tile("Engagement", num(sum("engagement")), pct(ratio(sum("engagement"), sum("reach")), 1) + " de la portée")}${tile("Clics", num(sum("clicks")))}${tile("Leads", num(sum("leads")))}${tile("Coût", money(sum("cost")), sum("leads") ? money(sum("cost") / sum("leads")) + " / lead" : "&nbsp;")}</div>`
-    + card("📣 Actions de communication", table(list, actionCols(), { entity: "posts", emptyMsg: "Aucune action sur la période : cliquez sur « Nouvelle action » pour lancer l'assistant." }));
+    <div class="toolbar">${addBtn("posts", "Nouvelle action", TX().categories.some(c => c.key === sel) ? { category: sel } : null, "btn pri")}<a class="btn" href="#comm/performance">${ic("chart", "sm")} Voir la performance</a><span class="grow"></span>${exportBtn("posts")}</div>${chips}
+    <div class="kpis">${kt("Actions", num(list.length), ["megaphone", "violet"])}${kt("Portée", num(sum("reach")), ["eye", "blue"])}${kt("Engagement", num(sum("engagement")), ["heart", "pink"], pct(ratio(sum("engagement"), sum("reach")), 1) + " de la portée")}${kt("Clics", num(sum("clicks")), ["link", "teal"])}${kt("Leads", num(sum("leads")), ["user-plus", "orange"])}${kt("Coût", money(sum("cost")), ["wallet", "amber"], sum("leads") ? money(sum("cost") / sum("leads")) + " / lead" : "&nbsp;")}</div>`
+    + card("📣 Actions de communication", table(list, actionCols(), { entity: "posts", emptyMsg: "Aucune action sur la période. Une publication, un email, un salon… : enregistrez-la avec « Nouvelle action », l'assistant vous guide en 5 étapes." }));
 } };
 VIEWS["comm/taxonomy"] = { fn: async param => {
   if (!S.tx || !S.tx.dirty) S.tx = Object.assign(taxFresh(), S.tx ? { open: S.tx.open, level: S.tx.level } : {});
@@ -1574,6 +1733,193 @@ VIEWS["comm/taxonomy"] = { fn: async param => {
 /* ================================================================ formulaires */
 function openModal(html) { $("#modalBox").innerHTML = html; $("#modal").hidden = false; const f = $("#modalBox input:not([type=hidden]), #modalBox select, #modalBox textarea"); if (f) f.focus(); }
 function closeModal() { $("#modal").hidden = true; $("#modalBox").innerHTML = ""; }
+
+/* ================================================================ boîte de dialogue (remplace confirm / prompt) */
+/**
+ * Pose une question dans une petite fenêtre. Renvoie une promesse :
+ * true / false, ou le texte saisi (null si annulé) quand `input` est fourni.
+ * opt = { icon: [nom, teinte], title, text, input: { value, label, placeholder, rows }, ok, cancel, danger }
+ */
+function askDialog(opt) {
+  return new Promise(resolve => {
+    const box = $("#dlgBox"), wrap = $("#dlg");
+    const prevFocus = document.activeElement;
+    const inp = opt.input ? (opt.input.rows ? `<textarea id="dlgIn" rows="${opt.input.rows}" aria-label="${esc(opt.input.label || opt.title)}" placeholder="${esc(opt.input.placeholder || "")}">${esc(opt.input.value || "")}</textarea>`
+      : `<input type="text" id="dlgIn" aria-label="${esc(opt.input.label || opt.title)}" value="${esc(opt.input.value || "")}" placeholder="${esc(opt.input.placeholder || "")}">`) : "";
+    box.setAttribute("aria-labelledby", "dlgT");
+    box.innerHTML = `${opt.icon ? tile(opt.icon[0], opt.icon[1]) : ""}<h2 id="dlgT">${esc(opt.title)}</h2>${opt.text ? `<p>${esc(opt.text)}</p>` : ""}${inp}
+      <div class="form-foot"><button type="button" class="btn" data-dlg="0">${esc(opt.cancel || "Annuler")}</button><button type="button" class="btn ${opt.danger ? "danger" : "pri"}" data-dlg="1">${esc(opt.ok || "Continuer")}</button></div>`;
+    wrap.hidden = false;
+    const field = $("#dlgIn", box);
+    (field || $('[data-dlg="1"]', box)).focus();
+    if (field && field.select) field.select();
+    const done = yes => {
+      wrap.hidden = true;
+      box.innerHTML = "";
+      wrap.removeEventListener("click", onClick);
+      document.removeEventListener("keydown", onKey, true);
+      if (prevFocus && prevFocus.focus) prevFocus.focus();
+      resolve(opt.input ? (yes ? field.value : null) : yes);
+    };
+    const onClick = e => {
+      const b = e.target.closest("[data-dlg]");
+      if (b) done(b.dataset.dlg === "1");
+      else if (e.target === wrap) done(false);
+    };
+    const onKey = e => {
+      if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); done(false); }
+      else if (e.key === "Enter" && !(field && field.tagName === "TEXTAREA") && box.contains(document.activeElement) && document.activeElement.dataset.dlg !== "0") { e.preventDefault(); done(true); }
+    };
+    wrap.addEventListener("click", onClick);
+    document.addEventListener("keydown", onKey, true);
+  });
+}
+
+/* ================================================================ import de leads (CSV / Excel enregistré en CSV) */
+/** Colonnes reconnues : nom de colonne du fichier (sans accents, minuscules) → champ du lead. */
+const IMPORT_COLS = {
+  date: ["date", "date d'arrivee", "date arrivee", "recu le", "created", "created at"],
+  name: ["nom", "nom complet", "name", "full name", "lead", "contact", "prenom nom"],
+  phone: ["telephone", "tel", "phone", "mobile", "numero", "gsm"],
+  email: ["email", "e-mail", "mail", "adresse email"],
+  city: ["ville", "wilaya", "city", "wilaya / ville"],
+  type: ["profil", "type", "profile", "investisseur / porteur"],
+  source: ["canal", "source", "canal (source)", "channel", "provenance"],
+  support: ["support", "format"],
+  assigned_to: ["commercial", "commercial responsable", "assigne a", "responsable", "assigned to"],
+  status: ["traitement", "statut", "status", "etat"],
+  reason: ["pourquoi non qualifie", "raison", "motif", "reason"],
+  notes: ["notes", "note", "commentaire", "commentaires", "remarque"],
+};
+const fold = s => String(s == null ? "" : s).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
+/** Lit un CSV (séparateur ; ou , détecté, guillemets doublés, retours à la ligne dans les guillemets). */
+function parseCsv(text) {
+  text = text.replace(/^﻿/, "");
+  const first = text.split(/\r?\n/, 1)[0] || "";
+  const sep = (first.match(/;/g) || []).length >= (first.match(/,/g) || []).length ? ";" : ",";
+  const rows = [];
+  let row = [], cell = "", q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) {
+      if (c === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; }
+      else cell += c;
+    } else if (c === '"') q = true;
+    else if (c === sep) { row.push(cell); cell = ""; }
+    else if (c === "\n" || c === "\r") {
+      if (c === "\r" && text[i + 1] === "\n") i++;
+      row.push(cell); rows.push(row); row = []; cell = "";
+    } else cell += c;
+  }
+  if (cell !== "" || row.length) { row.push(cell); rows.push(row); }
+  return rows.filter(r => r.some(x => String(x).trim() !== ""));
+}
+/** Retrouve la clé d'une liste à partir d'une valeur du fichier (clé ou libellé, sans tenir compte des accents). */
+function matchKey(enumName, v) {
+  const f = fold(v);
+  if (!f) return "";
+  const opts = EN(enumName);
+  for (const [k, l] of Object.entries(opts)) if (fold(k) === f || fold(l) === f) return k;
+  for (const [k, l] of Object.entries(opts)) if (fold(l).startsWith(f) || f.startsWith(fold(l))) return k;
+  return null; // valeur inconnue
+}
+/** Convertit une date du fichier (AAAA-MM-JJ, JJ/MM/AAAA, JJ-MM-AAAA, JJ.MM.AA) en AAAA-MM-JJ. */
+function importDate(v) {
+  v = String(v || "").trim();
+  if (!v) return S.today;
+  if (isDate(v.slice(0, 10))) return v.slice(0, 10);
+  const m = v.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})/);
+  if (!m) return null;
+  const y = m[3].length === 2 ? "20" + m[3] : m[3];
+  const d = `${y}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+  return isDate(d) && !isNaN(new Date(d + "T12:00:00")) ? d : null;
+}
+/** Prépare chaque ligne : colonnes reconnues, valeurs converties en clés, problèmes repérés avant l'envoi. */
+function prepareImport(table) {
+  const head = table[0].map(fold);
+  const map = {};
+  head.forEach((h, i) => { for (const [k, syn] of Object.entries(IMPORT_COLS)) if (map[k] == null && syn.includes(h)) map[k] = i; });
+  const rows = table.slice(1).map((r, n) => {
+    const get = k => map[k] == null ? "" : String(r[map[k]] || "").trim();
+    const out = { _line: n + 2 }, issues = [];
+    out.date = importDate(get("date"));
+    if (!out.date) { issues.push(`date « ${get("date")} » illisible`); out.date = S.today; }
+    out.name = get("name");
+    let block = !out.name;
+    if (!out.name) issues.push("nom manquant");
+    for (const k of ["phone", "email", "city", "notes"]) out[k] = get(k);
+    for (const [k, en, def] of [["type", "contact_types", "investisseur"], ["source", "sources", ""], ["support", "supports", ""], ["assigned_to", "commercials", ""], ["status", "contact_status", "nouveau"], ["reason", "reasons", ""]]) {
+      const raw = get(k), key = matchKey(en, raw);
+      if (key === null) { issues.push(`${k === "source" ? "canal" : k === "assigned_to" ? "commercial" : k === "type" ? "profil" : k === "status" ? "traitement" : k} « ${raw} » inconnu`); out[k] = def; }
+      else out[k] = key || def;
+    }
+    if (!out.source) { block = true; if (!get("source")) issues.push("canal manquant"); }
+    return { data: out, issues, block };
+  });
+  return { map, rows };
+}
+function openImport(entity) {
+  if (entity !== "contacts") return;
+  const cols = ["Date", "Nom complet", "Téléphone", "Email", "Ville", "Profil", "Canal", "Support", "Commercial", "Traitement", "Notes"];
+  const sample = [S.today, "Exemple Nom", "0550 00 00 00", "exemple@mail.com", "Alger", L("contact_types", "investisseur"), L("sources", Object.keys(EN("sources"))[0]), "", "", L("contact_status", "nouveau"), ""];
+  const tpl = "﻿" + [cols, sample].map(r => r.map(x => /[;"\n]/.test(x) ? `"${String(x).replace(/"/g, '""')}"` : x).join(";")).join("\r\n");
+  const tplHref = "data:text/csv;charset=utf-8," + encodeURIComponent(tpl);
+  openModal(`<div class="imp">${tile("upload", "green")}<h2>Importer des leads</h2>
+    <p class="muted" style="margin-top:-4px">Ajoutez d'un coup les leads d'un fichier Excel ou Google Sheets enregistré au format CSV. Rien n'est enregistré avant votre confirmation.</p>
+    <ol class="imp-steps"><li><b>Téléchargez le modèle</b> ou utilisez votre fichier : une ligne par lead, avec au moins le <b>nom</b> et le <b>canal</b>.</li><li><b>Déposez le fichier</b> ci-dessous : vous verrez un aperçu avant l'import.</li></ol>
+    <div class="toolbar"><a class="btn sm" href="${tplHref}" download="modele-import-leads.csv">${ic("download", "sm")} Télécharger le modèle</a></div>
+    <label class="dropzone" id="impDrop">${ic("upload")}<b>Glissez votre fichier CSV ici</b><span class="muted small">ou cliquez pour le choisir · 1 000 lignes au maximum</span><input type="file" id="impFile" accept=".csv,text/csv,text/plain" hidden></label>
+    <div id="impOut"></div>
+    <div class="form-foot"><button type="button" class="btn" data-close>Annuler</button><button type="button" class="btn pri" id="impGo" disabled>Importer</button></div></div>`);
+  let prepared = null;
+  const show = (file) => {
+    if (!file) return;
+    if (file.size > 3 * 1024 * 1024) { $("#impOut").innerHTML = `<p class="form-err">Ce fichier est trop lourd (plus de 3 Mo). Découpez-le en plusieurs fichiers.</p>`; return; }
+    const rd = new FileReader();
+    rd.onload = () => {
+      const tab = parseCsv(String(rd.result || ""));
+      if (tab.length < 2) { $("#impOut").innerHTML = `<p class="form-err">Aucune ligne trouvée. Vérifiez que le fichier est bien au format CSV, avec une ligne de titres puis une ligne par lead.</p>`; $("#impGo").disabled = true; return; }
+      prepared = prepareImport(tab);
+      const found = Object.keys(prepared.map);
+      if (!found.includes("name") || !found.includes("source")) {
+        $("#impOut").innerHTML = `<p class="form-err">Les colonnes « Nom complet » et « Canal » sont introuvables. Renommez les titres de colonnes comme dans le modèle, puis réessayez.</p>`;
+        $("#impGo").disabled = true; prepared = null; return;
+      }
+      if (prepared.rows.length > 1000) { $("#impOut").innerHTML = `<p class="form-err">${num(prepared.rows.length)} lignes : c'est plus que les 1 000 autorisées par import. Découpez le fichier en plusieurs parties.</p>`; $("#impGo").disabled = true; prepared = null; return; }
+      const bad = prepared.rows.filter(r => r.issues.length);
+      const skip = prepared.rows.filter(r => r.block), warn = bad.filter(r => !r.block);
+      const ok = prepared.rows.length - bad.length, go = prepared.rows.length - skip.length;
+      const labels = { date: "Date", name: "Nom", phone: "Téléphone", email: "Email", city: "Ville", type: "Profil", source: "Canal", support: "Support", assigned_to: "Commercial", status: "Traitement", reason: "Raison", notes: "Notes" };
+      $("#impDrop").classList.add("done");
+      $("#impDrop").innerHTML = `${ic("file")}<b>${esc(file.name)}</b><span class="muted small">Cliquez pour choisir un autre fichier</span><input type="file" id="impFile" accept=".csv,text/csv,text/plain" hidden>`;
+      $("#impOut").innerHTML = `<div class="imp-sum"><span class="pill good">${num(ok)} prête(s)</span>${warn.length ? `<span class="pill warn">${num(warn.length)} avec valeur par défaut</span>` : ""}${skip.length ? `<span class="pill bad">${num(skip.length)} ignorée(s)</span>` : ""}<span class="muted small">Colonnes reconnues : ${found.map(k => esc(labels[k])).join(", ")}</span></div>`
+        + (bad.length ? `<p class="small" style="margin:8px 0">${warn.length ? "Une valeur inconnue est remplacée par la valeur par défaut (profil Investisseur, traitement À traiter…). " : ""}${skip.length ? "Une ligne sans nom ou sans canal reconnu est ignorée : corrigez-la dans le fichier, puis importez-la à part." : ""}</p><div class="dl-list">${bad.slice(0, 8).map(r => `<div class="dl-row${r.block ? " block" : ""}">${ic(r.block ? "x" : "alert", "sm")}<span>Ligne ${r.data._line} — ${esc(r.data.name || "sans nom")} : ${esc(r.issues.join(", "))}${r.block ? " · <b>ignorée</b>" : ""}</span></div>`).join("")}${bad.length > 8 ? `<div class="dl-row muted small">… et ${num(bad.length - 8)} autre(s)</div>` : ""}</div>` : "")
+        + `<div class="tbl-wrap" style="margin-top:10px"><table><thead><tr><th>Ligne</th><th>Nom</th><th>Profil</th><th>Canal</th><th>Traitement</th></tr></thead><tbody>${prepared.rows.slice(0, 5).map(r => `<tr><td>${r.data._line}</td><td>${esc(r.data.name || "—")}</td><td>${esc(L("contact_types", r.data.type))}</td><td>${esc(L("sources", r.data.source) || "—")}</td><td>${esc(L("contact_status", r.data.status))}</td></tr>`).join("")}</tbody></table></div>${prepared.rows.length > 5 ? `<p class="muted small">Aperçu des 5 premières lignes sur ${num(prepared.rows.length)}.</p>` : ""}`;
+      $("#impGo").disabled = !go;
+      $("#impGo").textContent = go ? `Importer ${num(go)} lead(s)` : "Aucune ligne à importer";
+    };
+    rd.onerror = () => { $("#impOut").innerHTML = `<p class="form-err">Le fichier n'a pas pu être lu. Réessayez, ou enregistrez-le de nouveau au format CSV.</p>`; };
+    rd.readAsText(file, "utf-8");
+  };
+  const box = $("#modalBox");
+  box.addEventListener("change", e => { if (e.target.id === "impFile") show(e.target.files[0]); });
+  box.addEventListener("dragover", e => { if (e.target.closest("#impDrop")) { e.preventDefault(); $("#impDrop").classList.add("over"); } });
+  box.addEventListener("dragleave", e => { if (e.target.closest("#impDrop")) $("#impDrop").classList.remove("over"); });
+  box.addEventListener("drop", e => { if (!e.target.closest("#impDrop")) return; e.preventDefault(); $("#impDrop").classList.remove("over"); show(e.dataTransfer.files[0]); });
+  $("#impGo").addEventListener("click", async () => {
+    if (!prepared) return;
+    const b = $("#impGo");
+    b.disabled = true; b.textContent = "Import en cours…";
+    try {
+      const d = await api("import", {}, { entity: "contacts", rows: prepared.rows.filter(r => !r.block).map(r => r.data) });
+      if (!d.errors.length) { closeModal(); toast(`${num(d.imported)} lead(s) importé(s)`); afterMutation("contacts"); return; }
+      $("#impOut").innerHTML = `<div class="imp-sum"><span class="pill good">${num(d.imported)} importé(s)</span><span class="pill bad">${num(d.errors.length)} refusé(s)</span></div><p class="small" style="margin:8px 0">Ces lignes n'ont pas été importées. Corrigez-les dans le fichier, puis importez uniquement ces lignes.</p><div class="dl-list">${d.errors.slice(0, 20).map(x => `<div class="dl-row">${ic("x", "sm")}<span>Ligne ${x.line} : ${esc(x.message)}</span></div>`).join("")}</div>`;
+      b.textContent = "Terminé"; prepared = null;
+      $("[data-close]", box).textContent = "Fermer";
+      afterMutation("contacts");
+    } catch (err) { toast(err.message, "err"); b.disabled = false; b.textContent = "Réessayer l'import"; }
+  });
+}
 $("#modal").addEventListener("mousedown", e => { if (e.target.id === "modal") closeModal(); });
 document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("#modal").hidden) closeModal(); });
 
@@ -1606,7 +1952,7 @@ function channelOptions(cat, v) {
 }
 function channelPicker(id, k, f, v) {
   const cat = catOf(v);
-  return `<div class="cascade"><select data-cat-for="${k}" aria-label="Catégorie de canal"><option value="">Catégorie…</option>${TX().categories.map(c => `<option value="${c.key}"${c.key === cat ? " selected" : ""}>${c.icon} ${esc(c.label)}</option>`).join("")}</select>`
+  return `<div class="cascade"><select data-cat-for="${k}" aria-label="Catégorie de canal"><option value="">Catégorie…</option>${TX().categories.map(c => `<option value="${c.key}"${c.key === cat ? " selected" : ""}>${esc(c.label)}</option>`).join("")}</select>`
     + `<select id="${id}" name="${k}"${f.req ? " required" : ""}${cat || v ? "" : " disabled"} aria-label="Canal">${channelOptions(cat, v)}</select></div>`;
 }
 /** Support : ceux du canal choisi d'abord, puis tous les autres. */
@@ -1712,7 +2058,7 @@ function openForm(entity, row = null, preset = {}) {
     const data = readForm(form, entity);
     try {
       await api("save", {}, { entity, id: row ? +row.id : 0, row: data });
-      toast(row ? "Modifié ✓" : "Ajouté ✓");
+      toast(row ? "Modifications enregistrées" : "Ajouté");
       if (again) {
         const keep = {};
         for (const k of ["date", "source", "support", "platform", "campaign_id", "page_id", "funnel_id", "type", "assigned_to"]) if (k in data) keep[k] = data[k];
@@ -1734,45 +2080,47 @@ const FUNNEL_TEMPLATE = [
   { name: "Investissement", source: "manual", target: 0, tags: "" },
 ];
 /** Canaux d'une étape affichés en petites étiquettes. */
-const chanChips = keys => (keys || []).map(k => `<span class="chan">${esc(L("sources", k))}</span>`).join("");
+const chanChips = keys => (keys || []).map(k => `<span class="chan${channelOf(k) ? "" : " gone"}">${catIc(catOf(k) || "other")}${esc(L("sources", k))}</span>`).join("");
+/** Sources de chiffres calculées à partir des canaux de l'étape (il faut donc au moins un canal). */
+const needsCh = src => /^(stage_|social_)/.test(src || "");
 const splitKeys = v => Array.isArray(v) ? v : String(v || "").split(",").filter(Boolean);
 /** Groupes de la liste « Source des chiffres » d'une étape (par préfixe de clé). */
-const STAGE_SRC_GROUPS = [["manual", "Saisie"], ["stage_", "Canaux de l'étape"], ["ads_", "Campagnes publicitaires liées"], ["social_", "Réseaux sociaux liés au funnel"], ["page_", "Pages liées"], ["email_", "Emails liés"], ["contacts", "Leads liés au funnel"]];
+const STAGE_SRC_GROUPS = [["manual", "Saisie"], ["stage_", "Canaux de l'étape"], ["ads_", "Campagnes publicitaires liées"], ["social_", "Canaux de l'étape · relevés des comptes"], ["page_", "Pages liées"], ["email_", "Emails liés"], ["contacts", "Leads liés au funnel"]];
 
 function openFunnelEditor(id) {
   const f = id ? REF("funnels").find(x => +x.id === +id) : null;
   let stages = (f ? f.stages : FUNNEL_TEMPLATE).map(s => ({ id: s.id || 0, name: s.name, source: s.source, target: +s.target || 0, tags: s.tags || "", channels: splitKeys(s.channels) }));
-  const links = f ? f.links : { campaigns: [], pages: [], emails: [], social: [] };
+  const links = f ? f.links : { campaigns: [], pages: [], emails: [], channels: [] };
   const vals = Object.assign(defaults("funnels"), f || {});
   const srcOpts = v => STAGE_SRC_GROUPS.map(([pre, label]) => {
     const list = Object.entries(EN("stage_sources")).filter(([k]) => k.startsWith(pre));
     return list.length ? `<optgroup label="${esc(label)}">${list.map(([k, l]) => `<option value="${k}"${k === v ? " selected" : ""}>${esc(l)}</option>`).join("")}</optgroup>` : "";
   }).join("");
   const chSummary = s => (s.channels.length ? chanChips(s.channels) : '<span class="muted">aucun canal</span>')
-    + (s.source.startsWith("stage_") && !s.channels.length ? ' <span class="pill warn">⚠ choisissez au moins un canal</span>' : "");
+    + (needsCh(s.source) && !s.channels.length ? ' <span class="pill warn">Choisissez au moins un canal</span>' : "");
   const chPicker = (s, i) => {
     const box = (k, l) => `<label><input type="checkbox" data-k="ch" value="${esc(k)}"${s.channels.includes(k) ? " checked" : ""}> ${esc(l)}</label>`;
     const gone = s.channels.filter(k => !channelOf(k)); // canaux retirés mais encore cochés sur cette étape
     // Divulgation progressive : une catégorie s'ouvre seulement si elle contient des canaux cochés.
     const groups = TX().categories.map(c => [c, channelsIn(c.key)]).filter(g => g[1].length).map(([c, list]) => {
       const n = list.filter(x => s.channels.includes(x.key)).length;
-      return `<details class="ch-cat"${n ? " open" : ""}><summary>${c.icon} ${esc(c.label)}${n ? ` <span class="pill blue">${n}</span>` : ""}</summary><div class="ch-list">${list.map(x => box(x.key, x.label)).join("")}</div></details>`;
+      return `<details class="ch-cat"${n ? " open" : ""}><summary>${catIc(c.key)} ${esc(c.label)}${n ? ` <span class="pill blue">${n}</span>` : ""}</summary><div class="ch-list">${list.map(x => box(x.key, x.label)).join("")}</div></details>`;
     }).join("");
-    return `<details class="stage-ch"${s.open ? " open" : ""}><summary><span class="lab">📣 Canaux :</span><span class="ch-sum">${chSummary(s)}</span><span class="ch-edit">modifier</span></summary>
-      <div class="ch-pick">${groups}${gone.length ? `<details class="ch-cat" open><summary>🗂️ Canaux retirés</summary><div class="ch-list">${gone.map(k => box(k, L("sources", k))).join("")}</div></details>` : ""}</div></details>`;
+    return `<details class="stage-ch"${s.open ? " open" : ""}><summary><span class="lab">${ic("megaphone", "sm")} Canaux</span><span class="ch-sum">${chSummary(s)}</span><span class="ch-edit">Choisir</span></summary>
+      <div class="ch-pick">${groups}${gone.length ? `<details class="ch-cat" open><summary>${ic("archive", "sm")} Canaux retirés</summary><div class="ch-list">${gone.map(k => box(k, L("sources", k))).join("")}</div></details>` : ""}</div></details>`;
   };
   const box = (t, label, list) => `<div class="fld"><label>${label}</label><div class="linkbox">${list.length ? list.map(x => `<label><input type="checkbox" name="link_${t}" value="${x.id}"${links[t].includes(+x.id) ? " checked" : ""}> ${esc(x.name)}</label>`).join("") : '<span class="muted small">Rien à associer pour l\'instant.</span>'}</div></div>`;
   openModal(`<h2>${f ? "Modifier le funnel" : "Créer un funnel"}</h2><form id="fForm" novalidate>
     <div class="form">${Object.entries(SC("funnels").fields).map(([k, fd]) => fieldHtml("funnels", k, fd, vals[k], vals)).join("")}</div>
     <h3>Étapes & objectifs</h3>
-    <p class="small muted" style="margin-top:-4px">Pour chaque étape : ses <b>canaux de communication</b> (📣 Canaux), et la source de ses chiffres — saisie manuelle, ses canaux (publications, portée, leads, questions…) ou les campagnes, pages, emails et réseaux associés ci-dessous. Tags séparés par des virgules.</p>
+    <p class="small muted" style="margin-top:-4px">Chaque étape a ses <b>canaux de communication</b> et une source pour ses chiffres : saisie à la main, ses canaux (actions, portée, leads, questions, relevés des comptes sociaux…) ou les campagnes, pages et emails associés plus bas. Séparez les tags par des virgules.</p>
     <div class="stage-row stage-head"><span></span><span>Nom de l'étape</span><span>Source des chiffres</span><span>Objectif</span><span>Tags</span><span></span></div>
     <div class="stages" id="stagesBox"></div>
-    <button type="button" class="btn sm" id="addStage" style="margin-top:8px">＋ Ajouter une étape</button>
+    <button type="button" class="btn sm" id="addStage" style="margin-top:8px">${ic("plus", "sm")} Ajouter une étape</button>
     <h3>Associations</h3>
-    <div class="form">${box("campaigns", "Campagnes publicitaires", REF("campaigns"))}${box("pages", "Landing pages / site", REF("pages"))}${box("emails", "Campagnes email", REF("emails"))}<div class="fld"><label>Réseaux sociaux</label><p class="small muted" style="margin:0">Cochés plus haut (« Réseaux sociaux associés »).</p></div></div>
+    <div class="form">${box("campaigns", "Campagnes publicitaires", REF("campaigns"))}${box("pages", "Landing pages / site", REF("pages"))}${box("emails", "Campagnes email", REF("emails"))}</div>
     <p class="form-err" id="fErr"></p>
-    <div class="form-foot"><button type="button" class="btn" data-close>Annuler</button><button type="submit" class="btn pri">Enregistrer le funnel</button></div></form>`);
+    <div class="form-foot"><button type="button" class="btn" data-close>Annuler</button><button type="submit" class="btn pri">${f ? "Enregistrer le funnel" : "Créer le funnel"}</button></div></form>`);
   const form = $("#fForm");
   const sync = () => {
     stages = $$(".stage-row[data-i]", form).map(r => ({ id: +r.dataset.id || 0, name: $("[data-k=name]", r).value, source: $("[data-k=source]", r).value, target: +$("[data-k=target]", r).value || 0, tags: $("[data-k=tags]", r).value,
@@ -1784,7 +2132,7 @@ function openFunnelEditor(id) {
       <select data-k="source" class="src" aria-label="Source des chiffres">${srcOpts(s.source)}</select>
       <input type="number" data-k="target" min="0" value="${s.target || ""}" placeholder="—" aria-label="Objectif">
       <input type="text" data-k="tags" value="${esc(s.tags)}" placeholder="ex. meta" aria-label="Tags">
-      <span class="ctrl"><button type="button" class="icon-btn" data-mv="${i}:-1" title="Monter">↑</button><button type="button" class="icon-btn" data-mv="${i}:1" title="Descendre">↓</button><button type="button" class="icon-btn del" data-rm="${i}" title="Retirer">✕</button></span>
+      <span class="ctrl"><button type="button" class="icon-btn" data-mv="${i}:-1" title="Monter" aria-label="Monter l'étape">${ic("chev-u", "sm")}</button><button type="button" class="icon-btn" data-mv="${i}:1" title="Descendre" aria-label="Descendre l'étape">${ic("chev-d", "sm")}</button><button type="button" class="icon-btn del" data-rm="${i}" title="Retirer" aria-label="Retirer l'étape">${ic("trash", "sm")}</button></span>
       ${chPicker(s, i)}</div>`).join("");
   };
   draw();
@@ -1794,26 +2142,32 @@ function openFunnelEditor(id) {
     if (!row || !(e.target.dataset.k === "ch" || e.target.dataset.k === "source")) return;
     const st = { source: $("[data-k=source]", row).value, channels: $$("[data-k=ch]:checked", row).map(c => c.value) };
     $(".ch-sum", row).innerHTML = chSummary(st);
-    if (e.target.dataset.k === "source" && st.source.startsWith("stage_") && !st.channels.length) $(".stage-ch", row).open = true;
+    if (e.target.dataset.k === "source" && needsCh(st.source) && !st.channels.length) $(".stage-ch", row).open = true;
   });
-  form.addEventListener("click", e => {
+  form.addEventListener("click", async e => {
     const mv = e.target.closest("[data-mv]"), rm = e.target.closest("[data-rm]");
     if (e.target.id === "addStage") { sync(); stages.push({ id: 0, name: "", source: "manual", target: 0, tags: "", channels: [], open: true }); draw(); $$("[data-k=name]", form).pop().focus(); }
     if (mv) { sync(); const [i, d] = mv.dataset.mv.split(":").map(Number); const j = i + d; if (j >= 0 && j < stages.length) { [stages[i], stages[j]] = [stages[j], stages[i]]; draw(); } }
-    if (rm) { sync(); if (stages.length > 1 && (!stages[+rm.dataset.rm].id || confirm("Retirer cette étape ? Ses chiffres saisis à la main seront supprimés."))) { stages.splice(+rm.dataset.rm, 1); draw(); } }
+    if (rm) {
+      sync();
+      const k = +rm.dataset.rm;
+      if (stages.length < 2) { toast("Un funnel garde au moins une étape.", "error"); return; }
+      if (stages[k].id && !(await askDialog({ icon: ["trash", "pink"], title: `Retirer l'étape « ${stages[k].name || k + 1} » ?`, text: "Les chiffres saisis à la main pour cette étape seront supprimés à l'enregistrement du funnel.", ok: "Retirer l'étape", cancel: "Garder l'étape", danger: true }))) return;
+      stages.splice(k, 1); draw();
+    }
   });
   form.addEventListener("submit", async e => {
     e.preventDefault();
     sync();
     const data = readForm(form, "funnels");
     if (!data.name.trim()) { $("#fErr").textContent = "Donnez un nom au funnel."; return; }
-    const noCh = stages.findIndex(s => s.source.startsWith("stage_") && !s.channels.length);
-    if (noCh >= 0) { $("#fErr").textContent = `Étape ${noCh + 1} : choisissez ses canaux (ses chiffres viennent des canaux de l'étape).`; $$(".stage-ch", form)[noCh].open = true; return; }
+    const noCh = stages.findIndex(s => needsCh(s.source) && !s.channels.length);
+    if (noCh >= 0) { $("#fErr").textContent = `Étape ${noCh + 1} : ses chiffres viennent de ses canaux, mais aucun canal n'est coché. Choisissez au moins un canal, ou changez la source des chiffres.`; $$(".stage-ch", form)[noCh].open = true; return; }
     const ln = t => $$(`input[name="link_${t}"]:checked`, form).map(i => +i.value);
     try {
       const d = await api("funnel_save", {}, { id: f ? +f.id : 0, funnel: data, stages: stages.map(({ open, ...st }) => st), links: { campaigns: ln("campaigns"), pages: ln("pages"), emails: ln("emails") } });
       closeModal();
-      toast(f ? "Funnel modifié ✓" : "Funnel créé ✓");
+      toast(f ? "Funnel enregistré" : "Funnel créé");
       if (!f) location.hash = "#funnels/stages/" + d.funnel.id;
       afterMutation("funnels");
     } catch (err) { $("#fErr").textContent = err.message; }
@@ -1822,9 +2176,10 @@ function openFunnelEditor(id) {
 
 /* ================================================================ actions globales */
 document.addEventListener("click", async e => {
-  const t = e.target.closest("[data-add],[data-edit],[data-del],[data-close],[data-funnel-edit],[data-shift],[data-report],[data-archive-del]");
+  const t = e.target.closest("[data-add],[data-edit],[data-del],[data-close],[data-funnel-edit],[data-shift],[data-report],[data-archive-del],[data-import]");
   if (!t) return;
   if (t.hasAttribute("data-close")) return closeModal();
+  if (t.dataset.import) { $("#addMenu").hidden = true; return openImport(t.dataset.import); }
   if (t.dataset.add) {
     let preset = {};
     try { preset = t.dataset.preset ? JSON.parse(t.dataset.preset) : {}; } catch (err) {}
@@ -1845,8 +2200,8 @@ document.addEventListener("click", async e => {
   if (t.dataset.funnelEdit !== undefined) return openFunnelEditor(+t.dataset.funnelEdit);
   if (t.dataset.del) {
     const [ent, id] = t.dataset.del.split(":");
-    const warn = { campaigns: "Supprimer cette campagne et tous ses résultats saisis ?", pages: "Supprimer cette page et toutes ses statistiques ?", funnels: "Supprimer ce funnel, ses étapes et ses chiffres saisis ?", projects: "Supprimer ce projet et son historique de financement ?" }[ent] || "Supprimer définitivement cette ligne ?";
-    if (!confirm(warn)) return;
+    const what = { campaigns: ["Supprimer cette campagne ?", "Ses résultats saisis seront supprimés avec elle.", "Supprimer la campagne"], pages: ["Supprimer cette page ?", "Toutes ses statistiques saisies seront supprimées avec elle.", "Supprimer la page"], funnels: ["Supprimer ce funnel ?", "Ses étapes et ses chiffres saisis seront supprimés avec lui.", "Supprimer le funnel"], projects: ["Supprimer ce projet ?", "Son historique de financement sera supprimé avec lui.", "Supprimer le projet"] }[ent] || ["Supprimer cette ligne ?", "Elle disparaîtra aussi des rapports.", "Supprimer"];
+    if (!(await askDialog({ icon: ["trash", "pink"], title: what[0], text: what[1] + " Cette action est définitive.", ok: what[2], cancel: "Annuler", danger: true }))) return;
     try {
       await api("delete", {}, { entity: ent, id: +id });
       closeModal();
@@ -1862,7 +2217,7 @@ document.addEventListener("click", async e => {
     return;
   }
   if (t.dataset.archiveDel) {
-    if (!confirm("Supprimer ce rapport archivé ?")) return;
+    if (!(await askDialog({ icon: ["archive", "pink"], title: "Supprimer ce rapport archivé ?", text: "La copie archivée disparaît. Les données, elles, restent : vous pourrez toujours recalculer ce rapport.", ok: "Supprimer le rapport", cancel: "Garder le rapport", danger: true }))) return;
     try { await api("archive_delete", {}, { id: +t.dataset.archiveDel }); route(); } catch (err) { toast(err.message); }
     return;
   }
@@ -1871,18 +2226,18 @@ document.addEventListener("click", async e => {
     if (act === "print") return window.print();
     if (act === "csv") return reportCsv(S.lastReport);
     if (act === "archive") {
-      try { await api("archive_save", {}, { type, date }); toast("Rapport archivé ✓ (Overview → Archives)"); } catch (err) { toast(err.message); }
+      try { await api("archive_save", {}, { type, date }); toast("Rapport archivé : retrouvez-le dans Overview › Archives"); } catch (err) { toast(err.message, "err"); }
       return;
     }
     if (act === "send") {
       const rec = S.boot.settings.recipients;
-      const ans = prompt("Envoyer ce rapport à (adresses séparées par des virgules) :", rec.join(", "));
+      const ans = await askDialog({ icon: ["send", "violet"], title: "Envoyer le rapport par email", text: "Séparez les adresses par des virgules. Le rapport part tel qu'il est affiché.", input: { value: rec.join(", "), label: "Adresses email", placeholder: "prenom@yinvesti.com", rows: 2 }, ok: "Envoyer le rapport", cancel: "Annuler" });
       if (ans === null) return;
       const emails = ans.split(/[\s,;]+/).filter(Boolean);
-      if (!emails.length) return toast("Aucune adresse.");
+      if (!emails.length) return toast("Aucune adresse saisie : ajoutez au moins un destinataire.", "err");
       t.disabled = true;
-      try { const d = await api("send_report", {}, { type, date, emails }); toast("Rapport envoyé à " + d.sent.join(", ") + (d.errors.length ? " — échecs : " + d.errors.join(" ; ") : "")); }
-      catch (err) { toast(err.message); }
+      try { const d = await api("send_report", {}, { type, date, emails }); toast((d.sent.length ? "Rapport envoyé à " + d.sent.join(", ") : "Aucun envoi réussi") + (d.errors.length ? " — échecs : " + d.errors.join(" ; ") : ""), d.errors.length ? "err" : ""); }
+      catch (err) { toast(err.message, "err"); }
       t.disabled = false;
     }
   }
@@ -1904,7 +2259,7 @@ document.addEventListener("change", async e => {
   try {
     const d = await api("patch", {}, { entity: ent, id: +id, field, value: t.value });
     if (row) Object.assign(row, d.row);
-    toast("Enregistré ✓");
+    toast("Enregistré");
     S.cache.clear();
   } catch (err) { toast(err.message); route(); }
   t.disabled = false;
@@ -1945,10 +2300,96 @@ document.addEventListener("mousemove", e => {
 document.addEventListener("scroll", () => { tip.hidden = true; }, true);
 
 /* ---------- menu « Ajouter » */
-const ADD = [["contacts", "👥 Lead / contact"], ["inquiries", "💬 Question / inquiry"], ["projects", "📁 Demande de projet"], ["posts", "📣 Action de communication"], "-",
-  ["social_stats", "📈 Performances d'un réseau"], ["ad_results", "📢 Résultats publicitaires"], ["web_stats", "🌐 Statistiques de page"], ["emails", "✉️ Campagne email"], ["funnel_entries", "📊 Chiffres de funnel"], "-",
-  ["campaigns", "🎯 Campagne publicitaire"], ["pages", "🔗 Page / landing page"], ["funnels", "📊 Funnel"]];
-$("#addMenu").innerHTML = ADD.map(a => a === "-" ? "<hr>" : `<button type="button" data-add="${a[0]}">${a[1]}</button>`).join("");
+const ADD = [["Au quotidien"], ["contacts", "Lead", "user-plus", "blue"], ["inquiries", "Question", "message", "teal"], ["posts", "Action de communication", "megaphone", "violet"], ["projects", "Demande de projet", "folder", "pink"],
+  ["Résultats à saisir"], ["social_stats", "Relevé d'un réseau social", "share", "violet"], ["ad_results", "Résultats publicitaires", "target", "orange"], ["web_stats", "Statistiques d'une page", "globe", "blue"], ["emails", "Campagne email", "mail", "teal"], ["funnel_entries", "Chiffres d'un funnel", "funnel", "violet"],
+  ["À créer"], ["campaigns", "Campagne publicitaire", "target", "orange"], ["pages", "Page ou landing page", "link", "blue"], ["funnels", "Funnel", "funnel", "violet"]];
+$("#addMenu").innerHTML = ADD.map(a => a.length === 1 ? `<p class="grp-h">${esc(a[0])}</p>` : `<button type="button" data-add="${a[0]}">${tile(a[2], a[3], "sm")}${esc(a[1])}</button>`).join("")
+  + `<hr><button type="button" data-import="contacts">${tile("upload", "green", "sm")}Importer des leads (CSV)</button>`;
+$("#addBtn").innerHTML = ic("plus") + '<span class="lbl">Nouveau</span>';
+$("#burger").innerHTML = ic("menu");
+$("#bell").innerHTML = ic("bell");
+$("#logoutBtn").innerHTML = ic("logout");
+$("#sideLinks").innerHTML = `<a href="#settings">${ic("settings", "sm")} Réglages</a><a href="../admin/">${ic("home", "sm")} Administration du site</a><button type="button" id="themeBtn">${ic("moon", "sm")} Thème clair / sombre</button>`;
+$(".search").insertAdjacentHTML("afterbegin", ic("search"));
+
+/* ================================================================ recherche globale (Ctrl K) */
+const SEARCH_META = { contacts: ["user-plus", "blue"], inquiries: ["message", "teal"], posts: ["megaphone", "violet"], projects: ["folder", "pink"], campaigns: ["target", "orange"], emails: ["mail", "green"], funnels: ["funnel", "violet"], taxonomy: ["layers", "amber"] };
+const SR = { q: "", groups: [], tab: "all", at: -1, timer: 0, seq: 0 };
+function searchItems() {
+  const gs = SR.tab === "all" ? SR.groups : SR.groups.filter(g => g.key === SR.tab);
+  return gs.flatMap(g => g.items.map(it => Object.assign({ kind: g.key }, it)));
+}
+function paintSearch() {
+  const pop = $("#searchPop");
+  if (SR.q.length < 2) { pop.innerHTML = `<p class="search-empty">${ic("search", "sm")} Tapez au moins 2 lettres : un nom, un téléphone, un email, un canal, une campagne…</p>`; return; }
+  if (!SR.groups.length) { pop.innerHTML = `<p class="search-empty">Aucun résultat pour « ${esc(SR.q)} ». Vérifiez l'orthographe, ou cherchez un téléphone, un email ou un nom de canal.</p>`; return; }
+  const total = SR.groups.reduce((a, g) => a + g.count, 0);
+  const items = searchItems();
+  pop.innerHTML = `<div class="search-tabs" role="tablist">${[["all", "Tout", total], ...SR.groups.map(g => [g.key, g.label, g.count])].map(([k, l, n]) => `<button type="button" role="tab" data-stab="${k}" class="${SR.tab === k ? "on" : ""}" aria-selected="${SR.tab === k}">${esc(l)}<em>${num(n)}</em></button>`).join("")}</div>`
+    + `<div role="listbox" aria-label="Résultats">${items.map((it, i) => { const m = SEARCH_META[it.kind] || ["file", "violet"]; return `<button type="button" class="sr${i === SR.at ? " on" : ""}" role="option" aria-selected="${i === SR.at}" data-sr="${i}">${tile(m[0], m[1], "sm")}<span><b>${esc(it.title)}</b><span class="sub">${esc(it.sub || "")}</span></span><span class="ty">${esc(it.type)}</span></button>`; }).join("")}</div>`
+    + (SR.groups.some(g => g.count > g.items.length) ? `<p class="lbl" style="margin-top:8px">Seuls les 6 premiers résultats de chaque section sont affichés : précisez votre recherche pour aller plus vite.</p>` : "");
+}
+function openSearchItem(it) {
+  closeSearch();
+  $("#q").value = "";
+  if (it.kind === "campaigns") location.hash = "#ads/campaign/" + it.id;
+  else if (it.kind === "funnels") location.hash = "#funnels/stages/" + it.id;
+  else if (it.kind === "taxonomy") location.hash = "#comm/taxonomy";
+  else {
+    const fake = document.createElement("button");
+    fake.dataset.edit = it.kind + ":" + it.id;
+    fake.hidden = true;
+    document.body.append(fake);
+    fake.click();
+    fake.remove();
+  }
+}
+function closeSearch() { $("#searchPop").hidden = true; SR.at = -1; $("#q").setAttribute("aria-expanded", "false"); }
+$("#q").setAttribute("aria-controls", "searchPop");
+$("#q").setAttribute("aria-expanded", "false");
+$("#q").addEventListener("input", e => {
+  SR.q = e.target.value.trim();
+  SR.at = -1;
+  clearTimeout(SR.timer);
+  $("#searchPop").hidden = false;
+  $("#q").setAttribute("aria-expanded", "true");
+  if (SR.q.length < 2) { SR.groups = []; paintSearch(); return; }
+  SR.timer = setTimeout(async () => {
+    const my = ++SR.seq;
+    try {
+      const d = await api("search", { q: SR.q });
+      if (my !== SR.seq) return;
+      SR.groups = d.groups;
+      if (SR.tab !== "all" && !SR.groups.some(g => g.key === SR.tab)) SR.tab = "all";
+      paintSearch();
+    } catch (err) { if (my === SR.seq) $("#searchPop").innerHTML = `<p class="search-empty">La recherche n'a pas abouti. ${esc(err.message)}</p>`; }
+  }, 220);
+});
+$("#q").addEventListener("focus", () => { if (SR.q.length) { $("#searchPop").hidden = false; paintSearch(); } });
+$("#q").addEventListener("keydown", e => {
+  const items = searchItems();
+  if (e.key === "Escape") { closeSearch(); $("#q").blur(); return; }
+  if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+    if (!items.length) return;
+    e.preventDefault();
+    SR.at = (SR.at + (e.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
+    paintSearch();
+    const on = $("#searchPop .sr.on");
+    if (on) on.scrollIntoView({ block: "nearest" });
+  }
+  if (e.key === "Enter" && items.length) { e.preventDefault(); openSearchItem(items[Math.max(0, SR.at)]); }
+});
+$("#searchPop").addEventListener("mousedown", e => e.preventDefault()); // garder le focus dans le champ
+$("#searchPop").addEventListener("click", e => {
+  const t = e.target.closest("[data-stab]"), r = e.target.closest("[data-sr]");
+  if (t) { SR.tab = t.dataset.stab; SR.at = -1; paintSearch(); }
+  if (r) openSearchItem(searchItems()[+r.dataset.sr]);
+});
+$("#q").addEventListener("blur", () => setTimeout(closeSearch, 120));
+document.addEventListener("keydown", e => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); $("#q").focus(); $("#q").select(); }
+  else if (e.key === "/" && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName) && !document.activeElement.isContentEditable) { e.preventDefault(); $("#q").focus(); }
+});
 $("#addBtn").addEventListener("click", e => { e.stopPropagation(); $("#addMenu").hidden = !$("#addMenu").hidden; });
 document.addEventListener("click", e => { if (!e.target.closest(".addmenu")) $("#addMenu").hidden = true; });
 
@@ -1967,11 +2408,25 @@ applyTheme();
 
 /* ================================================================ démarrage */
 function showLogin() { $("#app").hidden = true; $("#loginView").hidden = false; closeModal(); }
+/** Nom et initiale dans la carte utilisateur ; nombre de choses à traiter sur la cloche. */
+function paintUser() {
+  const n = (S.boot.settings.owner_name || "").trim();
+  $("#userName").textContent = n || "Équipe marketing";
+  $("#avatar").textContent = (n || S.boot.settings.org || "M").charAt(0).toUpperCase();
+  $("#orgName").textContent = S.boot.settings.org;
+}
+function paintBell(b) {
+  if (b) S.attention = (+b.stale || 0) + (+b.unassigned || 0) + (+b.stale_inquiries || 0);
+  const el = $("#bell");
+  el.innerHTML = ic("bell") + (S.attention ? `<span class="badge">${S.attention > 99 ? "99+" : S.attention}</span>` : "");
+  el.title = S.attention ? `${S.attention} point(s) à traiter` : "Rien à traiter";
+}
 async function start() {
   const d = await api("bootstrap");
   S.boot = d;
   S.today = d.today;
-  $("#orgName").textContent = d.settings.org;
+  paintUser();
+  paintBell(d.attention);
   $("#loginView").hidden = true;
   $("#app").hidden = false;
   route();
