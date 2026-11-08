@@ -39,7 +39,55 @@ final class MkInputError extends RuntimeException {}
 
 /* ================================================================ listes */
 
-const MK_SOCIAL = ['facebook', 'instagram', 'linkedin', 'tiktok'];
+/** Transforme un nom de réseau en identifiant stable (ex. « X (Twitter) » → « x_twitter »). */
+function mk_slug(string $s): string
+{
+    $s = mb_strtolower(trim($s));
+    $map = ['à' => 'a', 'â' => 'a', 'ä' => 'a', 'é' => 'e', 'è' => 'e', 'ê' => 'e', 'ë' => 'e',
+        'î' => 'i', 'ï' => 'i', 'ô' => 'o', 'ö' => 'o', 'ù' => 'u', 'û' => 'u', 'ü' => 'u', 'ç' => 'c', 'ñ' => 'n'];
+    $s = strtr($s, $map);
+    $s = preg_replace('/[^a-z0-9]+/', '_', $s) ?? '';
+    $s = trim($s, '_');
+    return $s !== '' ? mb_substr($s, 0, 30) : 'reseau';
+}
+
+/** Réseaux sociaux configurés (Réglages → Réseaux sociaux) : clé stable => libellé, dans l'ordre choisi. */
+function mk_social_platforms(): array
+{
+    $out = [];
+    foreach (mk_settings()['social_platforms'] as $p) {
+        $k = (string) ($p['key'] ?? '');
+        if ($k !== '') $out[$k] = (string) ($p['label'] ?? $k);
+    }
+    return $out;
+}
+
+/**
+ * Valide la liste envoyée depuis Réglages → Réseaux sociaux. Un élément qui reprend la clé
+ * d'un réseau existant ne fait que le renommer (les publications et relevés déjà saisis le
+ * suivent) ; un élément sans clé connue en est un nouveau, dont la clé est dérivée du nom.
+ * Un réseau retiré de la liste reste affiché sur les anciennes données qui le citaient.
+ */
+function mk_clean_platforms(array $items): array
+{
+    if (!$items) throw new MkInputError('Ajoutez au moins un réseau social.');
+    if (count($items) > 12) throw new MkInputError('12 réseaux sociaux au maximum.');
+    $existing = array_column(mk_settings()['social_platforms'], 'key');
+    $out = [];
+    $used = [];
+    foreach ($items as $it) {
+        $label = mk_str(is_array($it) ? ($it['label'] ?? '') : '', 40);
+        if ($label === '') throw new MkInputError('Donnez un nom à chaque réseau social.');
+        $key = (string) (is_array($it) ? ($it['key'] ?? '') : '');
+        if ($key === '' || !in_array($key, $existing, true)) $key = mk_slug($label);
+        $base = $key;
+        $i = 2;
+        while (in_array($key, $used, true)) { $key = $base . '_' . $i; $i++; }
+        $used[] = $key;
+        $out[] = ['key' => $key, 'label' => $label];
+    }
+    return $out;
+}
 
 /** Listes de choix (clé stockée => libellé affiché). */
 function mk_enums(): array
@@ -48,12 +96,10 @@ function mk_enums(): array
     if ($e === null) {
         $e = [
             'sources' => [
-                'facebook' => 'Facebook', 'instagram' => 'Instagram', 'linkedin' => 'LinkedIn', 'tiktok' => 'TikTok',
                 'site' => 'Site web YINVESTI', 'landing' => 'Landing page', 'email' => 'Email marketing',
                 'telephone' => 'Appel / WhatsApp', 'evenement' => 'Événement / salon',
                 'recommandation' => 'Recommandation', 'autre' => 'Autre',
             ],
-            'platforms' => ['facebook' => 'Facebook', 'instagram' => 'Instagram', 'linkedin' => 'LinkedIn', 'tiktok' => 'TikTok'],
             'ad_platforms' => [
                 'meta' => 'Meta (Facebook & Instagram)', 'google' => 'Google Ads', 'linkedin' => 'LinkedIn Ads',
                 'tiktok' => 'TikTok Ads', 'autre' => 'Autre',
@@ -114,6 +160,10 @@ function mk_enums(): array
     $out = $e;
     $out['commercials'] = [];
     foreach (mk_settings()['commercials'] as $name) $out['commercials'][$name] = $name;
+    // Réseaux sociaux configurables (Réglages) : en tête des sources, et seule liste des « platforms ».
+    $plats = mk_social_platforms();
+    $out['platforms'] = $plats;
+    $out['sources'] = $plats + $out['sources'];
     return $out;
 }
 
@@ -446,6 +496,12 @@ function mk_settings_defaults(): array
         'currency'      => 'DA',
         'commercials'   => [],
         'recipients'    => [],
+        'social_platforms' => [
+            ['key' => 'facebook', 'label' => 'Facebook'],
+            ['key' => 'instagram', 'label' => 'Instagram'],
+            ['key' => 'linkedin', 'label' => 'LinkedIn'],
+            ['key' => 'tiktok', 'label' => 'TikTok'],
+        ],
         'send_daily'    => true,
         'send_weekly'   => true,
         'send_monthly'  => true,
@@ -479,6 +535,9 @@ function mk_settings_save(array $in): array
     if (array_key_exists('org', $in)) $next['org'] = mk_str($in['org'], 60) ?: 'YINVESTI';
     if (array_key_exists('currency', $in)) $next['currency'] = mk_str($in['currency'], 8) ?: 'DA';
     if (array_key_exists('commercials', $in)) $next['commercials'] = $lines($in['commercials']);
+    if (array_key_exists('social_platforms', $in)) {
+        $next['social_platforms'] = mk_clean_platforms(is_array($in['social_platforms']) ? $in['social_platforms'] : []);
+    }
     if (array_key_exists('recipients', $in)) {
         $mails = [];
         foreach ($lines($in['recipients']) as $m) {

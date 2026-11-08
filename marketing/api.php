@@ -4,6 +4,7 @@
  * même mot de passe et même session que /admin (connexion via ../admin/api.php).
  *
  * GET  bootstrap                         réglages, schéma des formulaires, listes, référentiels
+ * GET  platforms_usage                   nombre de publications / relevés par réseau social
  * GET  list      entity, from?, to?      lignes d'une table (filtrées par date si la table en a une)
  * POST save      {entity, id?, row}      crée ou modifie une ligne
  * POST patch     {entity, id, field, value}  modifie un seul champ (ex. statut d'un lead)
@@ -110,6 +111,18 @@ try {
 
         case 'refs': {
             ok(['refs' => refs(), 'enums' => mk_enums()]);
+            break;
+        }
+
+        case 'platforms_usage': {
+            // Combien de publications et de relevés citent chaque réseau (pour avertir avant d'en retirer un).
+            $out = [];
+            foreach (mk_social_platforms() as $k => $l) {
+                $n = (int) qv('SELECT COUNT(*) FROM posts WHERE platform = ?', [$k])
+                    + (int) qv('SELECT COUNT(*) FROM social_stats WHERE platform = ?', [$k]);
+                if ($n) $out[$k] = $n;
+            }
+            ok(['usage' => $out]);
             break;
         }
 

@@ -654,7 +654,7 @@ VIEWS["funnels/conversions"] = { range: true, fn: async param => {
 } };
 
 /* ================================================================ vues : leads & questions (réutilisées par Social / Website) */
-const SOCIAL = ["facebook", "instagram", "linkedin", "tiktok"];
+const socialKeys = () => Object.keys(EN("platforms"));
 function contactCols() {
   return [
     { l: "Date", h: c => fdate(c.date) },
@@ -678,11 +678,11 @@ function inquiryCols() {
 }
 /** Filtre de canal : social (tous les réseaux), un réseau, all, other. */
 function channelChips(base, sel, withAll = true) {
-  const opts = [["social", "Tous les réseaux"], ...SOCIAL.map(p => [p, L("platforms", p)])];
+  const opts = [["social", "Tous les réseaux"], ...socialKeys().map(p => [p, L("platforms", p)])];
   if (withAll) opts.push(["other", "Autres canaux"], ["all", "Tous les canaux"]);
-  return `<div class="chips">${opts.map(([k, l]) => `<a class="chip${k === sel ? " on" : ""}" href="#${base}/${k}">${esc(l)}</a>`).join("")}</div>`;
+  return `<div class="chips">${opts.map(([k, l]) => `<a class="chip${k === sel ? " on" : ""}" href="#${base}/${k}">${esc(l)}</a>`).join("")}<a class="chip" href="#settings" style="margin-left:auto">⚙️ Gérer les réseaux</a></div>`;
 }
-const chanFilter = sel => r => sel === "all" ? true : sel === "social" ? SOCIAL.includes(r.source) : sel === "other" ? !SOCIAL.includes(r.source) : r.source === sel;
+const chanFilter = sel => r => sel === "all" ? true : sel === "social" ? socialKeys().includes(r.source) : sel === "other" ? !socialKeys().includes(r.source) : r.source === sel;
 
 VIEWS["social/leads"] = { range: true, fn: async param => {
   const sel = param || "social";
@@ -690,7 +690,7 @@ VIEWS["social/leads"] = { range: true, fn: async param => {
   const by = {};
   for (const r of rows) by[r.source] = (by[r.source] || 0) + 1;
   const q = rows.filter(r => ["qualifie", "converti"].includes(r.status)).length;
-  const preset = SOCIAL.includes(sel) ? { source: sel } : {};
+  const preset = socialKeys().includes(sel) ? { source: sel } : {};
   return channelChips("social/leads", sel)
     + `<div class="kpis"><div class="kpi"><small>Leads & contacts</small><b>${num(rows.length)}</b><span class="d">${esc(rangeLabel())}</span></div><div class="kpi"><small>Qualifiés</small><b>${num(q)}</b><span class="d">${pct(ratio(q, rows.length))}</span></div><div class="kpi"><small>À traiter</small><b>${num(rows.filter(r => r.status === "nouveau").length)}</b><span class="d">&nbsp;</span></div><div class="kpi"><small>Non assignés</small><b>${num(rows.filter(r => !r.assigned_to).length)}</b><span class="d">&nbsp;</span></div></div>`
     + (sel === "social" || sel === "all" || sel === "other" ? card("Répartition par source", mapBars(by, "sources", rows.length)) : "")
@@ -706,7 +706,7 @@ VIEWS["social/inquiries"] = { range: true, fn: async param => {
   return channelChips("social/inquiries", sel)
     + `<div class="kpis"><div class="kpi"><small>Questions reçues</small><b>${num(rows.length)}</b><span class="d">${esc(rangeLabel())}</span></div><div class="kpi ${open ? "warn" : ""}"><small>En attente</small><b>${num(open)}</b><span class="d">&nbsp;</span></div><div class="kpi"><small>Taux de réponse</small><b>${pct(ratio(rows.length - open, rows.length))}</b><span class="d">&nbsp;</span></div></div>`
     + card("Sujets des questions", mapBars(cat, "inq_categories", rows.length))
-    + card("Questions & inquiries", table(rows, inquiryCols(), { entity: "inquiries", emptyMsg: "Aucune question sur ce canal pour la période." }), addBtn("inquiries", "Question", SOCIAL.includes(sel) ? { source: sel } : {}, "btn sm pri") + exportBtn("inquiries"));
+    + card("Questions & inquiries", table(rows, inquiryCols(), { entity: "inquiries", emptyMsg: "Aucune question sur ce canal pour la période." }), addBtn("inquiries", "Question", socialKeys().includes(sel) ? { source: sel } : {}, "btn sm pri") + exportBtn("inquiries"));
 } };
 
 VIEWS["social/activity"] = { range: true, fn: async param => {
@@ -718,7 +718,7 @@ VIEWS["social/activity"] = { range: true, fn: async param => {
   return channelChips("social/activity", sel, false)
     + `<div class="kpis"><div class="kpi"><small>Publications</small><b>${num(rows.length)}</b><span class="d">${esc(rangeLabel())}</span></div><div class="kpi"><small>Portée des publications</small><b>${num(reach)}</b><span class="d">&nbsp;</span></div><div class="kpi"><small>Engagement</small><b>${num(eng)}</b><span class="d">${pct(ratio(eng, reach), 1)} de la portée</span></div></div>`
     + `<div class="grid2">${card("Par réseau", mapBars(byP, "platforms", rows.length))}${card("Par format", mapBars(byF, "post_formats", rows.length))}</div>`
-    + card("Publications", table(rows, [col("posts", "date", { h: r => fdate(r.date) }), { l: "Réseau", h: r => `<b>${esc(L("platforms", r.platform))}</b><div class="sub">${esc(L("post_formats", r.format))}</div>` }, { l: "Sujet", wrap: 1, h: r => esc(r.topic) + (r.link ? ` <a href="${esc(r.link)}" target="_blank" rel="noopener">↗</a>` : "") }, col("posts", "reach"), col("posts", "impressions"), col("posts", "engagement"), col("posts", "clicks")], { entity: "posts", emptyMsg: "Aucune publication enregistrée sur la période." }), addBtn("posts", "Publication", SOCIAL.includes(sel) ? { platform: sel } : {}, "btn sm pri") + exportBtn("posts"));
+    + card("Publications", table(rows, [col("posts", "date", { h: r => fdate(r.date) }), { l: "Réseau", h: r => `<b>${esc(L("platforms", r.platform))}</b><div class="sub">${esc(L("post_formats", r.format))}</div>` }, { l: "Sujet", wrap: 1, h: r => esc(r.topic) + (r.link ? ` <a href="${esc(r.link)}" target="_blank" rel="noopener">↗</a>` : "") }, col("posts", "reach"), col("posts", "impressions"), col("posts", "engagement"), col("posts", "clicks")], { entity: "posts", emptyMsg: "Aucune publication enregistrée sur la période." }), addBtn("posts", "Publication", socialKeys().includes(sel) ? { platform: sel } : {}, "btn sm pri") + exportBtn("posts"));
 } };
 
 VIEWS["social/performance"] = { range: true, fn: async () => {
@@ -994,9 +994,14 @@ VIEWS["projects/funding"] = { range: true, fn: async () => {
 VIEWS.settings = { fn: async () => {
   const s = S.boot.settings;
   const cronCmd = "/usr/local/bin/php ~/public_html/marketing/cron.php > /dev/null 2>&1";
+  const usage = (await api("platforms_usage")).usage;
+  S.platState = { plats: Object.entries(S.boot.enums.platforms).map(([key, label]) => ({ key, label })), usage };
   return `<div class="set-grid">
     ${card("Organisation", `<div class="form" style="grid-template-columns:1fr 1fr"><div class="fld"><label for="sOrg">Nom</label><input type="text" id="sOrg" value="${esc(s.org)}"></div><div class="fld"><label for="sCur">Devise</label><input type="text" id="sCur" value="${esc(s.currency)}"></div>
       <div class="fld full"><label for="sCom">Commerciaux (un par ligne)</label><textarea id="sCom" rows="5">${esc(s.commercials.join("\n"))}</textarea><small>Proposés dans « Commercial responsable » des leads et des questions.</small></div></div>`)}
+    ${card("Réseaux sociaux", `<p class="sub" style="margin:-4px 0 10px">Utilisés dans Social Media, Funnel Analytics et pour filtrer les sources des leads. Renommer un réseau garde ses publications et relevés déjà saisis.</p>
+      <div class="stages" id="platStages"></div>
+      <div class="toolbar" style="margin:10px 0 0"><button type="button" class="btn sm" id="platAdd">＋ Ajouter un réseau</button><span class="grow"></span><button type="button" class="btn pri sm" id="platSave">Enregistrer les réseaux</button></div>`)}
     ${card("Rapports automatiques par email", `<div class="form" style="grid-template-columns:1fr"><div class="fld"><label for="sRec">Destinataires (une adresse par ligne)</label><textarea id="sRec" rows="4">${esc(s.recipients.join("\n"))}</textarea></div>
       <div class="checks"><label><input type="checkbox" id="sD"${s.send_daily ? " checked" : ""}> Quotidien (chaque matin, la veille)</label><label><input type="checkbox" id="sW"${s.send_weekly ? " checked" : ""}> Hebdomadaire (le lundi)</label><label><input type="checkbox" id="sM"${s.send_monthly ? " checked" : ""}> Mensuel (le 1er)</label></div>
       <div class="fld"><label for="sUrl">Adresse du tableau de bord (lien dans les emails)</label><input type="url" id="sUrl" value="${esc(s.dashboard_url)}" placeholder="${esc(S.boot.url)}"></div>
@@ -1020,6 +1025,59 @@ VIEWS.settings = { fn: async () => {
   });
   $("#sTestBtn").addEventListener("click", async () => {
     try { const d = await api("test_mail", {}, { email: $("#sTest").value }); toast("Email de test envoyé à " + d.to); } catch (e) { toast(e.message); }
+  });
+
+  // Réseaux sociaux : liste modifiable (ajouter, renommer, réordonner, retirer).
+  const st = S.platState;
+  const drawPlats = () => {
+    $("#platStages").innerHTML = st.plats.map((p, i) => {
+      const n = p.key ? st.usage[p.key] : 0;
+      return `<div class="plat-row" data-i="${i}" data-key="${esc(p.key)}"><span class="num">${i + 1}</span>
+        <input type="text" data-k="label" value="${esc(p.label)}" placeholder="ex. YouTube" aria-label="Nom du réseau ${i + 1}">
+        <span class="usage">${n ? n + " donnée(s)" : ""}</span>
+        <span class="ctrl"><button type="button" class="icon-btn" data-mv="${i}:-1" title="Monter">↑</button><button type="button" class="icon-btn" data-mv="${i}:1" title="Descendre">↓</button><button type="button" class="icon-btn del" data-rm="${i}" title="Retirer">✕</button></span></div>`;
+    }).join("");
+  };
+  const syncPlats = () => {
+    st.plats = $$(".plat-row[data-i]", $("#platStages")).map(r => ({ key: r.dataset.key || "", label: $("[data-k=label]", r).value }));
+  };
+  drawPlats();
+  $("#platAdd").addEventListener("click", () => {
+    if (st.plats.length >= 12) return toast("12 réseaux sociaux au maximum.");
+    syncPlats();
+    st.plats.push({ key: "", label: "" });
+    drawPlats();
+    const inputs = $$("#platStages [data-k=label]");
+    inputs[inputs.length - 1].focus();
+  });
+  $("#platStages").addEventListener("click", e => {
+    const mv = e.target.closest("[data-mv]"), rm = e.target.closest("[data-rm]");
+    if (mv) {
+      syncPlats();
+      const [i, d] = mv.dataset.mv.split(":").map(Number);
+      const j = i + d;
+      if (j >= 0 && j < st.plats.length) { [st.plats[i], st.plats[j]] = [st.plats[j], st.plats[i]]; drawPlats(); }
+    }
+    if (rm) {
+      syncPlats();
+      if (st.plats.length <= 1) return toast("Gardez au moins un réseau social.");
+      const p = st.plats[+rm.dataset.rm];
+      const n = p.key ? st.usage[p.key] : 0;
+      if (n && !confirm(`« ${p.label} » est cité par ${n} donnée(s) (publications, relevés…). Le retirer de la liste ? Les données déjà saisies garderont l'ancien nom.`)) return;
+      st.plats.splice(+rm.dataset.rm, 1);
+      drawPlats();
+    }
+  });
+  $("#platSave").addEventListener("click", async () => {
+    syncPlats();
+    if (st.plats.some(p => !p.label.trim())) return toast("Donnez un nom à chaque réseau.");
+    try {
+      const d = await api("settings_save", {}, { social_platforms: st.plats.map(p => ({ key: p.key, label: p.label.trim() })) });
+      S.boot.settings = d.settings; S.boot.enums = d.enums;
+      S.cache.clear();
+      toast("Réseaux sociaux enregistrés ✓");
+      route();
+    } catch (e) { toast(e.message); }
   });
 } };
 
