@@ -777,7 +777,7 @@ function brevo_account(string $key): array
     $h = ['api-key: ' . $key];
     [$code, $body] = http_get(brevo_base() . '/account', [], 15, $h);
     $a = json_decode($body, true) ?: [];
-    if ($code !== 200) throw new RuntimeException('Brevo ' . $code . ' : ' . ($a['message'] ?? 'réponse inattendue'), $code);
+    if ($code !== 200) throw new RuntimeException(brevo_error($code, (string) ($a['message'] ?? 'réponse inattendue')), $code);
     $credits = null;
     foreach ((array) ($a['plan'] ?? []) as $p) if (isset($p['credits'])) $credits = ['type' => (string) ($p['type'] ?? ''), 'credits' => (int) $p['credits'], 'unit' => (string) ($p['creditsType'] ?? '')];
     $from = mail_from();
@@ -818,8 +818,22 @@ function brevo_send(string $to, string $subject, string $html, string $text, ?st
     [$code, $body] = http_post_json(IMPACT_BREVO_URL, $data, ['api-key: ' . brevo_key()]);
     if ($code < 200 || $code >= 300) {
         $msg = (string) (json_decode($body, true)['message'] ?? mb_substr($body, 0, 200));
-        throw new RuntimeException('Brevo ' . $code . ' : ' . $msg);
+        throw new RuntimeException(brevo_error($code, $msg), $code);
     }
+}
+
+/**
+ * Message d'erreur de Brevo, en clair. Cas fréquent : la clé est bonne mais Brevo bloque l'adresse IP
+ * du serveur, qu'il faut autoriser une fois dans Brevo (Sécurité → IP autorisées).
+ */
+function brevo_error(int $code, string $msg): string
+{
+    if (preg_match('/unrecogni[sz]ed IP address ([0-9a-fA-F.:]+)/', $msg, $m)) {
+        $ip = rtrim($m[1], '.');
+        return "La clé est bonne, mais Brevo bloque l'adresse IP du serveur ($ip). Dans Brevo : votre nom en haut à droite → "
+            . "Sécurité → IP autorisées (https://app.brevo.com/security/authorised_ips) → ajoutez $ip, puis réessayez.";
+    }
+    return 'Brevo ' . $code . ' : ' . $msg;
 }
 
 /** Envoie un email. Lève une exception en cas d'échec. */

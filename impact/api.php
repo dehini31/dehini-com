@@ -1761,9 +1761,10 @@ switch ($action) {
         try {
             $acc = brevo_account($key);
         } catch (Throwable $e) {
-            fail(in_array($e->getCode(), [401, 403], true)
-                ? 'Brevo ne reconnaît pas cette clé (' . $e->getMessage() . '). Copiez-la en entier, ou générez-en une nouvelle dans Brevo.'
-                : 'Vérification auprès de Brevo impossible : ' . $e->getMessage(), 400);
+            $m = $e->getMessage();
+            fail(strpos($m, 'La clé est bonne') === 0 ? $m : (in_array($e->getCode(), [401, 403], true)
+                ? 'Brevo ne reconnaît pas cette clé (' . $m . '). Copiez-la en entier, ou générez-en une nouvelle dans Brevo.'
+                : 'Vérification auprès de Brevo impossible : ' . $m), 400);
         }
         setting_set('brevo_key', $key);
         ok(['account' => $acc, 'transport' => mail_transport(), 'masked' => brevo_key_masked($key)]);
