@@ -4,7 +4,8 @@
  * même mot de passe et même session que /admin (connexion via ../admin/api.php).
  *
  * GET  bootstrap                         réglages, schéma des formulaires, listes, référentiels
- * GET  channels_usage                    nombre de données qui citent chaque canal de communication
+ * GET  taxonomy_usage                    nombre de données qui citent chaque canal / support
+ * GET  performance  from, to            niveau 3 : performance par catégorie → canal → support
  * GET  list      entity, from?, to?      lignes d'une table (filtrées par date si la table en a une)
  * POST save      {entity, id?, row}      crée ou modifie une ligne
  * POST patch     {entity, id, field, value}  modifie un seul champ (ex. statut d'un lead)
@@ -103,6 +104,12 @@ try {
                 'schema' => mk_schema(),
                 'enums' => mk_enums(),
                 'refs' => refs(),
+                // Niveaux 1 et 2 : catégories de canaux et types de supports (fixes), supports par défaut d'une catégorie.
+                'taxonomy' => [
+                    'categories' => array_map(fn ($k, $c) => ['key' => $k, 'icon' => $c[0], 'label' => $c[1]], array_keys(MK_CHANNEL_CATEGORIES), MK_CHANNEL_CATEGORIES),
+                    'support_types' => array_map(fn ($k, $t) => ['key' => $k, 'group' => $t[0], 'label' => $t[1]], array_keys(MK_SUPPORT_TYPES), MK_SUPPORT_TYPES),
+                    'category_supports' => array_combine(array_keys(MK_CHANNEL_CATEGORIES), array_map('mk_category_supports', array_keys(MK_CHANNEL_CATEGORIES))),
+                ],
                 'mail' => ['smtp' => MK_SMTP_HOST !== '', 'from' => mk_mail_from()],
                 'url' => mk_site_url(),
             ]);
@@ -114,14 +121,23 @@ try {
             break;
         }
 
-        case 'channels_usage': {
-            // Combien de données citent chaque canal (pour avertir avant d'en retirer un).
-            $out = [];
-            foreach (mk_channels() as $c) {
-                $n = mk_channel_usage($c['key']);
-                if ($n) $out[$c['key']] = $n;
-            }
-            ok(['usage' => $out]);
+        case 'taxonomy_usage': {
+            // Combien de données citent chaque canal et chaque support (pour avertir avant d'en retirer un).
+            $ch = [];
+            foreach (mk_channels() as $c) if ($n = mk_channel_usage($c['key'])) $ch[$c['key']] = $n;
+            $sp = [];
+            foreach (mk_supports() as $x) if ($n = mk_support_usage($x['key'])) $sp[$x['key']] = $n;
+            ok(['channels' => $ch, 'supports' => $sp]);
+            break;
+        }
+
+        case 'performance': {
+            // Niveau 3 : performance par catégorie → canal → support, avec la période précédente.
+            $to = date_param('to', mk_today());
+            $from = date_param('from', mk_add_days($to, -29));
+            if ($from > $to) [$from, $to] = [$to, $from];
+            $p = mk_period('custom', $from, $to);
+            ok(['period' => $p, 'perf' => mk_comm_performance($p['from'], $p['to']), 'prev' => mk_comm_performance($p['prev_from'], $p['prev_to'])['totals']]);
             break;
         }
 
