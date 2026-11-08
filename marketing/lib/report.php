@@ -704,7 +704,7 @@ function mk_report_email(array $r, string $link = ''): array
     $funnelHtml = '';
     foreach ($r['funnels'] as $f) {
         $rows = [];
-        foreach ($f['stages'] as $s) $rows[] = [$s['name'], mk_num($s['value']), mk_pct($s['conv_prev']), mk_pct($s['drop']), $s['target'] ? mk_pct($s['target_pct']) . ' de ' . mk_num($s['target']) : '—'];
+        foreach ($f['stages'] as $s) $rows[] = [$s['name'] . ($s['channels'] ? ' — ' . implode(', ', array_map(fn ($c) => mk_label('sources', $c), $s['channels'])) : ''), mk_num($s['value']), mk_pct($s['conv_prev']), mk_pct($s['drop']), $s['target'] ? mk_pct($s['target_pct']) . ' de ' . mk_num($s['target']) : '—'];
         $funnelHtml .= '<p style="font-weight:bold;margin:12px 0 4px;font-size:14px">' . mk_h($f['name']) . ($f['overall'] !== null ? ' — conversion globale ' . mk_h(mk_pct($f['overall'], 1)) : '') . '</p>'
             . $table(['Étape', 'Prospects', 'Conversion', 'Abandon', 'Objectif'], $rows, [1, 2, 3]);
     }
@@ -726,7 +726,7 @@ function mk_report_email(array $r, string $link = ''): array
         . ($reqRows ? $table(['Date', 'Projet', 'Secteur', 'Montant', 'Statut'], $reqRows, [3]) : '')
         . '<p style="font-weight:bold;margin:12px 0 4px;font-size:14px">En cours de financement</p>' . $table(['Projet', 'Levé', 'Objectif', 'Avancement', 'Investisseurs', 'Fin'], $fundRows, [1, 2, 3, 4])
         . $h2('Website Analytics') . $table(['Page', 'Visites', 'Inscr. investisseurs', 'Inscr. porteurs', 'Formulaires', 'Conversion'], $webRows, [1, 2, 3, 4, 5])
-        . $h2('Social Media') . $table(['Réseau', 'Publications', 'Portée', 'Engagement', 'Taux', 'Nouveaux abonnés', 'Abonnés'], $socRows, [1, 2, 3, 4, 5, 6])
+        . $h2('Social Media') . $table(['Canal', 'Publications', 'Portée', 'Engagement', 'Taux', 'Nouveaux abonnés', 'Abonnés'], $socRows, [1, 2, 3, 4, 5, 6])
         . $h2('Ads Manager') . $table(['Campagne', 'Dépense', 'Clics', 'Leads', 'Conversions', 'Coût / lead'], $adRows, [1, 2, 3, 4, 5])
         . ($budRows ? '<p style="font-weight:bold;margin:12px 0 4px;font-size:14px">Budgets et objectifs (cumul)</p>' . $table(['Campagne', 'Statut', 'Budget', 'Dépensé', 'Restant', 'Objectif'], $budRows, [2, 3, 4]) : '')
         . $h2('Email Marketing') . $table(['Campagne', 'Envoyés', 'Ouverture*', 'Clics', 'Objectifs'], $emRows, [1, 2, 3, 4])

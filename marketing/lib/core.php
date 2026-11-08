@@ -39,7 +39,7 @@ final class MkInputError extends RuntimeException {}
 
 /* ================================================================ listes */
 
-/** Transforme un nom de réseau en identifiant stable (ex. « X (Twitter) » → « x_twitter »). */
+/** Transforme un nom en identifiant stable (ex. « Posts & Reels » → « posts_reels »). */
 function mk_slug(string $s): string
 {
     $s = mb_strtolower(trim($s));
@@ -48,45 +48,132 @@ function mk_slug(string $s): string
     $s = strtr($s, $map);
     $s = preg_replace('/[^a-z0-9]+/', '_', $s) ?? '';
     $s = trim($s, '_');
-    return $s !== '' ? mb_substr($s, 0, 30) : 'reseau';
+    return $s !== '' ? mb_substr($s, 0, 30) : 'canal';
 }
 
-/** Réseaux sociaux configurés (Réglages → Réseaux sociaux) : clé stable => libellé, dans l'ordre choisi. */
-function mk_social_platforms(): array
+/**
+ * Canaux de communication proposés au départ (Réglages → Canaux de communication, où l'on
+ * peut les ajouter, renommer, réordonner, retirer et choisir lesquels sont des réseaux sociaux).
+ */
+function mk_default_channels(): array
+{
+    return [
+        ['key' => 'posts_reels', 'label' => 'Posts & Reels', 'social' => true],
+        ['key' => 'youtube', 'label' => 'YouTube Videos', 'social' => true],
+        ['key' => 'masterclass', 'label' => 'Masterclass', 'social' => true],
+        ['key' => 'broadcast', 'label' => 'Broadcast', 'social' => true],
+        ['key' => 'lives', 'label' => 'Lives', 'social' => true],
+        ['key' => 'stories', 'label' => 'Stories', 'social' => false],
+        ['key' => 'email', 'label' => 'Email Marketing', 'social' => false],
+        ['key' => 'webinars', 'label' => 'Webinars', 'social' => false],
+        ['key' => 'evenement', 'label' => 'Events & Meetings', 'social' => false],
+        ['key' => 'podcasts', 'label' => 'Podcasts', 'social' => false],
+        ['key' => 'broadcast_projet', 'label' => 'Project-specific Broadcast', 'social' => false],
+    ];
+}
+
+/** Canaux de communication configurés, dans l'ordre choisi : [{key, label, social}, …]. */
+function mk_channels(): array
 {
     $out = [];
-    foreach (mk_settings()['social_platforms'] as $p) {
-        $k = (string) ($p['key'] ?? '');
-        if ($k !== '') $out[$k] = (string) ($p['label'] ?? $k);
+    foreach (mk_settings()['channels'] as $c) {
+        $k = (string) ($c['key'] ?? '');
+        if ($k !== '') $out[] = ['key' => $k, 'label' => (string) ($c['label'] ?? $k), 'social' => !empty($c['social'])];
     }
     return $out;
 }
 
-/**
- * Valide la liste envoyée depuis Réglages → Réseaux sociaux. Un élément qui reprend la clé
- * d'un réseau existant ne fait que le renommer (les publications et relevés déjà saisis le
- * suivent) ; un élément sans clé connue en est un nouveau, dont la clé est dérivée du nom.
- * Un réseau retiré de la liste reste affiché sur les anciennes données qui le citaient.
- */
-function mk_clean_platforms(array $items): array
+/** Canaux marqués « réseau social » : clé stable => libellé (Social Media, funnels). */
+function mk_social_platforms(): array
 {
-    if (!$items) throw new MkInputError('Ajoutez au moins un réseau social.');
-    if (count($items) > 12) throw new MkInputError('12 réseaux sociaux au maximum.');
-    $existing = array_column(mk_settings()['social_platforms'], 'key');
+    $out = [];
+    foreach (mk_channels() as $c) if ($c['social']) $out[$c['key']] = $c['label'];
+    return $out;
+}
+
+/** Valeurs de canal / réseau réellement utilisées dans les données saisies. */
+function mk_used_channel_keys(): array
+{
+    $out = [];
+    foreach ([['posts', 'platform'], ['social_stats', 'platform'], ['contacts', 'source'], ['inquiries', 'source'], ['projects', 'source']] as [$t, $c]) {
+        foreach (q("SELECT DISTINCT $c AS v FROM $t WHERE $c != ''") as $r) $out[] = (string) $r['v'];
+    }
+    foreach (q("SELECT social FROM funnels WHERE social != ''") as $r) {
+        foreach (explode(',', (string) $r['social']) as $k) $out[] = $k;
+    }
+    return array_values(array_unique(array_filter($out)));
+}
+
+/**
+ * Première liste de canaux d'une installation : les canaux par défaut, plus les anciens
+ * réseaux sociaux et anciennes sources (avant les canaux) déjà cités par des données, pour
+ * que rien de ce qui a été saisi ne perde son nom.
+ */
+function mk_initial_channels(array $stored): array
+{
+    $list = mk_default_channels();
+    $have = array_column($list, 'key');
+    $legacy = [];
+    $oldSocial = is_array($stored['social_platforms'] ?? null) ? $stored['social_platforms']
+        : [['key' => 'facebook', 'label' => 'Facebook'], ['key' => 'instagram', 'label' => 'Instagram'], ['key' => 'linkedin', 'label' => 'LinkedIn'], ['key' => 'tiktok', 'label' => 'TikTok']];
+    foreach ($oldSocial as $p) {
+        if (!empty($p['key'])) $legacy[(string) $p['key']] = [(string) ($p['label'] ?? $p['key']), true];
+    }
+    $oldOther = ['site' => 'Site web YINVESTI', 'landing' => 'Landing page', 'telephone' => 'Appel / WhatsApp', 'recommandation' => 'Recommandation', 'autre' => 'Autre'];
+    foreach ($oldOther as $k => $l) $legacy[$k] = $legacy[$k] ?? [$l, false];
+    $used = mk_used_channel_keys();
+    foreach ($legacy as $k => [$label, $social]) {
+        if (in_array($k, $used, true) && !in_array($k, $have, true)) {
+            $list[] = ['key' => $k, 'label' => $label, 'social' => $social];
+            $have[] = $k;
+        }
+    }
+    return $list;
+}
+
+/**
+ * Valide la liste envoyée depuis Réglages → Canaux de communication. Un canal qui reprend la
+ * clé d'un canal existant ne fait que changer de nom ou de type (les données déjà saisies le
+ * suivent) ; un canal sans clé connue en est un nouveau, dont la clé est dérivée du nom.
+ * Un canal retiré de la liste reste affiché sur les anciennes données qui le citaient.
+ */
+function mk_clean_channels(array $items): array
+{
+    if (!$items) throw new MkInputError('Ajoutez au moins un canal de communication.');
+    if (count($items) > 40) throw new MkInputError('40 canaux au maximum.');
+    $existing = array_column(mk_channels(), 'key');
     $out = [];
     $used = [];
+    $names = [];
     foreach ($items as $it) {
-        $label = mk_str(is_array($it) ? ($it['label'] ?? '') : '', 40);
-        if ($label === '') throw new MkInputError('Donnez un nom à chaque réseau social.');
-        $key = (string) (is_array($it) ? ($it['key'] ?? '') : '');
+        if (!is_array($it)) continue;
+        $label = mk_str($it['label'] ?? '', 50);
+        if ($label === '') throw new MkInputError('Donnez un nom à chaque canal.');
+        $lower = mb_strtolower($label);
+        if (in_array($lower, $names, true)) throw new MkInputError("Deux canaux portent le même nom : « $label ».");
+        $names[] = $lower;
+        $key = (string) ($it['key'] ?? '');
         if ($key === '' || !in_array($key, $existing, true)) $key = mk_slug($label);
         $base = $key;
         $i = 2;
         while (in_array($key, $used, true)) { $key = $base . '_' . $i; $i++; }
         $used[] = $key;
-        $out[] = ['key' => $key, 'label' => $label];
+        $out[] = ['key' => $key, 'label' => $label, 'social' => !empty($it['social'])];
     }
+    if (!$out) throw new MkInputError('Ajoutez au moins un canal de communication.');
     return $out;
+}
+
+/** Nombre de données saisies qui citent un canal (publications, relevés, leads, questions, projets, funnels). */
+function mk_channel_usage(string $key): int
+{
+    return (int) qv('SELECT COUNT(*) FROM posts WHERE platform = ?', [$key])
+        + (int) qv('SELECT COUNT(*) FROM social_stats WHERE platform = ?', [$key])
+        + (int) qv('SELECT COUNT(*) FROM contacts WHERE source = ?', [$key])
+        + (int) qv('SELECT COUNT(*) FROM inquiries WHERE source = ?', [$key])
+        + (int) qv('SELECT COUNT(*) FROM projects WHERE source = ?', [$key])
+        + (int) qv("SELECT COUNT(*) FROM funnels WHERE ',' || social || ',' LIKE ?", ['%,' . $key . ',%'])
+        + (int) qv("SELECT COUNT(*) FROM funnel_stages WHERE ',' || channels || ',' LIKE ?", ['%,' . $key . ',%']);
 }
 
 /** Listes de choix (clé stockée => libellé affiché). */
@@ -95,11 +182,6 @@ function mk_enums(): array
     static $e = null;
     if ($e === null) {
         $e = [
-            'sources' => [
-                'site' => 'Site web YINVESTI', 'landing' => 'Landing page', 'email' => 'Email marketing',
-                'telephone' => 'Appel / WhatsApp', 'evenement' => 'Événement / salon',
-                'recommandation' => 'Recommandation', 'autre' => 'Autre',
-            ],
             'ad_platforms' => [
                 'meta' => 'Meta (Facebook & Instagram)', 'google' => 'Google Ads', 'linkedin' => 'LinkedIn Ads',
                 'tiktok' => 'TikTok Ads', 'autre' => 'Autre',
@@ -144,6 +226,11 @@ function mk_enums(): array
             // automatiquement des données des autres sections liées au funnel.
             'stage_sources' => [
                 'manual' => 'Saisie manuelle',
+                'stage_posts' => "Publications sur les canaux de l'étape",
+                'stage_reach' => "Portée des canaux de l'étape", 'stage_engagement' => "Engagement des canaux de l'étape",
+                'stage_clicks' => "Clics des canaux de l'étape",
+                'stage_leads' => "Leads venus des canaux de l'étape", 'stage_leads_qualified' => "Leads qualifiés venus des canaux de l'étape",
+                'stage_inquiries' => "Questions reçues par les canaux de l'étape",
                 'ads_impressions' => 'Impressions des campagnes liées', 'ads_clicks' => 'Clics des campagnes liées',
                 'ads_leads' => 'Leads des campagnes liées', 'ads_conversions' => 'Conversions des campagnes liées',
                 'social_reach' => 'Portée des réseaux liés', 'social_engagement' => 'Engagement des réseaux liés',
@@ -160,17 +247,26 @@ function mk_enums(): array
     $out = $e;
     $out['commercials'] = [];
     foreach (mk_settings()['commercials'] as $name) $out['commercials'][$name] = $name;
-    // Réseaux sociaux configurables (Réglages) : en tête des sources, et seule liste des « platforms ».
-    $plats = mk_social_platforms();
-    $out['platforms'] = $plats;
-    $out['sources'] = $plats + $out['sources'];
+    // Canaux de communication (Réglages) : tous servent de source, ceux marqués « réseau social »
+    // alimentent aussi Social Media et les funnels.
+    $out['sources'] = [];
+    $out['platforms'] = [];
+    foreach (mk_channels() as $c) {
+        $out['sources'][$c['key']] = $c['label'];
+        if ($c['social']) $out['platforms'][$c['key']] = $c['label'];
+    }
+    // Tous les noms connus, canaux retirés compris (affichage des anciennes données seulement).
+    $archive = mk_settings()['channels_archive'] ?? [];
+    $out['channel_labels'] = $out['sources'] + (is_array($archive) ? array_map('strval', $archive) : []);
     return $out;
 }
 
 function mk_label(string $enum, $key): string
 {
-    $e = mk_enums()[$enum] ?? [];
-    return (string) ($e[(string) $key] ?? (string) $key);
+    $all = mk_enums();
+    $v = $all[$enum][(string) $key] ?? null;
+    if ($v === null && ($enum === 'sources' || $enum === 'platforms')) $v = $all['channel_labels'][(string) $key] ?? null;
+    return (string) ($v ?? (string) $key);
 }
 
 /* ================================================================ schéma */
@@ -199,7 +295,7 @@ function mk_schema(): array
             'email'       => f('email', 'Email'),
             'city'        => f('text', 'Wilaya / ville'),
             'type'        => f('enum', 'Profil', ['opts' => 'contact_types', 'req' => 1, 'def' => 'investisseur']),
-            'source'      => f('enum', 'Source', ['opts' => 'sources', 'req' => 1]),
+            'source'      => f('enum', 'Canal (source)', ['opts' => 'sources', 'req' => 1]),
             'campaign_id' => f('ref', 'Campagne publicitaire', ['ref' => 'campaigns']),
             'page_id'     => f('ref', 'Landing page / page du site', ['ref' => 'pages']),
             'email_id'    => f('ref', 'Campagne email', ['ref' => 'emails']),
@@ -212,7 +308,7 @@ function mk_schema(): array
         ]],
         'inquiries' => ['label' => 'Question / inquiry', 'date' => 'date', 'title' => 'question', 'fields' => [
             'date'        => f('date', 'Date de réception', ['req' => 1, 'def' => 'today']),
-            'source'      => f('enum', 'Canal', ['opts' => 'sources', 'req' => 1]),
+            'source'      => f('enum', 'Canal de communication', ['opts' => 'sources', 'req' => 1]),
             'name'        => f('text', 'Nom'),
             'contact'     => f('text', 'Téléphone / email'),
             'type'        => f('enum', 'Profil', ['opts' => 'contact_types']),
@@ -228,7 +324,7 @@ function mk_schema(): array
             'owner'         => f('text', 'Porteur de projet'),
             'contact'       => f('text', 'Téléphone / email'),
             'sector'        => f('text', "Secteur d'activité"),
-            'source'        => f('enum', 'Source', ['opts' => 'sources']),
+            'source'        => f('enum', 'Canal (source)', ['opts' => 'sources']),
             'status'        => f('enum', 'Statut', ['opts' => 'project_status', 'req' => 1, 'def' => 'demande']),
             'amount_target' => f('money', 'Montant recherché'),
             'raised'        => f('money', 'Montant levé (total)'),
@@ -240,7 +336,7 @@ function mk_schema(): array
         ]],
         'posts' => ['label' => 'Publication', 'date' => 'date', 'title' => 'topic', 'fields' => [
             'date'        => f('date', 'Date de publication', ['req' => 1, 'def' => 'today']),
-            'platform'    => f('enum', 'Réseau', ['opts' => 'platforms', 'req' => 1]),
+            'platform'    => f('enum', 'Canal (réseau social)', ['opts' => 'platforms', 'req' => 1]),
             'format'      => f('enum', 'Format', ['opts' => 'post_formats', 'req' => 1, 'def' => 'post']),
             'topic'       => f('text', 'Sujet / titre', ['req' => 1]),
             'link'        => f('url', 'Lien'),
@@ -251,7 +347,7 @@ function mk_schema(): array
         ]],
         'social_stats' => ['label' => 'Performances réseau social', 'date' => 'date', 'title' => 'platform', 'fields' => [
             'date'          => f('date', 'Date (dernier jour couvert)', ['req' => 1, 'def' => 'today', 'help' => "Une ligne = les chiffres d'un jour ou d'une semaine, datés du dernier jour couvert."]),
-            'platform'      => f('enum', 'Réseau', ['opts' => 'platforms', 'req' => 1]),
+            'platform'      => f('enum', 'Canal (réseau social)', ['opts' => 'platforms', 'req' => 1]),
             'followers'     => f('int', 'Abonnés (total)'),
             'new_followers' => f('int', 'Nouveaux abonnés'),
             'reach'         => f('int', 'Portée'),
@@ -321,7 +417,7 @@ function mk_schema(): array
             'objective'   => f('text', 'Objectif'),
             'audience'    => f('enum', 'Cible', ['opts' => 'audiences']),
             'status'      => f('enum', 'Statut', ['opts' => 'funnel_status', 'req' => 1, 'def' => 'actif']),
-            'social'      => f('multi', 'Réseaux sociaux associés', ['opts' => 'platforms']),
+            'social'      => f('multi', 'Canaux « réseau social » associés', ['opts' => 'platforms']),
             'description' => f('longtext', 'Description'),
         ]],
         'funnel_entries' => ['label' => 'Chiffres de funnel', 'date' => 'date', 'title' => 'stage_id', 'fields' => [
@@ -386,7 +482,7 @@ function db(): PDO
 function mk_migrate(PDO $pdo): void
 {
     $pdo->exec('CREATE TABLE IF NOT EXISTS settings (k TEXT PRIMARY KEY, v TEXT NOT NULL)');
-    $hash = md5(json_encode(mk_schema()) . '|v1');
+    $hash = md5(json_encode(mk_schema()) . '|v2');
     $s = $pdo->prepare('SELECT v FROM settings WHERE k = ?');
     $s->execute(['schema_hash']);
     if ($s->fetchColumn() === $hash) return;
@@ -411,7 +507,8 @@ function mk_migrate(PDO $pdo): void
         name TEXT NOT NULL DEFAULT '',
         target INTEGER NOT NULL DEFAULT 0,
         tags TEXT NOT NULL DEFAULT '',
-        source TEXT NOT NULL DEFAULT 'manual'
+        source TEXT NOT NULL DEFAULT 'manual',
+        channels TEXT NOT NULL DEFAULT ''
     );
     CREATE INDEX IF NOT EXISTS funnel_stages_f ON funnel_stages(funnel_id, position);
     -- Historique du financement des projets : permet de savoir ce qui a été levé pendant une période.
@@ -439,6 +536,9 @@ function mk_migrate(PDO $pdo): void
     );
     CREATE INDEX IF NOT EXISTS reports_t ON reports(type, date_from);
     SQL);
+    // Canaux de communication de chaque étape de funnel (ajouté après coup aux bases existantes).
+    $stageCols = array_column($pdo->query('PRAGMA table_info(funnel_stages)')->fetchAll(), 'name');
+    if (!in_array('channels', $stageCols, true)) $pdo->exec("ALTER TABLE funnel_stages ADD COLUMN channels TEXT NOT NULL DEFAULT ''");
     $pdo->prepare('INSERT OR REPLACE INTO settings (k, v) VALUES (?, ?)')->execute(['schema_hash', $hash]);
 }
 
@@ -496,12 +596,8 @@ function mk_settings_defaults(): array
         'currency'      => 'DA',
         'commercials'   => [],
         'recipients'    => [],
-        'social_platforms' => [
-            ['key' => 'facebook', 'label' => 'Facebook'],
-            ['key' => 'instagram', 'label' => 'Instagram'],
-            ['key' => 'linkedin', 'label' => 'LinkedIn'],
-            ['key' => 'tiktok', 'label' => 'TikTok'],
-        ],
+        'channels'      => mk_default_channels(),
+        'channels_archive' => [], // nom des canaux retirés (clé => libellé), pour les données qui les citent encore
         'send_daily'    => true,
         'send_weekly'   => true,
         'send_monthly'  => true,
@@ -515,7 +611,14 @@ function mk_settings(bool $reload = false): array
     if ($cache !== null && !$reload) return $cache;
     $raw = qv('SELECT v FROM settings WHERE k = ?', ['app']);
     $d = $raw ? json_decode((string) $raw, true) : [];
-    $cache = array_merge(mk_settings_defaults(), is_array($d) ? $d : []);
+    if (!is_array($d)) $d = [];
+    // Une seule fois : la liste des canaux remplace les anciennes listes « réseaux sociaux » et « sources ».
+    if (!isset($d['channels']) || !is_array($d['channels'])) {
+        $d['channels'] = mk_initial_channels($d);
+        unset($d['social_platforms']);
+        db()->prepare('INSERT OR REPLACE INTO settings (k, v) VALUES (?, ?)')->execute(['app', json_encode($d, JSON_UNESCAPED_UNICODE)]);
+    }
+    $cache = array_merge(mk_settings_defaults(), $d);
     return $cache;
 }
 
@@ -535,8 +638,17 @@ function mk_settings_save(array $in): array
     if (array_key_exists('org', $in)) $next['org'] = mk_str($in['org'], 60) ?: 'YINVESTI';
     if (array_key_exists('currency', $in)) $next['currency'] = mk_str($in['currency'], 8) ?: 'DA';
     if (array_key_exists('commercials', $in)) $next['commercials'] = $lines($in['commercials']);
-    if (array_key_exists('social_platforms', $in)) {
-        $next['social_platforms'] = mk_clean_platforms(is_array($in['social_platforms']) ? $in['social_platforms'] : []);
+    if (array_key_exists('channels', $in)) {
+        $new = mk_clean_channels(is_array($in['channels']) ? $in['channels'] : []);
+        $newKeys = array_column($new, 'key');
+        // Un canal retiré garde son nom pour les données qui le citent ; s'il revient, il les retrouve.
+        $archive = is_array($cur['channels_archive'] ?? null) ? $cur['channels_archive'] : [];
+        foreach (mk_channels() as $c) {
+            if (!in_array($c['key'], $newKeys, true)) $archive[$c['key']] = $c['label'];
+        }
+        foreach ($newKeys as $k) unset($archive[$k]);
+        $next['channels'] = $new;
+        $next['channels_archive'] = $archive;
     }
     if (array_key_exists('recipients', $in)) {
         $mails = [];
@@ -734,8 +846,8 @@ function mk_funnel_links(array $f): array
 }
 
 /**
- * Crée ou modifie un funnel avec ses étapes (nom, objectif, tags, source des chiffres)
- * et ses associations. Une étape retirée perd ses chiffres saisis.
+ * Crée ou modifie un funnel avec ses étapes (nom, objectif, tags, canaux de communication,
+ * source des chiffres) et ses associations. Une étape retirée perd ses chiffres saisis.
  */
 function mk_funnel_save(array $in): array
 {
@@ -745,6 +857,7 @@ function mk_funnel_save(array $in): array
     if (!$stages) throw new MkInputError('Ajoutez au moins une étape au funnel.');
     if (count($stages) > 20) throw new MkInputError('20 étapes au maximum.');
     $sources = mk_enums()['stage_sources'];
+    $channels = mk_enums()['sources'];
     $clean = [];
     foreach ($stages as $i => $st) {
         $name = mk_str($st['name'] ?? '', 80);
@@ -756,8 +869,17 @@ function mk_funnel_save(array $in): array
             $t = mk_str(ltrim(trim((string) $t), '#'), 40);
             if ($t !== '' && !in_array($t, $tags, true)) $tags[] = $t;
         }
+        // Canaux de communication de l'étape : ceux de la liste, plus ceux qu'elle avait déjà
+        // (un canal retiré des Réglages n'est pas effacé des étapes sans qu'on le décoche).
+        $had = [];
+        if ((int) ($st['id'] ?? 0) > 0) $had = explode(',', (string) qv('SELECT channels FROM funnel_stages WHERE id = ?', [(int) $st['id']]));
+        $chs = [];
+        foreach (is_array($st['channels'] ?? null) ? $st['channels'] : explode(',', (string) ($st['channels'] ?? '')) as $c) {
+            $c = (string) $c;
+            if ($c !== '' && (isset($channels[$c]) || in_array($c, $had, true)) && !in_array($c, $chs, true)) $chs[] = $c;
+        }
         $clean[] = ['id' => (int) ($st['id'] ?? 0), 'name' => $name, 'target' => max(0, (int) ($st['target'] ?? 0)),
-            'tags' => implode(',', array_slice($tags, 0, 12)), 'source' => $src];
+            'tags' => implode(',', array_slice($tags, 0, 12)), 'source' => $src, 'channels' => implode(',', $chs)];
     }
     $pdo->beginTransaction();
     try {
@@ -767,11 +889,11 @@ function mk_funnel_save(array $in): array
         foreach ($clean as $pos => $st) {
             $sid = $st['id'];
             if ($sid > 0 && qv('SELECT 1 FROM funnel_stages WHERE id = ? AND funnel_id = ?', [$sid, $fid])) {
-                $pdo->prepare('UPDATE funnel_stages SET position = ?, name = ?, target = ?, tags = ?, source = ? WHERE id = ?')
-                    ->execute([$pos, $st['name'], $st['target'], $st['tags'], $st['source'], $sid]);
+                $pdo->prepare('UPDATE funnel_stages SET position = ?, name = ?, target = ?, tags = ?, source = ?, channels = ? WHERE id = ?')
+                    ->execute([$pos, $st['name'], $st['target'], $st['tags'], $st['source'], $st['channels'], $sid]);
             } else {
-                $pdo->prepare('INSERT INTO funnel_stages (funnel_id, position, name, target, tags, source) VALUES (?, ?, ?, ?, ?, ?)')
-                    ->execute([$fid, $pos, $st['name'], $st['target'], $st['tags'], $st['source']]);
+                $pdo->prepare('INSERT INTO funnel_stages (funnel_id, position, name, target, tags, source, channels) VALUES (?, ?, ?, ?, ?, ?, ?)')
+                    ->execute([$fid, $pos, $st['name'], $st['target'], $st['tags'], $st['source'], $st['channels']]);
                 $sid = (int) $pdo->lastInsertId();
             }
             $keep[] = $sid;
@@ -816,9 +938,21 @@ function mk_stage_value(array $st, array $f, array $links, string $from, string 
         if (!$ids) return 0;
         return (int) round((float) qv("SELECT COALESCE(SUM($col), 0) FROM $table WHERE $key IN (" . mk_in($ids) . ') AND date BETWEEN ? AND ?', [...$ids, $from, $to]));
     };
+    $chs = array_values(array_filter(explode(',', (string) ($st['channels'] ?? ''))));
+    $countIn = function (string $table, string $key, array $vals, string $extra = '') use ($from, $to): int {
+        if (!$vals) return 0;
+        return (int) qv("SELECT COUNT(*) FROM $table WHERE $key IN (" . mk_in($vals) . ") AND date BETWEEN ? AND ?$extra", [...$vals, $from, $to]);
+    };
     switch ($src) {
         case 'manual':
             return (int) qv('SELECT COALESCE(SUM(count), 0) FROM funnel_entries WHERE stage_id = ? AND date BETWEEN ? AND ?', [(int) $st['id'], $from, $to]);
+        case 'stage_posts':           return $countIn('posts', 'platform', $chs);
+        case 'stage_reach':           return $sumIn('social_stats', 'reach', 'platform', $chs);
+        case 'stage_engagement':      return $sumIn('social_stats', 'engagement', 'platform', $chs);
+        case 'stage_clicks':          return $sumIn('social_stats', 'clicks', 'platform', $chs);
+        case 'stage_leads':           return $countIn('contacts', 'source', $chs);
+        case 'stage_leads_qualified': return $countIn('contacts', 'source', $chs, " AND status IN ('qualifie','converti')");
+        case 'stage_inquiries':       return $countIn('inquiries', 'source', $chs);
         case 'ads_impressions': return $sumIn('ad_results', 'impressions', 'campaign_id', $links['campaigns']);
         case 'ads_clicks':      return $sumIn('ad_results', 'clicks', 'campaign_id', $links['campaigns']);
         case 'ads_leads':       return $sumIn('ad_results', 'leads', 'campaign_id', $links['campaigns']);
@@ -867,6 +1001,7 @@ function mk_funnel_compute(array $f, string $from, string $to): array
         $row = [
             'id' => (int) $st['id'], 'name' => $st['name'], 'tags' => array_values(array_filter(explode(',', (string) $st['tags']))),
             'source' => $st['source'], 'target' => (int) $st['target'], 'value' => $v,
+            'channels' => array_values(array_filter(explode(',', (string) ($st['channels'] ?? '')))),
             'conv_prev' => $convPrev,
             'conv_start' => ($i > 0 && $first > 0) ? $v / $first : null,
             'drop' => $convPrev === null ? null : max(0.0, 1 - $convPrev),
