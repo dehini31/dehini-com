@@ -463,14 +463,15 @@ function funnelChart(f) {
   return `<div class="funnel">${f.stages.map((s, i) => {
     const color = ramp[Math.min(ramp.length - 1, Math.round(i * (ramp.length - 1) / Math.max(1, f.stages.length - 1)))];
     const conv = i > 0 ? `<div class="fs-conv${f.worst === i ? " worst" : ""}">↓ ${pct(s.conv_prev, 1)} passent à l'étape suivante · abandon ${pct(s.drop, 1)}${s.lost ? " (" + num(s.lost) + " perdus)" : ""}${f.worst === i ? " · ⚠ plus forte perte" : ""}</div>` : "";
-    const tip = `<b>${esc(s.name)}</b>Prospects : ${num(s.value)}${s.conv_start != null ? "<br>Depuis l'entrée : " + pct(s.conv_start, 1) : ""}${s.target ? "<br>Objectif : " + num(s.target) + " (" + pct(s.target_pct) + ")" : ""}<br>Source : ${esc(L("stage_sources", s.source))}`;
-    return conv + `<div data-tip="${esc(tip)}"><div class="fs-h"><span class="n">${i + 1}. ${esc(s.name)} ${s.tags.map(t => `<span class="tag">#${esc(t)}</span>`).join("")}</span><span class="v">${num(s.value)}${s.target ? ` <span class="muted small">/ ${num(s.target)}</span>` : ""}</span></div><div class="fs-bar"><i style="width:${(100 * s.value / max).toFixed(1)}%;background:var(${color})"></i></div></div>`;
+    const tip = `<b>${esc(s.name)}</b>${s.channels.length ? "Canaux : " + s.channels.map(k => esc(L("sources", k))).join(", ") + "<br>" : ""}Prospects : ${num(s.value)}${s.conv_start != null ? "<br>Depuis l'entrée : " + pct(s.conv_start, 1) : ""}${s.target ? "<br>Objectif : " + num(s.target) + " (" + pct(s.target_pct) + ")" : ""}<br>Source : ${esc(L("stage_sources", s.source))}`;
+    return conv + `<div data-tip="${esc(tip)}"><div class="fs-h"><span class="n">${i + 1}. ${esc(s.name)} ${s.tags.map(t => `<span class="tag">#${esc(t)}</span>`).join("")} ${chanChips(s.channels)}</span><span class="v">${num(s.value)}${s.target ? ` <span class="muted small">/ ${num(s.target)}</span>` : ""}</span></div><div class="fs-bar"><i style="width:${(100 * s.value / max).toFixed(1)}%;background:var(${color})"></i></div></div>`;
   }).join("")}</div>`;
 }
 function funnelTable(f) {
   return table(f.stages, [
     { l: "Étape", h: s => `<b>${esc(s.name)}</b>${s.tags.length ? "<div>" + s.tags.map(t => `<span class="tag">#${esc(t)}</span>`).join("") + "</div>" : ""}` },
-    { l: "Source des chiffres", h: s => `<span class="small">${esc(L("stage_sources", s.source))}</span>` },
+    { l: "Canaux de communication", wrap: 1, h: s => s.channels.length ? chanChips(s.channels) : '<span class="muted">—</span>' },
+    { l: "Source des chiffres", h: s => `<span class="small">${esc(L("stage_sources", s.source))}</span>` + (s.source.startsWith("stage_") && !s.channels.length ? '<div><span class="pill warn">⚠ aucun canal</span></div>' : "") },
     { l: "Prospects", n: 1, h: s => num(s.value) },
     { l: "Conv. étape préc.", n: 1, h: s => pct(s.conv_prev, 1) },
     { l: "Conv. depuis l'entrée", n: 1, h: s => pct(s.conv_start, 1) },
@@ -1224,17 +1225,38 @@ const FUNNEL_TEMPLATE = [
   { name: "Inscription", source: "page_registrations", target: 0, tags: "" },
   { name: "Investissement", source: "manual", target: 0, tags: "" },
 ];
+/** Canaux d'une étape affichés en petites étiquettes. */
+const chanChips = keys => (keys || []).map(k => `<span class="chan">${esc(L("sources", k))}</span>`).join("");
+const splitKeys = v => Array.isArray(v) ? v : String(v || "").split(",").filter(Boolean);
+/** Groupes de la liste « Source des chiffres » d'une étape (par préfixe de clé). */
+const STAGE_SRC_GROUPS = [["manual", "Saisie"], ["stage_", "Canaux de l'étape"], ["ads_", "Campagnes publicitaires liées"], ["social_", "Réseaux sociaux liés au funnel"], ["page_", "Pages liées"], ["email_", "Emails liés"], ["contacts", "Leads liés au funnel"]];
+
 function openFunnelEditor(id) {
   const f = id ? REF("funnels").find(x => +x.id === +id) : null;
-  let stages = (f ? f.stages : FUNNEL_TEMPLATE).map(s => ({ id: s.id || 0, name: s.name, source: s.source, target: +s.target || 0, tags: s.tags || "" }));
+  let stages = (f ? f.stages : FUNNEL_TEMPLATE).map(s => ({ id: s.id || 0, name: s.name, source: s.source, target: +s.target || 0, tags: s.tags || "", channels: splitKeys(s.channels) }));
   const links = f ? f.links : { campaigns: [], pages: [], emails: [], social: [] };
   const vals = Object.assign(defaults("funnels"), f || {});
-  const srcOpts = v => Object.entries(EN("stage_sources")).map(([k, l]) => `<option value="${k}"${k === v ? " selected" : ""}>${esc(l)}</option>`).join("");
+  const srcOpts = v => STAGE_SRC_GROUPS.map(([pre, label]) => {
+    const list = Object.entries(EN("stage_sources")).filter(([k]) => k.startsWith(pre));
+    return list.length ? `<optgroup label="${esc(label)}">${list.map(([k, l]) => `<option value="${k}"${k === v ? " selected" : ""}>${esc(l)}</option>`).join("")}</optgroup>` : "";
+  }).join("");
+  const chSummary = s => (s.channels.length ? chanChips(s.channels) : '<span class="muted">aucun canal</span>')
+    + (s.source.startsWith("stage_") && !s.channels.length ? ' <span class="pill warn">⚠ choisissez au moins un canal</span>' : "");
+  const chPicker = (s, i) => {
+    const all = EN("sources"), soc = EN("platforms");
+    const box = (k, l) => `<label><input type="checkbox" data-k="ch" value="${esc(k)}"${s.channels.includes(k) ? " checked" : ""}> ${esc(l)}</label>`;
+    const socList = Object.entries(all).filter(([k]) => k in soc), other = Object.entries(all).filter(([k]) => !(k in soc));
+    const gone = s.channels.filter(k => !(k in all)); // canaux retirés des Réglages mais encore cochés sur cette étape
+    return `<details class="stage-ch"${s.open ? " open" : ""}><summary><span class="lab">📣 Canaux :</span><span class="ch-sum">${chSummary(s)}</span><span class="ch-edit">modifier</span></summary>
+      <div class="ch-pick">${socList.length ? `<div class="grp">Réseaux sociaux</div>${socList.map(([k, l]) => box(k, l)).join("")}` : ""}
+      ${other.length ? `<div class="grp">Autres canaux</div>${other.map(([k, l]) => box(k, l)).join("")}` : ""}
+      ${gone.length ? `<div class="grp">Canaux retirés des Réglages</div>${gone.map(k => box(k, L("sources", k))).join("")}` : ""}</div></details>`;
+  };
   const box = (t, label, list) => `<div class="fld"><label>${label}</label><div class="linkbox">${list.length ? list.map(x => `<label><input type="checkbox" name="link_${t}" value="${x.id}"${links[t].includes(+x.id) ? " checked" : ""}> ${esc(x.name)}</label>`).join("") : '<span class="muted small">Rien à associer pour l\'instant.</span>'}</div></div>`;
   openModal(`<h2>${f ? "Modifier le funnel" : "Créer un funnel"}</h2><form id="fForm" novalidate>
     <div class="form">${Object.entries(SC("funnels").fields).map(([k, fd]) => fieldHtml("funnels", k, fd, vals[k], vals)).join("")}</div>
     <h3>Étapes & objectifs</h3>
-    <p class="small muted" style="margin-top:-4px">Chaque étape prend ses chiffres dans une saisie manuelle, ou automatiquement dans les campagnes, pages, emails ou réseaux associés ci-dessous. Tags séparés par des virgules.</p>
+    <p class="small muted" style="margin-top:-4px">Pour chaque étape : ses <b>canaux de communication</b> (📣 Canaux), et la source de ses chiffres — saisie manuelle, ses canaux (publications, portée, leads, questions…) ou les campagnes, pages, emails et réseaux associés ci-dessous. Tags séparés par des virgules.</p>
     <div class="stage-row stage-head"><span></span><span>Nom de l'étape</span><span>Source des chiffres</span><span>Objectif</span><span>Tags</span><span></span></div>
     <div class="stages" id="stagesBox"></div>
     <button type="button" class="btn sm" id="addStage" style="margin-top:8px">＋ Ajouter une étape</button>
@@ -1244,7 +1266,8 @@ function openFunnelEditor(id) {
     <div class="form-foot"><button type="button" class="btn" data-close>Annuler</button><button type="submit" class="btn pri">Enregistrer le funnel</button></div></form>`);
   const form = $("#fForm");
   const sync = () => {
-    stages = $$(".stage-row[data-i]", form).map(r => ({ id: +r.dataset.id || 0, name: $("[data-k=name]", r).value, source: $("[data-k=source]", r).value, target: +$("[data-k=target]", r).value || 0, tags: $("[data-k=tags]", r).value }));
+    stages = $$(".stage-row[data-i]", form).map(r => ({ id: +r.dataset.id || 0, name: $("[data-k=name]", r).value, source: $("[data-k=source]", r).value, target: +$("[data-k=target]", r).value || 0, tags: $("[data-k=tags]", r).value,
+      channels: $$("[data-k=ch]:checked", r).map(c => c.value), open: $(".stage-ch", r).open }));
   };
   const draw = () => {
     $("#stagesBox").innerHTML = stages.map((s, i) => `<div class="stage-row" data-i="${i}" data-id="${s.id}"><span class="num">${i + 1}</span>
@@ -1252,12 +1275,21 @@ function openFunnelEditor(id) {
       <select data-k="source" class="src" aria-label="Source des chiffres">${srcOpts(s.source)}</select>
       <input type="number" data-k="target" min="0" value="${s.target || ""}" placeholder="—" aria-label="Objectif">
       <input type="text" data-k="tags" value="${esc(s.tags)}" placeholder="ex. meta" aria-label="Tags">
-      <span class="ctrl"><button type="button" class="icon-btn" data-mv="${i}:-1" title="Monter">↑</button><button type="button" class="icon-btn" data-mv="${i}:1" title="Descendre">↓</button><button type="button" class="icon-btn del" data-rm="${i}" title="Retirer">✕</button></span></div>`).join("");
+      <span class="ctrl"><button type="button" class="icon-btn" data-mv="${i}:-1" title="Monter">↑</button><button type="button" class="icon-btn" data-mv="${i}:1" title="Descendre">↓</button><button type="button" class="icon-btn del" data-rm="${i}" title="Retirer">✕</button></span>
+      ${chPicker(s, i)}</div>`).join("");
   };
   draw();
+  // Cocher un canal ou changer de source met à jour le résumé de l'étape sans tout redessiner.
+  form.addEventListener("change", e => {
+    const row = e.target.closest(".stage-row[data-i]");
+    if (!row || !(e.target.dataset.k === "ch" || e.target.dataset.k === "source")) return;
+    const st = { source: $("[data-k=source]", row).value, channels: $$("[data-k=ch]:checked", row).map(c => c.value) };
+    $(".ch-sum", row).innerHTML = chSummary(st);
+    if (e.target.dataset.k === "source" && st.source.startsWith("stage_") && !st.channels.length) $(".stage-ch", row).open = true;
+  });
   form.addEventListener("click", e => {
     const mv = e.target.closest("[data-mv]"), rm = e.target.closest("[data-rm]");
-    if (e.target.id === "addStage") { sync(); stages.push({ id: 0, name: "", source: "manual", target: 0, tags: "" }); draw(); $$("[data-k=name]", form).pop().focus(); }
+    if (e.target.id === "addStage") { sync(); stages.push({ id: 0, name: "", source: "manual", target: 0, tags: "", channels: [], open: true }); draw(); $$("[data-k=name]", form).pop().focus(); }
     if (mv) { sync(); const [i, d] = mv.dataset.mv.split(":").map(Number); const j = i + d; if (j >= 0 && j < stages.length) { [stages[i], stages[j]] = [stages[j], stages[i]]; draw(); } }
     if (rm) { sync(); if (stages.length > 1 && (!stages[+rm.dataset.rm].id || confirm("Retirer cette étape ? Ses chiffres saisis à la main seront supprimés."))) { stages.splice(+rm.dataset.rm, 1); draw(); } }
   });
@@ -1266,9 +1298,11 @@ function openFunnelEditor(id) {
     sync();
     const data = readForm(form, "funnels");
     if (!data.name.trim()) { $("#fErr").textContent = "Donnez un nom au funnel."; return; }
+    const noCh = stages.findIndex(s => s.source.startsWith("stage_") && !s.channels.length);
+    if (noCh >= 0) { $("#fErr").textContent = `Étape ${noCh + 1} : choisissez ses canaux (ses chiffres viennent des canaux de l'étape).`; $$(".stage-ch", form)[noCh].open = true; return; }
     const ln = t => $$(`input[name="link_${t}"]:checked`, form).map(i => +i.value);
     try {
-      const d = await api("funnel_save", {}, { id: f ? +f.id : 0, funnel: data, stages, links: { campaigns: ln("campaigns"), pages: ln("pages"), emails: ln("emails") } });
+      const d = await api("funnel_save", {}, { id: f ? +f.id : 0, funnel: data, stages: stages.map(({ open, ...st }) => st), links: { campaigns: ln("campaigns"), pages: ln("pages"), emails: ln("emails") } });
       closeModal();
       toast(f ? "Funnel modifié ✓" : "Funnel créé ✓");
       if (!f) location.hash = "#funnels/stages/" + d.funnel.id;
