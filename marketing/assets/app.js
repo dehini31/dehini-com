@@ -76,7 +76,13 @@ async function afterMutation(entity) {
 /* ================================================================ schéma & libellés */
 const SC = e => S.boot.schema[e];
 const EN = n => S.boot.enums[n] || {};
-const L = (n, k) => k == null || k === "" ? "" : (EN(n)[k] != null ? EN(n)[k] : k);
+const L = (n, k) => {
+  if (k == null || k === "") return "";
+  if (EN(n)[k] != null) return EN(n)[k];
+  // Canal retiré de la liste : on garde son nom sur les anciennes données.
+  if ((n === "sources" || n === "platforms") && EN("channel_labels")[k] != null) return EN("channel_labels")[k];
+  return k;
+};
 const REF = e => (S.boot.refs[e] || []);
 const allStages = () => REF("funnels").flatMap(f => f.stages.map(s => Object.assign({ funnel: f.name }, s)));
 function refName(e, id) {
@@ -402,7 +408,7 @@ function socialTable(SOC) {
   const rows = Object.entries(SOC.platforms || {}).map(([p, v]) => ({ p, ...v }));
   const t = SOC.totals;
   return table(rows, [
-    { l: "Réseau", h: r => `<b>${esc(L("platforms", r.p))}</b>` },
+    { l: "Canal", h: r => `<b>${esc(L("platforms", r.p))}</b>` },
     { l: "Publications", n: 1, h: r => num(r.posts) },
     { l: "Portée", n: 1, h: r => num(r.reach) },
     { l: "Impressions", n: 1, h: r => num(r.impressions) },
@@ -562,7 +568,7 @@ VIEWS["overview/daily"] = { fn: async (param, tok) => {
     ${card(`👥 Nouveaux leads & contacts du jour <span class="muted small">(${num(d.contacts.length)})</span>`, table(d.contacts, leadCols, { entity: "contacts", emptyMsg: "Aucun lead enregistré ce jour." }), addBtn("contacts", "Lead", { date }, "btn sm"))}
     <div class="grid2">
       ${card(`💬 Questions & inquiries du jour <span class="muted small">(${num(d.inquiries.length)})</span>`, table(d.inquiries, inqCols, { entity: "inquiries", emptyMsg: "Aucune question ce jour." }), addBtn("inquiries", "Question", { date }, "btn sm"))}
-      ${card(`📱 Activité social media du jour <span class="muted small">(${num(d.posts.length)})</span>`, table(d.posts, [{ l: "Réseau", h: p => `<b>${esc(L("platforms", p.platform))}</b><div class="sub">${esc(L("post_formats", p.format))}</div>` }, { l: "Sujet", wrap: 1, h: p => esc(p.topic) + (p.link ? ` <a href="${esc(p.link)}" target="_blank" rel="noopener">↗</a>` : "") }, { l: "Portée", n: 1, h: p => num(p.reach) }], { entity: "posts", emptyMsg: "Aucune publication ce jour." }), addBtn("posts", "Publication", { date }, "btn sm"))}
+      ${card(`📱 Activité social media du jour <span class="muted small">(${num(d.posts.length)})</span>`, table(d.posts, [{ l: "Canal", h: p => `<b>${esc(L("platforms", p.platform))}</b><div class="sub">${esc(L("post_formats", p.format))}</div>` }, { l: "Sujet", wrap: 1, h: p => esc(p.topic) + (p.link ? ` <a href="${esc(p.link)}" target="_blank" rel="noopener">↗</a>` : "") }, { l: "Portée", n: 1, h: p => num(p.reach) }], { entity: "posts", emptyMsg: "Aucune publication ce jour." }), addBtn("posts", "Publication", { date }, "btn sm"))}
     </div>
     ${card(`📁 Nouvelles demandes de projets <span class="muted small">(${num(d.projects.length)})</span>`, table(d.projects, [{ l: "Projet", h: p => `<b>${esc(p.name)}</b><div class="sub">${esc(p.owner || "")}</div>` }, { l: "Secteur", h: p => esc(p.sector || "—") }, { l: "Montant recherché", n: 1, h: p => money(p.amount_target) }, { l: "Source", h: p => esc(L("sources", p.source) || "—") }, { l: "Statut", h: p => inlineSel("projects", p, "status") }], { entity: "projects", emptyMsg: "Aucune demande de projet ce jour." }), addBtn("projects", "Demande", { date }, "btn sm"))}
     <h2 style="margin:22px 0 12px">🔔 À traiter (tous jours confondus, du plus ancien au plus récent)</h2>
@@ -678,9 +684,10 @@ function inquiryCols() {
 }
 /** Filtre de canal : social (tous les réseaux), un réseau, all, other. */
 function channelChips(base, sel, withAll = true) {
-  const opts = [["social", "Tous les réseaux"], ...socialKeys().map(p => [p, L("platforms", p)])];
+  const opts = [["social", "Tous les réseaux sociaux"], ...socialKeys().map(p => [p, L("platforms", p)])];
   if (withAll) opts.push(["other", "Autres canaux"], ["all", "Tous les canaux"]);
-  return `<div class="chips">${opts.map(([k, l]) => `<a class="chip${k === sel ? " on" : ""}" href="#${base}/${k}">${esc(l)}</a>`).join("")}<a class="chip" href="#settings" style="margin-left:auto">⚙️ Gérer les réseaux</a></div>`;
+  const none = socialKeys().length ? "" : `<div class="banner">Aucun canal n'est marqué « réseau social » : cochez-en dans <a href="#settings">Réglages → Canaux de communication</a>.</div>`;
+  return none + `<div class="chips">${opts.map(([k, l]) => `<a class="chip${k === sel ? " on" : ""}" href="#${base}/${k}">${esc(l)}</a>`).join("")}<a class="chip" href="#settings" style="margin-left:auto">⚙️ Gérer les canaux</a></div>`;
 }
 const chanFilter = sel => r => sel === "all" ? true : sel === "social" ? socialKeys().includes(r.source) : sel === "other" ? !socialKeys().includes(r.source) : r.source === sel;
 
@@ -717,18 +724,18 @@ VIEWS["social/activity"] = { range: true, fn: async param => {
   for (const r of rows) { byP[r.platform] = (byP[r.platform] || 0) + 1; byF[r.format] = (byF[r.format] || 0) + 1; reach += +r.reach; eng += +r.engagement; }
   return channelChips("social/activity", sel, false)
     + `<div class="kpis"><div class="kpi"><small>Publications</small><b>${num(rows.length)}</b><span class="d">${esc(rangeLabel())}</span></div><div class="kpi"><small>Portée des publications</small><b>${num(reach)}</b><span class="d">&nbsp;</span></div><div class="kpi"><small>Engagement</small><b>${num(eng)}</b><span class="d">${pct(ratio(eng, reach), 1)} de la portée</span></div></div>`
-    + `<div class="grid2">${card("Par réseau", mapBars(byP, "platforms", rows.length))}${card("Par format", mapBars(byF, "post_formats", rows.length))}</div>`
-    + card("Publications", table(rows, [col("posts", "date", { h: r => fdate(r.date) }), { l: "Réseau", h: r => `<b>${esc(L("platforms", r.platform))}</b><div class="sub">${esc(L("post_formats", r.format))}</div>` }, { l: "Sujet", wrap: 1, h: r => esc(r.topic) + (r.link ? ` <a href="${esc(r.link)}" target="_blank" rel="noopener">↗</a>` : "") }, col("posts", "reach"), col("posts", "impressions"), col("posts", "engagement"), col("posts", "clicks")], { entity: "posts", emptyMsg: "Aucune publication enregistrée sur la période." }), addBtn("posts", "Publication", socialKeys().includes(sel) ? { platform: sel } : {}, "btn sm pri") + exportBtn("posts"));
+    + `<div class="grid2">${card("Par canal", mapBars(byP, "platforms", rows.length))}${card("Par format", mapBars(byF, "post_formats", rows.length))}</div>`
+    + card("Publications", table(rows, [col("posts", "date", { h: r => fdate(r.date) }), { l: "Canal", h: r => `<b>${esc(L("platforms", r.platform))}</b><div class="sub">${esc(L("post_formats", r.format))}</div>` }, { l: "Sujet", wrap: 1, h: r => esc(r.topic) + (r.link ? ` <a href="${esc(r.link)}" target="_blank" rel="noopener">↗</a>` : "") }, col("posts", "reach"), col("posts", "impressions"), col("posts", "engagement"), col("posts", "clicks")], { entity: "posts", emptyMsg: "Aucune publication enregistrée sur la période." }), addBtn("posts", "Publication", socialKeys().includes(sel) ? { platform: sel } : {}, "btn sm pri") + exportBtn("posts"));
 } };
 
 VIEWS["social/performance"] = { range: true, fn: async () => {
   const [r, rows] = await Promise.all([rangeReport(), rangeList("social_stats")]);
   const t = r.social.totals, p = r.prev.social.totals;
   const k = (label, v, pv, fmt = "int") => kpiTile({ key: "", label, value: v, prev: pv, fmt, better: "up" });
-  return `<p class="muted" style="margin-top:0">Saisissez chaque semaine (ou chaque jour) les chiffres de chaque réseau, relevés dans Meta Business Suite, LinkedIn et TikTok. ${esc(rangeLabel())}, comparé à la période précédente.</p>`
+  return `<p class="muted" style="margin-top:0">Saisissez chaque semaine (ou chaque jour) les chiffres de chaque canal « réseau social », relevés dans les statistiques de chaque plateforme. ${esc(rangeLabel())}, comparé à la période précédente.</p>`
     + `<div class="kpis">${k("Portée", t.reach, p.reach)}${k("Impressions", t.impressions, p.impressions)}${k("Engagement", t.engagement, p.engagement)}${k("Taux d'engagement", t.eng_rate, p.eng_rate, "pct")}${k("Clics", t.clicks, p.clicks)}${k("Nouveaux abonnés", t.new_followers, p.new_followers)}<div class="kpi"><small>Abonnés (total)</small><b>${num(t.followers)}</b><span class="d">dernier relevé</span></div></div>`
-    + card("Performances par réseau", socialTable(r.social))
-    + card("Relevés saisis", table(rows, [col("social_stats", "date", { h: x => fdate(x.date) }), { l: "Réseau", h: x => `<b>${esc(L("platforms", x.platform))}</b>` }, col("social_stats", "followers"), col("social_stats", "new_followers"), col("social_stats", "reach"), col("social_stats", "impressions"), { l: "Engagement", n: 1, h: x => num(x.engagement) }, col("social_stats", "clicks")], { entity: "social_stats", emptyMsg: "Aucun relevé sur la période." }), addBtn("social_stats", "Relevé", null, "btn sm pri") + exportBtn("social_stats"));
+    + card("Performances par canal", socialTable(r.social))
+    + card("Relevés saisis", table(rows, [col("social_stats", "date", { h: x => fdate(x.date) }), { l: "Canal", h: x => `<b>${esc(L("platforms", x.platform))}</b>` }, col("social_stats", "followers"), col("social_stats", "new_followers"), col("social_stats", "reach"), col("social_stats", "impressions"), { l: "Engagement", n: 1, h: x => num(x.engagement) }, col("social_stats", "clicks")], { entity: "social_stats", emptyMsg: "Aucun relevé sur la période." }), addBtn("social_stats", "Relevé", null, "btn sm pri") + exportBtn("social_stats"));
 } };
 
 /* ================================================================ vues : Ads Manager */
@@ -994,14 +1001,15 @@ VIEWS["projects/funding"] = { range: true, fn: async () => {
 VIEWS.settings = { fn: async () => {
   const s = S.boot.settings;
   const cronCmd = "/usr/local/bin/php ~/public_html/marketing/cron.php > /dev/null 2>&1";
-  const usage = (await api("platforms_usage")).usage;
-  S.platState = { plats: Object.entries(S.boot.enums.platforms).map(([key, label]) => ({ key, label })), usage };
-  return `<div class="set-grid">
+  const usage = (await api("channels_usage")).usage;
+  S.chanState = { items: s.channels.map(c => ({ key: c.key, label: c.label, social: !!c.social })), usage };
+  return `${card("📣 Canaux de communication", `<p class="sub" style="margin:-4px 0 10px">Tous les canaux forment la liste « Canal (source) » des leads, questions et projets. Cochez <b>Réseau social</b> pour ceux qui sont aussi suivis dans Social Media (publications, performances) et associables aux funnels. Renommer un canal ou changer son type garde les données déjà saisies.</p>
+      <p class="small muted" id="chanCount" style="margin:0 0 8px"></p>
+      <div class="stages" id="chanRows"></div>
+      <div class="toolbar" style="margin:12px 0 0"><button type="button" class="btn sm" id="chanAdd">＋ Ajouter un canal</button><span class="grow"></span><button type="button" class="btn pri" id="chanSave">Enregistrer les canaux</button></div>`, "", "channels")}
+  <div class="set-grid">
     ${card("Organisation", `<div class="form" style="grid-template-columns:1fr 1fr"><div class="fld"><label for="sOrg">Nom</label><input type="text" id="sOrg" value="${esc(s.org)}"></div><div class="fld"><label for="sCur">Devise</label><input type="text" id="sCur" value="${esc(s.currency)}"></div>
       <div class="fld full"><label for="sCom">Commerciaux (un par ligne)</label><textarea id="sCom" rows="5">${esc(s.commercials.join("\n"))}</textarea><small>Proposés dans « Commercial responsable » des leads et des questions.</small></div></div>`)}
-    ${card("Réseaux sociaux", `<p class="sub" style="margin:-4px 0 10px">Utilisés dans Social Media, Funnel Analytics et pour filtrer les sources des leads. Renommer un réseau garde ses publications et relevés déjà saisis.</p>
-      <div class="stages" id="platStages"></div>
-      <div class="toolbar" style="margin:10px 0 0"><button type="button" class="btn sm" id="platAdd">＋ Ajouter un réseau</button><span class="grow"></span><button type="button" class="btn pri sm" id="platSave">Enregistrer les réseaux</button></div>`)}
     ${card("Rapports automatiques par email", `<div class="form" style="grid-template-columns:1fr"><div class="fld"><label for="sRec">Destinataires (une adresse par ligne)</label><textarea id="sRec" rows="4">${esc(s.recipients.join("\n"))}</textarea></div>
       <div class="checks"><label><input type="checkbox" id="sD"${s.send_daily ? " checked" : ""}> Quotidien (chaque matin, la veille)</label><label><input type="checkbox" id="sW"${s.send_weekly ? " checked" : ""}> Hebdomadaire (le lundi)</label><label><input type="checkbox" id="sM"${s.send_monthly ? " checked" : ""}> Mensuel (le 1er)</label></div>
       <div class="fld"><label for="sUrl">Adresse du tableau de bord (lien dans les emails)</label><input type="url" id="sUrl" value="${esc(s.dashboard_url)}" placeholder="${esc(S.boot.url)}"></div>
@@ -1027,55 +1035,62 @@ VIEWS.settings = { fn: async () => {
     try { const d = await api("test_mail", {}, { email: $("#sTest").value }); toast("Email de test envoyé à " + d.to); } catch (e) { toast(e.message); }
   });
 
-  // Réseaux sociaux : liste modifiable (ajouter, renommer, réordonner, retirer).
-  const st = S.platState;
-  const drawPlats = () => {
-    $("#platStages").innerHTML = st.plats.map((p, i) => {
-      const n = p.key ? st.usage[p.key] : 0;
-      return `<div class="plat-row" data-i="${i}" data-key="${esc(p.key)}"><span class="num">${i + 1}</span>
-        <input type="text" data-k="label" value="${esc(p.label)}" placeholder="ex. YouTube" aria-label="Nom du réseau ${i + 1}">
-        <span class="usage">${n ? n + " donnée(s)" : ""}</span>
+  // Canaux de communication : ajouter, renommer, cocher « réseau social », réordonner, retirer.
+  const st = S.chanState;
+  const box = $("#chanRows");
+  const draw = () => {
+    box.innerHTML = st.items.map((c, i) => {
+      const n = c.key ? st.usage[c.key] || 0 : 0;
+      return `<div class="chan-row" data-i="${i}" data-key="${esc(c.key)}"><span class="num">${i + 1}</span>
+        <input type="text" class="lbl" data-k="label" value="${esc(c.label)}" placeholder="ex. Webinars" aria-label="Nom du canal ${i + 1}">
+        <label class="soc"><input type="checkbox" data-k="social"${c.social ? " checked" : ""}> Réseau social</label>
+        <span class="usage">${n ? num(n) + " donnée(s)" : ""}</span>
         <span class="ctrl"><button type="button" class="icon-btn" data-mv="${i}:-1" title="Monter">↑</button><button type="button" class="icon-btn" data-mv="${i}:1" title="Descendre">↓</button><button type="button" class="icon-btn del" data-rm="${i}" title="Retirer">✕</button></span></div>`;
     }).join("");
+    count();
   };
-  const syncPlats = () => {
-    st.plats = $$(".plat-row[data-i]", $("#platStages")).map(r => ({ key: r.dataset.key || "", label: $("[data-k=label]", r).value }));
+  const sync = () => {
+    st.items = $$(".chan-row[data-i]", box).map(r => ({ key: r.dataset.key || "", label: $("[data-k=label]", r).value, social: $("[data-k=social]", r).checked }));
   };
-  drawPlats();
-  $("#platAdd").addEventListener("click", () => {
-    if (st.plats.length >= 12) return toast("12 réseaux sociaux au maximum.");
-    syncPlats();
-    st.plats.push({ key: "", label: "" });
-    drawPlats();
-    const inputs = $$("#platStages [data-k=label]");
-    inputs[inputs.length - 1].focus();
+  const count = () => {
+    const soc = $$("[data-k=social]", box).filter(x => x.checked).length;
+    $("#chanCount").textContent = `${st.items.length} canal(aux) · ${soc} réseau(x) social(aux) · ${st.items.length - soc} autre(s) canal(aux)`;
+  };
+  draw();
+  box.addEventListener("change", count);
+  $("#chanAdd").addEventListener("click", () => {
+    if (st.items.length >= 40) return toast("40 canaux au maximum.");
+    sync();
+    st.items.push({ key: "", label: "", social: false });
+    draw();
+    $$("[data-k=label]", box).pop().focus();
   });
-  $("#platStages").addEventListener("click", e => {
+  box.addEventListener("click", e => {
     const mv = e.target.closest("[data-mv]"), rm = e.target.closest("[data-rm]");
     if (mv) {
-      syncPlats();
+      sync();
       const [i, d] = mv.dataset.mv.split(":").map(Number);
       const j = i + d;
-      if (j >= 0 && j < st.plats.length) { [st.plats[i], st.plats[j]] = [st.plats[j], st.plats[i]]; drawPlats(); }
+      if (j >= 0 && j < st.items.length) { [st.items[i], st.items[j]] = [st.items[j], st.items[i]]; draw(); }
     }
     if (rm) {
-      syncPlats();
-      if (st.plats.length <= 1) return toast("Gardez au moins un réseau social.");
-      const p = st.plats[+rm.dataset.rm];
-      const n = p.key ? st.usage[p.key] : 0;
-      if (n && !confirm(`« ${p.label} » est cité par ${n} donnée(s) (publications, relevés…). Le retirer de la liste ? Les données déjà saisies garderont l'ancien nom.`)) return;
-      st.plats.splice(+rm.dataset.rm, 1);
-      drawPlats();
+      sync();
+      if (st.items.length <= 1) return toast("Gardez au moins un canal.");
+      const c = st.items[+rm.dataset.rm];
+      const n = c.key ? st.usage[c.key] || 0 : 0;
+      if (n && !confirm(`« ${c.label} » est cité par ${n} donnée(s) (leads, questions, publications…). Le retirer de la liste ? Les données déjà saisies garderont son nom.`)) return;
+      st.items.splice(+rm.dataset.rm, 1);
+      draw();
     }
   });
-  $("#platSave").addEventListener("click", async () => {
-    syncPlats();
-    if (st.plats.some(p => !p.label.trim())) return toast("Donnez un nom à chaque réseau.");
+  $("#chanSave").addEventListener("click", async () => {
+    sync();
+    if (st.items.some(c => !c.label.trim())) return toast("Donnez un nom à chaque canal.");
     try {
-      const d = await api("settings_save", {}, { social_platforms: st.plats.map(p => ({ key: p.key, label: p.label.trim() })) });
+      const d = await api("settings_save", {}, { channels: st.items.map(c => ({ key: c.key, label: c.label.trim(), social: c.social })) });
       S.boot.settings = d.settings; S.boot.enums = d.enums;
       S.cache.clear();
-      toast("Réseaux sociaux enregistrés ✓");
+      toast("Canaux de communication enregistrés ✓");
       route();
     } catch (e) { toast(e.message); }
   });
@@ -1103,7 +1118,15 @@ function optionsFor(entity, k, f, v, vals) {
   }
   const opts = Object.assign({}, EN(f.opts));
   if (v && !(v in opts)) opts[v] = v;
-  return (f.req ? "" : `<option value="">${esc(f.empty || "—")}</option>`) + Object.entries(opts).map(([o, l]) => `<option value="${esc(o)}"${o === v ? " selected" : ""}>${esc(l)}</option>`).join("");
+  const opt = ([o, l]) => `<option value="${esc(o)}"${o === v ? " selected" : ""}>${esc(l)}</option>`;
+  const head = f.req ? (v ? "" : '<option value="" disabled selected>— Choisir —</option>') : `<option value="">${esc(f.empty || "—")}</option>`;
+  if (f.opts === "sources") {
+    const soc = EN("platforms");
+    const all = Object.entries(opts);
+    const groups = [["Réseaux sociaux", all.filter(([o]) => o in soc)], ["Autres canaux", all.filter(([o]) => !(o in soc))]].filter(g => g[1].length);
+    return head + groups.map(([l, list]) => `<optgroup label="${esc(l)}">${list.map(opt).join("")}</optgroup>`).join("");
+  }
+  return head + Object.entries(opts).map(opt).join("");
 }
 function fieldHtml(entity, k, f, v, vals) {
   const id = "f_" + k, req = f.req ? " required" : "";

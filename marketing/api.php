@@ -4,7 +4,7 @@
  * même mot de passe et même session que /admin (connexion via ../admin/api.php).
  *
  * GET  bootstrap                         réglages, schéma des formulaires, listes, référentiels
- * GET  platforms_usage                   nombre de publications / relevés par réseau social
+ * GET  channels_usage                    nombre de données qui citent chaque canal de communication
  * GET  list      entity, from?, to?      lignes d'une table (filtrées par date si la table en a une)
  * POST save      {entity, id?, row}      crée ou modifie une ligne
  * POST patch     {entity, id, field, value}  modifie un seul champ (ex. statut d'un lead)
@@ -114,13 +114,12 @@ try {
             break;
         }
 
-        case 'platforms_usage': {
-            // Combien de publications et de relevés citent chaque réseau (pour avertir avant d'en retirer un).
+        case 'channels_usage': {
+            // Combien de données citent chaque canal (pour avertir avant d'en retirer un).
             $out = [];
-            foreach (mk_social_platforms() as $k => $l) {
-                $n = (int) qv('SELECT COUNT(*) FROM posts WHERE platform = ?', [$k])
-                    + (int) qv('SELECT COUNT(*) FROM social_stats WHERE platform = ?', [$k]);
-                if ($n) $out[$k] = $n;
+            foreach (mk_channels() as $c) {
+                $n = mk_channel_usage($c['key']);
+                if ($n) $out[$c['key']] = $n;
             }
             ok(['usage' => $out]);
             break;
@@ -308,7 +307,6 @@ try {
             if ($schema['date'] !== '' && $from !== '') { $where[] = "{$schema['date']} >= ?"; $p[] = $from; }
             if ($schema['date'] !== '' && $to !== '') { $where[] = "{$schema['date']} <= ?"; $p[] = $to; }
             $rows = q("SELECT * FROM $e" . ($where ? ' WHERE ' . implode(' AND ', $where) : '') . ' ORDER BY ' . ($schema['date'] !== '' ? $schema['date'] . ' DESC, ' : '') . 'id DESC', $p);
-            $enums = mk_enums();
             $refNames = [];
             foreach ($schema['fields'] as $k => $fd) {
                 if ($fd['t'] !== 'ref') continue;
@@ -329,8 +327,8 @@ try {
                 $line = [$r['id']];
                 foreach ($schema['fields'] as $k => $fd) {
                     $v = $r[$k];
-                    if ($fd['t'] === 'enum') $v = $enums[$fd['opts']][$v] ?? $v;
-                    elseif ($fd['t'] === 'multi') $v = implode(', ', array_map(fn ($x) => $enums[$fd['opts']][$x] ?? $x, array_filter(explode(',', (string) $v))));
+                    if ($fd['t'] === 'enum') $v = $v === '' ? '' : mk_label($fd['opts'], $v);
+                    elseif ($fd['t'] === 'multi') $v = implode(', ', array_map(fn ($x) => mk_label($fd['opts'], $x), array_filter(explode(',', (string) $v))));
                     elseif ($fd['t'] === 'ref') $v = $v === null ? '' : ($refNames[$k][$v] ?? ('#' . $v));
                     elseif ($fd['t'] === 'money') $v = str_replace('.', ',', (string) (float) $v);
                     $line[] = $cell($v);
