@@ -90,7 +90,7 @@ function mk_meta_state(bool $reload = false): array
     $raw = qv('SELECT v FROM settings WHERE k = ?', ['meta']);
     $d = $raw ? json_decode((string) $raw, true) : [];
     $cache = array_merge([
-        'app_id' => '', 'app_secret' => '', 'user_token' => '', 'token_kind' => '', 'user_id' => '', 'user_name' => '',
+        'app_id' => '', 'app_secret' => '', 'config_id' => '', 'user_token' => '', 'token_kind' => '', 'user_id' => '', 'user_name' => '',
         'token_expires' => 0, 'connected_at' => 0, 'page_id' => '', 'page_name' => '', 'page_token' => '', 'ig_id' => '',
         'ig_username' => '', 'ad_accounts' => [], 'fx' => 1.0, 'backfill' => 30, 'questions' => true,
         'default_profile' => 'investisseur', 'rules' => [], 'last_sync' => 0, 'last_until' => '', 'last_result' => null,
@@ -203,7 +203,8 @@ function mk_meta_public(): array
     $exp = (int) $st['token_expires'];
     return [
         'connected' => mk_meta_connected(),
-        'app_source' => mk_meta_app_source(), 'app_id' => $appId,
+        'app_source' => mk_meta_app_source(), 'app_id' => $appId, 'config_id' => $st['config_id'],
+        'app_url' => $appId !== '' ? 'https://developers.facebook.com/apps/' . rawurlencode($appId) . '/' : '',
         'redirect_uri' => mk_meta_redirect_uri(), 'scopes' => MK_META_SCOPES,
         'user_name' => $st['user_name'], 'token_kind' => $st['token_kind'], 'token_expires' => $exp,
         'days_left' => $exp ? (int) floor(($exp - time()) / 86400) : null, 'connected_at' => (int) $st['connected_at'],
@@ -287,10 +288,12 @@ function mk_meta_login_url(string $state): string
 {
     [$appId] = mk_meta_app();
     if ($appId === '') throw new MkInputError("Renseignez d'abord l'app Meta (ID et clé secrète) dans Connexions.");
-    return 'https://www.facebook.com/' . MK_META_GRAPH_VERSION . '/dialog/oauth?' . http_build_query([
-        'client_id' => $appId, 'redirect_uri' => mk_meta_redirect_uri(), 'state' => $state,
-        'response_type' => 'code', 'scope' => implode(',', MK_META_SCOPES),
-    ]);
+    $q = ['client_id' => $appId, 'redirect_uri' => mk_meta_redirect_uri(), 'state' => $state, 'response_type' => 'code'];
+    // App « Facebook Login for Business » : les autorisations viennent de sa configuration (config_id).
+    $cfg = mk_meta_state()['config_id'];
+    if ($cfg !== '') $q['config_id'] = $cfg;
+    else $q['scope'] = implode(',', MK_META_SCOPES);
+    return 'https://www.facebook.com/' . MK_META_GRAPH_VERSION . '/dialog/oauth?' . http_build_query($q);
 }
 
 /** Code reçu de Facebook → jeton longue durée (≈ 60 jours), enregistré chiffré. */
@@ -394,6 +397,11 @@ function mk_meta_select(array $in): array
     if (array_key_exists('questions', $in)) $patch['questions'] = (bool) $in['questions'];
     if (array_key_exists('default_profile', $in)) $patch['default_profile'] = array_key_exists((string) $in['default_profile'], mk_enums()['contact_types']) ? (string) $in['default_profile'] : 'investisseur';
     if (array_key_exists('rules', $in) && is_array($in['rules'])) $patch['rules'] = mk_meta_clean_rules($in['rules']);
+    if (array_key_exists('config_id', $in)) {
+        $cfg = preg_replace('/\D/', '', (string) $in['config_id']);
+        if ($cfg !== '' && strlen($cfg) < 5) throw new MkInputError("L'ID de configuration est un long nombre : copiez-le depuis Facebook Login for Business › Configurations.");
+        $patch['config_id'] = $cfg;
+    }
     if (array_key_exists('app_id', $in) || array_key_exists('app_secret', $in)) {
         $id = preg_replace('/\D/', '', (string) ($in['app_id'] ?? ''));
         $sec = trim((string) ($in['app_secret'] ?? ''));

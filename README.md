@@ -969,6 +969,15 @@ Menu **Connexions** du tableau de bord, en trois étapes :
    `https://dehini.com/marketing/meta.php` (affichée avec un bouton « Copier »), puis coller l'App ID et la clé
    secrète dans Connexions. Tant que l'app est « en développement », seuls ses administrateurs peuvent se connecter :
    c'est suffisant pour ce tableau de bord.
+   **« URL bloquée » chez Facebook** = l'adresse de retour n'est pas autorisée dans l'app (y compris quand c'est l'app
+   d'ecom.dehini.com qui est reprise). Dans l'app Meta › Facebook Login (ou Facebook Login for Business) ›
+   Paramètres : activer « Connexion OAuth cliente » et « Connexion OAuth Web », ajouter
+   `https://dehini.com/marketing/meta.php` (exactement l'adresse affichée dans Connexions, avec son bouton « Copier »)
+   dans « URI de redirection OAuth valides », enregistrer ; dans Paramètres › Général, `dehini.com` doit figurer dans
+   « Domaines de l'app ». Si l'adresse affichée n'a pas le bon domaine ou commence par `http://`, régler « Adresse du
+   tableau de bord » dans Réglages (`https://dehini.com/marketing/`). Une app « Facebook Login for Business » peut
+   refuser les autorisations demandées (« Invalid Scopes ») : créer une configuration (Jeton d'accès utilisateur, avec
+   les autorisations listées ci-dessous) et coller son ID dans Connexions.
 2. **Connexion** — « Se connecter avec Facebook » (autorisations en lecture seule : `pages_show_list`,
    `pages_read_engagement`, `pages_read_user_content`, `read_insights`, `business_management`, `instagram_basic`,
    `instagram_manage_insights`, `instagram_manage_comments`, `ads_read`, `leads_retrieval`, `pages_manage_ads` ;
