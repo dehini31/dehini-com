@@ -106,7 +106,7 @@ const catIc = (cat, cls = "sm") => { const m = CAT_META[cat] || CAT_META.other; 
 /** Icône et couleur des indicateurs du rapport. */
 const KMETA = { leads: ["user-plus", "blue"], qualified: ["check-circle", "green"], qual_rate: ["check-circle", "green"], inquiries: ["message", "teal"], project_requests: ["folder", "pink"], raised: ["coins", "green"], visits: ["globe", "blue"], registrations: ["user-plus", "violet"], web_conv: ["trend", "violet"], ads_spend: ["wallet", "orange"], ads_leads: ["target", "orange"], cpl: ["coins", "orange"], posts: ["megaphone", "violet"], social_reach: ["share", "violet"], emails_sent: ["mail", "teal"], email_conversions: ["check-circle", "teal"] };
 /** Les titres de cartes commencent souvent par un emoji : on le remplace par une tuile d'icône. */
-const EMOJI_ICON = { "👥": ["users", "blue"], "💬": ["message", "teal"], "📁": ["folder", "pink"], "🌐": ["globe", "blue"], "📱": ["share", "violet"], "📢": ["target", "orange"], "✉️": ["mail", "teal"], "📊": ["funnel", "violet"], "📣": ["megaphone", "violet"], "🎯": ["target", "orange"], "💰": ["wallet", "orange"], "🗄": ["archive", "violet"], "🔔": ["bell", "amber"], "⏳": ["clock", "amber"], "💹": ["rocket", "green"], "✍️": ["edit", "violet"], "🔗": ["link", "blue"], "📤": ["send", "teal"], "👁": ["eye", "teal"], "📈": ["trend", "violet"] };
+const EMOJI_ICON = { "👥": ["users", "blue"], "💬": ["message", "teal"], "📁": ["folder", "pink"], "🌐": ["globe", "blue"], "📱": ["share", "violet"], "📢": ["target", "orange"], "✉️": ["mail", "teal"], "📊": ["funnel", "violet"], "📣": ["megaphone", "violet"], "🎯": ["target", "orange"], "💰": ["wallet", "orange"], "🗄": ["archive", "violet"], "🔔": ["bell", "amber"], "⏳": ["clock", "amber"], "💹": ["rocket", "green"], "✍️": ["edit", "violet"], "🔗": ["link", "blue"], "📤": ["send", "teal"], "👁": ["eye", "teal"], "📈": ["trend", "violet"], "🔥": ["zap", "pink"] };
 function titleWithIcon(title) {
   for (const [e, [n, t]] of Object.entries(EMOJI_ICON)) if (title.startsWith(e + " ")) return tile(n, t, "sm") + title.slice(e.length + 1);
   return title;
@@ -269,7 +269,7 @@ const NAV = [
   { id: "email", ic: "mail", label: "Email Marketing", tabs: [["campaigns", "Campagnes"], ["performance", "Performance"]] },
   { id: "funnels", ic: "funnel", label: "Funnel Analytics", tabs: [["list", "Funnels"], ["stages", "Étapes & canaux"], ["conversions", "Conversions"]] },
   { group: "Commercial" },
-  { id: "leads", ic: "users", label: "Leads & Contacts", tabs: [["contacts", "Leads"], ["questions", "Questions"], ["profiles", "Profils"], ["sources", "Qualité par canal"], ["assignment", "Assignation"], ["treatment", "Traitement"]] },
+  { id: "leads", ic: "users", label: "Leads & Contacts", tabs: [["contacts", "Leads"], ["messages", "Messages"], ["questions", "Questions"], ["profiles", "Profils"], ["sources", "Qualité par canal"], ["assignment", "Assignation"], ["treatment", "Traitement"]] },
   { id: "projects", ic: "folder", label: "Projets", tabs: [["requests", "Demandes"], ["funding", "En financement"]] },
   { id: "settings", ic: "settings", label: "Réglages", tabs: [], hidden: true },
 ];
@@ -754,6 +754,7 @@ VIEWS["overview/daily"] = { fn: async (param, tok) => {
     ["stale", "Sans contact depuis 48\u00a0h", "Leads à rappeler en priorité", "alert-c", "pink", b.stale, "#leads/treatment/nouveau"],
     ["untreated", "Leads à traiter", "Nouveaux ou contactés, pas encore qualifiés", "users", "orange", b.untreated, "#leads/treatment/nouveau"],
     ["unassigned", "Leads sans commercial", "À confier à un commercial", "user-plus", "blue", b.unassigned, "#leads/assignment"],
+    ["messages", "Messages sans réponse", "Messenger et Instagram : à répondre ou à transformer en prospect", "message", "blue", +S.boot.messages_waiting || 0, "#leads/messages/attente"],
     ["open_inquiries", "Questions sans réponse", "Nouvelles ou en cours", "message", "teal", b.open_inquiries, "#leads/questions"],
     ["pending_projects", "Projets à étudier", "Demandes reçues ou en étude", "folder", "violet", b.pending_projects, "#projects/requests"],
   ];
@@ -913,7 +914,7 @@ function inquiryCols() {
   return [
     { l: "Reçue le", h: q => fdate(q.date) },
     { l: "Canal", h: q => chCell(q.source) },
-    { l: "De", h: q => `<b>${esc(q.name || "Anonyme")}</b>${metaTag(q)}<div class="sub">${esc(q.contact || "")}${q.type ? " · " + esc(L("contact_types", q.type)) : ""}</div>` },
+    { l: "De", h: q => `<b>${esc(q.name || (q.link ? "Nom masqué par Meta" : "Anonyme"))}</b>${metaTag(q)}<div class="sub">${q.link ? `<a href="${esc(q.link)}" target="_blank" rel="noopener">${ic("link", "xs")} ${q.source === "instagram" ? "Voir la publication" : "Voir le commentaire"}</a>` : esc(q.contact || "")}${q.type ? " · " + esc(L("contact_types", q.type)) : ""}</div>` },
     { l: "Question", wrap: 1, h: q => `<span class="pill">${esc(L("inq_categories", q.category))}</span><div class="sub">${esc(q.question)}</div>${q.answer ? `<div class="sub">↳ ${esc(q.answer.slice(0, 160))}</div>` : ""}` },
     { l: "Pris en charge", h: q => inlineSel("inquiries", q, "assigned_to") },
     { l: "Statut", h: q => inlineSel("inquiries", q, "status") },
@@ -926,6 +927,114 @@ function catChips(base, sel, rows, key) {
   return `<div class="chips"><a class="chip${!sel || sel === "all" ? " on" : ""}" href="#${base}">Tous les canaux (${num(rows.length)})</a>${TX().categories.filter(c => counts[c.key]).map(c => `<a class="chip${sel === c.key ? " on" : ""}" href="#${base}/${c.key}">${catIc(c.key)} ${esc(c.label)} (${num(counts[c.key])})</a>`).join("")}${counts.other ? `<a class="chip${sel === "other" ? " on" : ""}" href="#${base}/other">Canaux retirés (${num(counts.other)})</a>` : ""}</div>`;
 }
 const inCat = (sel, key) => r => !sel || sel === "all" ? true : (catOf(r[key]) || "other") === sel;
+
+/* ================================================================ vue : Messages (Messenger, Instagram) */
+const HEAT = { chaud: ["Chaud", "crit"], tiede: ["Tiède", "warn"], froid: ["Froid", ""] };
+const PLAT = { messenger: ["Messenger", "message", "blue"], instagram: ["Instagram", "share", "pink"] };
+const CONV_FILTERS = [["all", "Toutes"], ["attente", "Sans réponse"], ["chaud", "Chaudes"], ["coordonnees", "Avec coordonnées"], ["sans", "Sans prospect"], ["prospects", "Prospects créés"], ["ignore", "Ignorées"]];
+const convWho = c => c.name || (c.who_username ? "@" + c.who_username : "Inconnu");
+const convIn = (f, c) => f === "attente" ? !+c.last_from_me && c.status !== "ignore" : f === "chaud" ? c.heat === "chaud" : f === "coordonnees" ? !!(c.phone || c.email)
+  : f === "sans" ? !c.contact_id && c.status !== "ignore" : f === "prospects" ? !!c.contact_id : f === "ignore" ? c.status === "ignore" : c.status !== "ignore";
+const minutes = v => v == null ? "—" : v < 60 ? num(v) + " min" : v < 1440 ? num(v / 60, 1) + " h" : num(v / 1440, 1) + " j";
+const initial = s => (String(s || "?").replace(/^@/, "").trim().charAt(0) || "?").toUpperCase();
+
+VIEWS["leads/messages"] = { range: true, fn: async param => {
+  const [from, to] = curRange();
+  const d = await api("conversations", { from, to });
+  S.convs = d.rows;
+  const st = d.stats, f = CONV_FILTERS.some(x => x[0] === param) ? param : "all";
+  if (!d.meta.connected) return empty("Les messages arrivent de Meta. Connectez votre Page Facebook (et son compte Instagram) dans Connexions : les conversations Messenger et Instagram s'afficheront ici, analysées.", `<a class="btn pri" href="#connexions/meta">${ic("link", "sm")} Relier Facebook et Instagram</a>`, { icon: ["message", "teal"] });
+  if (!d.rows.length) return `${!d.meta.messages ? `<div class="banner warn">${ic("alert", "sm")}<span>L'import des messages est désactivé : activez-le dans <a href="#connexions/meta">Connexions</a> › étape 3.</span></div>` : ""}`
+    + empty("Aucune conversation sur la période. Lancez une synchronisation dans Connexions : il faut les autorisations pages_messaging et instagram_manage_messages dans votre configuration Facebook Login for Business.", `<a class="btn pri" href="#connexions/meta">${ic("trend", "sm")} Synchroniser</a>`, { icon: ["message", "teal"] });
+  const t = (l, v, sub, m, cls = "") => `<div class="kpi ${cls}">${tile(m[0], m[1])}<small>${esc(l)}</small><b>${v}</b><span class="d">${sub}</span></div>`;
+  const counts = Object.fromEntries(CONV_FILTERS.map(([k]) => [k, d.rows.filter(c => convIn(k, c)).length]));
+  return `<div class="kpis k6">${t("Conversations", num(st.total), esc(rangeLabel()), ["message", "teal"])}${t("Sans réponse", num(st.waiting), st.waiting ? "le dernier message vient de la personne" : "tout le monde a eu une réponse", ["clock", "amber"], st.waiting ? "warn" : "")}`
+    + `${t("Conversations chaudes", num(st.hot), "intention forte ou coordonnées laissées", ["zap", "pink"])}${t("Avec téléphone ou email", num(st.with_contact), pct(ratio(st.with_contact, st.total)) + " des conversations", ["phone", "green"])}`
+    + `${t("Prospects créés", num(st.prospects), pct(ratio(st.prospects, st.total)) + " des conversations", ["user-plus", "blue"])}${t("Première réponse", minutes(st.reply_median), "délai médian", ["send", "violet"])}</div>`
+    + `<div class="grid3">${card("💬 Sujets", mapBars(st.by_category, "inq_categories", st.total))}${card("🔥 Chaleur", hbars(["chaud", "tiede", "froid"].filter(k => st.by_heat[k]).map(k => ({ label: HEAT[k][0], value: st.by_heat[k], sub: pct(st.by_heat[k] / st.total) }))))}${card("👥 Profils détectés", hbars(Object.entries(st.by_profile).map(([k, v]) => ({ label: k === "autre" ? "Non détecté" : L("contact_types", k), value: v, sub: pct(v / st.total) }))))}</div>`
+    + `<div class="chips">${CONV_FILTERS.map(([k, l]) => `<a class="chip${f === k ? " on" : ""}" href="#leads/messages${k === "all" ? "" : "/" + k}">${esc(l)} (${num(counts[k])})</a>`).join("")}</div>`
+    + `<section class="card"><div class="card-h"><h2>${tile("message", "teal", "sm")}Conversations</h2><div class="ctrl"><label class="field-search">${ic("search", "sm")}<input type="search" id="cvQ" placeholder="Nom, message, téléphone…" aria-label="Rechercher une conversation"></label></div></div><div id="cvList"></div></section>`;
+}, after: param => {
+  const f = CONV_FILTERS.some(x => x[0] === param) ? param : "all";
+  const list = $("#cvList");
+  if (!list) return;
+  const draw = () => {
+    const q = foldTxt($("#cvQ").value || "");
+    const rows = S.convs.filter(c => convIn(f, c) && (!q || foldTxt([convWho(c), c.snippet, c.phone, c.email, c.city].join(" ")).includes(q)));
+    list.innerHTML = rows.length ? `<div class="inbox">${rows.map(c => {
+      const p = PLAT[c.platform] || PLAT.messenger, h = HEAT[c.heat] || HEAT.froid;
+      return `<div class="cv${+c.last_from_me ? "" : " waiting"}" data-cv="${c.id}">
+        <span class="av t-${p[2]}">${esc(initial(convWho(c)))}<i>${ic(p[1], "xs")}</i></span>
+        <span class="cv-main"><span class="cv-top"><b>${esc(convWho(c))}</b><span class="muted small">${esc(p[0])} · ${esc(ago(Date.parse(String(c.updated).replace(" ", "T")) / 1000))}</span></span>
+          <span class="cv-snip">${+c.last_from_me ? `<span class="muted">Vous : </span>` : ""}<bdi dir="auto">${esc(c.snippet || "")}</bdi></span>
+          <span class="cv-tags"><span class="pill ${h[1]}">${h[0]} · ${num(c.score)}</span>${c.category && c.category !== "autre" ? `<span class="pill blue">${esc(L("inq_categories", c.category))}</span>` : ""}${c.profile ? `<span class="pill">${esc(L("contact_types", c.profile))}</span>` : ""}${c.phone ? `<span class="chip static">${ic("phone", "xs")} ${esc(c.phone)}</span>` : ""}${c.email ? `<span class="chip static">${ic("mail", "xs")} ${esc(c.email)}</span>` : ""}${c.city ? `<span class="chip static">${ic("globe", "xs")} ${esc(c.city)}</span>` : ""}${+c.last_from_me ? "" : '<span class="pill warn">Sans réponse</span>'}</span></span>
+        <span class="cv-act">${c.contact_id ? `<a class="btn sm" href="javascript:void 0" data-edit="contacts:${c.contact_id}">${ic("check-circle", "sm")} Prospect</a>` : c.status === "ignore" ? `<button type="button" class="btn sm ghost" data-cvst="${c.id}:a_traiter">Rétablir</button>` : `<button type="button" class="btn sm pri" data-cvp="${c.id}">${ic("user-plus", "sm")} Créer le prospect</button>`}
+          <button type="button" class="btn sm" data-cvo="${c.id}">${ic("eye", "sm")} Lire</button></span></div>`;
+    }).join("")}</div>` : empty("Aucune conversation ne correspond à ce filtre.", "", { icon: ["search", "violet"] });
+  };
+  $("#cvQ").addEventListener("input", draw);
+  list.addEventListener("click", async e => {
+    const o = e.target.closest("[data-cvo]"), p = e.target.closest("[data-cvp]"), s2 = e.target.closest("[data-cvst]");
+    if (o) return openConversation(+o.dataset.cvo);
+    if (p) return openProspect(+p.dataset.cvp);
+    if (s2) { const [id, st] = s2.dataset.cvst.split(":"); try { await api("conv_status", {}, { id: +id, status: st }); S.cache.clear(); route(); } catch (err) { toast(err.message, "err"); } }
+  });
+  draw();
+} };
+
+/** Fil de discussion, avec l'analyse et les actions. */
+async function openConversation(id) {
+  let d;
+  try { d = await api("conversation", { id }); } catch (err) { return toast(err.message, "err"); }
+  const c = d.conversation, p = PLAT[c.platform] || PLAT.messenger, h = HEAT[c.heat] || HEAT.froid;
+  const row = (l, v) => v ? `<div class="rv"><span class="rv-l">${l}</span><span class="rv-v">${v}</span></div>` : "";
+  openModal(`<div class="thread-h"><span class="av t-${p[2]}">${esc(initial(c.name))}<i>${ic(p[1], "xs")}</i></span><div><h2 style="margin:0">${esc(c.name)}</h2><span class="muted small">${esc(p[0])} · ${num(c.message_count)} message(s)${c.who_username ? " · @" + esc(c.who_username) : ""}</span></div></div>
+    <div class="thread-grid"><div class="thread">${d.messages.map(m => `<div class="bub${+m.from_me ? " me" : ""}"><span dir="auto">${esc(m.text)}</span><small>${esc(fdate(String(m.at).slice(0, 10)) + " · " + String(m.at).slice(11, 16))}</small></div>`).join("") || '<p class="muted">Aucun message importé.</p>'}</div>
+    <div class="thread-side"><h3 style="margin-top:0">Analyse</h3><div class="rv-list">${row("Chaleur", `<span class="pill ${h[1]}">${h[0]} · ${num(c.score)}/100</span>`)}${row("Sujet", esc(L("inq_categories", c.category || "autre")))}${row("Profil", c.profile ? esc(L("contact_types", c.profile)) : '<span class="muted">non détecté</span>')}${row("Question posée", +c.is_question ? "Oui" : "Non")}${row("Intention", +c.interest ? "Forte (veut investir, être rappelé…)" : "—")}${row("Téléphone", esc(c.phone))}${row("Email", esc(c.email))}${row("Wilaya", esc(c.city))}${row("1re réponse", c.reply_minutes != null ? minutes(+c.reply_minutes) : "")}</div>
+      <div class="toolbar" style="margin:12px 0 0;flex-direction:column;align-items:stretch">${d.contact ? `<button type="button" class="btn" data-edit="contacts:${d.contact.id}">${ic("check-circle", "sm")} Voir le prospect : ${esc(d.contact.name)}</button>` : `<button type="button" class="btn pri" id="thProspect">${ic("user-plus", "sm")} Créer le prospect</button>`}
+        <a class="btn" href="${esc(c.link)}" target="_blank" rel="noopener">${ic("send", "sm")} Répondre dans Meta Business Suite</a>
+        ${d.contact ? "" : c.status === "ignore" ? `<button type="button" class="btn ghost" id="thIgn" data-st="a_traiter">Rétablir dans la liste</button>` : `<button type="button" class="btn ghost" id="thIgn" data-st="ignore">Ignorer (pas un prospect)</button>`}</div>
+      <p class="small muted" style="margin:10px 0 0">Le tableau de bord lit les messages, il n'en envoie jamais : répondez depuis Meta Business Suite.</p></div></div>
+    <div class="form-foot"><button type="button" class="btn" data-close>Fermer</button></div>`);
+  const th = $(".thread"); if (th) th.scrollTop = th.scrollHeight;
+  if ($("#thProspect")) $("#thProspect").addEventListener("click", () => openProspect(id, d));
+  if ($("#thIgn")) $("#thIgn").addEventListener("click", async e => {
+    try { await api("conv_status", {}, { id, status: e.target.dataset.st }); closeModal(); toast(e.target.dataset.st === "ignore" ? "Conversation ignorée" : "Conversation rétablie"); S.cache.clear(); route(); } catch (err) { toast(err.message, "err"); }
+  });
+}
+
+/** Formulaire du prospect, prérempli avec ce que l'analyse a trouvé (à relire avant d'enregistrer). */
+async function openProspect(id, d = null) {
+  if (!d) { try { d = await api("conversation", { id }); } catch (err) { return toast(err.message, "err"); } }
+  const c = d.conversation;
+  const source = c.platform === "instagram" ? "instagram" : (channelOf("messenger") ? "messenger" : "facebook");
+  const opts = (en, v, empty) => (empty ? `<option value="">${esc(empty)}</option>` : "") + Object.entries(EN(en)).map(([k, l]) => `<option value="${esc(k)}"${k === v ? " selected" : ""}>${esc(l)}</option>`).join("");
+  const name = c.who_name || (c.who_username ? "@" + c.who_username : "");
+  openModal(`<div class="imp">${tile("user-plus", "blue")}<h2>Créer le prospect</h2>
+    <p class="muted" style="margin-top:-4px">Prérempli avec la conversation ${c.platform === "instagram" ? "Instagram" : "Messenger"} : vérifiez, complétez, puis enregistrez. Si la même personne existe déjà (même téléphone ou email), elle est reliée au lieu d'être recréée.</p>
+    <form id="pForm" class="form" novalidate>
+      <div class="fld"><label for="pN">Nom complet <span class="req">*</span></label><input type="text" id="pN" value="${esc(name)}" placeholder="Nom de la personne"></div>
+      <div class="fld"><label for="pT">Profil</label><select id="pT">${opts("contact_types", c.profile || S.boot.meta.default_profile || "investisseur")}</select></div>
+      <div class="fld"><label for="pP">Téléphone</label><input type="text" id="pP" value="${esc(c.phone)}" placeholder="0X XX XX XX XX"></div>
+      <div class="fld"><label for="pE">Email</label><input type="email" id="pE" value="${esc(c.email)}"></div>
+      <div class="fld"><label for="pC">Wilaya / ville</label><input type="text" id="pC" value="${esc(c.city)}"></div>
+      <div class="fld"><label for="pA">Commercial responsable</label><select id="pA">${opts("commercials", "", "Non assigné")}</select></div>
+      <div class="fld full"><label for="pO">Note (facultatif)</label><textarea id="pO" rows="2" placeholder="ex. veut investir 100 000 DA, rappeler après 18 h"></textarea><small>Le lien de la conversation et ses derniers messages sont ajoutés tout seuls aux notes du prospect.</small></div>
+    </form><p class="form-err" id="pErr"></p>
+    <div class="form-foot"><button type="button" class="btn" data-close>Annuler</button><button type="button" class="btn pri" id="pGo">${ic("user-plus", "sm")} Créer le prospect</button></div></div>`);
+  $("#pN").focus();
+  $("#pGo").addEventListener("click", async e => {
+    if (!$("#pN").value.trim()) { $("#pErr").textContent = "Donnez au moins un nom (même provisoire) au prospect."; return; }
+    e.target.disabled = true;
+    try {
+      const r = await api("conv_prospect", {}, { id, contact: { name: $("#pN").value, type: $("#pT").value, phone: $("#pP").value, email: $("#pE").value, city: $("#pC").value, assigned_to: $("#pA").value, notes: $("#pO").value, source } });
+      closeModal();
+      toast(r.linked ? `Conversation reliée au lead existant « ${r.contact.name} »` : `Prospect « ${r.contact.name} » créé dans Leads & Contacts`);
+      S.cache.clear();
+      route();
+    } catch (err) { $("#pErr").textContent = err.message; e.target.disabled = false; }
+  });
+}
 
 VIEWS["leads/questions"] = { range: true, fn: async param => {
   const all = await rangeList("inquiries");
@@ -1305,7 +1414,7 @@ VIEWS["connexions/meta"] = { fn: async param => {
        <span class="grow"></span>${appOk ? `<a class="btn sm" href="meta.php?start=1">${ic("link", "sm")} Reconnecter</a>` : ""}<button type="button" class="btn sm del" id="mOff">${ic("logout", "sm")} Déconnecter</button></div>
        ${m.days_left != null && m.days_left >= 0 && m.days_left <= 10 && m.token_kind !== "manual" ? `<p class="small" style="margin:10px 0 0">Les connexions Facebook durent environ 60 jours : cliquez sur « Reconnecter » avant l'échéance, ou utilisez un jeton d'utilisateur système qui n'expire pas.</p>` : ""}`
     : `${m.oauth_error ? `<div class="banner warn">${ic("alert", "sm")} ${esc(m.oauth_error)}</div>` : ""}
-       <p class="muted" style="margin-top:0">Autorisations demandées, toutes en <b>lecture seule</b> : rien n'est publié, modifié ni dépensé chez Meta.</p>
+       <p class="muted" style="margin-top:0">Le tableau de bord ne fait que <b>lire</b> : il ne publie rien, n'envoie aucun message et ne dépense rien chez Meta.</p>
        ${appOk ? allowBox : ""}
        ${appOk ? `<div class="cfg"><div class="cfg-h"><label for="mCfg"><b>ID de configuration</b></label>${m.config_id ? '<span class="pill good">Enregistré</span>' : '<span class="pill warn">À renseigner si Facebook affiche « config_id est requis »</span>'}</div>
          <p class="small muted">Nécessaire quand l'app utilise <b>Facebook Login for Business</b> : les autorisations viennent alors d'une configuration créée dans l'app.</p>
@@ -1440,7 +1549,7 @@ VIEWS["connexions/meta"] = { fn: async param => {
     <div class="form" style="margin-top:14px"><div class="fld" id="mFxBox"><label for="mFx">Taux de conversion</label><div class="fx"><span>1 <b id="mFxCur">USD</b> =</span><input type="number" id="mFx" min="0" step="any" value="${esc(m.fx)}"><span>${esc(curr)}</span></div><small>Les montants Meta (budgets, dépenses) sont convertis en ${esc(curr)}.</small></div>
       <div class="fld"><label for="mBack">Première importation</label><select id="mBack">${[30, 60, 90].map(n => `<option value="${n}"${+m.backfill === n ? " selected" : ""}>${n} derniers jours</option>`).join("")}</select></div>
       <div class="fld"><label for="mProf">Profil d'un lead impossible à classer</label><select id="mProf">${Object.entries(EN("contact_types")).map(([k, l]) => `<option value="${k}"${m.default_profile === k ? " selected" : ""}>${esc(l)}</option>`).join("")}</select></div>
-      <div class="fld full"><div class="checks"><label><input type="checkbox" id="mQ"${m.questions ? " checked" : ""}> Importer les commentaires qui posent une question (dans Leads & Contacts › Questions)</label></div></div></div>
+      <div class="fld full"><div class="checks"><label><input type="checkbox" id="mQ"${m.questions ? " checked" : ""}> Importer les commentaires qui posent une question (dans Leads & Contacts › Questions)</label><label><input type="checkbox" id="mM"${m.messages ? " checked" : ""}> Importer et analyser les messages Messenger et Instagram (dans Leads & Contacts › Messages)</label></div></div></div>
     <div class="toolbar" style="margin:14px 0 0"><button type="button" class="btn pri" id="mSave">Enregistrer ces choix</button></div>`;
   const draw = which => {
     if (!which || which === "page") el("mPg").innerHTML = drawPage();
@@ -1482,7 +1591,7 @@ VIEWS["connexions/meta"] = { fn: async param => {
   el("mSave").addEventListener("click", async e => {
     const b = e.target; b.disabled = true;
     try {
-      await api("meta_save", {}, { page_id: sel.page, ad_accounts: [...sel.ads], fx: el("mFxBox").hidden ? 1 : el("mFx").value, backfill: +el("mBack").value, default_profile: el("mProf").value, questions: el("mQ").checked });
+      await api("meta_save", {}, { page_id: sel.page, ad_accounts: [...sel.ads], fx: el("mFxBox").hidden ? 1 : el("mFx").value, backfill: +el("mBack").value, default_profile: el("mProf").value, questions: el("mQ").checked, messages: el("mM").checked });
       toast(m.last_sync ? "Choix enregistrés" : "Choix enregistrés : lancez la première synchronisation");
       route();
     } catch (err) { toast(err.message, "err"); b.disabled = false; }

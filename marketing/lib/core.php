@@ -195,6 +195,7 @@ function mk_schema(): array
             'status'      => f('enum', 'Statut', ['opts' => 'inq_status', 'req' => 1, 'def' => 'nouveau']),
             'assigned_to' => f('enum', 'Pris en charge par', ['opts' => 'commercials', 'empty' => 'Personne']),
             'answer'      => f('longtext', 'Réponse apportée'),
+            'link'        => f('url', 'Lien (commentaire, message…)'),
         ]],
         'projects' => ['label' => 'Projet', 'date' => 'date', 'title' => 'name', 'fields' => [
             'date'          => f('date', 'Date de la demande', ['req' => 1, 'def' => 'today']),
@@ -372,7 +373,7 @@ function db(): PDO
 function mk_migrate(PDO $pdo): void
 {
     $pdo->exec('CREATE TABLE IF NOT EXISTS settings (k TEXT PRIMARY KEY, v TEXT NOT NULL)');
-    $hash = md5(json_encode(mk_schema()) . '|v3');
+    $hash = md5(json_encode(mk_schema()) . '|v4');
     $s = $pdo->prepare('SELECT v FROM settings WHERE k = ?');
     $s->execute(['schema_hash']);
     if ($s->fetchColumn() === $hash) return;
@@ -444,6 +445,49 @@ function mk_migrate(PDO $pdo): void
         $pdo->exec("CREATE UNIQUE INDEX IF NOT EXISTS {$t}_ext ON $t(ext_id) WHERE ext_id != ''");
     }
     $pdo->exec(<<<SQL
+    -- Conversations Messenger et Instagram (importées de Meta), analysées pour en faire des prospects.
+    CREATE TABLE IF NOT EXISTS conversations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ext_id TEXT NOT NULL UNIQUE,
+        platform TEXT NOT NULL DEFAULT '',
+        channel TEXT NOT NULL DEFAULT '',
+        who_id TEXT NOT NULL DEFAULT '',
+        who_name TEXT NOT NULL DEFAULT '',
+        who_username TEXT NOT NULL DEFAULT '',
+        updated TEXT NOT NULL DEFAULT '',
+        first_date TEXT NOT NULL DEFAULT '',
+        last_date TEXT NOT NULL DEFAULT '',
+        message_count INTEGER NOT NULL DEFAULT 0,
+        in_count INTEGER NOT NULL DEFAULT 0,
+        out_count INTEGER NOT NULL DEFAULT 0,
+        last_from_me INTEGER NOT NULL DEFAULT 0,
+        snippet TEXT NOT NULL DEFAULT '',
+        link TEXT NOT NULL DEFAULT '',
+        category TEXT NOT NULL DEFAULT '',
+        profile TEXT NOT NULL DEFAULT '',
+        heat TEXT NOT NULL DEFAULT '',
+        score INTEGER NOT NULL DEFAULT 0,
+        is_question INTEGER NOT NULL DEFAULT 0,
+        interest INTEGER NOT NULL DEFAULT 0,
+        phone TEXT NOT NULL DEFAULT '',
+        email TEXT NOT NULL DEFAULT '',
+        city TEXT NOT NULL DEFAULT '',
+        reply_minutes INTEGER,
+        contact_id INTEGER,
+        status TEXT NOT NULL DEFAULT 'a_traiter',
+        created INTEGER NOT NULL DEFAULT 0,
+        synced INTEGER NOT NULL DEFAULT 0
+    );
+    CREATE INDEX IF NOT EXISTS conversations_d ON conversations(last_date);
+    CREATE TABLE IF NOT EXISTS conversation_messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        conv_id INTEGER NOT NULL,
+        ext_id TEXT NOT NULL UNIQUE,
+        from_me INTEGER NOT NULL DEFAULT 0,
+        text TEXT NOT NULL DEFAULT '',
+        at TEXT NOT NULL DEFAULT ''
+    );
+    CREATE INDEX IF NOT EXISTS conversation_messages_c ON conversation_messages(conv_id, at);
     -- Données importées puis supprimées par l'équipe : à ne pas réimporter.
     CREATE TABLE IF NOT EXISTS ext_ignored (ext_id TEXT PRIMARY KEY, at INTEGER NOT NULL DEFAULT 0);
     -- Historique des synchronisations avec Meta.
@@ -730,6 +774,8 @@ function mk_delete(string $entity, int $id): void
         }
         if ($entity === 'funnels') $pdo->prepare('DELETE FROM funnel_stages WHERE funnel_id = ?')->execute([$id]);
         if ($entity === 'projects') $pdo->prepare('DELETE FROM project_history WHERE project_id = ?')->execute([$id]);
+        // Un prospect supprimé : sa conversation redevient « à traiter ».
+        if ($entity === 'contacts') $pdo->prepare("UPDATE conversations SET contact_id = NULL, status = 'a_traiter' WHERE contact_id = ?")->execute([$id]);
         // Une donnée importée (Meta…) puis supprimée ne doit pas revenir à la synchronisation suivante.
         if (in_array($entity, MK_EXT_TABLES, true)) {
             $ext = (string) qv("SELECT ext_id FROM $entity WHERE id = ?", [$id]);
