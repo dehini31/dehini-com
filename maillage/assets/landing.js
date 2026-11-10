@@ -12,6 +12,11 @@
   // Icônes posées dans la page : <i data-ico="map-pin"></i>
   $$('[data-ico]').forEach((el) => { el.outerHTML = icon(el.dataset.ico); });
 
+  // Page entièrement statique (pas de contenu d'utilisateur) : traduction en bloc.
+  ML.translateDom(document.body);
+  $('#lang-slot-d').outerHTML = ML.langToggle('on-dark');
+  $('#lang-slot-m').outerHTML = ML.langToggle('on-dark');
+
   /* ------------------------------------------------------------------ menu */
   const nav = $('#nav');
   const onScroll = () => nav.classList.toggle('is-solid', window.scrollY > 24);
@@ -86,7 +91,7 @@
   };
   ML.bootstrap().then((boot) => {
     const zones = boot.zones.slice().sort((a, b) => a.name.localeCompare(b.name, 'fr'));
-    $('#s-zone').insertAdjacentHTML('beforeend', html`${zones.map((z) => html`<option value="${z.code}">${z.name}</option>`)}`);
+    $('#s-zone').insertAdjacentHTML('beforeend', html`${zones.map((z) => html`<option value="${z.code}">${ML.zoneName(z)}</option>`)}`);
     $('#s-sector').insertAdjacentHTML('beforeend', html`${boot.categories.map((c) => html`<option value="${c.key}">${c.label}</option>`)}`);
     if (!boot.config.demo) $$('[data-act="demo"]').forEach((b) => { b.hidden = true; });
     const c = boot.counts;
@@ -99,7 +104,7 @@
   }).catch(() => { $('#en-direct').hidden = true; });
   api('me').then((me) => {
     if (!me.user) return;
-    $$('.nav-login, .nav-login-d').forEach((a) => { a.textContent = 'Mon espace'; });
+    $$('.nav-login, .nav-login-d').forEach((a) => { a.textContent = ML.t('Mon espace'); });
   }).catch(() => {});
 
   /* ------------------------------------- carte en direct (chargée à l'approche) */
@@ -117,12 +122,12 @@
         const cluster = ML.clusters().addTo(map);
         stores.forEach((s) => {
           cluster.addLayer(L.marker([s.lat, s.lng], { icon: ML.pin(ML.TYPE_COLORS[s.type]), title: s.name })
-            .bindPopup(html`<b>${s.name}</b><br><span class="muted">${s.address || s.city}</span><br><a class="link" href="explorer/#/pdv/${s.id}">Voir le point de vente</a>`.toString()));
+            .bindPopup(html`<b>${s.name}</b><br><span class="muted">${s.address || s.city}</span><br><a class="link" href="explorer/#/pdv/${s.id}">${ML.t('Voir le point de vente')}</a>`.toString()));
         });
         map.fitBounds(L.latLngBounds(stores.map((s) => [s.lat, s.lng])).pad(0.1), { maxZoom: 12, animate: false });
-        $('#live-count').textContent = ML.fmt.plural(stores.length, 'point de vente', 'points de vente') + ' en ligne';
+        $('#live-count').textContent = ML.fmt.plural(stores.length, 'point de vente', 'points de vente') + ' ' + ML.t('en ligne');
       } catch (e) {
-        box.innerHTML = html`<div class="live-wait"><p>La carte n'a pas pu se charger. <a class="link" href="explorer/">Ouvrir la plateforme</a></p></div>`;
+        box.innerHTML = html`<div class="live-wait"><p>${ML.t("La carte n'a pas pu se charger.")} <a class="link" href="explorer/">${ML.t('Ouvrir la plateforme')}</a></p></div>`;
       }
     };
     if ('IntersectionObserver' in window) {
@@ -138,18 +143,18 @@
     const btn = $('button[type=submit]', f);
     const err = $('[data-error]', f);
     const stop = (msg, field) => { err.textContent = msg; err.hidden = false; if (field) f[field].focus(); };
-    if (d.company.trim().length < 2) return stop('Indiquez le nom de votre entreprise.', 'company');
-    if (d.name.trim().length < 2) return stop('Indiquez votre nom.', 'name');
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(d.email.trim())) return stop('Vérifiez votre adresse email.', 'email');
-    if (d.password.length < 8) return stop('Le mot de passe doit contenir au moins 8 caractères.', 'password');
-    if (!d.accept) return stop('Merci d\'accepter les conditions d\'utilisation.');
+    if (d.company.trim().length < 2) return stop(ML.t('Indiquez le nom de votre entreprise.'), 'company');
+    if (d.name.trim().length < 2) return stop(ML.t('Indiquez votre nom.'), 'name');
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(d.email.trim())) return stop(ML.t('Vérifiez votre adresse email.'), 'email');
+    if (d.password.length < 8) return stop(ML.t('Le mot de passe doit contenir au moins 8 caractères.'), 'password');
+    if (!d.accept) return stop(ML.t('Merci d\'accepter les conditions d\'utilisation.'));
     ML.busy(btn, true);
     try {
       await api('signup', { body: d });
       location.href = 'espace/';
     } catch (e) {
       ML.busy(btn, false);
-      if (e.code === 'exists') { err.innerHTML = html`Un compte existe déjà avec cette adresse. <a class="link" href="espace/">Se connecter</a>`; err.hidden = false; } else ML.fail(e, f);
+      if (e.code === 'exists') { err.innerHTML = html`${ML.t('Un compte existe déjà avec cette adresse.')} <a class="link" href="espace/">${ML.t('Se connecter')}</a>`; err.hidden = false; } else ML.fail(e, f);
     }
   };
   ML.actions.demo = async (el) => {
@@ -159,21 +164,21 @@
 
   /* ------------------------------------------------------------ conditions */
   ML.actions.terms = () => ML.modal({
-    title: 'Conditions d\'utilisation',
+    title: ML.t('Conditions d\'utilisation'),
     wide: true,
     body: html`
       <div class="terms">
-        <h3>Votre espace</h3>
-        <p>Vous créez un compte pour une entreprise que vous représentez, avec des informations exactes. Vous êtes responsable de ce que vous publiez : points de vente, produits, prix et disponibilités.</p>
-        <h3>Publication</h3>
-        <p>Une inscription peut être vérifiée avant que le réseau n'apparaisse sur la carte. Un contenu trompeur, illicite ou sans rapport avec la vente de produits peut être retiré, et l'espace suspendu.</p>
-        <h3>Commandes et réservations</h3>
-        <p>La plateforme transmet la demande du client au point de vente choisi. La vente se conclut entre le client et ce point de vente, qui confirme, prépare, encaisse (au retrait ou à la livraison) et assure le service après-vente.</p>
-        <h3>Données</h3>
-        <p>Les informations du compte (nom, email, téléphone) servent à gérer votre espace. Pour une commande, le nom, le téléphone et, s'ils sont fournis, l'email et l'adresse du client sont transmis au point de vente concerné, uniquement pour la traiter. Les recherches des visiteurs sont comptées sans leur identité, avec une position arrondie à la ville, pour produire les statistiques. Aucune donnée n'est revendue.</p>
-        <h3>Suppression</h3>
-        <p>Vous pouvez demander à tout moment la suppression de votre espace et de ses données.</p>
+        <h3>${ML.t('Votre espace')}</h3>
+        <p>${ML.t("Vous créez un compte pour une entreprise que vous représentez, avec des informations exactes. Vous êtes responsable de ce que vous publiez : points de vente, produits, prix et disponibilités.")}</p>
+        <h3>${ML.t('Publication')}</h3>
+        <p>${ML.t("Une inscription peut être vérifiée avant que le réseau n'apparaisse sur la carte. Un contenu trompeur, illicite ou sans rapport avec la vente de produits peut être retiré, et l'espace suspendu.")}</p>
+        <h3>${ML.t('Commandes et réservations')}</h3>
+        <p>${ML.t("La plateforme transmet la demande du client au point de vente choisi. La vente se conclut entre le client et ce point de vente, qui confirme, prépare, encaisse (au retrait ou à la livraison) et assure le service après-vente.")}</p>
+        <h3>${ML.t('Données')}</h3>
+        <p>${ML.t("Les informations du compte (nom, email, téléphone) servent à gérer votre espace. Pour une commande, le nom, le téléphone et, s'ils sont fournis, l'email et l'adresse du client sont transmis au point de vente concerné, uniquement pour la traiter. Les recherches des visiteurs sont comptées sans leur identité, avec une position arrondie à la ville, pour produire les statistiques. Aucune donnée n'est revendue.")}</p>
+        <h3>${ML.t('Suppression')}</h3>
+        <p>${ML.t("Vous pouvez demander à tout moment la suppression de votre espace et de ses données.")}</p>
       </div>`,
-    foot: html`<button class="btn btn-dark" type="button" data-close>J'ai compris</button>`,
+    foot: html`<button class="btn btn-dark" type="button" data-close>${ML.t("J'ai compris")}</button>`,
   });
 })();

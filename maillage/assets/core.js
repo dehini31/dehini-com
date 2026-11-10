@@ -141,19 +141,19 @@
     if (!h || !h.days || !h.days.length) return { open: null, label: '' };
     const { day, min } = nowLocal();
     const o = toMin(h.open); const c = toMin(h.close);
-    if (h.days.includes(day) && min >= o && min < c) return { open: true, label: 'Ouvert · ferme à ' + h.close };
+    if (h.days.includes(day) && min >= o && min < c) return { open: true, label: ML.t('Ouvert · ferme à') + ' ' + h.close };
     for (let i = 0; i < 8; i++) {
       const d = (day + i) % 7;
       if (h.days.includes(d) && (i > 0 || min < o)) {
-        return { open: false, label: 'Fermé · ouvre ' + (i === 0 ? '' : i === 1 ? 'demain ' : DAYS[d] + ' ') + 'à ' + h.open };
+        return { open: false, label: ML.t('Fermé · ouvre') + ' ' + (i === 0 ? '' : i === 1 ? ML.t('demain') + ' ' : ML.DAYS[d] + ' ') + ML.t('à') + ' ' + h.open };
       }
     }
-    return { open: false, label: 'Fermé' };
+    return { open: false, label: ML.t('Fermé') };
   };
   ML.hoursText = (h) => {
     if (!h || !h.days || !h.days.length) return '';
     const closed = [0, 1, 2, 3, 4, 5, 6].filter((d) => !h.days.includes(d));
-    const days = closed.length === 0 ? 'Tous les jours' : closed.length <= 2 ? 'Tous les jours sauf ' + closed.map((d) => DAYS[d]).join(' et ') : h.days.map((d) => DAYS[d]).join(' ');
+    const days = closed.length === 0 ? ML.t('Tous les jours') : closed.length <= 2 ? ML.t('Tous les jours sauf') + ' ' + closed.map((d) => ML.DAYS[d]).join(' ' + ML.t('et') + ' ') : h.days.map((d) => ML.DAYS[d]).join(' ');
     return days + ' · ' + h.open + ' – ' + h.close;
   };
   ML.DAYS = DAYS;
@@ -182,7 +182,7 @@
     navigator.geolocation.getCurrentPosition((pos) => {
       const pt = { lat: pos.coords.latitude, lng: pos.coords.longitude };
       const z = ML.nearestZone(pt);
-      const loc = { lat: pt.lat, lng: pt.lng, label: 'Ma position', zone: z ? z.code : '', precise: true };
+      const loc = { lat: pt.lat, lng: pt.lng, label: ML.t('Ma position'), zone: z ? z.code : '', precise: true };
       ML.setLoc(loc);
       resolve(loc);
     }, (err) => reject(new Error(err.code === 1 ? 'Position refusée. Choisissez plutôt votre ville.' : 'Position introuvable. Choisissez plutôt votre ville.')), { enableHighAccuracy: false, timeout: 9000, maximumAge: 300000 });
@@ -267,9 +267,9 @@
     o = o || {};
     let answer = false;
     const m = ML.modal({
-      title: o.title || 'Confirmer',
+      title: o.title || ML.t('Confirmer'),
       body: html`<p>${message}</p>`,
-      foot: html`<button class="btn btn-line" type="button" data-close>Annuler</button><button class="btn ${o.danger ? 'btn-danger' : 'btn-primary'}" type="button" data-yes>${o.ok || 'Confirmer'}</button>`,
+      foot: html`<button class="btn btn-line" type="button" data-close>${ML.t('Annuler')}</button><button class="btn ${o.danger ? 'btn-danger' : 'btn-primary'}" type="button" data-yes>${o.ok || ML.t('Confirmer')}</button>`,
       onClose: () => resolve(answer),
     });
     m.el.querySelector('[data-yes]').addEventListener('click', () => { answer = true; m.close(); });
@@ -403,12 +403,12 @@
     cancelled: { label: 'Annulée', cls: 'badge-bad', icon: 'x' },
   };
   ML.statusLabel = (o) => {
-    if (o.status === 'done') return o.mode === 'delivery' ? 'Livrée' : 'Retirée';
-    return ML.STATUS[o.status] ? ML.STATUS[o.status].label : o.status;
+    if (o.status === 'done') return o.mode === 'delivery' ? ML.t('Livrée') : ML.t('Retirée');
+    return ML.STATUS[o.status] ? ML.t(ML.STATUS[o.status].label) : o.status;
   };
   ML.statusBadge = (o) => {
     const s = ML.STATUS[o.status] || { cls: '', icon: 'circle' };
     return html`<span class="badge ${s.cls}">${icon(s.icon)}${ML.statusLabel(o)}</span>`;
   };
-  ML.kindLabel = (o) => (o.kind === 'reservation' ? 'Réservation' : o.mode === 'delivery' ? 'Livraison' : 'Retrait en magasin');
+  ML.kindLabel = (o) => (o.kind === 'reservation' ? ML.t('Réservation') : o.mode === 'delivery' ? ML.t('Livraison') : ML.t('Retrait en magasin'));
 })();

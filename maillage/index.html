@@ -2,6 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
+<script src="assets/lang-boot.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Maillage — La plateforme des points de vente et des réseaux de distribution</title>
 <meta name="description" content="Carte interactive de vos points de vente, catalogue, disponibilité des produits par magasin, commandes et réservations, analyses de la demande : gérez votre réseau de distribution dans un seul espace.">
@@ -16,9 +17,10 @@
 <meta name="twitter:card" content="summary">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=DM+Sans:opsz,wght@9..40,400..700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=DM+Sans:opsz,wght@9..40,400..700&family=Readex+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/base.css">
 <link rel="stylesheet" href="assets/landing.css">
+<link rel="stylesheet" href="assets/rtl.css">
 </head>
 <body class="lp">
 
@@ -32,9 +34,11 @@
     <a href="#questions">Questions</a>
     <a class="nav-login" href="espace/">Connexion</a>
   </nav>
-  <a class="btn btn-glass btn-sm nav-login-d" href="espace/">Connexion</a>
+  <span id="lang-slot-d"></span>
+<a class="btn btn-glass btn-sm nav-login-d" href="espace/">Connexion</a>
   <a class="btn btn-primary btn-sm" href="#inscription">Créer mon espace</a>
-  <button class="nav-burger" type="button" data-act="nav" aria-label="Menu" aria-controls="nav-links" aria-expanded="false"><i data-ico="menu"></i></button>
+  <span id="lang-slot-m"></span>
+<button class="nav-burger" type="button" data-act="nav" aria-label="Menu" aria-controls="nav-links" aria-expanded="false"><i data-ico="menu"></i></button>
 </header>
 
 <main>
@@ -325,6 +329,7 @@
 
 <script src="assets/icons.js" defer></script>
 <script src="assets/core.js" defer></script>
+<script src="assets/i18n.js" defer></script>
 <script src="assets/landing.js" defer></script>
 </body>
 </html>

@@ -1013,6 +1013,16 @@ Les six fonctions :
    disponibilité), et **expansion** : les wilayas où l'on cherche les produits sans point de vente à moins de
    30 km, classées par nombre de recherches.
 
+**Français / arabe** — les quatre pages (landing, plateforme publique, espace entreprise, administration) sont
+bilingues : un bouton FR/AR (en haut de chaque page) bascule la langue, mémorisée par appareil (`localStorage`),
+avec mise en page RTL (sens de lecture, icônes directionnelles, carte, tableaux) et police Readex Pro (déjà
+utilisée pour l'arabe sur le Défi Impact, pour rester cohérent visuellement). Le dictionnaire de traduction
+(`assets/i18n.js`) ne touche que les textes fixes de l'interface, jamais le contenu saisi par les entreprises ou
+les clients (noms de produits, adresses, notes…), pour ne jamais l'altérer. Limites connues : les emails
+(confirmation de commande, mot de passe oublié…) restent en français ; quelques libellés de wilaya résolus
+côté serveur (zone de livraison d'une commande, ville d'un distributeur dans l'annuaire réseau) s'affichent aussi
+en français faute du code de wilaya transmis à ces endroits précis.
+
 ### Organisation
 
 - `maillage/index.html` + `assets/landing.{css,js}` — la landing.
@@ -1092,7 +1102,6 @@ Voir `tests/maillage/README.md`.
 
 ### Ce qui n'est pas fait
 
-- Une seule langue (français). Les textes sont dans les fichiers `assets/*.js` et `index.html`.
 - Pas de paiement en ligne, ni de frais de livraison calculés : le point de vente s'arrange avec le client.
 - Une commande porte sur un produit (une déclinaison, une quantité) dans un point de vente ; il n'y a pas de panier
   multi-produits.
