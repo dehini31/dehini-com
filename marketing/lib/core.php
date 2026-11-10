@@ -316,6 +316,9 @@ function mk_schema(): array
     return $s;
 }
 
+/** Tables qui reçoivent des données importées automatiquement (colonne ext_id). */
+const MK_EXT_TABLES = ['posts', 'social_stats', 'campaigns', 'ad_results', 'contacts', 'inquiries'];
+
 /** Tables qui servent de listes de référence (chargées en entier par le navigateur). */
 const MK_REF_ENTITIES = ['campaigns', 'pages', 'emails', 'funnels'];
 
@@ -367,7 +370,7 @@ function db(): PDO
 function mk_migrate(PDO $pdo): void
 {
     $pdo->exec('CREATE TABLE IF NOT EXISTS settings (k TEXT PRIMARY KEY, v TEXT NOT NULL)');
-    $hash = md5(json_encode(mk_schema()) . '|v2');
+    $hash = md5(json_encode(mk_schema()) . '|v3');
     $s = $pdo->prepare('SELECT v FROM settings WHERE k = ?');
     $s->execute(['schema_hash']);
     if ($s->fetchColumn() === $hash) return;
@@ -432,6 +435,27 @@ function mk_migrate(PDO $pdo): void
         if (!$has) $pdo->prepare('UPDATE funnel_stages SET channels = ? WHERE id = (SELECT id FROM funnel_stages WHERE funnel_id = ? ORDER BY position, id LIMIT 1)')->execute([$fu['social'], (int) $fu['id']]);
         $pdo->prepare("UPDATE funnels SET social = '' WHERE id = ?")->execute([(int) $fu['id']]);
     }
+    // Données importées automatiquement (Meta…) : leur identifiant d'origine, pour les mettre à jour sans doublon.
+    foreach (MK_EXT_TABLES as $t) {
+        $have = array_column($pdo->query("PRAGMA table_info($t)")->fetchAll(), 'name');
+        if (!in_array('ext_id', $have, true)) $pdo->exec("ALTER TABLE $t ADD COLUMN ext_id TEXT NOT NULL DEFAULT ''");
+        $pdo->exec("CREATE UNIQUE INDEX IF NOT EXISTS {$t}_ext ON $t(ext_id) WHERE ext_id != ''");
+    }
+    $pdo->exec(<<<SQL
+    -- Données importées puis supprimées par l'équipe : à ne pas réimporter.
+    CREATE TABLE IF NOT EXISTS ext_ignored (ext_id TEXT PRIMARY KEY, at INTEGER NOT NULL DEFAULT 0);
+    -- Historique des synchronisations avec Meta.
+    CREATE TABLE IF NOT EXISTS meta_sync_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        at INTEGER NOT NULL,
+        date_from TEXT NOT NULL DEFAULT '',
+        date_to TEXT NOT NULL DEFAULT '',
+        ok INTEGER NOT NULL DEFAULT 1,
+        added INTEGER NOT NULL DEFAULT 0,
+        updated INTEGER NOT NULL DEFAULT 0,
+        result TEXT NOT NULL DEFAULT ''
+    );
+    SQL);
     $pdo->prepare('INSERT OR REPLACE INTO settings (k, v) VALUES (?, ?)')->execute(['schema_hash', $hash]);
 }
 
@@ -704,6 +728,14 @@ function mk_delete(string $entity, int $id): void
         }
         if ($entity === 'funnels') $pdo->prepare('DELETE FROM funnel_stages WHERE funnel_id = ?')->execute([$id]);
         if ($entity === 'projects') $pdo->prepare('DELETE FROM project_history WHERE project_id = ?')->execute([$id]);
+        // Une donnée importée (Meta…) puis supprimée ne doit pas revenir à la synchronisation suivante.
+        if (in_array($entity, MK_EXT_TABLES, true)) {
+            $ext = (string) qv("SELECT ext_id FROM $entity WHERE id = ?", [$id]);
+            if ($ext !== '') $pdo->prepare('INSERT OR REPLACE INTO ext_ignored (ext_id, at) VALUES (?, ?)')->execute([$ext, time()]);
+            if ($entity === 'campaigns') {
+                foreach (q("SELECT ext_id FROM ad_results WHERE campaign_id = ? AND ext_id != ''", [$id]) as $r) $pdo->prepare('INSERT OR REPLACE INTO ext_ignored (ext_id, at) VALUES (?, ?)')->execute([$r['ext_id'], time()]);
+            }
+        }
         $pdo->prepare("DELETE FROM $entity WHERE id = ?")->execute([$id]);
         $pdo->commit();
     } catch (Throwable $e) {

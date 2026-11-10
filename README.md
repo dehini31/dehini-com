@@ -868,7 +868,9 @@ Ouvrir `https://dehini.com/marketing/` (lien « 📈 Marketing Dashboard » dans
   départ, validation, migration des anciennes listes.
 - `marketing/lib/report.php` — calcul des rapports, performance de la communication (niveau 3), comparaisons,
   constats et email du rapport.
-- `marketing/cron.php` — envoi automatique des rapports (voir plus bas).
+- `marketing/lib/meta.php` + `marketing/meta.php` — connexion à Facebook, Instagram et Meta Ads (API Graph), import
+  et classement automatique des données (voir « Connexion Meta » plus bas).
+- `marketing/cron.php` — synchronisation Meta et envoi automatique des rapports (voir plus bas).
 
 ### Organisation
 
@@ -876,12 +878,13 @@ Un seul tableau de bord, trois niveaux de suivi : **Daily Monitoring** (gérer l
 Reports** (analyser la semaine ou le mois, générés automatiquement) et **analyse par campagne** (objectifs, budget,
 résultats et funnel de chaque campagne, quel que soit le canal). Chaque donnée n'est saisie qu'une fois, dans sa
 section ; l'Overview et les rapports la reprennent automatiquement. Le menu est rangé en trois groupes :
-**Pilotage** (Overview), **Marketing** (Communication, Social Media, Ads Manager, Website, Email, Funnels) et
+**Pilotage** (Overview, Connexions), **Marketing** (Communication, Social Media, Ads Manager, Website, Email, Funnels) et
 **Commercial** (Leads & Contacts, Projets).
 
 | Menu | Contenu |
 | --- | --- |
 | 🏠 Overview | **Daily Monitoring** (page d'accueil) : « Bonjour, *prénom* », les 5 indicateurs du jour comparés à la veille, l'analyse du jour (les 5 points les plus urgents, les autres sur demande), ce qui a été saisi ce jour-là (onglets Leads, Questions, Actions, Projets), les leads en attente, la liste « À traiter maintenant » (leads sans contact depuis 48 h, à traiter, sans commercial, questions sans réponse, projets à étudier), la saisie rapide, un calendrier du mois (un point sous chaque jour où quelque chose a été saisi ; cliquer un jour ouvre son suivi) et l'activité récente. **Weekly Reports** et **Monthly Reports** : 16 indicateurs comparés à la période précédente, analyse & décisions, leads (évolution, sources, qualité, commerciaux, raisons de non-qualification), questions, projets en cours de financement et montants levés, website, social media, publicité (résultats, budgets, objectifs), emails, communication par canal et support, et funnels. Envoi par email, archivage, CSV, impression / PDF. **Archives** : rapports figés. |
+| 🔗 Connexions | **Facebook · Instagram · Ads** : relier la Page, le compte Instagram et les comptes Meta Ads, synchroniser ; **Classement automatique** : mots-clés de classement (cible, objectif, sujet des questions) ; **Historique** des synchronisations. Voir « Connexion Meta » plus bas. |
 | 📣 Communication | **Actions** : chaque action de communication, saisie avec un assistant pas à pas (voir plus bas). **Performance** (niveau 3) : comparer les canaux, puis les supports à l'intérieur d'un canal (ex. Reels contre carrousels sur Instagram), tableau dépliable catégorie ▸ canal ▸ support, constats « où concentrer les efforts ». **Canaux & supports** (niveaux 1 et 2) : gérer les canaux par catégorie et les supports par type. |
 | 📊 Funnel Analytics | Création d'un funnel (modèle Publicité → Landing Page → Inscription → Investissement), étapes avec objectif chiffré, tags et **canaux de communication** (cochés pour chaque étape, par catégorie : c'est le seul endroit où l'on relie un funnel à des canaux, réseaux sociaux compris), association aux campagnes publicitaires, landing pages et emails. Chaque étape prend ses chiffres dans une **saisie manuelle** ou **automatiquement** dans les éléments associés (clics des campagnes, visites ou inscriptions des pages, ouvertures d'emails, leads liés…), ou dans **les canaux de l'étape** (actions de communication, portée, engagement, clics et conversions de ces actions, leads, leads qualifiés, questions reçues par ces canaux, et relevés des comptes sociaux de ces canaux). Prospects par étape, taux de conversion, taux d'abandon, étape où l'on perd le plus. |
 | 📱 Social Media | Les canaux de la catégorie « Réseaux sociaux » : **Vue d'ensemble** (portée, engagement, abonnés comparés à la période précédente, résultats par réseau, formats qui engagent le plus, dernières actions, liens vers les leads et les actions des réseaux) et **Relevés des comptes** (portée, impressions, engagement, abonnés, clics — à saisir chaque semaine). Les leads, questions et actions des réseaux ne sont pas dupliqués ici : ils sont dans Leads & Contacts et Communication, filtrés sur les réseaux sociaux. |
@@ -950,6 +953,52 @@ section contient et comment la remplir.
 Les semaines vont du lundi au dimanche. Une semaine ou un mois en cours est comparé au même nombre de jours de la
 période précédente (du 1er au 7 novembre contre du 1er au 7 octobre), jamais à une période entière.
 
+### Connexion Meta : Facebook, Instagram, Meta Ads (remplissage et classement automatiques)
+
+Menu **Connexions** du tableau de bord, en trois étapes :
+
+1. **App Meta** — si l'app Meta d'ecom.dehini.com existe (`~/ecom/.env` : `META_APP_ID` / `META_APP_SECRET`), elle
+   est reprise toute seule. Sinon : sur developers.facebook.com, créer une app (type « Entreprise ») reliée au
+   Business Manager de YINVESTI, ajouter **Facebook Login** avec l'URI de redirection
+   `https://dehini.com/marketing/meta.php` (affichée avec un bouton « Copier »), puis coller l'App ID et la clé
+   secrète dans Connexions. Tant que l'app est « en développement », seuls ses administrateurs peuvent se connecter :
+   c'est suffisant pour ce tableau de bord.
+2. **Connexion** — « Se connecter avec Facebook » (autorisations en lecture seule : `pages_show_list`,
+   `pages_read_engagement`, `pages_read_user_content`, `read_insights`, `business_management`, `instagram_basic`,
+   `instagram_manage_insights`, `instagram_manage_comments`, `ads_read`, `leads_retrieval`, `pages_manage_ads` ;
+   rien n'est publié ni modifié chez Meta). La connexion dure environ 60 jours : l'accueil prévient 7 jours avant.
+   Autre méthode, sans expiration : coller un **jeton d'utilisateur système** (Business Manager › Paramètres ›
+   Utilisateurs système › Générer un jeton). Les jetons sont chiffrés (AES-256-GCM) avec une clé rangée hors de
+   `public_html` (`~/marketing-data/meta.key`) et ne sont jamais renvoyés au navigateur.
+3. **Page, Instagram et comptes publicitaires** — choisir la Page Facebook (son compte Instagram professionnel suit),
+   les comptes publicitaires, le taux de conversion si le compte publicitaire est dans une autre devise (ex. 1 USD =
+   250 DA), la profondeur de la première importation (30, 60 ou 90 jours) et l'import des questions en commentaire.
+
+Ce que la synchronisation remplit (bouton « Synchroniser maintenant », et chaque matin avec la tâche cron) :
+
+| Source Meta | Va dans | Classement automatique |
+| --- | --- | --- |
+| Statistiques de la Page et du compte Instagram | Social Media › Relevés des comptes (un relevé par jour : portée, vues, engagement, nouveaux abonnés, abonnés, clics) | canal Facebook / Instagram |
+| Publications, Reels, carrousels, stories | Communication › Actions (portée, vues, engagement, clics, lien) | support (Post, Carrousel, Reel, Story, Live), cible et objectif d'après le texte |
+| Campagnes Meta Ads | Ads Manager › Campagnes (nom, statut, dates, budget converti) et Résultats jour par jour (dépense, impressions, clics, leads, conversions) | objectif Meta → objectif du tableau de bord, cible d'après le nom |
+| Formulaires Lead Ads | Leads & Contacts (nom, téléphone, email, ville, réponses dans les notes, campagne et funnel) | profil investisseur / porteur, canal Meta Ads (ou Facebook / Instagram si organique), support Formulaire |
+| Commentaires qui posent une question (français, arabe, darija) | Leads & Contacts › Questions | sujet (investissement, projet, plateforme, partenariat, réclamation) et profil |
+
+Le classement suit des mots-clés modifiables dans **Connexions › Classement automatique** (avec un champ « Essayer »
+qui montre le résultat en direct). Règles de mise à jour : les chiffres venant de Meta sont mis à jour à chaque
+synchronisation (les 3 derniers jours, et les publications des 14 derniers jours) ; ce que l'équipe complète (statut
+et commercial d'un lead, objectif chiffré et funnel d'une campagne…) n'est jamais écrasé ; une campagne ou un lead déjà
+saisi à la main (même nom de campagne, même téléphone ou email) est relié au lieu d'être dupliqué ; une donnée
+importée puis supprimée n'est pas réimportée. Les lignes importées portent l'étiquette « Meta ». Les indicateurs
+retirés par Meta (impressions remplacées par les vues en 2025, par exemple) sont détectés et remplacés tout seuls par
+leurs successeurs. **Connexions › Historique** garde le détail des 60 dernières synchronisations.
+
+Pour une mise à jour toutes les heures, ajouter une 2e tâche cron (Minute `0`, autres champs `*`) :
+
+```bash
+/usr/local/bin/php ~/public_html/marketing/cron.php --meta-only > /dev/null 2>&1
+```
+
 ### Rapports automatiques par email
 
 1. Dans le tableau de bord → **Réglages** : saisir les destinataires et cocher les rapports voulus (quotidien,
@@ -962,11 +1011,12 @@ période précédente (du 1er au 7 novembre contre du 1er au 7 octobre), jamais 
    /usr/local/bin/php ~/public_html/marketing/cron.php > /dev/null 2>&1
    ```
 
-Chaque matin : rapport de la veille ; le lundi : rapport de la semaine écoulée ; le 1er : rapport du mois écoulé.
-Chaque rapport est aussi **archivé** (Overview → Archives), même sans destinataire. Si la tâche repasse le même jour,
+Chaque matin : synchronisation Meta (si un compte est connecté), puis rapport de la veille ; le lundi : rapport de la
+semaine écoulée ; le 1er : rapport du mois écoulé. Chaque rapport est aussi **archivé** (Overview → Archives), même sans destinataire. Si la tâche repasse le même jour,
 rien n'est envoyé deux fois ; si l'envoi a échoué pour tous les destinataires, il est retenté au passage suivant. `php cron.php --dry-run` affiche ce qui partirait (avec les constats) sans rien envoyer ;
 `--date=2026-11-09` rattrape un jour manqué ; `--force=week` produit un rapport hors de son jour ;
-`--test=adresse@exemple.com` envoie les trois rapports à cette adresse.
+`--test=adresse@exemple.com` envoie les trois rapports à cette adresse ; `--no-meta` saute la synchronisation Meta,
+`--meta-only` ne fait qu'elle.
 
 ## Référencement (SEO)
 
@@ -1083,4 +1133,6 @@ pas mis à jour automatiquement après coup.
 - Marketing Dashboard : réservé à la session de `/admin` (expiration après 12 h), jeton anti-CSRF sur chaque écriture,
   toutes les saisies validées côté serveur à partir du schéma, requêtes SQL préparées, base hors de `public_html` ;
   `config.php`, `cron.php` et `lib/` bloqués en accès direct, page exclue des moteurs de recherche (`noindex` et
-  `robots.txt`) ; exports CSV protégés contre les formules Excel.
+  `robots.txt`) ; exports CSV protégés contre les formules Excel ; connexion Meta en lecture seule, jetons chiffrés
+  hors de `public_html`, jamais envoyés au navigateur, `appsecret_proof` sur chaque appel, retour OAuth vérifié par un
+  jeton `state` lié à la session.

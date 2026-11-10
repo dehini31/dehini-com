@@ -18,6 +18,11 @@
  *   --date=AAAA-MM-JJ       fait comme si on était ce jour-là (rattrapage)
  *   --force=day|week|month  produit ce rapport même si ce n'est pas le jour prévu
  *   --test=adresse@x.com    envoie les trois rapports (veille, semaine, mois écoulés) à cette adresse
+ *   --no-meta               ne synchronise pas Meta avant les rapports
+ *   --meta-only             synchronise Meta, sans produire de rapport (pour une tâche toutes les heures)
+ *
+ * Si un compte Meta est connecté (Connexions), ses données (Facebook, Instagram, Meta Ads, leads)
+ * sont synchronisées avant les rapports, pour qu'ils soient complets.
  */
 declare(strict_types=1);
 
@@ -28,17 +33,32 @@ if (PHP_SAPI !== 'cli') {
 
 require __DIR__ . '/lib/core.php';
 require __DIR__ . '/lib/report.php';
+require __DIR__ . '/lib/meta.php';
 
 function say(string $s): void
 {
     echo '[' . date('Y-m-d H:i:s') . '] ' . $s . "\n";
 }
 
-$opts = getopt('', ['dry-run', 'date:', 'force:', 'test:']);
+$opts = getopt('', ['dry-run', 'date:', 'force:', 'test:', 'no-meta', 'meta-only']);
 $dry = isset($opts['dry-run']);
 $today = isset($opts['date']) && mk_valid_date((string) $opts['date']) ? (string) $opts['date'] : mk_today();
 $force = (array) ($opts['force'] ?? []);
 $S = mk_settings();
+
+// Synchronisation Meta (Facebook, Instagram, Meta Ads, leads) avant les rapports.
+if (!isset($opts['no-meta']) && !$dry && mk_meta_connected()) {
+    try {
+        $m = mk_meta_sync();
+        foreach ($m['steps'] as $st) {
+            $n = array_map(fn ($c) => "{$c['label']} +{$c['added']} / ~{$c['updated']}", $st['counts']);
+            say(($st['status'] === 'error' ? '✗' : ($st['status'] === 'skip' ? '·' : '✓')) . " Meta · {$st['label']} : " . ($n ? implode(', ', $n) : '') . ($st['message'] !== '' ? ' — ' . $st['message'] : ''));
+        }
+    } catch (Throwable $e) {
+        say('✗ Meta : ' . $e->getMessage());
+    }
+}
+if (isset($opts['meta-only'])) exit(0);
 
 // Les trois rapports possibles aujourd'hui : [type, date dans la période, activé ?, prévu aujourd'hui ?]
 $d = new DateTimeImmutable($today);

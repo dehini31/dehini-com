@@ -20,3 +20,9 @@
 // define('MK_SMTP_USER', 'marketing@dehini.com');
 // define('MK_SMTP_PASS', 'mot-de-passe-du-compte-email');
 // define('MK_MAIL_FROM', 'marketing@dehini.com');
+
+// Connexion Meta (Facebook, Instagram, Meta Ads) : l'app Meta se règle normalement dans le tableau de
+// bord (Connexions), ou est reprise d'ecom.dehini.com (~/ecom/.env : META_APP_ID / META_APP_SECRET).
+// define('MK_META_APP_ID', '1234567890123456');
+// define('MK_META_APP_SECRET', '0123456789abcdef0123456789abcdef');
+// define('MK_META_GRAPH_VERSION', 'v24.0');
