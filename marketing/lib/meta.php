@@ -273,9 +273,17 @@ function mk_graph(string $path, array $params = [], string $token = '', string $
     // Preuve de la clé secrète, pour les jetons obtenus avec notre app (un jeton collé peut venir d'une autre app).
     if ($base === '' && $secret !== '' && $st['token_kind'] === 'oauth') $params['appsecret_proof'] = hash_hmac('sha256', $token, $secret);
     foreach ($params as $k => $v) if (is_array($v)) $params[$k] = json_encode($v, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-    $url = rtrim($base === 'ig' ? MK_META_IG_GRAPH_URL : MK_META_GRAPH_URL, '/') . '/' . MK_META_GRAPH_VERSION . '/' . ltrim($path, '/');
+    static $igNoVersion = false; // l'API d'Instagram a refusé le numéro de version : on s'en passe pour la suite
+    $ver = $base === 'ig' && $igNoVersion ? '' : MK_META_GRAPH_VERSION . '/';
+    $url = rtrim($base === 'ig' ? MK_META_IG_GRAPH_URL : MK_META_GRAPH_URL, '/') . '/' . $ver . ltrim($path, '/');
     [$code, $body] = mk_meta_http($url, $params);
     $d = json_decode($body, true);
+    // L'API d'Instagram refuse parfois une version précise (« Unsupported request - method type: get ») : on réessaie sans.
+    if ($base === 'ig' && $ver !== '' && is_array($d) && stripos((string) ($d['error']['message'] ?? ''), 'Unsupported request') !== false) {
+        [$code, $body] = mk_meta_http(rtrim(MK_META_IG_GRAPH_URL, '/') . '/' . ltrim($path, '/'), $params);
+        $d = json_decode($body, true);
+        if (is_array($d) && !isset($d['error'])) $igNoVersion = true;
+    }
     if (!is_array($d)) throw new MkMetaError('Réponse illisible de Meta (HTTP ' . $code . ').', ['code' => $code]);
     if (isset($d['error']) && is_array($d['error'])) throw new MkMetaError((string) ($d['error']['message'] ?? 'Erreur Meta'), $d['error']);
     return $d;
@@ -513,7 +521,12 @@ function mk_meta_ig_exchange(string $code): array
     $l = json_decode($body, true);
     $tok = is_array($l) && !empty($l['access_token']) ? (string) $l['access_token'] : $short;
     $exp = is_array($l) && !empty($l['expires_in']) ? time() + (int) $l['expires_in'] : time() + 3600;
-    $me = mk_graph('me', ['fields' => 'user_id,username'], $tok, 'ig');
+    try {
+        $me = mk_graph('me', ['fields' => 'user_id,username'], $tok, 'ig');
+    } catch (MkMetaError $e) {
+        if ($e->metaCode() === 190) throw $e;
+        $me = mk_graph('me', ['fields' => 'id,username'], $tok, 'ig');
+    }
     $id = (string) ($me['user_id'] ?? $me['id'] ?? '');
     if ($id === '') throw new MkMetaError("Instagram n'a pas indiqué le compte connecté.");
     return mk_meta_put(['ig_token' => mk_seal($tok), 'ig_token_expires' => $exp, 'ig_connected_at' => time(), 'ig_via' => 'instagram',
@@ -539,8 +552,9 @@ function mk_meta_ig_refresh(): void
 function mk_meta_ig_ctx(): array
 {
     $st = mk_meta_state();
-    if ($st['ig_via'] === 'instagram' && $st['ig_token'] !== '') return [mk_unseal($st['ig_token']), 'ig'];
-    return [mk_unseal($st['page_token']) ?: '', ''];
+    // Avec « Se connecter avec Instagram », on passe par « me » : pas de doute sur l'identifiant du compte.
+    if ($st['ig_via'] === 'instagram' && $st['ig_token'] !== '') return [mk_unseal($st['ig_token']), 'ig', 'me'];
+    return [mk_unseal($st['page_token']) ?: '', '', $st['ig_id']];
 }
 
 /* ============================================================ classement automatique */
@@ -905,15 +919,15 @@ function mk_meta_sync_ig_stats(string $from, string $to): array
 {
     $st = mk_meta_state();
     if (!mk_meta_has_channel('instagram')) throw new MkInputError('Le canal « Instagram » a été retiré de Canaux & supports : ajoutez-le de nouveau (catégorie Réseaux sociaux) pour importer ses chiffres.');
-    [$tok, $gb] = mk_meta_ig_ctx();
+    [$tok, $gb, $node] = mk_meta_ig_ctx();
     $ig = $st['ig_id'];
     $c = mk_meta_counter('relevés');
     // Séries jour par jour (fenêtres de 30 jours au plus) : portée et nouveaux abonnés.
-    $series = function (string $metric) use ($ig, $from, $to, $tok, $gb): array {
+    $series = function (string $metric) use ($node, $from, $to, $tok, $gb): array {
         $vals = [];
         try {
             foreach (mk_meta_windows($from, $to, 30) as [$a, $b]) {
-                $d = mk_graph("$ig/insights", ['metric' => $metric, 'period' => 'day', 'since' => $a, 'until' => mk_add_days($b, 1)], $tok, $gb);
+                $d = mk_graph("$node/insights", ['metric' => $metric, 'period' => 'day', 'since' => $a, 'until' => mk_add_days($b, 1)], $tok, $gb);
                 foreach (($d['data'][0]['values'] ?? []) as $v) {
                     $day = mk_add_days(substr((string) ($v['end_time'] ?? ''), 0, 10), -1);
                     if (mk_valid_date($day) && $day >= $from && $day <= $to) $vals[$day] = (int) ($v['value'] ?? 0);
@@ -933,7 +947,7 @@ function mk_meta_sync_ig_stats(string $from, string $to): array
     foreach ($want as $k => $names) {
         foreach ($names as $n) {
             try {
-                mk_graph("$ig/insights", ['metric' => $n, 'metric_type' => 'total_value', 'period' => 'day', 'since' => $probe, 'until' => mk_add_days($probe, 1)], $tok, $gb);
+                mk_graph("$node/insights", ['metric' => $n, 'metric_type' => 'total_value', 'period' => 'day', 'since' => $probe, 'until' => mk_add_days($probe, 1)], $tok, $gb);
                 $use[$k] = $n;
                 break;
             } catch (MkMetaError $e) {
@@ -944,14 +958,14 @@ function mk_meta_sync_ig_stats(string $from, string $to): array
     $tot = [];
     if ($use) {
         for ($d = $from; $d <= $to; $d = mk_add_days($d, 1)) {
-            $r = mk_graph("$ig/insights", ['metric' => implode(',', array_values($use)), 'metric_type' => 'total_value', 'period' => 'day', 'since' => $d, 'until' => mk_add_days($d, 1)], $tok, $gb);
+            $r = mk_graph("$node/insights", ['metric' => implode(',', array_values($use)), 'metric_type' => 'total_value', 'period' => 'day', 'since' => $d, 'until' => mk_add_days($d, 1)], $tok, $gb);
             foreach (($r['data'] ?? []) as $m) {
                 $k = array_search((string) ($m['name'] ?? ''), $use, true);
                 if ($k !== false) $tot[$d][$k] = (int) ($m['total_value']['value'] ?? 0);
             }
         }
     }
-    $acc = mk_graph($ig, ['fields' => 'followers_count,username'], $tok, $gb);
+    $acc = mk_graph($node, ['fields' => 'followers_count,username'], $tok, $gb);
     $followers = mk_meta_followers_back((int) ($acc['followers_count'] ?? 0), $new, $from, $to);
     for ($d = $from; $d <= $to; $d = mk_add_days($d, 1)) {
         if (!isset($reach[$d]) && !isset($tot[$d]) && !isset($new[$d])) continue;
@@ -1048,16 +1062,16 @@ function mk_meta_sync_ig_posts(string $from, string $to): array
 {
     $st = mk_meta_state();
     if (!mk_meta_has_channel('instagram')) throw new MkInputError('Le canal « Instagram » a été retiré de Canaux & supports : ajoutez-le de nouveau pour importer les publications.');
-    [$tok, $gb] = mk_meta_ig_ctx();
+    [$tok, $gb, $node] = mk_meta_ig_ctx();
     $ig = $st['ig_id'];
     $since = min($from, mk_add_days($to, -13));
     $fields = 'id,caption,media_type,media_product_type,timestamp,permalink,like_count,comments_count';
     $media = [];
-    foreach (mk_graph_all("$ig/media", ['fields' => $fields, 'since' => strtotime($since . ' 00:00:00')], $tok, 500, $gb) as $m) {
+    foreach (mk_graph_all("$node/media", ['fields' => $fields, 'since' => strtotime($since . ' 00:00:00')], $tok, 500, $gb) as $m) {
         if (mk_meta_date((string) ($m['timestamp'] ?? '')) >= $since) $media[] = $m;
     }
     try {
-        foreach (mk_graph_all("$ig/stories", ['fields' => $fields], $tok, 100, $gb) as $m) $media[] = $m;
+        foreach (mk_graph_all("$node/stories", ['fields' => $fields], $tok, 100, $gb) as $m) $media[] = $m;
     } catch (MkMetaError $e) {
         if ($e->metaCode() === 190) throw $e;
     }
