@@ -104,7 +104,7 @@ function mk_meta_state(bool $reload = false): array
         'default_profile' => 'investisseur', 'rules' => [], 'last_sync' => 0, 'last_until' => '', 'last_result' => null,
         'metrics' => [], 'oauth_error' => '', 'token_invalid' => false,
         // Instagram : « page » (compte relié à la Page Facebook) ou « instagram » (Se connecter avec Instagram).
-        'ig_via' => '', 'ig_app_id' => '', 'ig_app_secret' => '', 'ig_token' => '', 'ig_token_expires' => 0, 'ig_connected_at' => 0,
+        'ig_via' => '', 'ig_app_id' => '', 'ig_app_secret' => '', 'ig_token' => '', 'ig_token_expires' => 0, 'ig_connected_at' => 0, 'ig_oauth_error' => '',
     ], is_array($d) ? $d : []);
     return $cache;
 }
@@ -229,6 +229,7 @@ function mk_meta_public(): array
         'instagram' => $st['ig_id'] !== '' ? ['id' => $st['ig_id'], 'username' => $st['ig_username'], 'via' => $st['ig_via'] ?: 'page',
             'days_left' => $st['ig_via'] === 'instagram' && $st['ig_token_expires'] ? (int) floor(((int) $st['ig_token_expires'] - time()) / 86400) : null] : null,
         'ig_app_id' => $st['ig_app_id'], 'ig_app_ready' => $st['ig_app_id'] !== '' && $st['ig_app_secret'] !== '', 'ig_scopes' => MK_META_IG_SCOPES,
+        'ig_oauth_error' => (string) $st['ig_oauth_error'],
         'ad_accounts' => array_values($st['ad_accounts']),
         'fx' => (float) $st['fx'], 'backfill' => (int) $st['backfill'], 'questions' => (bool) $st['questions'],
         'default_profile' => $st['default_profile'],
@@ -434,6 +435,7 @@ function mk_meta_select(array $in): array
         if ($sec !== '' && !preg_match('/^[a-f0-9]{32}$/i', $sec)) throw new MkInputError("La clé secrète de l'app Instagram compte 32 caractères (chiffres et lettres a à f) : cliquez sur « Afficher » à côté de « Clé secrète de l'app Instagram » puis copiez-la en entier.");
         if ($sec === '' && mk_meta_state()['ig_app_secret'] === '') throw new MkInputError("Ajoutez aussi la clé secrète de l'app Instagram.");
         $patch['ig_app_id'] = $id;
+        $patch['ig_oauth_error'] = '';
         if ($sec !== '') $patch['ig_app_secret'] = mk_seal($sec);
     }
     if (!empty($in['ig_disconnect'])) {
@@ -501,7 +503,12 @@ function mk_meta_ig_exchange(string $code): array
     ]);
     $d = json_decode($body, true);
     $short = is_array($d) ? (string) ($d['access_token'] ?? ($d['data'][0]['access_token'] ?? '')) : '';
-    if ($short === '') throw new MkMetaError('Instagram a refusé la connexion.', ['message' => (string) ($d['error_message'] ?? ($d['error']['message'] ?? 'réponse inattendue'))]);
+    if ($short === '') {
+        $msg = rtrim(trim((string) ($d['error_message'] ?? ($d['error']['message'] ?? ''))), '.');
+        $hint = stripos($msg, 'secret') !== false ? " La clé secrète Instagram enregistrée ne correspond pas (réinitialisée chez Meta ?) : recollez-la dans « Modifier l'app Instagram »."
+            : (stripos($msg, 'redirect') !== false ? " L'adresse de retour doit être enregistrée dans l'app Meta › connexion Instagram › Paramètres de connexion entreprise." : '');
+        throw new MkMetaError('Instagram a refusé la connexion' . ($msg !== '' ? ' : « ' . $msg . ' ».' : ' (réponse vide).') . $hint, ['message' => 'Instagram a refusé la connexion' . ($msg !== '' ? ' : « ' . $msg . ' ».' : ' (réponse vide).') . $hint]);
+    }
     [, $body] = mk_meta_http(rtrim(MK_META_IG_GRAPH_URL, '/') . '/access_token', ['grant_type' => 'ig_exchange_token', 'client_secret' => $sec, 'access_token' => $short]);
     $l = json_decode($body, true);
     $tok = is_array($l) && !empty($l['access_token']) ? (string) $l['access_token'] : $short;
@@ -510,7 +517,7 @@ function mk_meta_ig_exchange(string $code): array
     $id = (string) ($me['user_id'] ?? $me['id'] ?? '');
     if ($id === '') throw new MkMetaError("Instagram n'a pas indiqué le compte connecté.");
     return mk_meta_put(['ig_token' => mk_seal($tok), 'ig_token_expires' => $exp, 'ig_connected_at' => time(), 'ig_via' => 'instagram',
-        'ig_id' => $id, 'ig_username' => (string) ($me['username'] ?? ''), 'oauth_error' => '']);
+        'ig_id' => $id, 'ig_username' => (string) ($me['username'] ?? ''), 'ig_oauth_error' => '']);
 }
 
 /** Renouvelle le jeton Instagram quand il lui reste moins de 20 jours (Instagram l'accepte après 24 h). */

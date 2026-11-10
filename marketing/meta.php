@@ -33,6 +33,7 @@ if (!$okAdmin) {
     exit;
 }
 
+$flow = 'facebook';
 try {
     db();
     if (isset($_GET['start'])) {
@@ -62,10 +63,12 @@ try {
     mk_meta_put(['oauth_error' => '']);
     back('connecte');
 } catch (MkMetaError $e) {
-    mk_meta_put(['oauth_error' => $e->userMessage()]);
-    back('erreur');
+    // Le détail s'affiche dans Connexions : carte Instagram, ou étape « Connexion au compte Facebook ».
+    error_log('[marketing/meta] ' . $flow . ' : ' . $e->getMessage() . ' ' . json_encode($e->err, JSON_UNESCAPED_UNICODE));
+    mk_meta_put([$flow === 'instagram' ? 'ig_oauth_error' : 'oauth_error' => $e->userMessage()]);
+    back($flow === 'instagram' ? 'instagram-erreur' : 'erreur');
 } catch (Throwable $e) {
-    error_log('[marketing/meta] ' . $e->getMessage());
-    try { mk_meta_put(['oauth_error' => $e->getMessage()]); } catch (Throwable $x) {}
-    back('erreur');
+    error_log('[marketing/meta] ' . $flow . ' : ' . $e->getMessage());
+    try { mk_meta_put([$flow === 'instagram' ? 'ig_oauth_error' : 'oauth_error' => $e->getMessage()]); } catch (Throwable $x) {}
+    back($flow === 'instagram' ? 'instagram-erreur' : 'erreur');
 }
