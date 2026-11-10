@@ -1014,6 +1014,23 @@ Ce que la synchronisation remplit (bouton « Synchroniser maintenant », et chaq
 | Formulaires Lead Ads | Leads & Contacts (nom, téléphone, email, ville, réponses dans les notes, campagne et funnel) | profil investisseur / porteur, canal Meta Ads (ou Facebook / Instagram si organique), support Formulaire |
 | Commentaires qui posent une question (français, arabe, darija) | Leads & Contacts › Questions | sujet (investissement, projet, plateforme, partenariat, réclamation) et profil |
 
+**Messages Messenger et Instagram** (Leads & Contacts › **Messages**). Les conversations de la Page (Messenger) et du
+compte Instagram relié sont importées à chaque synchronisation (25 derniers messages par conversation) et analysées :
+sujet (investissement, projet, plateforme…), profil (investisseur / porteur), question posée, intention forte (« je
+veux investir », « rappelez-moi », numéro laissé…), **téléphone** (format algérien, chiffres arabes compris),
+**email** et **wilaya** trouvés dans les messages, temps de première réponse, et une **chaleur** (Chaud / Tiède /
+Froid, score sur 100). Filtres : sans réponse, chaudes, avec coordonnées, sans prospect, prospects créés, ignorées.
+« Lire » ouvre le fil de discussion et l'analyse ; **« Créer le prospect »** ouvre un formulaire prérempli (nom,
+téléphone, email, wilaya, profil) à relire, puis crée le lead dans Leads & Contacts (canal Messenger ou Instagram,
+lien et derniers messages dans les notes) ; une personne déjà enregistrée (même téléphone ou email) est reliée au
+lieu d'être recréée. Le tableau de bord ne fait que lire : on répond depuis Meta Business Suite (bouton « Répondre »).
+Autorisations à ajouter à la configuration Facebook Login for Business : `pages_messaging`, `pages_manage_metadata`,
+`instagram_manage_messages`, puis « Reconnecter ». L'accueil affiche les messages sans réponse.
+
+**Noms des commentateurs.** Meta ne donne le nom de l'auteur d'un commentaire Facebook qu'aux apps qui ont
+`pages_read_user_content` et sont « en ligne » (mode Live) ; sinon la question s'affiche « Nom masqué par Meta » avec
+un lien « Voir le commentaire » pour l'ouvrir sur Facebook. Sur Instagram, le nom d'utilisateur est toujours donné.
+
 Le classement suit des mots-clés modifiables dans **Connexions › Classement automatique** (avec un champ « Essayer »
 qui montre le résultat en direct). Règles de mise à jour : les chiffres venant de Meta sont mis à jour à chaque
 synchronisation (les 3 derniers jours, et les publications des 14 derniers jours) ; ce que l'équipe complète (statut

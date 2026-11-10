@@ -29,6 +29,10 @@
  * POST meta_token  {token}               connexion avec un jeton collé (utilisateur système du Business Manager)
  * POST meta_sync   {days?}               synchronise maintenant
  * POST meta_disconnect
+ * GET  conversations  from, to         conversations Messenger / Instagram de la période, avec leur analyse et des totaux
+ * GET  conversation   id               une conversation et ses messages
+ * POST conv_prospect  {id, contact}    crée (ou relie) le prospect d'une conversation
+ * POST conv_status    {id, status}     a_traiter | traite | ignore
  * GET  export    entity, from?, to?      CSV (Excel)
  */
 declare(strict_types=1);
@@ -124,6 +128,7 @@ try {
                 ],
                 'attention' => mk_backlog(false),
                 'meta' => mk_meta_public(),
+                'messages_waiting' => (int) qv("SELECT COUNT(*) FROM conversations WHERE last_from_me = 0 AND status = 'a_traiter' AND contact_id IS NULL"),
                 'mail' => ['smtp' => MK_SMTP_HOST !== '', 'from' => mk_mail_from()],
                 'url' => mk_site_url(),
             ]);
@@ -456,6 +461,49 @@ try {
             if (!$isPost) fail('Méthode invalide.', 405);
             mk_meta_disconnect();
             ok(['meta' => mk_meta_public()]);
+            break;
+        }
+
+        case 'conversations': {
+            $from = date_param('from', mk_add_days(mk_today(), -29));
+            $to = date_param('to', mk_today());
+            $rows = q('SELECT * FROM conversations WHERE last_date BETWEEN ? AND ? ORDER BY updated DESC LIMIT 1000', [$from, $to]);
+            $replies = array_values(array_filter(array_map(fn ($r) => $r['reply_minutes'], $rows), fn ($v) => $v !== null));
+            sort($replies);
+            $med = $replies ? $replies[intdiv(count($replies), 2)] : null;
+            foreach ($rows as $i => $r) $rows[$i]['name'] = mk_conv_name($r);
+            $count = fn (callable $f) => count(array_filter($rows, $f));
+            $by = function (string $k) use ($rows) { $o = []; foreach ($rows as $r) { $v = (string) $r[$k] ?: 'autre'; $o[$v] = ($o[$v] ?? 0) + 1; } arsort($o); return $o; };
+            ok(['rows' => $rows, 'stats' => [
+                'total' => count($rows), 'waiting' => $count(fn ($r) => !(int) $r['last_from_me'] && $r['status'] !== 'ignore'),
+                'prospects' => $count(fn ($r) => (int) $r['contact_id'] > 0), 'hot' => $count(fn ($r) => $r['heat'] === 'chaud'),
+                'with_contact' => $count(fn ($r) => $r['phone'] !== '' || $r['email'] !== ''), 'reply_median' => $med,
+                'by_category' => $by('category'), 'by_platform' => $by('platform'), 'by_heat' => $by('heat'), 'by_profile' => $by('profile'),
+            ], 'meta' => ['messages' => mk_meta_state()['messages'], 'connected' => mk_meta_fb_connected()]]);
+            break;
+        }
+
+        case 'conversation': {
+            $c = q1('SELECT * FROM conversations WHERE id = ?', [(int) ($_GET['id'] ?? 0)]);
+            if (!$c) fail('Conversation introuvable.', 404);
+            $c['name'] = mk_conv_name($c);
+            ok(['conversation' => $c, 'messages' => q('SELECT id, from_me, text, at FROM conversation_messages WHERE conv_id = ? ORDER BY at, id', [(int) $c['id']]),
+                'contact' => $c['contact_id'] ? q1('SELECT * FROM contacts WHERE id = ?', [(int) $c['contact_id']]) : null]);
+            break;
+        }
+
+        case 'conv_prospect': {
+            if (!$isPost) fail('Méthode invalide.', 405);
+            ok(mk_conv_prospect((int) ($b['id'] ?? 0), is_array($b['contact'] ?? null) ? $b['contact'] : []));
+            break;
+        }
+
+        case 'conv_status': {
+            if (!$isPost) fail('Méthode invalide.', 405);
+            $st = (string) ($b['status'] ?? '');
+            if (!in_array($st, ['a_traiter', 'traite', 'ignore'], true)) fail('Statut inconnu.');
+            db()->prepare('UPDATE conversations SET status = ? WHERE id = ? AND (contact_id IS NULL OR ? = \'a_traiter\')')->execute([$st, (int) ($b['id'] ?? 0), $st]);
+            ok();
             break;
         }
 

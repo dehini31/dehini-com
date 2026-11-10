@@ -42,6 +42,8 @@ const MK_META_SCOPES = [
     'pages_show_list', 'pages_read_engagement', 'pages_read_user_content', 'read_insights', 'business_management',
     'instagram_basic', 'instagram_manage_insights', 'instagram_manage_comments',
     'ads_read', 'leads_retrieval', 'pages_manage_ads',
+    // Messages Messenger et Instagram (lecture seule : le tableau de bord n'envoie aucun message).
+    'pages_messaging', 'pages_manage_metadata', 'instagram_manage_messages',
 ];
 /** Autorisations de « Se connecter avec Instagram » (lecture seule). */
 const MK_META_IG_SCOPES = ['instagram_business_basic', 'instagram_business_manage_insights', 'instagram_business_manage_comments'];
@@ -100,7 +102,7 @@ function mk_meta_state(bool $reload = false): array
     $cache = array_merge([
         'app_id' => '', 'app_secret' => '', 'config_id' => '', 'user_token' => '', 'token_kind' => '', 'user_id' => '', 'user_name' => '',
         'token_expires' => 0, 'connected_at' => 0, 'page_id' => '', 'page_name' => '', 'page_token' => '', 'ig_id' => '',
-        'ig_username' => '', 'ad_accounts' => [], 'fx' => 1.0, 'backfill' => 30, 'questions' => true,
+        'ig_username' => '', 'ad_accounts' => [], 'fx' => 1.0, 'backfill' => 30, 'questions' => true, 'messages' => true,
         'default_profile' => 'investisseur', 'rules' => [], 'last_sync' => 0, 'last_until' => '', 'last_result' => null,
         'metrics' => [], 'oauth_error' => '', 'token_invalid' => false,
         // Instagram : « page » (compte relié à la Page Facebook) ou « instagram » (Se connecter avec Instagram).
@@ -232,7 +234,7 @@ function mk_meta_public(): array
         'ig_app_id' => $st['ig_app_id'], 'ig_app_ready' => $st['ig_app_id'] !== '' && $st['ig_app_secret'] !== '', 'ig_scopes' => MK_META_IG_SCOPES,
         'ig_oauth_error' => (string) $st['ig_oauth_error'], 'ig_diag' => (string) $st['ig_diag'],
         'ad_accounts' => array_values($st['ad_accounts']),
-        'fx' => (float) $st['fx'], 'backfill' => (int) $st['backfill'], 'questions' => (bool) $st['questions'],
+        'fx' => (float) $st['fx'], 'backfill' => (int) $st['backfill'], 'questions' => (bool) $st['questions'], 'messages' => (bool) $st['messages'],
         'default_profile' => $st['default_profile'],
         'rules' => mk_meta_rules(), 'rules_default' => mk_meta_default_rules(),
         'last_sync' => (int) $st['last_sync'], 'last_result' => $st['last_result'], 'oauth_error' => (string) $st['oauth_error'], 'token_invalid' => (bool) $st['token_invalid'],
@@ -434,6 +436,7 @@ function mk_meta_select(array $in): array
     }
     if (array_key_exists('backfill', $in)) $patch['backfill'] = max(7, min(90, (int) $in['backfill']));
     if (array_key_exists('questions', $in)) $patch['questions'] = (bool) $in['questions'];
+    if (array_key_exists('messages', $in)) $patch['messages'] = (bool) $in['messages'];
     if (array_key_exists('default_profile', $in)) $patch['default_profile'] = array_key_exists((string) $in['default_profile'], mk_enums()['contact_types']) ? (string) $in['default_profile'] : 'investisseur';
     if (array_key_exists('rules', $in) && is_array($in['rules'])) $patch['rules'] = mk_meta_clean_rules($in['rules']);
     if (array_key_exists('ig_app_id', $in) || array_key_exists('ig_app_secret', $in)) {
@@ -825,13 +828,14 @@ function mk_meta_sync(array $opt = []): array
         'ig_posts' => ['Publications Instagram', 'mk_meta_sync_ig_posts', $st['ig_id'] !== ''],
         'ads' => ['Campagnes Meta Ads', 'mk_meta_sync_ads', (bool) $st['ad_accounts']],
         'leads' => ['Leads des formulaires', 'mk_meta_sync_leads', $st['page_id'] !== ''],
+        'messages' => ['Messages Messenger et Instagram', 'mk_meta_sync_messages', $st['page_id'] !== '' && $st['page_token'] !== '' && $st['messages']],
     ];
     $out = ['at' => time(), 'from' => $from, 'to' => $to, 'steps' => [], 'ok' => true, 'totals' => ['added' => 0, 'updated' => 0]];
     foreach ($steps as $key => [$label, $fn, $on]) {
         if ($only && !in_array($key, $only, true)) continue;
         $res = ['key' => $key, 'label' => $label, 'status' => 'skip', 'counts' => [], 'message' => ''];
         if (!$on) {
-            $res['message'] = $key === 'ads' ? 'Aucun compte publicitaire choisi.' : ($key === 'ig_stats' || $key === 'ig_posts' ? "Aucun compte Instagram professionnel n'est relié à la Page." : 'Aucune Page choisie.');
+            $res['message'] = $key === 'messages' && !$st['messages'] ? 'Import des messages désactivé (Connexions › étape 3).' : ($key === 'ads' ? 'Aucun compte publicitaire choisi.' : ($key === 'ig_stats' || $key === 'ig_posts' ? "Aucun compte Instagram professionnel n'est relié à la Page." : 'Aucune Page choisie.'));
         } else {
             try {
                 $res['counts'] = $fn($from, $to);
@@ -1088,9 +1092,9 @@ function mk_meta_sync_fb_posts(string $from, string $to): array
             $c['note'] = $e->getMessage();
         }
         if ($st['questions'] && (int) ($p['comments']['summary']['total_count'] ?? 0) > 0 && $date >= $from) {
-            foreach (mk_graph_all($p['id'] . '/comments', ['fields' => 'id,message,created_time,from{id,name}', 'filter' => 'toplevel'], $tok, 200) as $cm) {
+            foreach (mk_graph_all($p['id'] . '/comments', ['fields' => 'id,message,created_time,permalink_url,from{id,name}', 'filter' => 'toplevel'], $tok, 200) as $cm) {
                 if ((string) ($cm['from']['id'] ?? '') === $pid) continue; // réponse de la Page elle-même
-                mk_meta_question($q, 'facebook', (string) $cm['id'], (string) ($cm['message'] ?? ''), (string) ($cm['created_time'] ?? ''), (string) ($cm['from']['name'] ?? ''), '');
+                mk_meta_question($q, 'facebook', (string) $cm['id'], (string) ($cm['message'] ?? ''), (string) ($cm['created_time'] ?? ''), (string) ($cm['from']['name'] ?? ''), '', (string) ($cm['permalink_url'] ?? $link));
             }
         }
     }
@@ -1142,7 +1146,7 @@ function mk_meta_sync_ig_posts(string $from, string $to): array
         if ($st['questions'] && (int) ($m['comments_count'] ?? 0) > 0 && $date >= $from) {
             foreach (mk_graph_all($m['id'] . '/comments', ['fields' => 'id,text,timestamp,username'], $tok, 200, $gb) as $cm) {
                 if (strcasecmp((string) ($cm['username'] ?? ''), $st['ig_username']) === 0) continue;
-                mk_meta_question($q, 'instagram', (string) $cm['id'], (string) ($cm['text'] ?? ''), (string) ($cm['timestamp'] ?? ''), '', (string) ($cm['username'] ?? ''));
+                mk_meta_question($q, 'instagram', (string) $cm['id'], (string) ($cm['text'] ?? ''), (string) ($cm['timestamp'] ?? ''), '', (string) ($cm['username'] ?? ''), (string) ($m['permalink'] ?? ''));
             }
         }
     }
@@ -1150,20 +1154,260 @@ function mk_meta_sync_ig_posts(string $from, string $to): array
 }
 
 /** Un commentaire qui pose une question devient une question à traiter (sujet et profil devinés). */
-function mk_meta_question(array &$q, string $channel, string $id, string $text, string $when, string $name, string $username): void
+function mk_meta_question(array &$q, string $channel, string $id, string $text, string $when, string $name, string $username, string $link = ''): void
 {
     if (!mk_is_question($text)) return;
     $st = mk_meta_state();
+    $who = $name !== '' ? $name : ($username !== '' ? '@' . $username : '');
+    // Meta ne donne le nom d'un commentateur Facebook qu'aux apps « en ligne » ayant pages_read_user_content :
+    // sans lui, le lien permet d'ouvrir le commentaire pour voir qui l'a écrit. Un nom reçu plus tard complète la ligne.
+    $owned = ['link'];
+    if ($who !== '') $owned[] = 'name';
     try {
         mk_meta_count($q, mk_meta_upsert('inquiries', "meta:cmt:$id", [
-            'date' => mk_meta_date($when), 'source' => $channel, 'name' => $name !== '' ? $name : ($username !== '' ? '@' . $username : ''),
+            'date' => mk_meta_date($when), 'source' => $channel, 'name' => $who,
             'contact' => $username !== '' ? '@' . $username . ' (Instagram)' : 'Commentaire Facebook', 'type' => mk_classify_profile($text),
             'category' => mk_classify($text, mk_meta_rules()['question']) ?: 'autre', 'question' => mk_str($text, 2000) ?: '—', 'status' => 'nouveau',
-        ], []));
+            'link' => preg_match('~^https?://~', $link) ? mb_substr($link, 0, 500) : '',
+        ], $owned));
     } catch (MkInputError $e) {
         $q['errors']++;
         $q['note'] = $e->getMessage();
     }
+}
+
+/* ============================================================ messages Messenger et Instagram */
+
+/** Wilayas d'Algérie (et quelques noms en arabe), pour reconnaître la ville d'un prospect dans ses messages. */
+const MK_WILAYAS = ['Adrar', 'Chlef', 'Laghouat', 'Oum El Bouaghi', 'Batna', 'Béjaïa', 'Biskra', 'Béchar', 'Blida', 'Bouira', 'Tamanrasset', 'Tébessa',
+    'Tlemcen', 'Tiaret', 'Tizi Ouzou', 'Alger', 'Djelfa', 'Jijel', 'Sétif', 'Saïda', 'Skikda', 'Sidi Bel Abbès', 'Annaba', 'Guelma', 'Constantine',
+    'Médéa', 'Mostaganem', "M'Sila", 'Mascara', 'Ouargla', 'Oran', 'El Bayadh', 'Illizi', 'Bordj Bou Arreridj', 'Boumerdès', 'El Tarf', 'Tindouf',
+    'Tissemsilt', 'El Oued', 'Khenchela', 'Souk Ahras', 'Tipaza', 'Mila', 'Aïn Defla', 'Naâma', 'Aïn Témouchent', 'Ghardaïa', 'Relizane', 'Timimoun',
+    'Bordj Badji Mokhtar', 'Ouled Djellal', 'Béni Abbès', 'In Salah', 'In Guezzam', 'Touggourt', 'Djanet', "El M'Ghair", 'El Meniaa'];
+const MK_WILAYAS_AR = ['الجزائر' => 'Alger', 'وهران' => 'Oran', 'قسنطينة' => 'Constantine', 'سطيف' => 'Sétif', 'عنابة' => 'Annaba', 'البليدة' => 'Blida',
+    'باتنة' => 'Batna', 'تيزي وزو' => 'Tizi Ouzou', 'بجاية' => 'Béjaïa', 'تلمسان' => 'Tlemcen', 'بسكرة' => 'Biskra', 'ورقلة' => 'Ouargla', 'غرداية' => 'Ghardaïa',
+    'الشلف' => 'Chlef', 'المدية' => 'Médéa', 'مستغانم' => 'Mostaganem', 'بومرداس' => 'Boumerdès', 'تيبازة' => 'Tipaza', 'جيجل' => 'Jijel', 'سكيكدة' => 'Skikda'];
+/** Mots qui montrent une intention forte (vouloir investir, être rappelé, donner ses coordonnées). */
+const MK_INTEREST_WORDS = ['interesse', 'je veux investir', 'je souhaite investir', 'je souhaite', 'comment participer', 'comment investir', 'comment faire pour',
+    'rendez-vous', 'rdv', 'rappel', 'rappelez', 'appelez-moi', 'contactez-moi', 'mon numero', 'mon whatsapp', 'disponible', 'je suis partant', 'inscrire',
+    'نحب نستثمر', 'نحب نشارك', 'كيفاش نشارك', 'رقمي', 'اتصلوا بي', 'مهتم', 'نحب'];
+
+/** Chiffres arabes orientaux → chiffres occidentaux. */
+function mk_digits(string $s): string
+{
+    return strtr($s, ['٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4', '٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9']);
+}
+/** Premier numéro de téléphone algérien trouvé (mobile ou fixe), au format 0X XX XX XX XX. */
+function mk_extract_phone(string $text): string
+{
+    $t = mk_digits($text);
+    if (!preg_match('/(?:(?:\+|00)\s*213[\s.\-]*0?|\b0)([5-7](?:[\s.\-]*\d){8}|[2-4](?:[\s.\-]*\d){7})/u', $t, $m)) return '';
+    $d = '0' . preg_replace('/\D/', '', $m[1]);
+    return strlen($d) === 10 ? substr($d, 0, 4) . ' ' . substr($d, 4, 2) . ' ' . substr($d, 6, 2) . ' ' . substr($d, 8, 2) : $d;
+}
+function mk_extract_email(string $text): string
+{
+    return preg_match('/[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}/i', $text, $m) ? strtolower($m[0]) : '';
+}
+function mk_extract_city(string $text): string
+{
+    $f = ' ' . mk_fold($text) . ' ';
+    $f = (string) preg_replace('/[^\p{L}\p{N}\' ]+/u', ' ', $f);
+    foreach (MK_WILAYAS as $w) {
+        if (mb_strpos($f, ' ' . mk_fold($w) . ' ') !== false) return $w;
+    }
+    foreach (MK_WILAYAS_AR as $ar => $w) if (mb_strpos($text, $ar) !== false) return $w;
+    return '';
+}
+
+/**
+ * Analyse d'une conversation : sujet, profil, coordonnées laissées, intention, chaleur (score 0-100),
+ * temps de première réponse. Seuls les messages de la personne comptent pour le classement.
+ */
+function mk_conv_analyze(int $id): void
+{
+    $msgs = q('SELECT from_me, text, at FROM conversation_messages WHERE conv_id = ? ORDER BY at, id', [$id]);
+    $in = array_values(array_filter($msgs, fn ($m) => !(int) $m['from_me']));
+    $text = implode("\n", array_map(fn ($m) => (string) $m['text'], $in));
+    $rules = mk_meta_rules();
+    $phone = mk_extract_phone($text);
+    $email = mk_extract_email($text);
+    $city = mk_extract_city($text);
+    $profile = mk_classify_profile($text);
+    $question = (bool) array_filter($in, fn ($m) => mk_is_question((string) $m['text']));
+    $f = mk_fold($text);
+    $interest = (bool) array_filter(MK_INTEREST_WORDS, fn ($w) => mb_strpos($f, mk_fold($w)) !== false);
+    $score = min(100, ($phone !== '' ? 35 : 0) + ($email !== '' ? 20 : 0) + ($interest ? 25 : 0) + ($question ? 10 : 0) + ($profile !== '' ? 10 : 0) + min(20, max(0, count($in) - 1) * 5));
+    $heat = $score >= 60 ? 'chaud' : ($score >= 30 ? 'tiede' : 'froid');
+    // Temps de première réponse : du premier message de la personne au premier message de la Page qui suit.
+    $reply = null;
+    $firstIn = null;
+    foreach ($msgs as $m) {
+        if (!(int) $m['from_me'] && $firstIn === null) $firstIn = strtotime((string) $m['at']);
+        if ((int) $m['from_me'] && $firstIn !== null) { $reply = max(0, (int) round((strtotime((string) $m['at']) - $firstIn) / 60)); break; }
+    }
+    $last = end($msgs) ?: null;
+    db()->prepare('UPDATE conversations SET category = ?, profile = ?, heat = ?, score = ?, is_question = ?, interest = ?, phone = ?, email = ?, city = ?,
+        reply_minutes = ?, in_count = ?, out_count = ?, last_from_me = ?, snippet = ? WHERE id = ?')->execute([
+        mk_classify($text, $rules['question']) ?: 'autre', $profile, $heat, $score, $question ? 1 : 0, $interest ? 1 : 0, $phone, $email, $city,
+        $reply, count($in), count($msgs) - count($in), $last ? (int) $last['from_me'] : 0, $last ? mb_substr((string) $last['text'], 0, 180) : '', $id,
+    ]);
+}
+
+/** Messages Messenger (Page) et Instagram (compte relié à la Page) depuis la Page Facebook. */
+function mk_meta_sync_messages(string $from, string $to): array
+{
+    $st = mk_meta_state();
+    $tok = mk_unseal($st['page_token']);
+    $out = [];
+    $since = strtotime(mk_add_days($from, -1) . ' 00:00:00');
+    foreach (['messenger' => 'facebook', 'instagram' => 'instagram'] as $platform => $channel) {
+        if ($platform === 'instagram' && $st['ig_id'] === '') continue;
+        $c = mk_meta_counter($platform === 'messenger' ? 'conversations Messenger' : 'conversations Instagram');
+        $c['messages'] = 0;
+        $params = ['platform' => $platform, 'fields' => 'id,updated_time,link,participants,messages.limit(25){id,message,from,created_time}', 'limit' => 50];
+        try {
+            for ($page = 0; $page < 20; $page++) {
+                $d = mk_graph($st['page_id'] . '/conversations', $params, $tok);
+                $stop = false;
+                foreach (($d['data'] ?? []) as $cv) {
+                    if (strtotime((string) ($cv['updated_time'] ?? 'now')) < $since) { $stop = true; break; }
+                    mk_meta_count($c, mk_meta_store_conversation($cv, $platform, $channel, $tok, $c['messages']));
+                }
+                $after = $d['paging']['cursors']['after'] ?? null;
+                if ($stop || !$after || empty($d['paging']['next'])) break;
+                $params['after'] = $after;
+            }
+        } catch (MkMetaError $e) {
+            if ($e->metaCode() === 190) throw $e;
+            $c['note'] = ($platform === 'messenger' ? 'Messages Messenger' : 'Messages Instagram') . ' inaccessibles (« ' . rtrim($e->getMessage(), '.') . ' »).'
+                . ' Ajoutez ' . ($platform === 'messenger' ? 'pages_messaging et pages_manage_metadata' : 'instagram_manage_messages et pages_manage_metadata')
+                . ' à la configuration Facebook Login for Business, puis cliquez sur « Reconnecter ».';
+            $c['failed'] = true;
+        }
+        $out[] = $c;
+    }
+    // Aucune messagerie lisible : l'étape est en erreur, avec la marche à suivre.
+    if ($out && !array_filter($out, fn ($c) => empty($c['failed']))) throw new MkInputError(implode(' ', array_column($out, 'note')));
+    return $out;
+}
+
+/** Enregistre une conversation et ses derniers messages, puis l'analyse. Renvoie added / updated / same. */
+function mk_meta_store_conversation(array $cv, string $platform, string $channel, string $tok, int &$msgCount): string
+{
+    $st = mk_meta_state();
+    $own = [$st['page_id'], $st['ig_id']];
+    $who = null;
+    foreach (($cv['participants']['data'] ?? []) as $p) if (!in_array((string) ($p['id'] ?? ''), $own, true)) { $who = $p; break; }
+    $msgs = $cv['messages']['data'] ?? [];
+    // Certains comptes ne renvoient que les identifiants des messages : on lit alors les 20 plus récents un par un.
+    if ($msgs && !array_key_exists('message', $msgs[0]) && !array_key_exists('from', $msgs[0])) {
+        $full = [];
+        foreach (array_slice($msgs, 0, 20) as $m) {
+            try { $full[] = mk_graph((string) $m['id'], ['fields' => 'id,message,from,created_time'], $tok); } catch (MkMetaError $e) { if ($e->metaCode() === 190) throw $e; }
+        }
+        $msgs = $full;
+    }
+    $ext = 'meta:conv:' . $cv['id'];
+    if (qv('SELECT 1 FROM ext_ignored WHERE ext_id = ?', [$ext])) return 'ignored';
+    $row = q1('SELECT id FROM conversations WHERE ext_id = ?', [$ext]);
+    $whoName = (string) ($who['name'] ?? '');
+    $whoUser = (string) ($who['username'] ?? '');
+    $updated = mk_meta_local((string) ($cv['updated_time'] ?? ''));
+    $link = (string) ($cv['link'] ?? '');
+    if ($link !== '' && $link[0] === '/') $link = 'https://www.facebook.com' . $link;
+    if ($link === '') $link = 'https://business.facebook.com/latest/inbox/all?asset_id=' . rawurlencode($st['page_id']);
+    $now = time();
+    if ($row) {
+        $id = (int) $row['id'];
+        db()->prepare('UPDATE conversations SET who_name = CASE WHEN ? != \'\' THEN ? ELSE who_name END, who_username = CASE WHEN ? != \'\' THEN ? ELSE who_username END,
+            updated = ?, last_date = ?, link = ?, synced = ? WHERE id = ?')->execute([$whoName, $whoName, $whoUser, $whoUser, $updated, substr($updated, 0, 10), $link, $now, $id]);
+        $res = 'updated';
+    } else {
+        db()->prepare('INSERT INTO conversations (ext_id, platform, channel, who_id, who_name, who_username, updated, last_date, first_date, link, status, created, synced)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, \'a_traiter\', ?, ?)')->execute([$ext, $platform, $channel, (string) ($who['id'] ?? ''), $whoName, $whoUser,
+            $updated, substr($updated, 0, 10), substr($updated, 0, 10), $link, $now, $now]);
+        $id = (int) db()->lastInsertId();
+        $res = 'added';
+    }
+    $new = 0;
+    foreach ($msgs as $m) {
+        $text = trim((string) ($m['message'] ?? ''));
+        if ($text === '') $text = '[pièce jointe]';
+        $fromId = (string) ($m['from']['id'] ?? '');
+        $fromMe = in_array($fromId, $own, true) ? 1 : 0;
+        $s = db()->prepare('INSERT OR IGNORE INTO conversation_messages (conv_id, ext_id, from_me, text, at) VALUES (?, ?, ?, ?, ?)');
+        $s->execute([$id, 'meta:msg:' . ($m['id'] ?? md5($text . ($m['created_time'] ?? ''))), $fromMe, mb_substr($text, 0, 4000), mk_meta_local((string) ($m['created_time'] ?? ''))]);
+        $new += $s->rowCount();
+        if (!$fromMe && $whoName === '' && !empty($m['from']['name'])) {
+            db()->prepare("UPDATE conversations SET who_name = ? WHERE id = ? AND who_name = ''")->execute([(string) $m['from']['name'], $id]);
+        }
+        if (!$fromMe && $whoUser === '' && !empty($m['from']['username'])) {
+            db()->prepare("UPDATE conversations SET who_username = ? WHERE id = ? AND who_username = ''")->execute([(string) $m['from']['username'], $id]);
+        }
+    }
+    $msgCount += $new;
+    db()->prepare('UPDATE conversations SET first_date = (SELECT substr(MIN(at), 1, 10) FROM conversation_messages WHERE conv_id = ?), message_count = (SELECT COUNT(*) FROM conversation_messages WHERE conv_id = ?) WHERE id = ?')->execute([$id, $id, $id]);
+    mk_conv_analyze($id);
+    return $res === 'updated' && !$new ? 'same' : $res;
+}
+
+/** Date et heure locales (AAAA-MM-JJ HH:MM:SS) d'un horodatage Meta. */
+function mk_meta_local(string $iso): string
+{
+    try {
+        return (new DateTimeImmutable($iso !== '' ? $iso : 'now'))->setTimezone(new DateTimeZone(MK_TIMEZONE))->format('Y-m-d H:i:s');
+    } catch (Throwable $e) {
+        return date('Y-m-d H:i:s');
+    }
+}
+
+/** Nom affichable d'une conversation. */
+function mk_conv_name(array $c): string
+{
+    if ((string) $c['who_name'] !== '') return (string) $c['who_name'];
+    if ((string) $c['who_username'] !== '') return '@' . $c['who_username'];
+    return $c['platform'] === 'instagram' ? 'Compte Instagram' : 'Personne sur Messenger';
+}
+
+/**
+ * Crée le prospect (lead) d'une conversation avec les informations trouvées, ou le relie à un lead
+ * existant (même téléphone ou même email). $in : champs du formulaire, déjà relus par l'équipe.
+ */
+function mk_conv_prospect(int $id, array $in): array
+{
+    $c = q1('SELECT * FROM conversations WHERE id = ?', [$id]);
+    if (!$c) throw new MkInputError('Conversation introuvable (supprimée entre-temps ?).');
+    if ($c['contact_id'] && q1('SELECT id FROM contacts WHERE id = ?', [(int) $c['contact_id']])) throw new MkInputError('Cette conversation a déjà son prospect.');
+    $msgs = q('SELECT from_me, text, at FROM conversation_messages WHERE conv_id = ? ORDER BY at DESC, id DESC LIMIT 6', [$id]);
+    $excerpt = implode("\n", array_map(fn ($m) => ((int) $m['from_me'] ? 'Nous' : 'Prospect') . ' (' . substr((string) $m['at'], 0, 16) . ') : ' . mb_substr((string) $m['text'], 0, 200), array_reverse($msgs)));
+    $source = mk_meta_has_channel($c['platform'] === 'instagram' ? 'instagram' : 'messenger') ? ($c['platform'] === 'instagram' ? 'instagram' : 'messenger') : (mk_meta_has_channel('facebook') ? 'facebook' : (mk_channels()[0]['key'] ?? ''));
+    $data = [
+        'date' => (string) ($c['first_date'] ?: mk_today()),
+        'name' => mk_str($in['name'] ?? mk_conv_name($c), 200),
+        'phone' => mk_str($in['phone'] ?? $c['phone'], 60), 'email' => mk_str($in['email'] ?? $c['email'], 190), 'city' => mk_str($in['city'] ?? $c['city'], 80),
+        'type' => (string) ($in['type'] ?? ($c['profile'] ?: mk_meta_state()['default_profile'])),
+        'source' => (string) ($in['source'] ?? $source), 'status' => 'nouveau', 'assigned_to' => (string) ($in['assigned_to'] ?? ''),
+        'notes' => trim(mk_str($in['notes'] ?? '', 1000) . "\n\nConversation " . ($c['platform'] === 'instagram' ? 'Instagram' : 'Messenger') . ' : ' . $c['link'] . "\n" . $excerpt),
+    ];
+    // Même personne déjà enregistrée (même téléphone ou même email) : on relie au lieu de dupliquer.
+    $match = null;
+    $digits = substr((string) preg_replace('/\D/', '', $data['phone']), -9);
+    if (strlen($digits) === 9) {
+        foreach (q("SELECT id, phone FROM contacts WHERE phone != '' ORDER BY id DESC LIMIT 3000") as $r) {
+            if (substr((string) preg_replace('/\D/', '', (string) $r['phone']), -9) === $digits) { $match = $r; break; }
+        }
+    }
+    if (!$match && $data['email'] !== '') $match = q1('SELECT id FROM contacts WHERE lower(email) = lower(?)', [$data['email']]);
+    if ($match) {
+        $contact = q1('SELECT * FROM contacts WHERE id = ?', [(int) $match['id']]);
+        $linked = true;
+    } else {
+        $contact = mk_save('contacts', $data);
+        $linked = false;
+    }
+    db()->prepare("UPDATE conversations SET contact_id = ?, status = 'prospect' WHERE id = ?")->execute([(int) $contact['id'], $id]);
+    return ['contact' => $contact, 'linked' => $linked];
 }
 
 /** Plus grande valeur parmi des types d'actions équivalents (Meta renvoie souvent le même chiffre sous plusieurs noms). */
