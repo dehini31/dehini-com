@@ -291,8 +291,13 @@ function mk_meta_login_url(string $state): string
     $q = ['client_id' => $appId, 'redirect_uri' => mk_meta_redirect_uri(), 'state' => $state, 'response_type' => 'code'];
     // App « Facebook Login for Business » : les autorisations viennent de sa configuration (config_id).
     $cfg = mk_meta_state()['config_id'];
-    if ($cfg !== '') $q['config_id'] = $cfg;
-    else $q['scope'] = implode(',', MK_META_SCOPES);
+    if ($cfg !== '') {
+        $q['config_id'] = $cfg;
+        // Sans ce paramètre, Facebook Login for Business ignore response_type=code (page « Sorry, something went wrong »).
+        $q['override_default_response_type'] = 'true';
+    } else {
+        $q['scope'] = implode(',', MK_META_SCOPES);
+    }
     return 'https://www.facebook.com/' . MK_META_GRAPH_VERSION . '/dialog/oauth?' . http_build_query($q);
 }
 
@@ -400,6 +405,7 @@ function mk_meta_select(array $in): array
     if (array_key_exists('config_id', $in)) {
         $cfg = preg_replace('/\D/', '', (string) $in['config_id']);
         if ($cfg !== '' && strlen($cfg) < 5) throw new MkInputError("L'ID de configuration est un long nombre : copiez-le depuis Facebook Login for Business › Configurations.");
+        if ($cfg !== '' && $cfg === mk_meta_app()[0]) throw new MkInputError("Ce numéro est l'ID de l'app, pas celui de la configuration. Ouvrez Facebook Login for Business › Configurations, cliquez sur votre configuration et copiez l'ID affiché sous son nom.");
         $patch['config_id'] = $cfg;
     }
     if (array_key_exists('app_id', $in) || array_key_exists('app_secret', $in)) {

@@ -1312,7 +1312,8 @@ VIEWS["connexions/meta"] = { fn: async param => {
            <li>Nom : <code>Marketing Dashboard</code> · Type de jeton : <b>Jeton d'accès utilisateur</b> · Expiration : <b>Jamais</b> si le choix existe (sinon 60 jours).</li>
            <li>Actifs : <b>Pages</b>, <b>Comptes publicitaires</b>, <b>Comptes Instagram</b>.</li>
            <li>Autorisations : <span class="copy"><code id="mScopes">${esc(m.scopes.join(", "))}</code><button type="button" class="icon-btn" data-copy="#mScopes" aria-label="Copier la liste" title="Copier">${ic("copy", "sm")}</button></span><br><span class="small muted">Une autorisation absente de la liste ? Ajoutez d'abord le cas d'utilisation correspondant (Pages, Instagram, API Marketing, Lead Ads) dans « Cas d'utilisation ».</span></li>
-           <li>Créez la configuration, copiez son <b>ID</b> et collez-le ci-dessus.</li></ol></details></div>` : ""}
+           <li>Créez la configuration, copiez son <b>ID</b> et collez-le ci-dessus.</li></ol>
+           <p class="small muted" style="margin:8px 0 0">Facebook affiche « Sorry, something went wrong » ? L'ID collé n'est sans doute pas celui de la configuration (ni l'ID de l'app, ni celui du Business Manager), ou la configuration a été supprimée : recopiez-le depuis Configurations.</p></details></div>` : ""}
        <a class="btn pri big${appOk ? "" : " disabled"}" ${appOk ? 'href="meta.php?start=1"' : 'aria-disabled="true"'}>${ic("link", "sm")} Se connecter avec Facebook</a>
        <details class="more"><summary>Autre méthode : coller un jeton d'utilisateur système</summary>
          <p class="small muted">Business Manager › Paramètres › Utilisateurs système › Générer un jeton (avec les autorisations ${m.scopes.slice(0, 4).join(", ")}…). Ce jeton n'expire pas : idéal pour la synchronisation automatique.</p>
