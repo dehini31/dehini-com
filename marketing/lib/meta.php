@@ -102,7 +102,7 @@ function mk_meta_state(bool $reload = false): array
     $cache = array_merge([
         'app_id' => '', 'app_secret' => '', 'config_id' => '', 'user_token' => '', 'token_kind' => '', 'user_id' => '', 'user_name' => '',
         'token_expires' => 0, 'connected_at' => 0, 'page_id' => '', 'page_name' => '', 'page_token' => '', 'ig_id' => '',
-        'ig_username' => '', 'ad_accounts' => [], 'fx' => 1.0, 'backfill' => 30, 'questions' => true, 'messages' => true,
+        'ig_username' => '', 'ad_accounts' => [], 'fx' => 1.0, 'backfill' => 30, 'questions' => true, 'messages' => true, 'auto_sync' => 60,
         'default_profile' => 'investisseur', 'rules' => [], 'last_sync' => 0, 'last_until' => '', 'last_result' => null,
         'metrics' => [], 'oauth_error' => '', 'token_invalid' => false,
         // Instagram : « page » (compte relié à la Page Facebook) ou « instagram » (Se connecter avec Instagram).
@@ -234,7 +234,7 @@ function mk_meta_public(): array
         'ig_app_id' => $st['ig_app_id'], 'ig_app_ready' => $st['ig_app_id'] !== '' && $st['ig_app_secret'] !== '', 'ig_scopes' => MK_META_IG_SCOPES,
         'ig_oauth_error' => (string) $st['ig_oauth_error'], 'ig_diag' => (string) $st['ig_diag'],
         'ad_accounts' => array_values($st['ad_accounts']),
-        'fx' => (float) $st['fx'], 'backfill' => (int) $st['backfill'], 'questions' => (bool) $st['questions'], 'messages' => (bool) $st['messages'],
+        'fx' => (float) $st['fx'], 'backfill' => (int) $st['backfill'], 'questions' => (bool) $st['questions'], 'messages' => (bool) $st['messages'], 'auto_sync' => (int) $st['auto_sync'],
         'default_profile' => $st['default_profile'],
         'rules' => mk_meta_rules(), 'rules_default' => mk_meta_default_rules(),
         'last_sync' => (int) $st['last_sync'], 'last_result' => $st['last_result'], 'oauth_error' => (string) $st['oauth_error'], 'token_invalid' => (bool) $st['token_invalid'],
@@ -437,6 +437,7 @@ function mk_meta_select(array $in): array
     if (array_key_exists('backfill', $in)) $patch['backfill'] = max(7, min(90, (int) $in['backfill']));
     if (array_key_exists('questions', $in)) $patch['questions'] = (bool) $in['questions'];
     if (array_key_exists('messages', $in)) $patch['messages'] = (bool) $in['messages'];
+    if (array_key_exists('auto_sync', $in)) $patch['auto_sync'] = in_array((int) $in['auto_sync'], [0, 15, 30, 60, 180, 360, 720], true) ? (int) $in['auto_sync'] : 60;
     if (array_key_exists('default_profile', $in)) $patch['default_profile'] = array_key_exists((string) $in['default_profile'], mk_enums()['contact_types']) ? (string) $in['default_profile'] : 'investisseur';
     if (array_key_exists('rules', $in) && is_array($in['rules'])) $patch['rules'] = mk_meta_clean_rules($in['rules']);
     if (array_key_exists('ig_app_id', $in) || array_key_exists('ig_app_secret', $in)) {
@@ -835,7 +836,7 @@ function mk_meta_sync(array $opt = []): array
         if ($only && !in_array($key, $only, true)) continue;
         $res = ['key' => $key, 'label' => $label, 'status' => 'skip', 'counts' => [], 'message' => ''];
         if (!$on) {
-            $res['message'] = $key === 'messages' && !$st['messages'] ? 'Import des messages désactivé (Connexions › étape 3).' : ($key === 'ads' ? 'Aucun compte publicitaire choisi.' : ($key === 'ig_stats' || $key === 'ig_posts' ? "Aucun compte Instagram professionnel n'est relié à la Page." : 'Aucune Page choisie.'));
+            $res['message'] = $key === 'messages' && !$st['messages'] ? 'Import des messages désactivé (Connexions › étape 3).' : ($key === 'ads' ? 'Aucun compte publicitaire choisi.' : ($key === 'ig_stats' || $key === 'ig_posts' ? "Aucun compte Instagram professionnel n'est relié à la Page." : 'Aucune Page Facebook choisie : choisissez-la à l\'étape 3 « Page, Instagram et comptes publicitaires », puis « Enregistrer ces choix ».'));
         } else {
             try {
                 $res['counts'] = $fn($from, $to);

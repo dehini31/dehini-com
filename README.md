@@ -1040,7 +1040,12 @@ importée puis supprimée n'est pas réimportée. Les lignes importées portent 
 retirés par Meta (impressions remplacées par les vues en 2025, par exemple) sont détectés et remplacés tout seuls par
 leurs successeurs. **Connexions › Historique** garde le détail des 60 dernières synchronisations.
 
-Pour une mise à jour toutes les heures, ajouter une 2e tâche cron (Minute `0`, autres champs `*`) :
+**Synchronisation automatique.** Tant que le tableau de bord est ouvert (même dans un onglet en arrière-plan), Meta est
+synchronisé tout seul à l'intervalle choisi dans Connexions › Synchronisation (15 min à 12 h, 1 h par défaut, ou
+désactivé) ; s'il y a du nouveau, une notification le signale et la page se met à jour. Le choix de la Page Facebook est
+obligatoire pour Facebook, les leads et les messages : l'accueil et Connexions préviennent s'il manque (une seule Page
+accessible est choisie d'office). Pour synchroniser aussi quand personne n'a ouvert le tableau de bord, ajouter une 2e
+tâche cron (cPanel › Tâches Cron › « Une fois par heure ») :
 
 ```bash
 /usr/local/bin/php ~/public_html/marketing/cron.php --meta-only > /dev/null 2>&1
