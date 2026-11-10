@@ -105,6 +105,7 @@ function mk_meta_state(bool $reload = false): array
         'metrics' => [], 'oauth_error' => '', 'token_invalid' => false,
         // Instagram : « page » (compte relié à la Page Facebook) ou « instagram » (Se connecter avec Instagram).
         'ig_via' => '', 'ig_app_id' => '', 'ig_app_secret' => '', 'ig_token' => '', 'ig_token_expires' => 0, 'ig_connected_at' => 0, 'ig_oauth_error' => '',
+        'ig_node' => '', 'ig_diag' => '',
     ], is_array($d) ? $d : []);
     return $cache;
 }
@@ -229,7 +230,7 @@ function mk_meta_public(): array
         'instagram' => $st['ig_id'] !== '' ? ['id' => $st['ig_id'], 'username' => $st['ig_username'], 'via' => $st['ig_via'] ?: 'page',
             'days_left' => $st['ig_via'] === 'instagram' && $st['ig_token_expires'] ? (int) floor(((int) $st['ig_token_expires'] - time()) / 86400) : null] : null,
         'ig_app_id' => $st['ig_app_id'], 'ig_app_ready' => $st['ig_app_id'] !== '' && $st['ig_app_secret'] !== '', 'ig_scopes' => MK_META_IG_SCOPES,
-        'ig_oauth_error' => (string) $st['ig_oauth_error'],
+        'ig_oauth_error' => (string) $st['ig_oauth_error'], 'ig_diag' => (string) $st['ig_diag'],
         'ad_accounts' => array_values($st['ad_accounts']),
         'fx' => (float) $st['fx'], 'backfill' => (int) $st['backfill'], 'questions' => (bool) $st['questions'],
         'default_profile' => $st['default_profile'],
@@ -448,7 +449,7 @@ function mk_meta_select(array $in): array
     }
     if (!empty($in['ig_disconnect'])) {
         $st0 = mk_meta_state();
-        $patch += ['ig_token' => '', 'ig_token_expires' => 0, 'ig_connected_at' => 0, 'ig_via' => '', 'ig_id' => '', 'ig_username' => ''];
+        $patch += ['ig_token' => '', 'ig_token_expires' => 0, 'ig_connected_at' => 0, 'ig_via' => '', 'ig_id' => '', 'ig_username' => '', 'ig_node' => '', 'ig_diag' => ''];
         // Retour au compte Instagram relié à la Page, s'il y en a un.
         if ($st0['page_id'] !== '' && $st0['page_token'] !== '') {
             try {
@@ -517,20 +518,58 @@ function mk_meta_ig_exchange(string $code): array
             : (stripos($msg, 'redirect') !== false ? " L'adresse de retour doit être enregistrée dans l'app Meta › connexion Instagram › Paramètres de connexion entreprise." : '');
         throw new MkMetaError('Instagram a refusé la connexion' . ($msg !== '' ? ' : « ' . $msg . ' ».' : ' (réponse vide).') . $hint, ['message' => 'Instagram a refusé la connexion' . ($msg !== '' ? ' : « ' . $msg . ' ».' : ' (réponse vide).') . $hint]);
     }
-    [, $body] = mk_meta_http(rtrim(MK_META_IG_GRAPH_URL, '/') . '/access_token', ['grant_type' => 'ig_exchange_token', 'client_secret' => $sec, 'access_token' => $short]);
+    // Diagnostic de chaque étape, affiché dans la carte Instagram si quelque chose coince (jamais le jeton lui-même).
+    $userId = is_array($d) ? (string) ($d['user_id'] ?? ($d['data'][0]['user_id'] ?? '')) : '';
+    $diag = ['jeton reçu (' . mk_meta_token_kind($short) . ')' . ($userId !== '' ? ', compte ' . $userId : '')];
+    [$lcode, $body] = mk_meta_http(rtrim(MK_META_IG_GRAPH_URL, '/') . '/access_token', ['grant_type' => 'ig_exchange_token', 'client_secret' => $sec, 'access_token' => $short]);
     $l = json_decode($body, true);
     $tok = is_array($l) && !empty($l['access_token']) ? (string) $l['access_token'] : $short;
     $exp = is_array($l) && !empty($l['expires_in']) ? time() + (int) $l['expires_in'] : time() + 3600;
-    try {
-        $me = mk_graph('me', ['fields' => 'user_id,username'], $tok, 'ig');
-    } catch (MkMetaError $e) {
-        if ($e->metaCode() === 190) throw $e;
-        $me = mk_graph('me', ['fields' => 'id,username'], $tok, 'ig');
+    if ($tok === $short) $diag[] = 'jeton 60 jours refusé (HTTP ' . $lcode . ' : ' . mk_meta_err_text($l) . ') : jeton d\'une heure utilisé';
+    // Le compte connecté : « me », sinon l'identifiant donné avec le jeton.
+    $me = null;
+    $node = 'me';
+    foreach (['user_id,username', 'id,username'] as $fields) {
+        try {
+            $me = mk_graph('me', ['fields' => $fields], $tok, 'ig');
+            break;
+        } catch (MkMetaError $e) {
+            if ($e->metaCode() === 190) throw $e;
+            $diag[] = "lecture de « me » ($fields) refusée : " . $e->getMessage() . mk_meta_err_code($e);
+        }
     }
-    $id = (string) ($me['user_id'] ?? $me['id'] ?? '');
-    if ($id === '') throw new MkMetaError("Instagram n'a pas indiqué le compte connecté.");
+    if (!$me && $userId !== '') {
+        try {
+            $me = mk_graph($userId, ['fields' => 'id,username'], $tok, 'ig');
+            $node = $userId;
+        } catch (MkMetaError $e) {
+            if ($e->metaCode() === 190) throw $e;
+            $diag[] = "lecture du compte $userId refusée : " . $e->getMessage() . mk_meta_err_code($e);
+        }
+    }
+    if (!$me && $userId === '') throw new MkMetaError("Instagram n'a pas indiqué le compte connecté. Détail : " . implode(' · ', $diag) . '.');
+    $id = (string) ($me['user_id'] ?? '') ?: ($userId !== '' ? $userId : (string) ($me['id'] ?? ''));
+    if (!$me) $node = $userId; // la connexion est gardée : la synchronisation réessaiera avec l'identifiant du compte
     return mk_meta_put(['ig_token' => mk_seal($tok), 'ig_token_expires' => $exp, 'ig_connected_at' => time(), 'ig_via' => 'instagram',
-        'ig_id' => $id, 'ig_username' => (string) ($me['username'] ?? ''), 'ig_oauth_error' => '']);
+        'ig_id' => $id, 'ig_node' => $node, 'ig_username' => (string) ($me['username'] ?? ''), 'ig_oauth_error' => '',
+        'ig_diag' => $me ? '' : implode(' · ', $diag) . '.']);
+}
+
+/** Type d'un jeton, sans le dévoiler : Instagram (IG…), Facebook (EA…) ou inconnu. */
+function mk_meta_token_kind(string $t): string
+{
+    return strncmp($t, 'IG', 2) === 0 ? 'jeton Instagram' : (strncmp($t, 'EA', 2) === 0 ? 'jeton Facebook' : 'jeton de type inconnu');
+}
+/** Message d'erreur d'une réponse d'Instagram ou de Facebook. */
+function mk_meta_err_text($d): string
+{
+    if (!is_array($d)) return 'réponse illisible';
+    return rtrim(trim((string) ($d['error']['message'] ?? $d['error_message'] ?? 'réponse inattendue')), '.');
+}
+function mk_meta_err_code(MkMetaError $e): string
+{
+    $parts = array_filter([isset($e->err['code']) ? 'code ' . $e->err['code'] : '', $e->err['type'] ?? ($e->err['error_type'] ?? '')]);
+    return $parts ? ' (' . implode(', ', $parts) . ')' : '';
 }
 
 /** Renouvelle le jeton Instagram quand il lui reste moins de 20 jours (Instagram l'accepte après 24 h). */
@@ -553,7 +592,7 @@ function mk_meta_ig_ctx(): array
 {
     $st = mk_meta_state();
     // Avec « Se connecter avec Instagram », on passe par « me » : pas de doute sur l'identifiant du compte.
-    if ($st['ig_via'] === 'instagram' && $st['ig_token'] !== '') return [mk_unseal($st['ig_token']), 'ig', 'me'];
+    if ($st['ig_via'] === 'instagram' && $st['ig_token'] !== '') return [mk_unseal($st['ig_token']), 'ig', $st['ig_node'] !== '' ? $st['ig_node'] : 'me'];
     return [mk_unseal($st['page_token']) ?: '', '', $st['ig_id']];
 }
 

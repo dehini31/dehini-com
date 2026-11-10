@@ -1402,7 +1402,8 @@ VIEWS["connexions/meta"] = { fn: async param => {
   };
   const drawIg = () => {
     const p = pageOf(sel.page);
-    if (igDirect) return sum("share", "pink", "@" + esc(m.instagram.username), "Connecté avec Instagram" + (m.instagram.days_left != null ? ` · renouvelé tout seul (encore ${num(Math.max(0, m.instagram.days_left))} j)` : ""), `<a class="btn sm" href="meta.php?start=instagram">Reconnecter</a><button type="button" class="btn sm del" id="mIgOff">Déconnecter</button>`);
+    if (igDirect) return sum("share", "pink", m.instagram.username ? "@" + esc(m.instagram.username) : "Compte Instagram " + esc(m.instagram.id), "Connecté avec Instagram" + (m.instagram.days_left != null ? ` · renouvelé tout seul (encore ${num(Math.max(0, m.instagram.days_left))} j)` : ""), `<a class="btn sm" href="meta.php?start=instagram">Reconnecter</a><button type="button" class="btn sm del" id="mIgOff">Déconnecter</button>`)
+      + (m.ig_diag ? `<div class="banner warn" style="margin:10px 0 0">${ic("alert", "sm")}<span>Connecté, mais Instagram refuse de lire le compte par « me » : la synchronisation utilisera son identifiant. Si elle échoue aussi, envoyez ce diagnostic : <b>${esc(m.ig_diag)}</b></span></div>` : "");
     if (p && p.instagram) return sum("share", "pink", "@" + esc(p.instagram.username), "Relié à la Page " + esc(p.name) + " : importé avec elle", "");
     const igIsFb = !!m.ig_app_id && m.ig_app_id === m.app_id; // ID Facebook collé à la place de l'ID Instagram
     const ready = m.ig_app_ready && !igIsFb;
