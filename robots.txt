@@ -7,6 +7,9 @@ Disallow: /impact/page.php
 Disallow: /swanbida/admin/
 Disallow: /marketing/
 Disallow: /swanbida/api.php
+Disallow: /maillage/espace/
+Disallow: /maillage/admin.html
+Disallow: /maillage/api.php
 Disallow: /swanbida/commande/
 Disallow: /swanbida/fr/commande/
 
