@@ -988,6 +988,19 @@ Menu **Connexions** du tableau de bord, en trois étapes :
 3. **Page, Instagram et comptes publicitaires** — choisir la Page Facebook (son compte Instagram professionnel suit),
    les comptes publicitaires, le taux de conversion si le compte publicitaire est dans une autre devise (ex. 1 USD =
    250 DA), la profondeur de la première importation (30, 60 ou 90 jours) et l'import des questions en commentaire.
+   Une fois enregistrés, seuls les choix s'affichent (bouton « Changer » / « Modifier ») ; la liste des comptes
+   publicitaires a une recherche et masque les comptes inactifs (désactivés, fermés, paiement en attente), qu'une case
+   permet d'afficher. Pour ne voir que les comptes de YINVESTI dès la fenêtre Facebook, ne cochez qu'eux lors de la
+   connexion (« Modifier les paramètres » de la fenêtre).
+
+**Se connecter avec Instagram.** Si aucun compte Instagram professionnel n'est relié à la Page, la carte Instagram
+propose de le connecter directement (Business Login for Instagram) : dans l'app Meta, ajouter le cas d'utilisation
+Instagram (« Configuration de l'API avec la connexion Instagram »), y déclarer l'URI de redirection
+`https://dehini.com/marketing/meta.php`, puis coller dans Connexions l'**ID de l'app Instagram** et la **clé secrète de
+l'app Instagram** (différents de l'App ID Facebook) et cliquer sur « Se connecter avec Instagram » (autorisations
+`instagram_business_basic`, `instagram_business_manage_insights`, `instagram_business_manage_comments`). Le jeton
+Instagram dure 60 jours et se renouvelle tout seul à chaque synchronisation. Autre solution : relier le compte
+Instagram à la Page dans Meta Business Suite › Paramètres › Comptes › Comptes Instagram, puis se reconnecter.
 
 Ce que la synchronisation remplit (bouton « Synchroniser maintenant », et chaque matin avec la tâche cron) :
 
