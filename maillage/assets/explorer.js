@@ -12,7 +12,7 @@
   const { html, icon, fmt, color } = ML;
   const $ = (sel, root) => (root || document).querySelector(sel);
   const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
-  const TYPES = { magasin: 'Magasin', succursale: 'Succursale', distributeur: 'Distributeur' };
+  const TYPES = () => ({ magasin: ML.t('Magasin'), succursale: ML.t('Succursale'), distributeur: ML.t('Distributeur') });
   const S = { stores: null, storeById: {}, brandById: {}, brandBySlug: {}, cleanup: null, current: '', logged: {}, seq: 0 };
   class Stale extends Error {}
   /** Appel lié à la page affichée : abandonné si l'on a changé de page avant la réponse. */
@@ -42,25 +42,25 @@
       <header class="topbar">
         <a class="logo-link" href="../" aria-label="Maillage, accueil">${ML.logo()}</a>
         <nav class="topnav" aria-label="Navigation principale">
-          <a href="#/carte" data-nav="carte">Carte</a>
-          <a href="#/produits" data-nav="produits">Produits</a>
-          <a href="#/marques" data-nav="marques">Marques</a>
-          <a href="#/suivi" data-nav="suivi">Suivi de commande</a>
+          <a href="#/carte" data-nav="carte">${ML.t('Carte')}</a>
+          <a href="#/produits" data-nav="produits">${ML.t('Produits')}</a>
+          <a href="#/marques" data-nav="marques">${ML.t('Marques')}</a>
+          <a href="#/suivi" data-nav="suivi">${ML.t('Suivi de commande')}</a>
         </nav>
         <button class="loc-chip" type="button" data-act="loc" aria-label="Changer de position">${icon('map-pin')}<span data-loc-label></span></button>
-        <a class="btn btn-line btn-sm pro-link" href="../espace/">Espace pro</a>
+        ${ML.langToggle()}<a class="btn btn-line btn-sm pro-link" href="../espace/">${ML.t('Espace pro')}</a>
       </header>`);
     document.body.insertAdjacentHTML('beforeend', html`
       <nav class="tabbar" aria-label="Navigation">
-        <a href="#/carte" data-nav="carte">${icon('map')}<span>Carte</span></a>
-        <a href="#/produits" data-nav="produits">${icon('shopping-bag')}<span>Produits</span></a>
-        <a href="#/marques" data-nav="marques">${icon('tag')}<span>Marques</span></a>
-        <a href="#/suivi" data-nav="suivi">${icon('package-check')}<span>Suivi</span></a>
+        <a href="#/carte" data-nav="carte">${icon('map')}<span>${ML.t('Carte')}</span></a>
+        <a href="#/produits" data-nav="produits">${icon('shopping-bag')}<span>${ML.t('Produits')}</span></a>
+        <a href="#/marques" data-nav="marques">${icon('tag')}<span>${ML.t('Marques')}</span></a>
+        <a href="#/suivi" data-nav="suivi">${icon('package-check')}<span>${ML.t('Suivi')}</span></a>
       </nav>`);
     paintLoc();
   }
   function paintLoc() {
-    $$('[data-loc-label]').forEach((el) => { el.textContent = ML.loc ? ML.loc.label : 'Ma ville'; });
+    $$('[data-loc-label]').forEach((el) => { el.textContent = ML.loc ? ML.loc.label : ML.t('Ma ville'); });
     $$('.loc-chip').forEach((el) => el.classList.toggle('is-set', !!ML.loc));
   }
   ML.actions.loc = () => ML.pickLocation();
@@ -68,7 +68,7 @@
   const view = () => $('#view');
   const loading = () => { view().innerHTML = '<div class="loading"><div class="spinner"></div></div>'; };
   const notFound = (msg) => {
-    view().innerHTML = html`<div class="page"><div class="empty">${icon('search-x')}<h3>${msg || 'Page introuvable'}</h3><p>Le lien a peut-être changé.</p><a class="btn btn-dark" href="#/carte">Revenir à la carte</a></div></div>`;
+    view().innerHTML = html`<div class="page"><div class="empty">${icon('search-x')}<h3>${msg || ML.t('Page introuvable')}</h3><p>${ML.t('Le lien a peut-être changé.')}</p><a class="btn btn-dark" href="#/carte">${ML.t('Revenir à la carte')}</a></div></div>`;
   };
 
   /* ------------------------------------------------------------- routeur */
@@ -96,7 +96,7 @@
     } catch (e) {
       if (my !== S.seq || e instanceof Stale) return;
       if (e.status === 404) notFound(e.message);
-      else view().innerHTML = html`<div class="page"><div class="empty">${icon('wifi-off')}<h3>Chargement impossible</h3><p>${e.message}</p><button class="btn btn-dark" data-act="reload">Réessayer</button></div></div>`;
+      else view().innerHTML = html`<div class="page"><div class="empty">${icon('wifi-off')}<h3>${ML.t('Chargement impossible')}</h3><p>${e.message}</p><button class="btn btn-dark" data-act="reload">${ML.t('Réessayer')}</button></div></div>`;
     }
   }
   ML.actions.reload = () => route();
@@ -107,15 +107,15 @@
     if (st.open === null) return '';
     return html`<span class="open ${st.open ? 'is-open' : 'is-closed'}"><i></i>${st.label}</span>`;
   };
-  const typeBadge = (s) => html`<span class="badge badge-line"><span class="type-dot" style="--c:${color(ML.TYPE_COLORS[s.type])}"></span>${TYPES[s.type] || s.type}</span>`;
-  const demoBadge = (on) => (on ? html`<span class="badge" title="Donnée de démonstration">Démo</span>` : '');
+  const typeBadge = (s) => html`<span class="badge badge-line"><span class="type-dot" style="--c:${color(ML.TYPE_COLORS[s.type])}"></span>${TYPES()[s.type] || s.type}</span>`;
+  const demoBadge = (on) => (on ? html`<span class="badge" title="${ML.t('Donnée de démonstration')}">${ML.t('Démo')}</span>` : '');
   const services = (s) => html`
-    ${s.pickup ? html`<span class="svc">${icon('shopping-bag')}Retrait</span>` : ''}
-    ${s.reserve ? html`<span class="svc">${icon('bookmark-check')}Réservation</span>` : ''}
-    ${s.delivery ? html`<span class="svc">${icon('truck')}Livraison</span>` : ''}`;
+    ${s.pickup ? html`<span class="svc">${icon('shopping-bag')}${ML.t('Retrait')}</span>` : ''}
+    ${s.reserve ? html`<span class="svc">${icon('bookmark-check')}${ML.t('Réservation')}</span>` : ''}
+    ${s.delivery ? html`<span class="svc">${icon('truck')}${ML.t('Livraison')}</span>` : ''}`;
   const contactButtons = (s, small) => html`
-    ${s.phone ? html`<a class="btn btn-line ${small ? 'btn-sm' : ''}" href="tel:${s.phone}" data-track="call" data-id="${s.id}">${icon('phone')}Appeler</a>` : ''}
-    <a class="btn btn-line ${small ? 'btn-sm' : ''}" href="${ML.routeUrl(s)}" target="_blank" rel="noopener" data-track="route" data-id="${s.id}">${icon('navigation')}Itinéraire</a>`;
+    ${s.phone ? html`<a class="btn btn-line ${small ? 'btn-sm' : ''}" href="tel:${s.phone}" data-track="call" data-id="${s.id}">${icon('phone')}${ML.t('Appeler')}</a>` : ''}
+    <a class="btn btn-line ${small ? 'btn-sm' : ''}" href="${ML.routeUrl(s)}" target="_blank" rel="noopener" data-track="route" data-id="${s.id}">${icon('navigation')}${ML.t('Itinéraire')}</a>`;
   document.addEventListener('click', (e) => {
     const t = e.target.closest('[data-track]');
     if (t) api('event', { body: { kind: t.dataset.track, id: +t.dataset.id } }).catch(() => {});
@@ -125,13 +125,13 @@
     <a class="pcard" href="#/produit/${p.slug}">
       ${ML.visual(p)}
       <div class="pcard-body">
-        <span class="pcard-brand">${p.brand.name}${p.demo ? html` <span class="badge">Démo</span>` : ''}</span>
+        <span class="pcard-brand">${p.brand.name}${p.demo ? html` <span class="badge">${ML.t('Démo')}</span>` : ''}</span>
         <h3>${p.name}</h3>
         <div class="pcard-row">
-          <b class="price">${p.price_max > p.price ? 'dès ' : ''}${fmt.price(p.price)}</b>
+          <b class="price">${p.price_max > p.price ? ML.t('dès ') : ''}${fmt.price(p.price)}</b>
           ${p.colors.length ? html`<span class="swatches">${p.colors.slice(0, 5).map((c) => html`<i class="swatch" style="--c:${color(c.hex)}" title="${c.name}"></i>`)}${p.colors.length > 5 ? html`<small>+${p.colors.length - 5}</small>` : ''}</span>` : ''}
         </div>
-        <span class="pcard-stock ${p.stores ? '' : 'is-out'}">${icon(p.stores ? 'store' : 'circle-slash')}${p.stores ? 'Dans ' + fmt.plural(p.stores, 'point de vente', 'points de vente') : 'Indisponible pour le moment'}</span>
+        <span class="pcard-stock ${p.stores ? '' : 'is-out'}">${icon(p.stores ? 'store' : 'circle-slash')}${p.stores ? ML.t('Dans ') + fmt.plural(p.stores, 'point de vente', 'points de vente') : ML.t('Indisponible pour le moment')}</span>
       </div>
     </a>`;
 
@@ -147,15 +147,15 @@
       <div class="mapview">
         <div class="mv-filters">
           <div class="mv-search">
-            <div class="input-icon grow">${icon('search')}<input class="input" type="search" placeholder="Magasin, marque, ville…" autocomplete="off" data-input="mapq" aria-label="Chercher un point de vente"></div>
-            <button class="btn btn-dark btn-icon" type="button" data-act="near" aria-label="Autour de moi" title="Autour de moi">${icon('locate-fixed')}</button>
+            <div class="input-icon grow">${icon('search')}<input class="input" type="search" placeholder="${ML.t('Magasin, marque, ville…')}" autocomplete="off" data-input="mapq" aria-label="${ML.t('Chercher un point de vente')}"></div>
+            <button class="btn btn-dark btn-icon" type="button" data-act="near" aria-label="${ML.t('Autour de moi')}" title="${ML.t('Autour de moi')}">${icon('locate-fixed')}</button>
           </div>
           <div class="chips" data-brands role="group" aria-label="Filtrer par marque"></div>
           <div class="chips" data-flags role="group" aria-label="Filtrer par type"></div>
         </div>
         <div class="mv-map">
-          <div id="map" aria-label="Carte des points de vente"></div>
-          <div class="map-legend">${Object.keys(TYPES).map((t) => html`<span><i style="--c:${ML.TYPE_COLORS[t]}"></i>${TYPES[t]}</span>`)}</div>
+          <div id="map" aria-label="${ML.t('Carte des points de vente')}"></div>
+          <div class="map-legend">${Object.keys(TYPES()).map((tk) => html`<span><i style="--c:${ML.TYPE_COLORS[tk]}"></i>${TYPES()[tk]}</span>`)}</div>
         </div>
         <div class="mv-results">
           <p class="mv-count" data-count aria-live="polite"></p>
@@ -172,12 +172,12 @@
 
     const chips = () => {
       $('[data-brands]').innerHTML = html`
-        <button class="chip ${F.brand ? '' : 'is-on'}" type="button" data-act="mbrand" data-id="0">Toutes les marques</button>
+        <button class="chip ${F.brand ? '' : 'is-on'}" type="button" data-act="mbrand" data-id="0">${ML.t('Toutes les marques')}</button>
         ${brands.map((b) => html`<button class="chip ${F.brand === b.id ? 'is-on' : ''}" type="button" data-act="mbrand" data-id="${b.id}"><span class="dot" style="--c:${color(b.color)}"></span>${b.name}</button>`)}`;
       $('[data-flags]').innerHTML = html`
-        ${Object.keys(TYPES).map((t) => html`<button class="chip ${F.type === t ? 'is-on' : ''}" type="button" data-act="mtype" data-id="${t}"><span class="dot" style="--c:${ML.TYPE_COLORS[t]}"></span>${TYPES[t]}s</button>`)}
-        <button class="chip ${F.open ? 'is-on' : ''}" type="button" data-act="mflag" data-id="open">${icon('clock', 'ico-sm')}Ouvert maintenant</button>
-        <button class="chip ${F.delivery ? 'is-on' : ''}" type="button" data-act="mflag" data-id="delivery">${icon('truck', 'ico-sm')}Livraison</button>`;
+        ${Object.keys(TYPES()).map((tk) => html`<button class="chip ${F.type === tk ? 'is-on' : ''}" type="button" data-act="mtype" data-id="${tk}"><span class="dot" style="--c:${ML.TYPE_COLORS[tk]}"></span>${TYPES()[tk]}</button>`)}
+        <button class="chip ${F.open ? 'is-on' : ''}" type="button" data-act="mflag" data-id="open">${icon('clock', 'ico-sm')}${ML.t('Ouvert maintenant')}</button>
+        <button class="chip ${F.delivery ? 'is-on' : ''}" type="button" data-act="mflag" data-id="delivery">${icon('truck', 'ico-sm')}${ML.t('Livraison')}</button>`;
     };
 
     const filter = () => {
@@ -189,7 +189,7 @@
         if (F.delivery && !s.delivery) return false;
         if (F.open && ML.openState(s.hours).open !== true) return false;
         if (tokens.length) {
-          const hay = ML.norm([s.name, s.city, s.zone, s.address, s.company.name, s.brands.map((id) => (S.brandById[id] || {}).name).join(' ')].join(' '));
+          const hay = ML.norm([s.name, s.city, s.zone, ML.storeZone(s), s.address, s.company.name, s.brands.map((id) => (S.brandById[id] || {}).name).join(' ')].join(' '));
           if (!tokens.every((t) => hay.includes(t))) return false;
         }
         return true;
@@ -202,7 +202,7 @@
         <div class="scard-top">
           <div class="grow">
             <h3>${s.name}</h3>
-            <p class="scard-addr">${s.address || s.city}${s.zone && s.zone !== s.city ? ', ' + s.zone : ''}</p>
+            <p class="scard-addr">${s.address || s.city}${ML.storeZone(s) && ML.storeZone(s) !== s.city ? ', ' + ML.storeZone(s) : ''}</p>
           </div>
           ${s.km != null ? html`<span class="km">${fmt.km(s.km)}</span>` : ''}
         </div>
@@ -210,11 +210,11 @@
         <div class="scard-brands">${s.brands.slice(0, 4).map((id) => (S.brandById[id] ? html`<span class="bchip"><i style="--c:${color(S.brandById[id].color)}"></i>${S.brandById[id].name}</span>` : ''))}</div>
         <div class="scard-actions">
           ${contactButtons(s, true)}
-          <a class="btn btn-soft btn-sm" href="#/pdv/${s.id}">Voir${icon('arrow-right', 'ico-sm')}</a>
+          <a class="btn btn-soft btn-sm" href="#/pdv/${s.id}">${ML.t('Voir')}${icon('arrow-right', 'ico-sm')}</a>
         </div>
       </li>`;
 
-    const popup = (s) => html`<b>${s.name}</b><br><span class="muted">${s.address || s.city}</span><br>${openBadge(s)}<br><a class="link" href="#/pdv/${s.id}">Voir le point de vente</a>`.toString();
+    const popup = (s) => html`<b>${s.name}</b><br><span class="muted">${s.address || s.city}</span><br>${openBadge(s)}<br><a class="link" href="#/pdv/${s.id}">${ML.t('Voir le point de vente')}</a>`.toString();
 
     const paint = (fit) => {
       shown = filter();
@@ -228,10 +228,10 @@
         markers[s.id] = m;
         cluster.addLayer(m);
       });
-      const where = ML.loc ? ' · du plus proche au plus loin de ' + (ML.loc.precise ? 'votre position' : ML.loc.label) : '';
+      const where = ML.loc ? ' · ' + ML.t('du plus proche au plus loin de') + ' ' + (ML.loc.precise ? ML.t('votre position') : ML.loc.label) : '';
       $('[data-count]').textContent = shown.length ? fmt.plural(shown.length, 'point de vente', 'points de vente') + where : '';
       $('[data-list]').innerHTML = shown.length ? html`${shown.slice(0, 60).map(card)}` : html`
-        <li class="empty">${icon('map-pin-off')}<h3>Aucun point de vente ne correspond</h3><p>Essayez une autre ville ou retirez un filtre.</p><button class="btn btn-line btn-sm" data-act="mreset">Tout afficher</button></li>`;
+        <li class="empty">${icon('map-pin-off')}<h3>${ML.t('Aucun point de vente ne correspond')}</h3><p>${ML.t('Essayez une autre ville ou retirez un filtre.')}</p><button class="btn btn-line btn-sm" data-act="mreset">${ML.t('Tout afficher')}</button></li>`;
       if (meMarker) { map.removeLayer(meMarker); meMarker = null; }
       if (ML.loc) meMarker = L.marker([ML.loc.lat, ML.loc.lng], { icon: ML.mePin(), interactive: false, keyboard: false, zIndexOffset: -100 }).addTo(map);
       if (fit) {
@@ -298,32 +298,32 @@
     loading();
     await loadStores();
     const s = S.storeById[id];
-    if (!s) { notFound('Ce point de vente n\'est plus en ligne'); return; }
+    if (!s) { notFound(ML.t('Ce point de vente n\'est plus en ligne')); return; }
     hit('store', id);
     const km = kmTo(s);
     view().innerHTML = html`
       <div class="page">
-        <a class="back" href="#/carte">${icon('arrow-left')}Carte des points de vente</a>
+        <a class="back" href="#/carte">${icon('arrow-left')}${ML.t('Carte des points de vente')}</a>
         <div class="store-top">
           <div class="store-main card card-pad">
             <div class="scard-tags">${typeBadge(s)}${openBadge(s)}${demoBadge(s.company.demo)}</div>
             <h1>${s.name}</h1>
             <p class="muted">${s.company.name}</p>
             <ul class="facts">
-              <li>${icon('map-pin')}<span>${s.address}${s.zone ? html`<br><span class="muted">${s.city}${s.zone !== s.city ? ' · ' + s.zone : ''}</span>` : ''}${km != null ? html`<br><b>à ${fmt.km(km)}</b>` : ''}</span></li>
+              <li>${icon('map-pin')}<span>${s.address}${ML.storeZone(s) ? html`<br><span class="muted">${s.city}${ML.storeZone(s) !== s.city ? ' · ' + ML.storeZone(s) : ''}</span>` : ''}${km != null ? html`<br><b>${ML.t('à')} ${fmt.km(km)}</b>` : ''}</span></li>
               ${s.phone ? html`<li>${icon('phone')}<a class="link" href="tel:${s.phone}" data-track="call" data-id="${s.id}">${s.phone}</a></li>` : ''}
               ${ML.hoursText(s.hours) ? html`<li>${icon('clock')}<span>${ML.hoursText(s.hours)}</span></li>` : ''}
               <li>${icon('check')}<span class="svcs">${services(s)}</span></li>
             </ul>
             <div class="row row-wrap">${contactButtons(s)}</div>
-            ${s.brands.length ? html`<div class="store-brands"><span class="label">Marques sur place</span><div class="chips wrap">${s.brands.map((b) => (S.brandById[b] ? html`<a class="chip" href="#/marque/${S.brandById[b].slug}"><span class="dot" style="--c:${color(S.brandById[b].color)}"></span>${S.brandById[b].name}</a>` : ''))}</div></div>` : ''}
+            ${s.brands.length ? html`<div class="store-brands"><span class="label">${ML.t('Marques sur place')}</span><div class="chips wrap">${s.brands.map((b) => (S.brandById[b] ? html`<a class="chip" href="#/marque/${S.brandById[b].slug}"><span class="dot" style="--c:${color(S.brandById[b].color)}"></span>${S.brandById[b].name}</a>` : ''))}</div></div>` : ''}
           </div>
           <div class="store-map card"><div id="map"></div></div>
         </div>
         <section class="section">
           <div class="section-head">
-            <h2>Disponible dans ce point de vente</h2>
-            <form class="input-icon" data-form="storeq" role="search">${icon('search')}<input class="input" type="search" name="q" placeholder="Chercher un produit ici…" autocomplete="off" aria-label="Chercher un produit dans ce point de vente"></form>
+            <h2>${ML.t('Disponible dans ce point de vente')}</h2>
+            <form class="input-icon" data-form="storeq" role="search">${icon('search')}<input class="input" type="search" name="q" placeholder="${ML.t('Chercher un produit ici…')}" autocomplete="off" aria-label="${ML.t('Chercher un produit dans ce point de vente')}"></form>
           </div>
           <div data-grid><div class="loading"><div class="spinner"></div></div></div>
         </section>
@@ -334,32 +334,32 @@
     S.cleanup = () => map.remove();
     const load = async (q) => {
       const res = await api('products', { params: { store: id, q, instock: 1 } });
-      $('[data-grid]').innerHTML = res.items.length ? html`<div class="pgrid">${res.items.map(productCard)}</div>` : html`<div class="empty">${icon('package-search')}<h3>${q ? 'Aucun produit ne correspond' : 'Pas encore de produit en stock ici'}</h3><p>${q ? 'Essayez un autre mot.' : 'Appelez le point de vente pour connaître son assortiment.'}</p></div>`;
+      $('[data-grid]').innerHTML = res.items.length ? html`<div class="pgrid">${res.items.map(productCard)}</div>` : html`<div class="empty">${icon('package-search')}<h3>${q ? ML.t('Aucun produit ne correspond') : ML.t('Pas encore de produit en stock ici')}</h3><p>${q ? ML.t('Essayez un autre mot.') : ML.t('Appelez le point de vente pour connaître son assortiment.')}</p></div>`;
     };
     ML.forms.storeq = (f) => load(f.q.value.trim());
     await load('');
   }
 
   /* ============================================================ CATALOGUE */
-  const SORTS = { '': 'Pertinence', new: 'Nouveautés', price_asc: 'Prix croissant', price_desc: 'Prix décroissant' };
+  const SORTS = () => ({ '': ML.t('Pertinence'), new: ML.t('Nouveautés'), price_asc: ML.t('Prix croissant'), price_desc: ML.t('Prix décroissant') });
   async function catalogView(query) {
     view().innerHTML = html`
       <div class="page catalog">
         <div class="cat-hero">
-          <h1>Trouvez un produit <em>près de chez vous</em></h1>
+          <h1>${ML.t('Trouvez un produit')} <em>${ML.t('près de chez vous')}</em></h1>
           <form class="cat-search" data-form="catq" role="search">
-            <div class="input-icon grow">${icon('search')}<input class="input" type="search" name="q" placeholder="Chaussure de running, bouilloire, parure de lit…" autocomplete="off" data-input="catq" aria-label="Chercher un produit"></div>
-            <button class="btn btn-primary" type="submit">Chercher</button>
+            <div class="input-icon grow">${icon('search')}<input class="input" type="search" name="q" placeholder="${ML.t('Chaussure de running, bouilloire, parure de lit…')}" autocomplete="off" data-input="catq" aria-label="${ML.t('Chercher un produit')}"></div>
+            <button class="btn btn-primary" type="submit">${ML.t('Chercher')}</button>
           </form>
         </div>
         <div class="cat-body">
-          <aside class="facets" data-facets aria-label="Filtres"></aside>
+          <aside class="facets" data-facets aria-label="${ML.t('Filtres')}"></aside>
           <section class="cat-main">
             <div class="cat-bar">
               <p class="cat-count" data-count aria-live="polite"></p>
               <div class="row">
-                <button class="btn btn-line btn-sm cat-filter-btn" type="button" data-act="facets">${icon('sliders-horizontal', 'ico-sm')}Filtres<span data-nfilters></span></button>
-                <select class="select input-sm" data-change="sort" aria-label="Trier">${Object.keys(SORTS).map((k) => html`<option value="${k}">${SORTS[k]}</option>`)}</select>
+                <button class="btn btn-line btn-sm cat-filter-btn" type="button" data-act="facets">${icon('sliders-horizontal', 'ico-sm')}${ML.t('Filtres')}<span data-nfilters></span></button>
+                <select class="select input-sm" data-change="sort" aria-label="${ML.t('Trier')}">${Object.keys(SORTS()).map((k) => html`<option value="${k}">${SORTS()[k]}</option>`)}</select>
               </div>
             </div>
             <div class="chips wrap" data-active></div>
@@ -378,25 +378,25 @@
       if (!facets) return '';
       const group = (title, body) => html`<div class="facet"><h3>${title}</h3>${body}</div>`;
       return html`
-        <div class="facets-head"><b>Filtres</b><button class="btn btn-ghost btn-icon btn-sm" type="button" data-act="facets-close" aria-label="Fermer les filtres">${icon('x')}</button></div>
-        ${group('Rayon', html`<div class="facet-list">${facets.categories.map((c) => html`<button class="facet-opt ${Q.cat === c.key ? 'is-on' : ''}" type="button" data-act="facet" data-k="cat" data-v="${c.key}"><span>${c.label}</span><small>${c.n}</small></button>`)}</div>`)}
-        ${facets.brands.length > 1 || Q.marque ? group('Marque', html`<div class="facet-list">${facets.brands.map((b) => html`<button class="facet-opt ${Q.marque === String(b.id) ? 'is-on' : ''}" type="button" data-act="facet" data-k="marque" data-v="${b.id}"><span>${b.name}</span><small>${b.n}</small></button>`)}</div>`) : ''}
-        ${facets.sizes.length ? group('Taille', html`<div class="chips wrap">${facets.sizes.map((s) => html`<button class="chip ${ML.norm(Q.taille) === ML.norm(s.label) ? 'is-on' : ''}" type="button" data-act="facet" data-k="taille" data-v="${s.label}">${s.label}</button>`)}</div>`) : ''}
-        ${facets.colors.length ? group('Couleur', html`<div class="chips wrap">${facets.colors.map((c) => html`<button class="chip ${ML.norm(Q.couleur) === ML.norm(c.label) ? 'is-on' : ''}" type="button" data-act="facet" data-k="couleur" data-v="${c.label}"><i class="swatch" style="--c:${color(c.hex)}"></i>${c.label}</button>`)}</div>`) : ''}
-        ${group('Prix (' + ML.boot.config.currency + ')', html`<form class="price-range" data-form="price"><input class="input input-sm" type="number" name="pmin" min="0" inputmode="numeric" placeholder="Min" value="${Q.pmin || ''}" aria-label="Prix minimum"><span>–</span><input class="input input-sm" type="number" name="pmax" min="0" inputmode="numeric" placeholder="Max" value="${Q.pmax || ''}" aria-label="Prix maximum"><button class="btn btn-line btn-sm" type="submit">OK</button></form>`)}
-        <label class="switch facet-switch"><input type="checkbox" data-change="stock" ${Q.stock ? ML.raw('checked') : ''}><i></i>En stock uniquement</label>
-        <button class="btn btn-dark btn-block facets-apply" type="button" data-act="facets-close">Voir les résultats</button>`;
+        <div class="facets-head"><b>${ML.t('Filtres')}</b><button class="btn btn-ghost btn-icon btn-sm" type="button" data-act="facets-close" aria-label="${ML.t('Fermer les filtres')}">${icon('x')}</button></div>
+        ${group(ML.t('Rayon'), html`<div class="facet-list">${facets.categories.map((c) => html`<button class="facet-opt ${Q.cat === c.key ? 'is-on' : ''}" type="button" data-act="facet" data-k="cat" data-v="${c.key}"><span>${c.label}</span><small>${c.n}</small></button>`)}</div>`)}
+        ${facets.brands.length > 1 || Q.marque ? group(ML.t('Marque'), html`<div class="facet-list">${facets.brands.map((b) => html`<button class="facet-opt ${Q.marque === String(b.id) ? 'is-on' : ''}" type="button" data-act="facet" data-k="marque" data-v="${b.id}"><span>${b.name}</span><small>${b.n}</small></button>`)}</div>`) : ''}
+        ${facets.sizes.length ? group(ML.t('Taille'), html`<div class="chips wrap">${facets.sizes.map((s) => html`<button class="chip ${ML.norm(Q.taille) === ML.norm(s.label) ? 'is-on' : ''}" type="button" data-act="facet" data-k="taille" data-v="${s.label}">${s.label}</button>`)}</div>`) : ''}
+        ${facets.colors.length ? group(ML.t('Couleur'), html`<div class="chips wrap">${facets.colors.map((c) => html`<button class="chip ${ML.norm(Q.couleur) === ML.norm(c.label) ? 'is-on' : ''}" type="button" data-act="facet" data-k="couleur" data-v="${c.label}"><i class="swatch" style="--c:${color(c.hex)}"></i>${c.label}</button>`)}</div>`) : ''}
+        ${group(ML.t('Prix') + ' (' + ML.boot.config.currency + ')', html`<form class="price-range" data-form="price"><input class="input input-sm" type="number" name="pmin" min="0" inputmode="numeric" placeholder="${ML.lang === 'ar' ? 'حد أدنى' : 'Min'}" value="${Q.pmin || ''}" aria-label="${ML.lang === 'ar' ? 'الحد الأدنى' : 'Prix minimum'}"><span>–</span><input class="input input-sm" type="number" name="pmax" min="0" inputmode="numeric" placeholder="${ML.lang === 'ar' ? 'حد أقصى' : 'Max'}" value="${Q.pmax || ''}" aria-label="${ML.lang === 'ar' ? 'الحد الأقصى' : 'Prix maximum'}"><button class="btn btn-line btn-sm" type="submit">OK</button></form>`)}
+        <label class="switch facet-switch"><input type="checkbox" data-change="stock" ${Q.stock ? ML.raw('checked') : ''}><i></i>${ML.t('En stock uniquement')}</label>
+        <button class="btn btn-dark btn-block facets-apply" type="button" data-act="facets-close">${ML.t('Voir les résultats')}</button>`;
     };
     const activeChips = () => {
       const a = [];
       if (Q.cat) a.push(['cat', ML.cats[Q.cat] || Q.cat]);
       if (Q.marque && S.brandById[Q.marque]) a.push(['marque', S.brandById[Q.marque].name]);
-      if (Q.taille) a.push(['taille', 'Taille ' + Q.taille]);
+      if (Q.taille) a.push(['taille', ML.t('Taille') + ' ' + Q.taille]);
       if (Q.couleur) a.push(['couleur', Q.couleur]);
       if (Q.pmin || Q.pmax) a.push(['prix', (Q.pmin || '0') + ' – ' + (Q.pmax || '…') + ' ' + ML.boot.config.currency]);
-      if (Q.stock) a.push(['stock', 'En stock']);
+      if (Q.stock) a.push(['stock', ML.t('En stock')]);
       $('[data-nfilters]').textContent = a.length ? ' · ' + a.length : '';
-      return a.length ? html`${a.map(([k, label]) => html`<button class="chip is-on" type="button" data-act="unfacet" data-k="${k}">${label}${icon('x', 'ico-sm')}</button>`)}<button class="chip" type="button" data-act="unfacet" data-k="all">Tout effacer</button>` : '';
+      return a.length ? html`${a.map(([k, label]) => html`<button class="chip is-on" type="button" data-act="unfacet" data-k="${k}">${label}${icon('x', 'ico-sm')}</button>`)}<button class="chip" type="button" data-act="unfacet" data-k="all">${ML.t('Tout effacer')}</button>` : '';
     };
     const update = async (query, log) => {
       Q = query;
@@ -416,17 +416,17 @@
       grid.classList.remove('is-loading');
       $('[data-facets]').innerHTML = facetHtml();
       $('[data-active]').innerHTML = activeChips();
-      $('[data-count]').textContent = res.total ? fmt.plural(res.total, 'produit') + (Q.q ? ' pour « ' + Q.q + ' »' : '') : '';
+      $('[data-count]').textContent = res.total ? fmt.plural(res.total, 'produit') + (Q.q ? ' ' + ML.t('pour « ') + Q.q + ML.t(' »') : '') : '';
       if (!res.items.length) {
-        grid.innerHTML = html`<div class="empty">${icon('package-search')}<h3>Aucun produit ne correspond${Q.q ? ' à « ' + Q.q + ' »' : ''}</h3><p>Vérifiez l'orthographe, essayez un mot plus général ou retirez un filtre. Votre recherche est transmise aux marques : elle les aide à étoffer leur offre.</p><button class="btn btn-line btn-sm" data-act="unfacet" data-k="all">Tout effacer</button></div>`;
+        grid.innerHTML = html`<div class="empty">${icon('package-search')}<h3>${ML.t("Aucun produit ne correspond à « ") + Q.q + ML.t(" »")}</h3><p>${ML.t('Vérifiez l\'orthographe, essayez un mot plus général ou retirez un filtre. Votre recherche est transmise aux marques : elle les aide à étoffer leur offre.')}</p><button class="btn btn-line btn-sm" data-act="unfacet" data-k="all">${ML.t('Tout effacer')}</button></div>`;
         return;
       }
       grid.innerHTML = html`
         <div class="pgrid">${res.items.map(productCard)}</div>
         ${res.pages > 1 ? html`<nav class="pager" aria-label="Pages">
-          <button class="btn btn-line btn-sm" type="button" data-act="page" data-p="${res.page - 1}" ${res.page <= 1 ? ML.raw('disabled') : ''}>${icon('arrow-left', 'ico-sm')}Précédent</button>
-          <span class="muted">Page ${res.page} sur ${res.pages}</span>
-          <button class="btn btn-line btn-sm" type="button" data-act="page" data-p="${res.page + 1}" ${res.page >= res.pages ? ML.raw('disabled') : ''}>Suivant${icon('arrow-right', 'ico-sm')}</button>
+          <button class="btn btn-line btn-sm" type="button" data-act="page" data-p="${res.page - 1}" ${res.page <= 1 ? ML.raw('disabled') : ''}>${icon('arrow-left', 'ico-sm')}${ML.t('Précédent')}</button>
+          <span class="muted">${ML.t('Page')} ${res.page} ${ML.t('sur')} ${res.pages}</span>
+          <button class="btn btn-line btn-sm" type="button" data-act="page" data-p="${res.page + 1}" ${res.page >= res.pages ? ML.raw('disabled') : ''}>${ML.t('Suivant')}${icon('arrow-right', 'ico-sm')}</button>
         </nav>` : ''}`;
     };
     ML.inputs.catq = ML.debounce((el) => setQ({ q: el.value.trim() }, true), 450);
@@ -469,12 +469,12 @@
       const vs = p.variants.filter((v) => (!sel.size || v.size === sel.size) && (!sel.color || v.color === sel.color));
       const list = (vs.length ? vs : p.variants).map((v) => v.price);
       const lo = Math.min(...list); const hi = Math.max(...list);
-      return (hi > lo ? 'dès ' : '') + fmt.price(lo);
+      return (hi > lo ? ML.t('dès ') : '') + fmt.price(lo);
     };
 
     view().innerHTML = html`
       <div class="page product">
-        <nav class="crumbs" aria-label="Fil d'Ariane"><a href="#/produits">Produits</a>${icon('chevron-right', 'ico-sm')}<a href="${ML.href('/produits', { cat: p.category })}">${ML.cats[p.category] || 'Rayon'}</a>${icon('chevron-right', 'ico-sm')}<span>${p.name}</span></nav>
+        <nav class="crumbs" aria-label="Fil d'Ariane"><a href="#/produits">${ML.t('Produits')}</a>${icon('chevron-right', 'ico-sm')}<a href="${ML.href('/produits', { cat: p.category })}">${ML.cats[p.category] || ML.t('Rayon')}</a>${icon('chevron-right', 'ico-sm')}<span>${p.name}</span></nav>
         <div class="p-top">
           <div class="p-gallery">
             <div data-visual></div>
@@ -484,16 +484,16 @@
             <a class="p-brand" href="#/marque/${p.brand.slug}">${ML.mono(p.brand.name, p.brand.color, p.brand.logo, 'mono-sm')}<span>${p.brand.name}</span>${demoBadge(p.demo)}</a>
             <h1>${p.name}</h1>
             <p class="p-price" data-price></p>
-            ${colors.length ? html`<div class="opt"><span class="label">Couleur <b data-color-name></b></span><div class="opt-row" data-colors></div></div>` : ''}
-            ${sizes.length ? html`<div class="opt"><span class="label">Taille</span><div class="opt-row" data-sizes></div></div>` : ''}
-            <a class="btn btn-primary btn-lg p-cta" href="#ou">${icon('map-pin')}Voir où le trouver</a>
+            ${colors.length ? html`<div class="opt"><span class="label">${ML.t('Couleur')} <b data-color-name></b></span><div class="opt-row" data-colors></div></div>` : ''}
+            ${sizes.length ? html`<div class="opt"><span class="label">${ML.t('Taille')}</span><div class="opt-row" data-sizes></div></div>` : ''}
+            <a class="btn btn-primary btn-lg p-cta" href="#ou">${icon('map-pin')}${ML.t('Voir où le trouver')}</a>
             ${p.about ? html`<p class="p-about">${p.about}</p>` : ''}
             ${p.specs.length ? html`<dl class="specs">${p.specs.map((s) => html`<div><dt>${s.k}</dt><dd>${s.v}</dd></div>`)}</dl>` : ''}
           </div>
         </div>
         <section class="section" id="ou">
           <div class="section-head">
-            <div><h2>Où le trouver</h2><p class="muted" data-avail-sub></p></div>
+            <div><h2>${ML.t('Où le trouver')}</h2><p class="muted" data-avail-sub></p></div>
             <button class="loc-chip is-big" type="button" data-act="loc">${icon('map-pin')}<span data-loc-label></span>${icon('chevron-down', 'ico-sm')}</button>
           </div>
           <div class="avail">
@@ -522,19 +522,19 @@
       if (vs.length === 1) {
         const v = vs[0];
         const opt = [v.size, v.color].filter(Boolean).join(' · ');
-        return html`<span class="stock ${v.low ? 'is-low' : 'is-ok'}">${icon(v.low ? 'triangle-alert' : 'circle-check', 'ico-sm')}${v.low ? (v.left === 1 ? 'Dernière pièce' : 'Plus que ' + v.left) : 'En stock'}${opt ? ' · ' + opt : ''}</span>`;
+        return html`<span class="stock ${v.low ? 'is-low' : 'is-ok'}">${icon(v.low ? 'triangle-alert' : 'circle-check', 'ico-sm')}${v.low ? (v.left === 1 ? ML.t('Dernière pièce') : ML.t('Plus que') + ' ' + v.left) : ML.t('En stock')}${opt ? ' · ' + opt : ''}</span>`;
       }
       const sz = Array.from(new Set(vs.map((v) => v.size).filter(Boolean)));
       const cl = Array.from(new Set(vs.map((v) => v.color).filter(Boolean)));
-      return html`<span class="stock is-ok">${icon('circle-check', 'ico-sm')}En stock</span>
-        ${sz.length && !sel.size ? html`<span class="av-opts">Tailles : ${sz.join(', ')}</span>` : ''}
-        ${cl.length && !sel.color ? html`<span class="av-opts">Couleurs : ${cl.join(', ')}</span>` : ''}`;
+      return html`<span class="stock is-ok">${icon('circle-check', 'ico-sm')}${ML.t('En stock')}</span>
+        ${sz.length && !sel.size ? html`<span class="av-opts">${ML.t('Tailles :')} ${sz.join(', ')}</span>` : ''}
+        ${cl.length && !sel.color ? html`<span class="av-opts">${ML.t('Couleurs :')} ${cl.join(', ')}</span>` : ''}`;
     };
 
     const paintAvail = () => {
-      const what = [sel.size && 'taille ' + sel.size, sel.color && sel.color.toLowerCase()].filter(Boolean).join(', ');
+      const what = [sel.size && ML.t('taille') + ' ' + sel.size, sel.color && sel.color.toLowerCase()].filter(Boolean).join(', ');
       $('[data-avail-sub]').textContent = found.length
-        ? fmt.plural(found.length, 'point de vente', 'points de vente') + (what ? ' pour : ' + what : '') + (ML.loc ? ' · du plus proche au plus loin' : '')
+        ? fmt.plural(found.length, 'point de vente', 'points de vente') + (what ? ' ' + ML.t('pour :') + ' ' + what : '') + (ML.loc ? ' · ' + ML.t('du plus proche au plus loin') : '')
         : '';
       $('[data-avail]').innerHTML = found.length ? html`${found.map((st) => html`
         <li class="av-item" data-store="${st.id}">
@@ -544,20 +544,20 @@
             <div class="scard-tags">${openBadge(st)}${stockLine(st)}</div>
           </div>
           <div class="av-actions">
-            ${st.reserve ? html`<button class="btn btn-soft btn-sm" type="button" data-act="order" data-store="${st.id}" data-kind="reservation">${icon('bookmark-check', 'ico-sm')}Réserver</button>` : ''}
-            ${st.pickup || st.delivery ? html`<button class="btn btn-primary btn-sm" type="button" data-act="order" data-store="${st.id}" data-kind="order">${icon('shopping-bag', 'ico-sm')}Commander</button>` : ''}
-            <a class="btn btn-ghost btn-sm" href="#/pdv/${st.id}" aria-label="Voir ${st.name}">${icon('arrow-right', 'ico-sm')}</a>
+            ${st.reserve ? html`<button class="btn btn-soft btn-sm" type="button" data-act="order" data-store="${st.id}" data-kind="reservation">${icon('bookmark-check', 'ico-sm')}${ML.t('Réserver')}</button>` : ''}
+            ${st.pickup || st.delivery ? html`<button class="btn btn-primary btn-sm" type="button" data-act="order" data-store="${st.id}" data-kind="order">${icon('shopping-bag', 'ico-sm')}${ML.t('Commander')}</button>` : ''}
+            <a class="btn btn-ghost btn-sm" href="#/pdv/${st.id}" aria-label="${ML.t('Voir')} ${st.name}">${icon('arrow-right', 'ico-sm')}</a>
           </div>
         </li>`)}` : html`
-        <li class="empty">${icon('map-pin-off')}<h3>Indisponible${what ? ' dans cette déclinaison' : ' pour le moment'}</h3>
-          <p>${what ? 'Aucun point de vente n\'a cette taille ou cette couleur en stock. Essayez une autre déclinaison.' : 'Aucun point de vente n\'a ce produit en stock aujourd\'hui.'}</p>
-          ${what ? html`<button class="btn btn-line btn-sm" data-act="pclear">Voir toutes les déclinaisons</button>` : ''}</li>`;
+        <li class="empty">${icon('map-pin-off')}<h3>${ML.t('Indisponible')}${what ? ML.t(' dans cette déclinaison') : ML.t(' pour le moment')}</h3>
+          <p>${what ? ML.t("Aucun point de vente n\'a cette taille ou cette couleur en stock. Essayez une autre déclinaison.") : ML.t("Aucun point de vente n\'a ce produit en stock aujourd\'hui.")}</p>
+          ${what ? html`<button class="btn btn-line btn-sm" data-act="pclear">${ML.t('Voir toutes les déclinaisons')}</button>` : ''}</li>`;
       if (!map) return;
       layer.clearLayers();
       const pts = [];
       found.forEach((st) => {
         const m = L.marker([st.lat, st.lng], { icon: ML.pin(p.brand.color || ML.TYPE_COLORS[st.type]), title: st.name });
-        m.bindPopup(html`<b>${st.name}</b><br><span class="muted">${st.address || st.city}</span>${st.km != null ? html`<br>à ${fmt.km(st.km)}` : ''}`.toString());
+        m.bindPopup(html`<b>${st.name}</b><br><span class="muted">${st.address || st.city}</span>${st.km != null ? html`<br>${ML.t('à')} ${fmt.km(st.km)}` : ''}`.toString());
         layer.addLayer(m);
         pts.push([st.lat, st.lng]);
       });
@@ -600,15 +600,15 @@
   function orderSheet(p, st, kind, onDone) {
     const me = ML.ls.get('me', {});
     const modes = [];
-    if (st.reserve) modes.push(['reservation', 'Réserver', 'Mis de côté ' + ML.boot.config.reservation_hours + ' h · paiement en magasin', 'bookmark-check']);
-    if (st.pickup) modes.push(['pickup', 'Commander · retrait en magasin', 'Paiement au retrait', 'shopping-bag']);
-    if (st.delivery) modes.push(['delivery', 'Commander · livraison', 'Paiement à la livraison', 'truck']);
+    if (st.reserve) modes.push(['reservation', ML.t('Réserver'), ML.t('Mis de côté') + ' ' + ML.boot.config.reservation_hours + ' ' + ML.t('h · paiement en magasin'), 'bookmark-check']);
+    if (st.pickup) modes.push(['pickup', ML.t('Commander · retrait en magasin'), ML.t('Paiement au retrait'), 'shopping-bag']);
+    if (st.delivery) modes.push(['delivery', ML.t('Commander · livraison'), ML.t('Paiement à la livraison'), 'truck']);
     let mode = kind === 'reservation' && st.reserve ? 'reservation' : (st.pickup ? 'pickup' : (st.delivery ? 'delivery' : modes[0][0]));
-    const vlabel = (v) => [v.size, v.color].filter(Boolean).join(' · ') || 'Modèle unique';
-    const zones = ML.boot.zones.slice().sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+    const vlabel = (v) => [v.size, v.color].filter(Boolean).join(' · ') || ML.t('Modèle unique');
+    const zones = ML.boot.zones.slice().sort((a, b) => ML.zoneName(a).localeCompare(ML.zoneName(b), ML.lang === 'ar' ? 'ar' : 'fr'));
 
     const m = ML.modal({
-      title: 'Votre demande',
+      title: ML.t('Votre demande'),
       body: html`
         <form class="order-form" data-form="order" novalidate>
           <div class="order-sum">
@@ -617,37 +617,37 @@
           </div>
           <div class="form-grid cols-2">
             <div class="field">
-              <label for="o-variant">Déclinaison</label>
-              <select class="select" id="o-variant" name="variant">${st.variants.map((v) => html`<option value="${v.id}">${vlabel(v)}${v.low ? ' — plus que ' + v.left : ''}</option>`)}</select>
+              <label for="o-variant">${ML.t('Déclinaison')}</label>
+              <select class="select" id="o-variant" name="variant">${st.variants.map((v) => html`<option value="${v.id}">${vlabel(v)}${v.low ? ' — ' + ML.t('plus que') + ' ' + v.left : ''}</option>`)}</select>
             </div>
             <div class="field">
-              <span class="label" id="o-qty-label">Quantité</span>
+              <span class="label" id="o-qty-label">${ML.t('Quantité')}</span>
               <div class="stepper" role="group" aria-labelledby="o-qty-label">
-                <button type="button" data-step="-1" aria-label="Moins">${icon('minus')}</button>
+                <button type="button" data-step="-1" aria-label="${ML.t('Moins')}">${icon('minus')}</button>
                 <output name="qtyout" aria-live="polite">1</output>
-                <button type="button" data-step="1" aria-label="Plus">${icon('plus')}</button>
+                <button type="button" data-step="1" aria-label="${ML.t('Plus')}">${icon('plus')}</button>
               </div>
             </div>
           </div>
-          <fieldset class="modes"><legend class="label">Comment le récupérer ?</legend>
+          <fieldset class="modes"><legend class="label">${ML.t('Comment le récupérer ?')}</legend>
             ${modes.map(([k, t, d, ic]) => html`<label class="mode"><input type="radio" name="mode" value="${k}" ${k === mode ? ML.raw('checked') : ''}><span class="mode-box">${icon(ic)}<span><b>${t}</b><small>${d}</small></span></span></label>`)}
           </fieldset>
           <div class="form-grid cols-2">
-            <div class="field"><label for="o-name">Nom et prénom</label><input class="input" id="o-name" name="name" autocomplete="name" required value="${me.name || ''}"></div>
-            <div class="field"><label for="o-phone">Téléphone</label><input class="input" id="o-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="05 00 00 00 00" value="${me.phone || ''}"></div>
-            <div class="field span-2"><label for="o-email">Email <span class="dim">(facultatif, pour recevoir le suivi)</span></label><input class="input" id="o-email" name="email" type="email" autocomplete="email" value="${me.email || ''}"></div>
+            <div class="field"><label for="o-name">${ML.t('Nom et prénom')}</label><input class="input" id="o-name" name="name" autocomplete="name" required value="${me.name || ''}"></div>
+            <div class="field"><label for="o-phone">${ML.t('Téléphone')}</label><input class="input" id="o-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="05 00 00 00 00" value="${me.phone || ''}"></div>
+            <div class="field span-2"><label for="o-email">${ML.t('Email')} <span class="dim">(${ML.t('facultatif, pour recevoir le suivi')})</span></label><input class="input" id="o-email" name="email" type="email" autocomplete="email" value="${me.email || ''}"></div>
           </div>
           <div class="form-grid cols-2" data-delivery hidden>
-            <div class="field span-2"><label for="o-address">Adresse de livraison</label><input class="input" id="o-address" name="address" autocomplete="street-address"></div>
-            <div class="field"><label for="o-city">Ville</label><input class="input" id="o-city" name="city" autocomplete="address-level2"></div>
-            <div class="field"><label for="o-zone">Wilaya</label><select class="select" id="o-zone" name="zone"><option value="">Choisir…</option>${zones.map((z) => html`<option value="${z.code}" ${ML.loc && ML.loc.zone === z.code ? ML.raw('selected') : ''}>${z.name}</option>`)}</select></div>
+            <div class="field span-2"><label for="o-address">${ML.t('Adresse de livraison')}</label><input class="input" id="o-address" name="address" autocomplete="street-address"></div>
+            <div class="field"><label for="o-city">${ML.t('Ville')}</label><input class="input" id="o-city" name="city" autocomplete="address-level2"></div>
+            <div class="field"><label for="o-zone">${ML.t('Wilaya')}</label><select class="select" id="o-zone" name="zone"><option value="">${ML.t('Choisir…')}</option>${zones.map((z) => html`<option value="${z.code}" ${ML.loc && ML.loc.zone === z.code ? ML.raw('selected') : ''}>${ML.zoneName(z)}</option>`)}</select></div>
           </div>
-          <div class="field"><label for="o-note">Message au point de vente <span class="dim">(facultatif)</span></label><textarea class="textarea" id="o-note" name="note" rows="2" maxlength="400"></textarea></div>
+          <div class="field"><label for="o-note">${ML.t('Message au point de vente')} <span class="dim">(${ML.t('facultatif')})</span></label><textarea class="textarea" id="o-note" name="note" rows="2" maxlength="400"></textarea></div>
           <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
-          <div class="order-total"><span>Total</span><b data-total></b></div>
+          <div class="order-total"><span>${ML.t('Total')}</span><b data-total></b></div>
           <p class="form-error" data-error hidden></p>
           <button class="btn btn-primary btn-lg btn-block" type="submit" data-submit></button>
-          <p class="order-legal">Aucun paiement en ligne. Le point de vente vous confirme la demande par téléphone.</p>
+          <p class="order-legal">${ML.t('Aucun paiement en ligne. Le point de vente vous confirme la demande par téléphone.')}</p>
         </form>`,
     });
     const form = $('form', m.el);
@@ -659,7 +659,7 @@
       form.qtyout.value = qty;
       $('[data-total]', form).textContent = fmt.price(v.price * qty);
       $('[data-delivery]', form).hidden = mode !== 'delivery';
-      $('[data-submit]', form).textContent = mode === 'reservation' ? 'Confirmer la réservation' : 'Confirmer la commande';
+      $('[data-submit]', form).textContent = mode === 'reservation' ? ML.t('Confirmer la réservation') : ML.t('Confirmer la commande');
       $('[data-step="-1"]', form).disabled = qty <= 1;
       $('[data-step="1"]', form).disabled = qty >= v.max;
     };
@@ -681,17 +681,17 @@
         mine.unshift({ ref: res.ref, token: res.token, name: p.name, at: Math.round(Date.now() / 1000) });
         ML.ls.set('orders', mine.slice(0, 20));
         const isRes = mode === 'reservation';
-        $('.modal-head h2', m.el).textContent = isRes ? 'Réservation enregistrée' : 'Commande enregistrée';
+        $('.modal-head h2', m.el).textContent = isRes ? ML.t('Réservation enregistrée') : ML.t('Commande enregistrée');
         $('.modal-body', m.el).innerHTML = html`
           <div class="order-done">
             <div class="done-mark">${icon('check')}</div>
-            <p class="done-ref">N° <b>${res.ref}</b></p>
+            <p class="done-ref">${ML.t('N°')} <b>${res.ref}</b></p>
             <p>${isRes
-              ? 'Votre article est mis de côté pendant ' + ML.boot.config.reservation_hours + ' heures chez ' + st.name + '. Le magasin vous appelle pour confirmer.'
-              : mode === 'delivery' ? st.name + ' vous appelle pour confirmer la livraison. Vous payez à la réception.' : st.name + ' vous prévient dès que votre commande est prête. Vous payez au retrait.'}</p>
+              ? ML.t('Votre article est mis de côté pendant') + ' ' + ML.boot.config.reservation_hours + ' ' + ML.t('heures chez') + ' ' + st.name + '. ' + ML.t('Le magasin vous appelle pour confirmer.')
+              : mode === 'delivery' ? st.name + ' ' + ML.t('vous appelle pour confirmer la livraison. Vous payez à la réception.') : st.name + ' ' + ML.t('vous prévient dès que votre commande est prête. Vous payez au retrait.')}</p>
             <div class="row row-wrap" style="justify-content:center">
-              <a class="btn btn-primary" href="#/suivi/${res.token}" data-close>${icon('package-check')}Suivre ma ${isRes ? 'réservation' : 'commande'}</a>
-              <button class="btn btn-line" type="button" data-close>Continuer</button>
+              <a class="btn btn-primary" href="#/suivi/${res.token}" data-close>${icon('package-check')}${isRes ? ML.t('Suivre ma réservation') : ML.t('Suivre ma commande')}</a>
+              <button class="btn btn-line" type="button" data-close>${ML.t('Continuer')}</button>
             </div>
           </div>`;
         if (onDone) onDone();
@@ -707,17 +707,17 @@
     const brands = ML.boot.brands;
     view().innerHTML = html`
       <div class="page">
-        <div class="page-head"><h1>Les marques du réseau</h1><p class="muted">Leur catalogue, leurs points de vente et la disponibilité de leurs produits.</p></div>
+        <div class="page-head"><h1>${ML.t('Les marques du réseau')}</h1><p class="muted">${ML.t('Leur catalogue, leurs points de vente et la disponibilité de leurs produits.')}</p></div>
         ${brands.length ? html`<div class="bgrid">${brands.map((b) => html`
           <a class="bcard" href="#/marque/${b.slug}" style="--c:${color(b.color, '#101828')}">
             <div class="bcard-band"></div>
             <div class="bcard-body">
               ${ML.mono(b.name, b.color, b.logo, 'mono-lg')}
-              <h2>${b.name}${b.company.demo ? html` <span class="badge">Démo</span>` : ''}</h2>
+              <h2>${b.name}${b.company.demo ? html` <span class="badge">${ML.t('Démo')}</span>` : ''}</h2>
               <p class="muted">${b.tagline || ML.cats[b.category] || ''}</p>
               <div class="bcard-stats"><span>${icon('package', 'ico-sm')}${fmt.plural(b.products, 'produit')}</span><span>${icon('store', 'ico-sm')}${fmt.plural(b.stores, 'point de vente', 'points de vente')}</span></div>
             </div>
-          </a>`)}</div>` : html`<div class="empty">${icon('tag')}<h3>Les premières marques arrivent</h3><p>Vous êtes une marque ou un distributeur ? Rejoignez le réseau.</p><a class="btn btn-primary" href="../#inscription">Créer mon espace</a></div>`}
+          </a>`)}</div>` : html`<div class="empty">${icon('tag')}<h3>${ML.t('Les premières marques arrivent')}</h3><p>${ML.t('Vous êtes une marque ou un distributeur ? Rejoignez le réseau.')}</p><a class="btn btn-primary" href="../#inscription">${ML.t('Créer mon espace')}</a></div>`}
       </div>`;
   }
 
@@ -727,7 +727,7 @@
     hit('brand', b.id);
     view().innerHTML = html`
       <div class="page">
-        <a class="back" href="#/marques">${icon('arrow-left')}Toutes les marques</a>
+        <a class="back" href="#/marques">${icon('arrow-left')}${ML.t('Toutes les marques')}</a>
         <div class="brand-hero" style="--c:${color(b.color, '#101828')}">
           ${ML.mono(b.name, b.color, b.logo, 'mono-lg brand-mono')}
           <div class="grow">
@@ -736,22 +736,22 @@
             ${b.about ? html`<p class="brand-about">${b.about}</p>` : ''}
           </div>
           <div class="brand-side">
-            <div class="brand-stats"><span><b>${fmt.num(b.products)}</b>produits</span><span><b>${fmt.num(b.stores)}</b>points de vente</span></div>
-            <a class="btn btn-white" href="${ML.href('/carte', { marque: b.slug })}">${icon('map')}Voir sur la carte</a>
+            <div class="brand-stats"><span><b>${fmt.num(b.products)}</b>${ML.t('produits')}</span><span><b>${fmt.num(b.stores)}</b>${ML.t('points de vente')}</span></div>
+            <a class="btn btn-white" href="${ML.href('/carte', { marque: b.slug })}">${icon('map')}${ML.t('Voir sur la carte')}</a>
           </div>
         </div>
         <section class="section">
           <div class="section-head">
-            <h2>Le catalogue</h2>
-            <form class="input-icon" data-form="brandq" role="search">${icon('search')}<input class="input" type="search" name="q" placeholder="Chercher dans ${b.name}…" autocomplete="off" aria-label="Chercher un produit de la marque"></form>
+            <h2>${ML.t('Le catalogue')}</h2>
+            <form class="input-icon" data-form="brandq" role="search">${icon('search')}<input class="input" type="search" name="q" placeholder="${ML.t('Chercher dans')} ${b.name}…" autocomplete="off" aria-label="${ML.t('Chercher un produit de la marque')}"></form>
           </div>
           <div data-grid><div class="loading"><div class="spinner"></div></div></div>
         </section>
       </div>`;
     const load = async (q) => {
       const res = await api('products', { params: Object.assign({ brand: b.id, q, log: q && once('b' + b.id + q) ? 1 : '' }, ML.locParams()) });
-      $('[data-grid]').innerHTML = res.items.length ? html`<div class="pgrid">${res.items.map(productCard)}</div>${res.total > res.items.length ? html`<p class="more"><a class="btn btn-line" href="${ML.href('/produits', { marque: b.id, q })}">Voir les ${fmt.num(res.total)} produits</a></p>` : ''}`
-        : html`<div class="empty">${icon('package-search')}<h3>${q ? 'Aucun produit ne correspond' : 'Le catalogue arrive bientôt'}</h3><p>${q ? 'Essayez un autre mot.' : ''}</p></div>`;
+      $('[data-grid]').innerHTML = res.items.length ? html`<div class="pgrid">${res.items.map(productCard)}</div>${res.total > res.items.length ? html`<p class="more"><a class="btn btn-line" href="${ML.href('/produits', { marque: b.id, q })}">${ML.t('Voir les')} ${fmt.num(res.total)} ${ML.t('produits')}</a></p>` : ''}`
+        : html`<div class="empty">${icon('package-search')}<h3>${q ? ML.t('Aucun produit ne correspond') : ML.t('Le catalogue arrive bientôt')}</h3><p>${q ? ML.t('Essayez un autre mot.') : ''}</p></div>`;
     };
     ML.forms.brandq = (f) => load(f.q.value.trim());
     await load('');
@@ -760,8 +760,8 @@
   /* ================================================================== SUIVI */
   function steps(o) {
     const list = o.mode === 'delivery'
-      ? [['pending', 'Demande reçue'], ['confirmed', 'Confirmée'], ['shipped', 'En livraison'], ['done', 'Livrée']]
-      : [['pending', 'Demande reçue'], ['confirmed', 'Confirmée'], ['ready', o.kind === 'reservation' ? 'Mise de côté' : 'Prête au retrait'], ['done', 'Retirée']];
+      ? [['pending', ML.t('Demande reçue')], ['confirmed', ML.t('Confirmée')], ['shipped', ML.t('En livraison')], ['done', ML.t('Livrée')]]
+      : [['pending', ML.t('Demande reçue')], ['confirmed', ML.t('Confirmée')], ['ready', o.kind === 'reservation' ? ML.t('Mise de côté') : ML.t('Prête au retrait')], ['done', ML.t('Retirée')]];
     const at = {};
     o.events.forEach((e) => { at[e.status] = e.created; });
     const idx = list.findIndex(([k]) => k === o.status);
@@ -772,56 +772,56 @@
     const mine = ML.ls.get('orders', []);
     const formHtml = html`
       <div class="page track">
-        <div class="page-head"><h1>Suivre une commande</h1><p class="muted">Avec le numéro reçu à la validation et le téléphone donné au point de vente.</p></div>
+        <div class="page-head"><h1>${ML.t('Suivre une commande')}</h1><p class="muted">${ML.t('Avec le numéro reçu à la validation et le téléphone donné au point de vente.')}</p></div>
         <div class="track-grid">
           <form class="card card-pad stack" data-form="track">
-            <div class="field"><label for="t-ref">Numéro de commande</label><input class="input" id="t-ref" name="ref" placeholder="ML-XXXXXX" autocapitalize="characters" autocomplete="off" required></div>
-            <div class="field"><label for="t-phone">Téléphone</label><input class="input" id="t-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" required></div>
+            <div class="field"><label for="t-ref">${ML.t('Numéro de commande')}</label><input class="input" id="t-ref" name="ref" placeholder="ML-XXXXXX" autocapitalize="characters" autocomplete="off" required></div>
+            <div class="field"><label for="t-phone">${ML.t('Téléphone')}</label><input class="input" id="t-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" required></div>
             <p class="form-error" data-error hidden></p>
-            <button class="btn btn-dark btn-block" type="submit">${icon('search')}Voir où elle en est</button>
+            <button class="btn btn-dark btn-block" type="submit">${icon('search')}${ML.t('Voir où elle en est')}</button>
           </form>
           <div class="card card-pad">
-            <h2 class="card-title">Mes demandes sur cet appareil</h2>
+            <h2 class="card-title">${ML.t('Mes demandes sur cet appareil')}</h2>
             ${mine.length ? html`<ul class="mine">${mine.map((o) => html`<li><a href="#/suivi/${o.token}"><span><b>${o.ref}</b><small class="muted">${o.name}</small></span><span class="dim">${fmt.day(o.at)}</span>${icon('chevron-right', 'ico-sm')}</a></li>`)}</ul>`
-              : html`<p class="muted" style="margin-top:8px">Vos commandes et réservations passées depuis cet appareil apparaîtront ici.</p>`}
+              : html`<p class="muted" style="margin-top:8px">${ML.t('Vos commandes et réservations passées depuis cet appareil apparaîtront ici.')}</p>`}
           </div>
         </div>
       </div>`;
     const detail = (o, tok) => {
-      const what = o.kind === 'reservation' ? 'réservation' : 'commande';
+      const what = o.kind === 'reservation' ? ML.t('réservation') : ML.t('commande');
       view().innerHTML = html`
         <div class="page track">
-          <a class="back" href="#/suivi">${icon('arrow-left')}Suivi</a>
+          <a class="back" href="#/suivi">${icon('arrow-left')}${ML.t('Suivi')}</a>
           <div class="track-head">
             <div><p class="eyebrow">${ML.kindLabel(o)}</p><h1>${o.ref}</h1></div>
             ${ML.statusBadge(o)}
           </div>
-          ${o.status === 'cancelled' ? html`<div class="notice is-bad">${icon('circle-x')}<div><b>Cette ${what} est annulée.</b>${(o.events[o.events.length - 1] || {}).note ? html`<br>${o.events[o.events.length - 1].note}` : ''}</div></div>` : ''}
-          ${o.kind === 'reservation' && o.expires && ['pending', 'confirmed', 'ready'].includes(o.status) ? html`<div class="notice">${icon('clock')}<div>Article mis de côté jusqu'au <b>${fmt.time(o.expires)}</b>.</div></div>` : ''}
+          ${o.status === 'cancelled' ? html`<div class="notice is-bad">${icon('circle-x')}<div><b>${ML.t('Cette')} ${what} ${ML.t('est annulée.')}</b>${(o.events[o.events.length - 1] || {}).note ? html`<br>${o.events[o.events.length - 1].note}` : ''}</div></div>` : ''}
+          ${o.kind === 'reservation' && o.expires && ['pending', 'confirmed', 'ready'].includes(o.status) ? html`<div class="notice">${icon('clock')}<div>${ML.t('Article mis de côté jusqu\'au')} <b>${fmt.time(o.expires)}</b>.</div></div>` : ''}
           <div class="track-grid">
             <div class="card card-pad">
-              <h2 class="card-title">Avancement</h2>
+              <h2 class="card-title">${ML.t('Avancement')}</h2>
               ${steps(o)}
-              ${tok && o.status === 'pending' ? html`<button class="btn btn-danger btn-sm" type="button" data-act="cancel" style="margin-top:14px">Annuler ma ${what}</button>` : ''}
+              ${tok && o.status === 'pending' ? html`<button class="btn btn-danger btn-sm" type="button" data-act="cancel" style="margin-top:14px">${ML.t('Annuler ma')} ${what}</button>` : ''}
             </div>
             <div class="stack">
               <div class="card card-pad">
-                <h2 class="card-title">Détail</h2>
-                <ul class="lines">${o.items.map((i) => html`<li><span>${i.qty} × ${i.name}${[i.size, i.color].filter(Boolean).length ? html`<small class="muted"> · ${[i.size, i.color].filter(Boolean).join(' · ')}</small>` : ''}</span><b>${fmt.price(i.price * i.qty)}</b></li>`)}<li class="total"><span>Total à payer ${o.mode === 'delivery' ? 'à la livraison' : 'en magasin'}</span><b>${fmt.price(o.total)}</b></li></ul>
+                <h2 class="card-title">${ML.t('Détail')}</h2>
+                <ul class="lines">${o.items.map((i) => html`<li><span>${i.qty} × ${i.name}${[i.size, i.color].filter(Boolean).length ? html`<small class="muted"> · ${[i.size, i.color].filter(Boolean).join(' · ')}</small>` : ''}</span><b>${fmt.price(i.price * i.qty)}</b></li>`)}<li class="total"><span>${ML.t('Total à payer')} ${o.mode === 'delivery' ? ML.t('à la livraison') : ML.t('en magasin')}</span><b>${fmt.price(o.total)}</b></li></ul>
               </div>
               ${o.store ? html`<div class="card card-pad">
-                <h2 class="card-title">${o.mode === 'delivery' ? 'Expédiée par' : 'À retirer chez'}</h2>
+                <h2 class="card-title">${o.mode === 'delivery' ? ML.t('Expédiée par') : ML.t('À retirer chez')}</h2>
                 <p style="margin-top:6px"><b>${o.store.name}</b><br><span class="muted">${o.store.address}</span></p>
-                ${o.delivery ? html`<p class="muted" style="margin-top:8px">${icon('truck', 'ico-sm')} Livraison : ${o.delivery.address}, ${o.delivery.city}</p>` : ''}
+                ${o.delivery ? html`<p class="muted" style="margin-top:8px">${icon('truck', 'ico-sm')} ${ML.t('Livraison')} : ${o.delivery.address}, ${o.delivery.city}</p>` : ''}
                 <div class="row row-wrap" style="margin-top:12px">${contactButtons(Object.assign({ id: o.store.id }, o.store), true)}</div>
               </div>` : ''}
             </div>
           </div>
         </div>`;
       ML.actions.cancel = async (el) => {
-        if (!await ML.confirm('Annuler cette ' + what + ' ? L\'article sera remis en vente.', { ok: 'Oui, annuler', danger: true })) return;
+        if (!await ML.confirm(ML.t('Annuler cette') + ' ' + what + ML.t(" ? L'article sera remis en vente."), { ok: ML.t('Oui, annuler'), danger: true })) return;
         ML.busy(el, true);
-        try { detail((await api('order_cancel', { body: { token: tok } })).order, tok); ML.toast('Votre ' + what + ' est annulée.', 'good'); } catch (e) { ML.fail(e); ML.busy(el, false); }
+        try { detail((await api('order_cancel', { body: { token: tok } })).order, tok); ML.toast(ML.t('Votre') + ' ' + what + ' ' + ML.t('est annulée.'), 'good'); } catch (e) { ML.fail(e); ML.busy(el, false); }
       };
     };
     ML.forms.track = async (f) => {
@@ -832,7 +832,7 @@
     };
     if (token) {
       loading();
-      try { detail((await api('track', { params: { token } })).order, token); return; } catch (e) { ML.toast('Cette commande est introuvable.', 'bad'); }
+      try { detail((await api('track', { params: { token } })).order, token); return; } catch (e) { ML.toast(ML.t('Cette commande est introuvable.'), 'bad'); }
     }
     view().innerHTML = formHtml;
   }
@@ -843,7 +843,7 @@
     try {
       await ML.bootstrap();
     } catch (e) {
-      view().innerHTML = html`<div class="page"><div class="empty">${icon('wifi-off')}<h3>La plateforme est momentanément indisponible</h3><p>${e.message}</p></div></div>`;
+      view().innerHTML = html`<div class="page"><div class="empty">${icon('wifi-off')}<h3>${ML.t('La plateforme est momentanément indisponible')}</h3><p>${e.message}</p></div></div>`;
       return;
     }
     ML.boot.brands.forEach((b) => { S.brandById[b.id] = b; S.brandBySlug[b.slug] = b; });

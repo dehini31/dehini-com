@@ -229,7 +229,7 @@ em.out { background: var(--bad-soft); color: var(--bad); }
 .kind input:checked + span { border-color: var(--brand); background: var(--brand-soft); }
 .kind input:checked + span .ico { color: var(--brand-strong); }
 .kind input:focus-visible + span { outline: 2.5px solid var(--brand); outline-offset: 2px; }
-.hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+.hp { position: absolute !important; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 .signup-form .hint { font-size: 13px; color: var(--ink-2); }
 .signup-foot { text-align: center; font-size: 14.5px; color: var(--ink-2); }
 @media (min-width: 760px) { .signup-form { padding: 32px; } }

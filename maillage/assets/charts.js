@@ -94,7 +94,7 @@
         });
       }
       // Zone de survol : toute la surface du tracé, découpée par jour (cible bien plus large que la marque).
-      s += `<rect class="ch-hit" x="${padL}" y="${padT}" width="${iw}" height="${ih}" fill="transparent" tabindex="0" aria-label="${esc(o.name)} : parcourir avec les flèches"/></svg>`;
+      s += `<rect class="ch-hit" x="${padL}" y="${padT}" width="${iw}" height="${ih}" fill="transparent" tabindex="0" aria-label="${esc(o.name)} : ${ML.t('parcourir avec les flèches')}"/></svg>`;
       el.innerHTML = s;
       const svg = el.firstChild;
       const cross = svg.querySelector('.ch-cross');
@@ -145,7 +145,7 @@
         <span class="ch-bars-label" title="${it.label}">${it.label}${it.sub ? html`<small>${it.sub}</small>` : ''}</span>
         <span class="ch-bars-track"><i style="width:${Math.max(it.value > 0 ? 1.5 : 0, (it.value / max) * 100).toFixed(1)}%;background:${o.color}"></i></span>
         <b class="num">${fmtV(it.value)}</b>
-      </li>`)}</ul>` : html`<p class="ch-empty">Pas encore de données sur cette période.</p>`;
+      </li>`)}</ul>` : html`<p class="ch-empty">${ML.t('Pas encore de données sur cette période.')}</p>`;
   }
 
   /**
@@ -156,7 +156,7 @@
     const fmtV = o.format || ML.fmt.num;
     const parts = o.parts.filter((p) => p.value > 0);
     const total = parts.reduce((a, p) => a + p.value, 0);
-    if (!total) { el.innerHTML = '<p class="ch-empty">Pas encore de données sur cette période.</p>'; return; }
+    if (!total) { el.innerHTML = '<p class="ch-empty">' + ML.t('Pas encore de données sur cette période.') + '</p>'; return; }
     const dark = (hex) => { const n = parseInt(hex.slice(1), 16); return ((n >> 16) * 299 + ((n >> 8) & 255) * 587 + (n & 255) * 114) / 1000 > 165; };
     el.innerHTML = html`
       <div class="ch-seg" role="img" aria-label="${parts.map((p) => p.label + ' : ' + fmtV(p.value) + ' (' + Math.round((p.value / total) * 100) + ' %)').join(', ')}">
@@ -208,7 +208,7 @@
           const showTable = table.hidden;
           table.hidden = !showTable; plot.hidden = showTable;
           btn.setAttribute('aria-pressed', showTable);
-          btn.lastChild.textContent = showTable ? 'Graphique' : 'Tableau';
+          btn.lastChild.textContent = showTable ? ML.t('Graphique') : ML.t('Tableau');
           if (!showTable) o.draw(plot);
         });
       }
@@ -217,7 +217,7 @@
       <section class="card card-pad ch-card ${o.cls || ''}" id="${id}">
         <div class="card-head">
           <div><h3 class="card-title">${o.title}</h3>${o.sub ? html`<p class="card-sub">${o.sub}</p>` : ''}</div>
-          ${o.rows ? html`<button class="btn btn-ghost btn-sm" type="button" data-toggle aria-pressed="false">${ML.icon('table', 'ico-sm')}<span>Tableau</span></button>` : ''}
+          ${o.rows ? html`<button class="btn btn-ghost btn-sm" type="button" data-toggle aria-pressed="false">${ML.icon('table', 'ico-sm')}<span>${ML.t('Tableau')}</span></button>` : ''}
         </div>
         <div data-plot></div>
         ${o.rows ? html`<div data-table hidden>${table(o.head, o.rows, o.align)}</div>` : ''}
@@ -226,7 +226,7 @@
   function table(head, rows, align) {
     align = align || [];
     return html`<div class="tbl-wrap"><table class="tbl"><thead><tr>${head.map((h, i) => html`<th class="${align[i] === 'r' ? 'r' : ''}">${h}</th>`)}</tr></thead>
-      <tbody>${rows.length ? rows.map((r) => html`<tr>${r.map((c, i) => html`<td class="${align[i] === 'r' ? 'r num' : ''}">${c}</td>`)}</tr>`) : html`<tr><td colspan="${head.length}" class="dim">Pas encore de données.</td></tr>`}</tbody></table></div>`;
+      <tbody>${rows.length ? rows.map((r) => html`<tr>${r.map((c, i) => html`<td class="${align[i] === 'r' ? 'r num' : ''}">${c}</td>`)}</tr>`) : html`<tr><td colspan="${head.length}" class="dim">${ML.t('Pas encore de données.')}</td></tr>`}</tbody></table></div>`;
   }
 
   ML.charts = { C, timeSeries, bars, segments, spark, meter, card, table, dayLabel };
