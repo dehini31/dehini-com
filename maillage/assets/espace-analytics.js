@@ -5,8 +5,9 @@
  */
 (function () {
   'use strict';
-  const { html, icon, fmt, api } = ML;
+  const { html, icon, fmt } = ML;
   const E = ML.E;
+  const api = (action, opts) => E.api(action, opts);
   const { $ } = E;
   const CH = ML.charts;
   const C = CH.C;

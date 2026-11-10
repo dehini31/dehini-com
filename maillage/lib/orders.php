@@ -104,13 +104,13 @@ function order_create(array $b, ?int $at = null): array
     }
 
     $token = token(20);
-    $pdo->beginTransaction();
+    tx_begin();
     try {
         $take = $pdo->prepare('UPDATE stock SET qty = qty - ?, updated = ? WHERE store_id = ? AND variant_id = ? AND qty >= ?');
         foreach ($lines as $l) {
             $take->execute([$l['qty'], $now, $store['id'], $l['v']['id'], $l['qty']]);
             if ($take->rowCount() !== 1) {
-                $pdo->rollBack();
+                tx_rollback();
                 throw new InvalidArgumentException('Stock insuffisant pour « ' . $l['v']['p_name'] . ' » dans ce point de vente. Choisissez une quantité plus petite ou un autre magasin.');
             }
         }
@@ -128,9 +128,9 @@ function order_create(array $b, ?int $at = null): array
             $ins->execute([$oid, $v['product_id'], $v['id'], $v['p_cid'], $v['brand_id'], $v['p_name'], $v['b_name'], $v['size'], $v['color'], $l['price'], $l['qty']]);
         }
         $pdo->prepare('INSERT INTO order_events (order_id, status, note, actor, created) VALUES (?, ?, ?, ?, ?)')->execute([$oid, 'pending', '', 'client', $now]);
-        $pdo->commit();
+        tx_commit();
     } catch (Throwable $e) {
-        if ($pdo->inTransaction()) $pdo->rollBack();
+        tx_rollback();
         throw $e;
     }
 
@@ -207,13 +207,13 @@ function order_set_status(array $o, string $new, string $note, string $actor, ?i
     if (!in_array($new, order_next((string) $o['status'], (string) $o['mode']), true)) {
         throw new InvalidArgumentException('Ce changement de statut n\'est pas possible.');
     }
-    $pdo->beginTransaction();
+    tx_begin();
     try {
         // Garde contre deux changements simultanés : la mise à jour ne passe que depuis l'ancien statut.
         $u = $pdo->prepare('UPDATE orders SET status = ?, updated = ? WHERE id = ? AND status = ?');
         $u->execute([$new, $now, $o['id'], $o['status']]);
         if ($u->rowCount() !== 1) {
-            $pdo->rollBack();
+            tx_rollback();
             throw new InvalidArgumentException('Cette commande vient d\'être modifiée. Rechargez la page.');
         }
         if ($new === 'cancelled') {
@@ -222,9 +222,9 @@ function order_set_status(array $o, string $new, string $note, string $actor, ?i
         }
         $pdo->prepare('INSERT INTO order_events (order_id, status, note, actor, created) VALUES (?, ?, ?, ?, ?)')
             ->execute([$o['id'], $new, str_clean($note, 300), $actor, $now]);
-        $pdo->commit();
+        tx_commit();
     } catch (Throwable $e) {
-        if ($pdo->inTransaction()) $pdo->rollBack();
+        tx_rollback();
         throw $e;
     }
     $label = ($o['kind'] === 'reservation' ? 'Réservation ' : 'Commande ') . $o['ref'];

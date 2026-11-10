@@ -9,11 +9,19 @@
  */
 (function () {
   'use strict';
-  const { html, icon, fmt, api, color } = ML;
+  const { html, icon, fmt, color } = ML;
   const $ = (sel, root) => (root || document).querySelector(sel);
   const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
   const TYPES = { magasin: 'Magasin', succursale: 'Succursale', distributeur: 'Distributeur' };
-  const S = { stores: null, storeById: {}, brandById: {}, brandBySlug: {}, cleanup: null, current: '', logged: {} };
+  const S = { stores: null, storeById: {}, brandById: {}, brandBySlug: {}, cleanup: null, current: '', logged: {}, seq: 0 };
+  class Stale extends Error {}
+  /** Appel lié à la page affichée : abandonné si l'on a changé de page avant la réponse. */
+  const api = async (action, opts) => {
+    const my = S.seq;
+    const res = await ML.api(action, opts);
+    if (my !== S.seq) throw new Stale();
+    return res;
+  };
 
   /* ------------------------------------------------------------ données */
   async function loadStores() {
@@ -69,6 +77,8 @@
     const name = r.parts[0] || 'carte';
     // Le catalogue se met à jour sans être reconstruit (le champ de recherche garde le curseur).
     if (name === 'produits' && S.current === 'produits' && S.catalogUpdate) { S.catalogUpdate(r.query); return; }
+    const my = ++S.seq;
+    ML.closeModals();
     if (S.cleanup) { try { S.cleanup(); } catch (e) { /* vue déjà retirée */ } S.cleanup = null; }
     S.catalogUpdate = null;
     S.current = name;
@@ -84,6 +94,7 @@
       else if (name === 'suivi') { setNav('suivi'); await trackView(r.parts[1] || ''); }
       else notFound();
     } catch (e) {
+      if (my !== S.seq || e instanceof Stale) return;
       if (e.status === 404) notFound(e.message);
       else view().innerHTML = html`<div class="page"><div class="empty">${icon('wifi-off')}<h3>Chargement impossible</h3><p>${e.message}</p><button class="btn btn-dark" data-act="reload">Réessayer</button></div></div>`;
     }
@@ -434,7 +445,7 @@
     const closeFacets = () => document.body.classList.remove('facets-open');
     ML.actions.facets = () => document.body.classList.toggle('facets-open');
     ML.actions['facets-close'] = closeFacets;
-    S.catalogUpdate = (q) => { closeFacets(); update(q); };
+    S.catalogUpdate = (q) => { closeFacets(); update(q).catch((e) => { if (!(e instanceof Stale)) ML.fail(e); }); };
     S.cleanup = closeFacets;
     await update(query);
   }
@@ -685,7 +696,7 @@
           </div>`;
         if (onDone) onDone();
       } catch (err) {
-        ML.fail(err, f);
+        if (!(err instanceof Stale)) ML.fail(err, f);
       }
       ML.busy(btn, false);
     };

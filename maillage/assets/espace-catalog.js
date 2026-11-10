@@ -4,8 +4,9 @@
  */
 (function () {
   'use strict';
-  const { html, icon, fmt, api, color } = ML;
+  const { html, icon, fmt, color } = ML;
   const E = ML.E;
+  const api = (action, opts) => E.api(action, opts);
   const { $, $$ } = E;
   const view = E.view;
   const TYPES = { magasin: 'Magasin', succursale: 'Succursale', distributeur: 'Distributeur' };

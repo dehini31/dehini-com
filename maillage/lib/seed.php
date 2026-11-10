@@ -7,19 +7,29 @@
  */
 declare(strict_types=1);
 
-/** Charge la démonstration à la première visite (une seule fois, sauf MLG_SEED_DEMO = false). */
+/**
+ * Charge la démonstration à la première visite (une seule fois, sauf MLG_SEED_DEMO = false).
+ * Un verrou fait patienter les autres requêtes pendant le chargement : sans lui, elles
+ * afficheraient une plateforme vide pendant la première seconde.
+ */
 function seed_maybe(): void
 {
     if (!MLG_SEED_DEMO || meta_get('seeded') !== null) return;
-    $pdo = db();
-    $lock = $pdo->prepare("INSERT OR IGNORE INTO meta (k, v) VALUES ('seeded', ?)");
-    $lock->execute([(string) time()]);
-    if ($lock->rowCount() !== 1) return; // une autre requête s'en charge
-    if ((int) $pdo->query('SELECT COUNT(*) FROM companies')->fetchColumn() > 0) return;
+    $lock = @fopen(dirname(MLG_DB_PATH) . '/seed.lock', 'c');
+    if ($lock) flock($lock, LOCK_EX);
     try {
-        seed_demo();
-    } catch (Throwable $e) {
-        error_log('maillage seed: ' . $e->getMessage());
+        if (meta_get('seeded') !== null) return; // une autre requête vient de s'en charger
+        $state = 'done';
+        try {
+            if ((int) db()->query('SELECT COUNT(*) FROM companies')->fetchColumn() === 0) seed_demo();
+        } catch (Throwable $e) {
+            $state = 'failed';
+            tx_rollback();
+            error_log('maillage seed: ' . $e->getMessage());
+        }
+        meta_set('seeded', $state);
+    } finally {
+        if ($lock) { flock($lock, LOCK_UN); fclose($lock); }
     }
 }
 
@@ -207,7 +217,7 @@ function seed_demo(): void
 
     /* --- assortiment : chaque magasin référence une partie du catalogue (stock plein pendant la génération des commandes) */
     $assort = [];   // [index magasin] => [[produit, clé de la marque], ...]
-    $pdo->beginTransaction();
+    tx_begin();
     $ins = $pdo->prepare('INSERT OR REPLACE INTO stock (store_id, variant_id, qty, updated) VALUES (?, ?, 999, ?)');
     foreach ($stores as $si => $st) {
         foreach ($st['brands'] as $bk) {
@@ -220,7 +230,7 @@ function seed_demo(): void
             }
         }
     }
-    $pdo->commit();
+    tx_commit();
 
     /* --- commandes des 60 derniers jours */
     $first = ['Yacine', 'Amina', 'Sofiane', 'Lina', 'Karim', 'Nadia', 'Mehdi', 'Sara', 'Walid', 'Imène', 'Rachid', 'Meriem', 'Anis', 'Yasmine', 'Hamza', 'Salma', 'Nabil', 'Ines', 'Farid', 'Asma'];
@@ -278,7 +288,7 @@ function seed_demo(): void
     }
 
     /* --- stock réel : quelques ruptures et stocks limités */
-    $pdo->beginTransaction();
+    tx_begin();
     $set = $pdo->prepare('UPDATE stock SET qty = ?, updated = ? WHERE store_id = ? AND variant_id = ?');
     foreach ($stores as $si => $st) {
         foreach ($assort[$si] ?? [] as [$p]) {
@@ -289,7 +299,7 @@ function seed_demo(): void
             }
         }
     }
-    $pdo->commit();
+    tx_commit();
 
     /* --- recherches des 60 derniers jours */
     $zoneW = ['16' => 22, '31' => 12, '25' => 8, '19' => 10, '09' => 5, '15' => 5, '06' => 4, '23' => 4, '05' => 6, '07' => 5, '13' => 3, '02' => 5,
@@ -303,7 +313,7 @@ function seed_demo(): void
     // Demandes sans réponse : dans le catalogue d'une marque, et sur toute la plateforme.
     $missBrand = ['velora' => ['chaussettes', 'brassière', 'tapis de yoga', 'maillot de bain'], 'darlina' => ['couette', 'oreiller', 'drap housse'], 'kivo' => ['micro-ondes', 'climatiseur', 'cafetière filtre']];
     $missAll = ['montre connectée', 'haltères', 'robot aspirateur', 'trottinette', 'poussette', 'vélo d\'appartement'];
-    $pdo->beginTransaction();
+    tx_begin();
     for ($day = 59; $day >= 0; $day--) {
         $n = (int) round((22 + (59 - $day) * 0.55) * (mt_rand(70, 135) / 100));
         for ($k = 0; $k < $n; $k++) {
@@ -371,7 +381,7 @@ function seed_demo(): void
         }
     }
     log_activity($cid['relais'], 'partner', 'Demande de partenariat envoyée à Vélora Sport', 0, $cid['velora'], $today - 2 * 86400 + 11 * 3600);
-    $pdo->commit();
+    tx_commit();
     $pdo->exec('PRAGMA synchronous = NORMAL');
     mt_srand();
 }

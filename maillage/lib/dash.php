@@ -186,16 +186,18 @@ function product_save(int $cid, array $b): array
     if (!$variants) $variants[] = ['id' => 0, 'sku' => '', 'size' => '', 'color' => '', 'hex' => '', 'price' => null];
     if (count($variants) > 1 && isset($seen['|'])) bad('Chaque déclinaison doit avoir une taille ou une couleur.');
 
+    if (!$id) {
+        $n = $pdo->prepare('SELECT COUNT(*) FROM products WHERE company_id = ?');
+        $n->execute([$cid]);
+        if ((int) $n->fetchColumn() >= MAX_PRODUCTS) bad('Nombre maximal de produits atteint.');
+    }
     $now = time();
-    $pdo->beginTransaction();
+    tx_begin();
     try {
         if ($id) {
             $pdo->prepare('UPDATE products SET brand_id = ?, name = ?, category = ?, about = ?, price = ?, images = ?, specs = ?, status = ?, updated = ? WHERE id = ?')
                 ->execute([$brand['id'], $name, $cat, str_clean($b['about'] ?? '', 3000), $price, json_encode($images), json_encode($specs, JSON_UNESCAPED_UNICODE), $status, $now, $id]);
         } else {
-            $n = $pdo->prepare('SELECT COUNT(*) FROM products WHERE company_id = ?');
-            $n->execute([$cid]);
-            if ((int) $n->fetchColumn() >= MAX_PRODUCTS) bad('Nombre maximal de produits atteint.');
             $pdo->prepare('INSERT INTO products (company_id, brand_id, name, slug, category, about, price, images, specs, status, created, updated) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
                 ->execute([$cid, $brand['id'], $name, unique_slug('products', $name), $cat, str_clean($b['about'] ?? '', 3000), $price, json_encode($images), json_encode($specs, JSON_UNESCAPED_UNICODE), $status, $now, $now]);
             $id = (int) $pdo->lastInsertId();
@@ -220,9 +222,9 @@ function product_save(int $cid, array $b): array
         }
         $row = own_row('products', $cid, $id);
         $pdo->prepare('UPDATE products SET search = ? WHERE id = ?')->execute([product_search_text($row, (string) $brand['name'], variants_of([$id])[$id] ?? []), $id]);
-        $pdo->commit();
+        tx_commit();
     } catch (Throwable $e) {
-        if ($pdo->inTransaction()) $pdo->rollBack();
+        tx_rollback();
         throw $e;
     }
     if ($old) {
@@ -539,7 +541,7 @@ function stock_save(int $cid, string $kind, int $storeId, array $items): int
     $now = time();
     $n = 0;
     $about = [];
-    $pdo->beginTransaction();
+    tx_begin();
     try {
         $del = $pdo->prepare('DELETE FROM stock WHERE store_id = ? AND variant_id = ?');
         $set = $pdo->prepare('INSERT OR REPLACE INTO stock (store_id, variant_id, qty, updated) VALUES (?, ?, ?, ?)');
@@ -556,9 +558,9 @@ function stock_save(int $cid, string $kind, int $storeId, array $items): int
             $n++;
             $about[$allowed[$vid]] = ($about[$allowed[$vid]] ?? 0) + 1;
         }
-        $pdo->commit();
+        tx_commit();
     } catch (Throwable $e) {
-        if ($pdo->inTransaction()) $pdo->rollBack();
+        tx_rollback();
         throw $e;
     }
     foreach ($about as $pc => $k) {
@@ -702,7 +704,7 @@ function company_save(int $cid, array $b): array
 function company_delete(int $cid): void
 {
     $pdo = db();
-    $pdo->beginTransaction();
+    tx_begin();
     try {
         $pdo->prepare('DELETE FROM order_events WHERE order_id IN (SELECT id FROM orders WHERE seller_cid = ?)')->execute([$cid]);
         $pdo->prepare('DELETE FROM order_items WHERE order_id IN (SELECT id FROM orders WHERE seller_cid = ?)')->execute([$cid]);
@@ -711,9 +713,9 @@ function company_delete(int $cid): void
         $pdo->prepare('DELETE FROM activity WHERE company_id = ? OR about_cid = ?')->execute([$cid, $cid]);
         $pdo->prepare('DELETE FROM companies WHERE id = ?')->execute([$cid]); // cascade : comptes, marques, produits, magasins, stock, partenariats
         $pdo->exec('DELETE FROM searches WHERE id NOT IN (SELECT search_id FROM search_hits)');
-        $pdo->commit();
+        tx_commit();
     } catch (Throwable $e) {
-        if ($pdo->inTransaction()) $pdo->rollBack();
+        tx_rollback();
         throw $e;
     }
     media_purge($cid);

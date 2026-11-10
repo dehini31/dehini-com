@@ -261,6 +261,8 @@
     else wrap.querySelector('[data-close]').focus({ preventScroll: true });
     return { el: wrap, close };
   };
+  /** Ferme les fenêtres ouvertes (appelé à chaque changement de page). */
+  ML.closeModals = () => document.querySelectorAll('.modal-wrap').forEach((w) => { const b = w.querySelector('[data-close]'); if (b) b.click(); });
   ML.confirm = (message, o) => new Promise((resolve) => {
     o = o || {};
     let answer = false;

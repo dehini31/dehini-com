@@ -237,7 +237,7 @@ try {
             $s->execute([$email]);
             if ($s->fetchColumn()) fail('Un compte existe déjà avec cette adresse. Connectez-vous.', 409, 'exists');
             $sizes = ['1', '2-5', '6-20', '21+'];
-            $pdo->beginTransaction();
+            tx_begin();
             [$cid, $uid] = account_create([
                 'kind' => $kind, 'company' => $company, 'name' => $name, 'email' => $email, 'phone' => $phone, 'password' => $pass,
                 'wilaya' => zone_code($b['wilaya'] ?? ''), 'city' => line_clean($b['city'] ?? '', 80),
@@ -245,7 +245,7 @@ try {
                 'size' => in_array($b['size'] ?? '', $sizes, true) ? (string) $b['size'] : '',
                 'status' => moderation_on() ? 'pending' : 'active',
             ]);
-            $pdo->commit();
+            tx_commit();
             // Une marque démarre avec sa marque déjà créée : une étape de moins.
             if ($kind === 'brand') brand_save($cid, ['name' => $company, 'category' => $b['sector'] ?? 'autre']);
             $csrf = start_session($uid);
@@ -562,10 +562,10 @@ try {
         }
     }
 } catch (InvalidArgumentException $e) {
-    if ($pdo->inTransaction()) $pdo->rollBack();
+    tx_rollback();
     fail($e->getMessage());
 } catch (Throwable $e) {
-    if ($pdo->inTransaction()) $pdo->rollBack();
+    tx_rollback();
     error_log('maillage api ' . $action . ': ' . $e->getMessage() . ' @ ' . basename($e->getFile()) . ':' . $e->getLine());
     fail('Une erreur est survenue. Réessayez dans un instant.', 500, 'server');
 }

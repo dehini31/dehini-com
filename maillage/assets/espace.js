@@ -10,10 +10,21 @@
  */
 (function () {
   'use strict';
-  const { html, icon, fmt, api, color } = ML;
+  const { html, icon, fmt, color } = ML;
   const $ = (sel, root) => (root || document).querySelector(sel);
   const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
-  const E = ML.E = { me: null, views: {}, cleanup: null, $, $$ };
+  const E = ML.E = { me: null, views: {}, cleanup: null, seq: 0, $, $$ };
+  class Stale extends Error {}
+  /**
+   * Appel à l'API lié à la page affichée : si l'on a changé de page avant la réponse, la suite
+   * est abandonnée (sinon une vue lente écraserait celle qu'on vient d'ouvrir).
+   */
+  const api = E.api = async (action, opts) => {
+    const my = E.seq;
+    const res = await ML.api(action, opts);
+    if (my !== E.seq) throw new Stale();
+    return res;
+  };
   const KINDS = { brand: 'Entreprise / marque', distributor: 'Distributeur' };
   const NAV = [
     ['', 'layout-dashboard', 'Vue d\'ensemble'],
@@ -32,6 +43,7 @@
   /** Appel d'écriture : affiche l'erreur (dont « lecture seule » en démonstration) et retourne null. */
   E.send = async (action, body, form) => {
     try { return await api(action, { body }); } catch (err) {
+      if (err instanceof Stale) return null;
       if (err.code === 'auth') { location.reload(); return null; }
       ML.fail(err, form);
       return null;
@@ -153,6 +165,8 @@
   async function route() {
     const r = ML.route();
     const name = r.parts[0] || '';
+    const my = ++E.seq;
+    ML.closeModals();
     document.body.classList.remove('side-open');
     if (E.cleanup) { try { E.cleanup(); } catch (e) { /* vue déjà retirée */ } E.cleanup = null; }
     $$('[data-nav]').forEach((a) => a.classList.toggle('is-on', a.dataset.nav === name));
@@ -161,6 +175,7 @@
     try {
       await v(r);
     } catch (e) {
+      if (my !== E.seq || e instanceof Stale) return;
       if (e.code === 'auth') { location.reload(); return; }
       view().innerHTML = html`<div class="empty">${icon('wifi-off')}<h3>Chargement impossible</h3><p>${e.message}</p><button class="btn btn-dark" data-act="retry">Réessayer</button></div>`;
     }
@@ -275,7 +290,7 @@
 
   async function openOrder(id) {
     let o;
-    try { o = (await api('order_get', { params: { id } })).order; } catch (e) { ML.fail(e); return; }
+    try { o = (await api('order_get', { params: { id } })).order; } catch (e) { if (!(e instanceof Stale)) ML.fail(e); return; }
     const body = (ord) => html`
       <div class="odetail">
         <div class="row row-wrap between">${ML.statusBadge(ord)}<span class="muted">${ML.kindLabel(ord)} · ${fmt.time(ord.created)}</span></div>

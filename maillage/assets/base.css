@@ -85,7 +85,7 @@ button { cursor: pointer; background: none; border: 0; padding: 0; }
 .row-wrap { flex-wrap: wrap; }
 .between { justify-content: space-between; }
 .grow { flex: 1 1 auto; min-width: 0; }
-.stack { display: grid; gap: 14px; }
+.stack { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
 .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ------------------------------------------------------------------ logo */

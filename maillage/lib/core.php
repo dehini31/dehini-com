@@ -83,19 +83,46 @@ function db(): PDO
         PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
     ]);
-    $pdo->exec('PRAGMA busy_timeout = 5000');
+    $pdo->exec('PRAGMA busy_timeout = 8000');
     $pdo->exec('PRAGMA foreign_keys = ON');
-    $pdo->exec('PRAGMA journal_mode = WAL');
+    try { $pdo->exec('PRAGMA journal_mode = WAL'); } catch (Throwable $e) { /* base occupée : la prochaine connexion s'en chargera */ }
     migrate($pdo);
     return $pdo;
+}
+
+/*
+ * Transactions d'écriture. Le verrou d'écriture est pris dès le début (BEGIN IMMEDIATE) : une
+ * transaction qui lirait d'abord puis écrirait serait refusée tout de suite (« database is
+ * locked ») si une autre requête a écrit entre-temps, au lieu de patienter.
+ */
+function tx_begin(): void
+{
+    db()->exec('BEGIN IMMEDIATE');
+    $GLOBALS['mlg_tx'] = true;
+}
+function tx_commit(): void
+{
+    db()->exec('COMMIT');
+    $GLOBALS['mlg_tx'] = false;
+}
+/** Annule la transaction en cours, s'il y en a une (sans effet sinon). */
+function tx_rollback(): void
+{
+    if (empty($GLOBALS['mlg_tx'])) return;
+    $GLOBALS['mlg_tx'] = false;
+    try { db()->exec('ROLLBACK'); } catch (Throwable $e) { /* déjà annulée par SQLite */ }
 }
 
 /** Schéma compatible avec les vieilles versions de SQLite des hébergeurs mutualisés. */
 function migrate(PDO $pdo): void
 {
-    $v = (int) $pdo->query('PRAGMA user_version')->fetchColumn();
-    if ($v < 1) {
-        $pdo->exec(<<<SQL
+    if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= 1) return;
+    // Deux premières visites simultanées : la seconde attend la fin de la création, puis ne fait rien.
+    $pdo->exec('BEGIN IMMEDIATE');
+    try {
+        $v = (int) $pdo->query('PRAGMA user_version')->fetchColumn();
+        if ($v < 1) {
+            $pdo->exec(<<<SQL
         -- Une entreprise inscrite : une marque (qui possède un catalogue) ou un distributeur.
         CREATE TABLE IF NOT EXISTS companies (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -323,6 +350,11 @@ function migrate(PDO $pdo): void
         );
         PRAGMA user_version = 1;
         SQL);
+        }
+        $pdo->exec('COMMIT');
+    } catch (Throwable $e) {
+        try { $pdo->exec('ROLLBACK'); } catch (Throwable $e2) { /* rien à annuler */ }
+        throw $e;
     }
 }
 

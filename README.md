@@ -31,6 +31,10 @@ Site personnel de Mohammed Dehini.
   passe que `/admin`) : suivi marketing de YINVESTI saisi à la main (leads, questions, projets, social media, publicité,
   site, emails, funnels) et rapports générés automatiquement chaque jour, chaque semaine et chaque mois. Voir la
   section « Marketing Dashboard » plus bas.
+- `maillage/` — **Maillage** (`https://dehini.com/maillage/`), plateforme de gestion des points de vente et des
+  réseaux de distribution : landing page d'inscription, carte interactive des points de vente (OpenStreetMap),
+  pages des marques et catalogue, disponibilité d'un produit par magasin, commandes et réservations, espace
+  entreprise (marques et distributeurs) et analyses commerciales. Voir la section « Maillage » plus bas.
 - `robots.txt` — robots du domaine (déclare les plans du site ; Google ne lit que celui de la racine).
 - `sitemap.xml` — plan des pages principales de dehini.com (les questions du défi Impact ont le leur :
   `/impact/sitemap.xml`). Voir « Référencement (SEO) » plus bas.
@@ -53,6 +57,7 @@ cp -rf dehini-com/impact ~/public_html/
 cp -rf dehini-com/metakpis ~/public_html/
 cp -rf dehini-com/swanbida ~/public_html/
 cp -rf dehini-com/marketing ~/public_html/
+cp -rf dehini-com/maillage ~/public_html/
 cp -f dehini-com/robots.txt dehini-com/sitemap.xml ~/public_html/
 ```
 
@@ -83,13 +88,14 @@ depuis `/admin`, jamais depuis ce dépôt.
 Dans **cPanel → Tâches Cron**, toutes les 5 minutes :
 
 ```bash
-cd ~/dehini-com && git pull -q && cp -f index.html ~/public_html/index.html && cp -f admin/index.html admin/api.php admin/.htaccess admin/.user.ini ~/public_html/admin/ && cp -f uploads/.htaccess ~/public_html/uploads/.htaccess && cp -rf img ~/public_html/ && cp -rf elbahiferti ~/public_html/ && cp -rf impact ~/public_html/ && cp -rf metakpis ~/public_html/ && cp -rf swanbida ~/public_html/ && cp -rf marketing ~/public_html/ && cp -f robots.txt sitemap.xml ~/public_html/
+cd ~/dehini-com && git pull -q && cp -f index.html ~/public_html/index.html && cp -f admin/index.html admin/api.php admin/.htaccess admin/.user.ini ~/public_html/admin/ && cp -f uploads/.htaccess ~/public_html/uploads/.htaccess && cp -rf img ~/public_html/ && cp -rf elbahiferti ~/public_html/ && cp -rf impact ~/public_html/ && cp -rf metakpis ~/public_html/ && cp -rf swanbida ~/public_html/ && cp -rf marketing ~/public_html/ && cp -rf maillage ~/public_html/ && cp -f robots.txt sitemap.xml ~/public_html/
 ```
 
 Cette commande ne touche jamais `data.json`, `admin/config.php`, `impact/config.php`,
-`metakpis/config.php`, `swanbida/config.php`, `marketing/config.php`, les bases du défi Impact, de Stats Meta KPIs,
-de SWANBIDA et du Marketing Dashboard, ni les images envoyées dans `uploads/` et `swanbida/media/` : seul le code
-(`index.html`, `admin/*.php`, `elbahiferti/`, `impact/`, `metakpis/`, `swanbida/`, `marketing/`) est mis à jour.
+`metakpis/config.php`, `swanbida/config.php`, `marketing/config.php`, `maillage/config.php`, les bases du défi
+Impact, de Stats Meta KPIs, de SWANBIDA, du Marketing Dashboard et de Maillage, ni les images envoyées dans
+`uploads/`, `swanbida/media/` et `maillage/media/` : seul le code (`index.html`, `admin/*.php`, `elbahiferti/`,
+`impact/`, `metakpis/`, `swanbida/`, `marketing/`, `maillage/`) est mis à jour.
 
 ## Défi Impact (`/impact/`)
 
@@ -968,6 +974,131 @@ rien n'est envoyé deux fois ; si l'envoi a échoué pour tous les destinataires
 `--date=2026-11-09` rattrape un jour manqué ; `--force=week` produit un rapport hors de son jour ;
 `--test=adresse@exemple.com` envoie les trois rapports à cette adresse.
 
+## Maillage (`/maillage/`)
+
+Plateforme qui réunit, pour des marques et leurs distributeurs, la découverte des produits, leur disponibilité
+près de chez soi, la commande et l'analyse de la demande. Trois parties, une seule base :
+
+| Adresse | Pour qui | Ce qu'on y fait |
+|---|---|---|
+| `https://dehini.com/maillage/` | entreprises | **Landing page d'inscription** : présentation, carte en direct, formulaire (marque ou distributeur), démonstration |
+| `https://dehini.com/maillage/explorer/` | clients | **Plateforme publique** : carte des points de vente, marques, catalogue, « où le trouver », commande ou réservation, suivi |
+| `https://dehini.com/maillage/espace/` | entreprises | **Espace entreprise** : points de vente, catalogue, stock par magasin, commandes, réseau, analyses |
+| `https://dehini.com/maillage/admin.html` | toi | **Administration** : inscriptions à valider, entreprises, réglages, démonstration (même mot de passe que `/admin`) |
+
+Les six fonctions :
+
+1. **Carte interactive** (`explorer/#/carte`) — magasins, succursales et distributeurs sur un fond OpenStreetMap
+   (Leaflet), recherche par nom, ville ou marque, filtres (type, ouvert maintenant, livraison), « autour de moi »
+   ou choix de la ville, tri du plus proche au plus loin, téléphone, horaires et itinéraire.
+2. **Marques et produits** (`#/marques`, `#/produits`) — une page par marque, fiches produit (photos, prix,
+   caractéristiques), classement par rayon, recherche sans accents sur le nom, la marque, les caractéristiques, les
+   tailles et les couleurs.
+3. **Disponibilité** (`#/produit/…`) — le client choisit une taille et une couleur : la fiche liste les points de
+   vente qui l'ont en stock, avec la distance et le niveau de stock (« en stock », « plus que 2 »).
+4. **Commandes et réservations** — depuis la fiche, choix du point de vente, puis réservation (article mis de
+   côté 48 h), commande à retirer ou commande livrée, selon ce que le magasin propose. Pas de paiement en ligne :
+   le client paie au retrait ou à la livraison. Il suit sa demande avec son numéro (`ML-XXXXXX`) et son téléphone,
+   et peut l'annuler tant qu'elle n'est pas confirmée. Le stock du magasin baisse à la commande et remonte si elle
+   est annulée ou si la réservation expire.
+5. **Espace entreprise** — vue d'ensemble (étapes de mise en route, commandes à traiter, stock à surveiller,
+   activité du réseau), commandes (confirmer → prête ou expédiée → retirée ou livrée, annuler avec motif),
+   catalogue (marques, produits, déclinaisons taille × couleur, photos), points de vente (épingle placée d'un clic
+   sur la carte, horaires, services), disponibilité magasin par magasin, réseau (une marque invite un distributeur
+   ou un distributeur demande à distribuer une marque ; une fois le partenariat accepté, le distributeur référence
+   le catalogue de la marque dans ses magasins).
+6. **Analyses** — recherches et commandes par jour, chiffre d'affaires, mots recherchés, **demandes restées sans
+   réponse**, produits, tailles et couleurs les plus demandés, demande par wilaya, tableau de bord des points de
+   vente et des distributeurs (commandes menées à terme, annulations, délai de confirmation, taux de
+   disponibilité), et **expansion** : les wilayas où l'on cherche les produits sans point de vente à moins de
+   30 km, classées par nombre de recherches.
+
+### Organisation
+
+- `maillage/index.html` + `assets/landing.{css,js}` — la landing.
+- `maillage/explorer/` + `assets/explorer.{css,js}` — la plateforme publique.
+- `maillage/espace/` + `assets/espace*.{css,js}`, `assets/charts.js` — l'espace entreprise et ses graphiques.
+- `maillage/admin.html` + `assets/admin.js` — l'administration.
+- `maillage/assets/core.js`, `base.css`, `icons.js` — socle commun (appels à l'API, gabarits HTML échappés,
+  carte, formats, icônes Lucide utilisées).
+- `maillage/api.php` — l'API (la liste des actions est en tête du fichier).
+- `maillage/lib/` — `core.php` (configuration, base, emails), `auth.php` (comptes, sessions), `catalog.php`
+  (côté public, recherche, suivi des recherches), `orders.php`, `dash.php` (espace entreprise), `analytics.php`,
+  `media.php` (photos), `seed.php` (démonstration), `data/zones.json` (wilayas et coordonnées de leur chef-lieu).
+- `maillage/vendor/` — Leaflet 1.9.4 et Leaflet.markercluster 1.5.3, embarqués (pas de CDN).
+- La base est créée toute seule au premier passage dans `~/maillage-data/maillage.sqlite` (hors `public_html`).
+  Les photos des produits vont dans `maillage/media/` (ré-encodées en WebP, ignorées par Git).
+
+### 1. Mise en route
+
+Il suffit que le dossier soit copié dans `public_html` (les commandes d'installation et le cron ci-dessus le font).
+**Si le cron est déjà en place sur le serveur, il faut lui ajouter `cp -rf maillage ~/public_html/`** (cPanel →
+Tâches Cron → modifier la commande, voir « 4. Mise à jour automatique du code »).
+
+À la première visite, un **réseau de démonstration** est chargé : trois marques fictives (Vélora, Dar Lina, Kivo),
+deux distributeurs, 22 points de vente, 30 produits et deux mois de recherches et de commandes. Tout est marqué
+« Démo ». Il sert à montrer la plateforme avant l'arrivée des premières entreprises, et il alimente le bouton
+« Voir le tableau de bord en démonstration » de la landing (session en **lecture seule**).
+Pour le retirer : `https://dehini.com/maillage/admin.html` → « Supprimer la démonstration » (on peut la recharger
+au même endroit). Pour ne jamais la charger : `define('MLG_SEED_DEMO', false);` dans `maillage/config.php` avant la
+première visite.
+
+### 2. Inscriptions
+
+Une entreprise s'inscrit depuis la landing et arrive tout de suite dans son espace, où elle peut tout préparer.
+**Son réseau n'apparaît sur la plateforme publique qu'après ta validation** : `maillage/admin.html` → « Valider ».
+Dans les réglages de cette page :
+
+- **« Valider chaque inscription avant sa mise en ligne »** — activé par défaut. Désactivé, une entreprise inscrite
+  est publiée immédiatement.
+- **« Email prévenu à chaque inscription »** — mets ton adresse pour être averti.
+
+« Ouvrir l'espace » ouvre l'espace d'une entreprise en ton nom (pour l'aider ou vérifier) ; « Suspendre » retire
+son réseau de la plateforme ; la corbeille supprime l'entreprise et tout ce qui lui appartient.
+
+### 3. Emails
+
+Bienvenue, inscription validée, nouvelle commande (au magasin, sinon à l'entreprise), confirmation et suivi au
+client s'il a laissé son email, demande de partenariat, mot de passe oublié. Comme pour Stats Meta KPIs, le compte
+SMTP du défi Impact (`impact/config.php`) est réutilisé s'il existe ; sinon `mail()` du serveur. Pour un compte
+dédié, voir `maillage/config.example.php`. Un email qui échoue ne bloque jamais une commande ou une inscription.
+
+### 4. Fond de carte
+
+Les tuiles viennent des serveurs d'OpenStreetMap, gratuits et prévus pour un **trafic modéré**. Si la plateforme
+prend de l'ampleur, passer à un fournisseur de tuiles (MapTiler, Stadia Maps, Thunderforest… souvent gratuits
+jusqu'à un certain volume) avec `MLG_TILES_URL` et `MLG_TILES_ATTR` dans `maillage/config.php`. La recherche
+d'adresse du formulaire « point de vente » interroge Nominatim (OpenStreetMap), une fois, au clic.
+
+### 5. Réglages (`maillage/config.php`, facultatif)
+
+Copier `maillage/config.example.php` : devise (`MLG_CURRENCY`, « DA » par défaut), durée d'une réservation
+(`MLG_RESERVATION_HOURS`, 48), rayon de couverture d'un point de vente pour l'analyse d'expansion (`MLG_COVER_KM`,
+30), centre et zoom de la carte, emplacement de la base, compte email. Les rayons du catalogue sont dans
+`lib/core.php` (`MLG_CATEGORIES`) ; les zones dans `lib/data/zones.json`.
+
+### 6. Tests
+
+```bash
+tests/maillage/run.sh /tmp/mlg-test
+```
+
+Faux hébergement neuf, puis parcours complet dans Chromium (Playwright) : inscription d'une marque depuis la
+landing, produit avec photo, point de vente placé sur la carte, stock, validation par le propriétaire, recherche et
+réservation côté client sur mobile, traitement de la commande, annulation par le client, distributeur et
+partenariat, analyses, mot de passe oublié, démonstration en lecture seule, cloisonnement entre entreprises,
+fichiers internes interdits, politique de sécurité (CSP), absence d'erreur JavaScript et de défilement horizontal.
+Voir `tests/maillage/README.md`.
+
+### Ce qui n'est pas fait
+
+- Une seule langue (français). Les textes sont dans les fichiers `assets/*.js` et `index.html`.
+- Pas de paiement en ligne, ni de frais de livraison calculés : le point de vente s'arrange avec le client.
+- Une commande porte sur un produit (une déclinaison, une quantité) dans un point de vente ; il n'y a pas de panier
+  multi-produits.
+- Un seul compte par entreprise (pas encore d'équipe avec plusieurs utilisateurs).
+- Les conditions d'utilisation affichées à l'inscription sont un texte de départ, à relire et adapter.
+
 ## Référencement (SEO)
 
 Ce que fait le code :
@@ -977,6 +1108,8 @@ Ce que fait le code :
   `data.json`), texte alternatif du portrait, liens vers le défi Impact et Stats Meta KPIs en pied de page.
 - **Défi Impact** : une page par question et une page de toutes les questions (voir « 10. Pages des
   questions »), versions arabe et anglaise signalées à Google (hreflang), données structurées.
+- **Maillage** : titre, description, adresse canonique et aperçu de partage sur la landing et la plateforme
+  publique ; l'espace entreprise et l'administration sont exclus des moteurs de recherche.
 - **Plans du site** : `/sitemap.xml` (pages principales), `/impact/sitemap.xml` (défi, toutes les questions,
   questions qui ont des récits), `/swanbida/sitemap.xml` ; tous déclarés dans `/robots.txt`.
 
@@ -1084,3 +1217,12 @@ pas mis à jour automatiquement après coup.
   toutes les saisies validées côté serveur à partir du schéma, requêtes SQL préparées, base hors de `public_html` ;
   `config.php`, `cron.php` et `lib/` bloqués en accès direct, page exclue des moteurs de recherche (`noindex` et
   `robots.txt`) ; exports CSV protégés contre les formules Excel.
+- Maillage : mots de passe hachés, sessions à jeton aléatoire (seul leur hash est en base), jeton anti-CSRF et
+  en-tête `X-Requested-With` sur chaque écriture, limites d'essais (inscription, connexion, commandes, suivi) ;
+  chaque action de l'espace entreprise vérifie que l'objet appartient à l'entreprise connectée ; la session de
+  démonstration est en lecture seule ; les inscriptions attendent une validation avant d'être publiées. Tout ce
+  que saisissent les entreprises et les clients est échappé à l'affichage, et une politique de sécurité du contenu
+  (CSP, `maillage/.htaccess`) interdit tout script en ligne. Photos ré-encodées (GD) et rangées dans `media/`, où
+  aucun script ne s'exécute ; `config.php` et `lib/` bloqués en accès direct ; base hors de `public_html`. Le
+  suivi d'une commande demande le numéro **et** le téléphone ; les recherches sont comptées sans identité, avec une
+  position arrondie à environ 1 km.

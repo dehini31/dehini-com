@@ -66,8 +66,8 @@ body.side-open .side-veil { opacity: 1; pointer-events: auto; }
 .vhead p { margin-top: 4px; }
 .vhead p::first-letter { text-transform: uppercase; }
 .vhead-actions { display: flex; flex-wrap: wrap; gap: 8px; }
-.cols { display: grid; gap: 16px; align-items: start; }
-.grid-2 { display: grid; gap: 16px; margin-bottom: 16px; }
+.cols { display: grid; gap: 16px; align-items: start; grid-template-columns: minmax(0, 1fr); }
+.grid-2 { display: grid; gap: 16px; margin-bottom: 16px; grid-template-columns: minmax(0, 1fr); }
 @media (min-width: 900px) { .cols { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); } .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 #view > .card, #view > section, [data-body] > .card, [data-body] > section { margin-bottom: 16px; }
 .sep { border: 0; border-top: 1px solid var(--line); margin: 2px 0; width: 100%; }
@@ -155,6 +155,7 @@ a.tile:hover { border-color: var(--line-2); box-shadow: var(--shadow-1); }
 .orow b { display: block; font-size: 15px; }
 .orow small { display: block; font-size: 13px; }
 .orow-end { display: grid; justify-items: end; gap: 3px; flex: none; }
+.orow > .grow { display: grid; }
 .lowlist li, .miss li { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 14.5px; }
 .lowlist li:last-child, .miss li:last-child { border-bottom: 0; }
 .lowlist small { display: block; font-size: 13px; }
@@ -199,7 +200,7 @@ a.tile:hover { border-color: var(--line-2); box-shadow: var(--shadow-1); }
 @media (min-width: 700px) { .prow-meta { display: grid; min-width: 130px; } }
 .brandcard { overflow: hidden; }
 .brandcard-band { height: 8px; background: var(--c); }
-.editor { display: grid; gap: 16px; align-items: start; }
+.editor { display: grid; gap: 16px; align-items: start; grid-template-columns: minmax(0, 1fr); }
 @media (min-width: 1100px) { .editor { grid-template-columns: minmax(0, 1fr) 320px; } .editor-side { position: sticky; top: 20px; } }
 .vgen { display: grid; gap: 14px; padding: 14px; border-radius: 12px; background: var(--paper); }
 .vgen .chip { min-height: 32px; font-size: 13.5px; }
@@ -220,7 +221,7 @@ a.tile:hover { border-color: var(--line-2); box-shadow: var(--shadow-1); }
 .drop.is-busy { opacity: .5; pointer-events: none; }
 
 /* -------------------------------------------------------- points de vente */
-.split { display: grid; gap: 16px; align-items: start; }
+.split { display: grid; gap: 16px; align-items: start; grid-template-columns: minmax(0, 1fr); }
 .slist li { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; padding: 14px; border-bottom: 1px solid var(--line); }
 .slist li:last-child { border-bottom: 0; }
 .slist li > .grow { display: grid; gap: 2px; min-width: 180px; }
@@ -258,7 +259,7 @@ a.tile:hover { border-color: var(--line-2); box-shadow: var(--shadow-1); }
 @media (min-width: 1000px) { .savebar { bottom: 20px; } }
 
 /* --------------------------------------------------------------- analyses */
-.zone-grid { display: grid; gap: 16px; align-items: start; }
+.zone-grid { display: grid; gap: 16px; align-items: start; grid-template-columns: minmax(0, 1fr); }
 .zone-map { height: 340px; border: 1px solid var(--line); }
 .zone-map.is-tall { height: min(520px, 70vh); }
 @media (min-width: 1000px) { .zone-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .zone-map { height: 440px; } }
@@ -307,3 +308,10 @@ a.tile:hover { border-color: var(--line-2); box-shadow: var(--shadow-1); }
 .ch-meter > span { width: 56px; height: 6px; border-radius: 99px; background: var(--paper-2); overflow: hidden; }
 .ch-meter i { display: block; height: 100%; border-radius: 99px; }
 .ch-meter b { font-weight: 600; font-size: 13.5px; min-width: 40px; }
+
+/* ------------------------------------------------- administration du site */
+body.adm .mtop { display: flex; gap: 12px; padding: 0 16px; }
+body.adm #view { max-width: 1280px; padding-top: 26px; }
+.adm-actions { gap: 6px; flex-wrap: nowrap; }
+.adm .switch { align-items: flex-start; }
+.adm .switch small { font-size: 13px; }
