@@ -999,7 +999,9 @@ Instagram (« Configuration de l'API avec la connexion Instagram »), y déclare
 `https://dehini.com/marketing/meta.php`, puis coller dans Connexions l'**ID de l'app Instagram** et la **clé secrète de
 l'app Instagram** (différents de l'App ID Facebook) et cliquer sur « Se connecter avec Instagram » (autorisations
 `instagram_business_basic`, `instagram_business_manage_insights`, `instagram_business_manage_comments`). Le jeton
-Instagram dure 60 jours et se renouvelle tout seul à chaque synchronisation. Autre solution : relier le compte
+Instagram dure 60 jours et se renouvelle tout seul à chaque synchronisation. « Invalid platform app » chez Instagram =
+l'ID collé n'est pas l'ID de l'app Instagram (souvent l'App ID Facebook, que le tableau de bord refuse désormais) ou
+la connexion Instagram n'est pas encore configurée dans l'app : « Modifier l'app Instagram » permet de recoller le bon. Autre solution : relier le compte
 Instagram à la Page dans Meta Business Suite › Paramètres › Comptes › Comptes Instagram, puis se reconnecter.
 
 Ce que la synchronisation remplit (bouton « Synchroniser maintenant », et chaque matin avec la tâche cron) :

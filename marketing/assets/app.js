@@ -1403,16 +1403,20 @@ VIEWS["connexions/meta"] = { fn: async param => {
     const p = pageOf(sel.page);
     if (igDirect) return sum("share", "pink", "@" + esc(m.instagram.username), "Connecté avec Instagram" + (m.instagram.days_left != null ? ` · renouvelé tout seul (encore ${num(Math.max(0, m.instagram.days_left))} j)` : ""), `<a class="btn sm" href="meta.php?start=instagram">Reconnecter</a><button type="button" class="btn sm del" id="mIgOff">Déconnecter</button>`);
     if (p && p.instagram) return sum("share", "pink", "@" + esc(p.instagram.username), "Relié à la Page " + esc(p.name) + " : importé avec elle", "");
-    const ready = m.ig_app_ready;
+    const igIsFb = !!m.ig_app_id && m.ig_app_id === m.app_id; // ID Facebook collé à la place de l'ID Instagram
+    const ready = m.ig_app_ready && !igIsFb;
     return `<div class="ig-box"><p style="margin:0 0 10px">${p ? `Aucun compte Instagram professionnel n'est relié à la Page <b>${esc(p.name)}</b>.` : "Choisissez d'abord une Page, ou connectez Instagram directement."} Deux solutions :</p>
       <div class="ig-opts"><div class="ig-opt"><b>1. Connecter Instagram directement</b><small>Sans passer par la Page. Le compte doit être un compte <b>professionnel</b> (Entreprise ou Créateur).</small>
-        ${ready ? `<a class="btn pri" href="meta.php?start=instagram">${ic("share", "sm")} Se connecter avec Instagram</a>`
-          : `<details class="more"${m.ig_app_id ? "" : " open"}><summary>Régler l'app Instagram (une seule fois)</summary><ol class="howto">
-              <li>Dans votre app Meta : <b>Cas d'utilisation</b> › ajouter <b>Gérer les messages et le contenu sur Instagram</b> (ou le produit Instagram), puis <b>Configuration de l'API avec la connexion Instagram</b>.</li>
-              <li>Section « Configurer la connexion entreprise d'Instagram » : ajoutez l'URI de redirection ${redir("mRedir3")}</li>
-              <li>Copiez l'<b>ID de l'app Instagram</b> et la <b>clé secrète de l'app Instagram</b> (différents de l'App ID Facebook) :</li></ol>
-            <div class="form"><div class="fld"><label for="mIgApp">ID de l'app Instagram</label><input type="text" id="mIgApp" inputmode="numeric" value="${esc(m.ig_app_id || "")}"></div><div class="fld"><label for="mIgSec">Clé secrète de l'app Instagram</label><input type="password" id="mIgSec" autocomplete="off" placeholder="${m.ig_app_id ? "Inchangée — tapez-en une nouvelle pour la remplacer" : "32 caractères"}"></div></div>
-            <div class="toolbar" style="margin:10px 0 0"><button type="button" class="btn pri" id="mIgSave">${ic("share", "sm")} Enregistrer et se connecter avec Instagram</button></div></details>`}</div>
+        ${ready ? `<a class="btn pri" href="meta.php?start=instagram">${ic("share", "sm")} Se connecter avec Instagram</a>` : ""}
+        ${igIsFb ? `<div class="banner warn" style="margin:6px 0 0">${ic("alert", "sm")}<span>L'ID enregistré est l'App ID <b>Facebook</b> : Instagram répond alors « Invalid platform app ». Collez ci-dessous l'ID de l'app <b>Instagram</b>.</span></div>` : ""}
+        <details class="more"${ready ? "" : " open"}><summary>${ready ? "Modifier l'app Instagram" : "Régler l'app Instagram (une seule fois)"}</summary>
+          ${ready ? `<p class="small" style="margin:6px 0">Instagram affiche « <b>Invalid platform app</b> » ? L'ID enregistré (<code>${esc(m.ig_app_id)}</code>) n'est pas celui de l'app Instagram, ou la connexion Instagram n'est pas encore configurée dans l'app : suivez les étapes ci-dessous et recollez l'ID.</p>` : ""}
+          <ol class="howto">
+            <li>Dans votre app Meta : <b>Cas d'utilisation</b> › <b>Gérer les messages et le contenu sur Instagram</b> (ajoutez-le s'il manque) › <b>Personnaliser</b> › <b>Configuration de l'API avec la connexion Instagram</b>.</li>
+            <li>Étape « Configurer la connexion entreprise d'Instagram » : collez l'URI de redirection ${redir("mRedir3")} puis enregistrez.</li>
+            <li>En haut de cette page, copiez l'<b>ID de l'app Instagram</b> et la <b>clé secrète de l'app Instagram</b>. Ce ne sont <b>pas</b> l'App ID et la clé de la page Paramètres › Général.</li></ol>
+          <div class="form"><div class="fld"><label for="mIgApp">ID de l'app Instagram</label><input type="text" id="mIgApp" inputmode="numeric" value="${esc(m.ig_app_id || "")}"></div><div class="fld"><label for="mIgSec">Clé secrète de l'app Instagram</label><input type="password" id="mIgSec" autocomplete="off" placeholder="${m.ig_app_id ? "Inchangée — tapez-en une nouvelle pour la remplacer" : "32 caractères"}"></div></div>
+          <div class="toolbar" style="margin:10px 0 0"><button type="button" class="btn${ready ? "" : " pri"}" id="mIgSave">${ic("share", "sm")} Enregistrer et se connecter avec Instagram</button></div></details></div>
         <div class="ig-opt"><b>2. Relier Instagram à la Page</b><small>Meta Business Suite › Paramètres › Comptes › <b>Comptes Instagram</b> › Connecter, puis reconnectez Facebook ici : le compte apparaît avec la Page.</small></div></div></div>`;
   };
   const drawAds = () => {
