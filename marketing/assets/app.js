@@ -1250,9 +1250,11 @@ const metaTag = r => r && r.ext_id && String(r.ext_id).startsWith("meta:") ? `<s
 const META_BACK = {
   connecte: ["Compte Facebook connecté. Choisissez maintenant la Page et les comptes publicitaires.", ""],
   annule: ["Connexion annulée : rien n'a été autorisé. Recommencez quand vous voulez.", "err"],
-  expire: ["La demande de connexion a expiré. Cliquez de nouveau sur « Se connecter avec Facebook ».", "err"],
-  erreur: ["Facebook a refusé la connexion.", "err"],
+  expire: ["La demande de connexion a expiré. Relancez la connexion (bouton « Se connecter avec Facebook » ou « Se connecter avec Instagram »).", "err"],
+  erreur: ["La connexion a été refusée : le détail s'affiche dans l'encadré ci-dessous.", "err"],
   "sans-app": ["Renseignez d'abord l'app Meta (étape 1).", "err"],
+  "instagram-connecte": ["Compte Instagram connecté : ses chiffres seront importés à la prochaine synchronisation.", ""],
+  "sans-app-instagram": ["Renseignez d'abord l'ID et la clé secrète de l'app Instagram (étape 3).", "err"],
 };
 const metaWhen = ts => ts ? new Date(ts * 1000).toLocaleString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "jamais";
 const META_STEP_IC = { fb_stats: ["share", "blue"], ig_stats: ["share", "pink"], fb_posts: ["megaphone", "blue"], ig_posts: ["megaphone", "pink"], ads: ["target", "orange"], leads: ["user-plus", "green"] };
@@ -1274,7 +1276,7 @@ VIEWS["connexions/meta"] = { fn: async param => {
   const d = await api("meta_status");
   const m = S.meta = d.meta;
   S.boot.meta = m;
-  const appOk = !!m.app_source, conn = m.connected, chosen = !!(m.page || m.ad_accounts.length);
+  const appOk = !!m.app_source, conn = m.fb_connected, chosen = !!(m.page || m.ad_accounts.length || m.instagram);
   const step = (n, done, cur, title, body, open = true) => `<section class="card mstep${done ? " done" : ""}${cur ? " cur" : ""}"><div class="card-h"><h2><span class="mnum">${done ? ic("check", "sm") : n}</span>${esc(title)}</h2></div>${open ? body : ""}</section>`;
   const appSrc = { ecom: "L'app Meta d'ecom.dehini.com est utilisée", config: "App Meta réglée dans config.php", dashboard: "App Meta enregistrée" }[m.app_source] || "";
   const appForm = `<div class="form"><div class="fld"><label for="mApp">Identifiant de l'app (App ID)</label><input type="text" id="mApp" inputmode="numeric" placeholder="ex. 1234567890123456" value="${esc(m.app_source === "dashboard" ? m.app_id : "")}"></div>
@@ -1319,7 +1321,7 @@ VIEWS["connexions/meta"] = { fn: async param => {
          <p class="small muted">Business Manager › Paramètres › Utilisateurs système › Générer un jeton (avec les autorisations ${m.scopes.slice(0, 4).join(", ")}…). Ce jeton n'expire pas : idéal pour la synchronisation automatique.</p>
          <textarea id="mTok" rows="3" placeholder="EAAB…" aria-label="Jeton d'accès"></textarea><div class="toolbar" style="margin:8px 0 0"><button type="button" class="btn" id="mTokSave">Vérifier et enregistrer le jeton</button></div></details>`;
   const s3 = `<div id="mAssets"><p class="loading">Chargement de vos Pages et comptes publicitaires…</p></div>`;
-  const sync = `<section class="card" id="mSync"><div class="card-h"><h2>${tile("trend", "violet", "sm")}Synchronisation</h2><div class="ctrl"><button type="button" class="btn pri" id="mGo"${conn && chosen ? "" : " disabled"}>${ic("trend", "sm")} Synchroniser maintenant</button></div></div>
+  const sync = `<section class="card" id="mSync"><div class="card-h"><h2>${tile("trend", "violet", "sm")}Synchronisation</h2><div class="ctrl"><button type="button" class="btn pri" id="mGo"${chosen ? "" : " disabled"}>${ic("trend", "sm")} Synchroniser maintenant</button></div></div>
       <p class="muted" style="margin-top:0">Dernière : <b>${esc(metaWhen(m.last_sync))}</b>${m.last_result ? ` · du ${fdate(m.last_result.from, false)} au ${fdate(m.last_result.to)}` : ""}. Automatique chaque matin avec l'envoi des rapports.</p>
       <div id="mRes">${metaResult(m.last_result)}</div></section>`;
   const what = [["share", "violet", "Social Media › Relevés", "Portée, vues, engagement et abonnés de la Page et du compte Instagram, jour par jour."],
@@ -1332,7 +1334,7 @@ VIEWS["connexions/meta"] = { fn: async param => {
       ${step(1, appOk, !appOk, "App Meta", s1)}
       ${step(2, conn && !m.token_invalid, appOk && (!conn || m.token_invalid), "Connexion au compte Facebook", s2)}
       ${step(3, chosen, conn && !chosen, "Page, Instagram et comptes publicitaires", conn ? s3 : `<p class="muted" style="margin:0">Disponible une fois le compte connecté.</p>`)}
-      ${conn ? sync : ""}
+      ${conn || m.instagram ? sync : ""}
     </div><div class="side-col">
       <section class="card"><div class="card-h"><h2>${tile("sparkles", "amber", "sm")}Ce qui arrive tout seul</h2></div><div class="alist">${what.map(w => `<div class="arow">${tile(w[0], w[1], "sm")}<span><b>${w[2]}</b><small>${w[3]}</small></span></div>`).join("")}</div>
         <p class="small muted" style="margin:10px 0 0">Le classement suit vos <a href="#connexions/rules">règles de classement</a>. Une donnée importée puis supprimée n'est pas réimportée.</p></section>
@@ -1378,32 +1380,103 @@ VIEWS["connexions/meta"] = { fn: async param => {
   try { a = (await api("meta_assets")).assets; }
   catch (err) { el("mAssets").innerHTML = `<div class="banner warn">${ic("alert", "sm")} ${esc(err.message)}</div>`; return; }
   const curr = S.boot.settings.currency;
-  const pageOpts = a.pages.length ? `<div class="choices">${a.pages.map(p => `<label class="choice${m.page && m.page.id === p.id ? " on" : ""}"><input type="radio" name="mPage" value="${esc(p.id)}"${m.page && m.page.id === p.id ? " checked" : ""} hidden><span class="ic">${tile("share", "blue")}</span><span class="cl">${esc(p.name)}</span><small>${p.instagram ? "+ Instagram @" + esc(p.instagram.username) : "Pas de compte Instagram pro relié"}</small></label>`).join("")}</div>`
-    : `<p class="muted">Aucune Page Facebook accessible avec ce compte. Vérifiez vos accès à la Page dans Meta Business Suite.</p>`;
-  const adOpts = a.ad_accounts.length ? `<div class="choices">${a.ad_accounts.map(x => { const on = m.ad_accounts.some(y => y.id === x.id); return `<label class="choice${on ? " on" : ""}"><input type="checkbox" name="mAd" value="${esc(x.id)}" data-cur="${esc(x.currency)}"${on ? " checked" : ""} hidden><span class="ic">${tile("target", "orange")}</span><span class="cl">${esc(x.name)}</span><small>${esc(x.currency)}${x.active ? "" : " · compte désactivé"}</small></label>`; }).join("")}</div>`
-    : `<p class="muted">Aucun compte publicitaire accessible (autorisation « ads_read » non accordée, ou aucun compte sur ce profil).</p>`;
-  el("mAssets").innerHTML = `<h3>Page Facebook</h3>${pageOpts}<p class="small muted">Le compte Instagram professionnel relié à la Page est importé avec elle.</p>
-    <h3>Comptes publicitaires</h3>${adOpts}
+  const redir = id => `<span class="copy"><code id="${id}">${esc(m.redirect_uri)}</code><button type="button" class="icon-btn" data-copy="#${id}" aria-label="Copier l'adresse" title="Copier">${ic("copy", "sm")}</button></span>`;
+  // Sélection en cours (enregistrée seulement au clic sur « Enregistrer ») et affichage : résumé, ou liste à choisir.
+  const sel = { page: m.page ? m.page.id : "", ads: new Set(m.ad_accounts.map(x => x.id)) };
+  const ui = { editPage: !m.page, editAds: !m.ad_accounts.length, q: "", qp: "", off: false };
+  const pageOf = id => a.pages.find(p => p.id === id) || null;
+  const adOf = id => a.ad_accounts.find(x => x.id === id) || m.ad_accounts.find(x => x.id === id) || { id, name: "Compte " + id, currency: "", active: false, status: "Inaccessible" };
+  const igDirect = m.instagram && m.instagram.via === "instagram";
+  const sum = (icn, tint, title, sub, btn) => `<div class="pick-sum">${tile(icn, tint, "sm")}<span><b>${title}</b><small>${sub}</small></span><span class="grow"></span>${btn}</div>`;
+  const search = (id, ph, v) => `<label class="field-search">${ic("search", "sm")}<input type="search" id="${id}" placeholder="${esc(ph)}" value="${esc(v)}" aria-label="${esc(ph)}"></label>`;
+  const drawPage = () => {
+    if (!a.pages.length) return `<p class="muted">Aucune Page Facebook accessible avec ce compte. Vérifiez vos accès à la Page dans Meta Business Suite, ou choisissez la Page dans la fenêtre Facebook en vous reconnectant.</p>`;
+    const p = pageOf(sel.page);
+    if (!ui.editPage && p) return sum("share", "blue", esc(p.name), p.instagram ? "Instagram relié : @" + esc(p.instagram.username) : "Pas de compte Instagram relié à cette Page", `<button type="button" class="btn sm" data-mx="editPage">Changer</button>`);
+    const q = foldTxt(ui.qp);
+    const list = a.pages.filter(x => !q || foldTxt(x.name).includes(q));
+    return (a.pages.length > 4 ? `<div class="toolbar" style="margin:0 0 10px">${search("mQp", "Rechercher une Page…", ui.qp)}</div>` : "")
+      + `<div class="choices">${list.map(x => `<label class="choice${sel.page === x.id ? " on" : ""}"><input type="radio" name="mPage" value="${esc(x.id)}"${sel.page === x.id ? " checked" : ""} hidden><span class="ic">${tile("share", "blue")}</span><span class="cl">${esc(x.name)}</span><small>${x.instagram ? "+ Instagram @" + esc(x.instagram.username) : "Sans Instagram relié"}</small></label>`).join("")}</div>`
+      + (list.length ? "" : `<p class="muted small">Aucune Page ne correspond à « ${esc(ui.qp)} ».</p>`);
+  };
+  const drawIg = () => {
+    const p = pageOf(sel.page);
+    if (igDirect) return sum("share", "pink", "@" + esc(m.instagram.username), "Connecté avec Instagram" + (m.instagram.days_left != null ? ` · renouvelé tout seul (encore ${num(Math.max(0, m.instagram.days_left))} j)` : ""), `<a class="btn sm" href="meta.php?start=instagram">Reconnecter</a><button type="button" class="btn sm del" id="mIgOff">Déconnecter</button>`);
+    if (p && p.instagram) return sum("share", "pink", "@" + esc(p.instagram.username), "Relié à la Page " + esc(p.name) + " : importé avec elle", "");
+    const ready = m.ig_app_ready;
+    return `<div class="ig-box"><p style="margin:0 0 10px">${p ? `Aucun compte Instagram professionnel n'est relié à la Page <b>${esc(p.name)}</b>.` : "Choisissez d'abord une Page, ou connectez Instagram directement."} Deux solutions :</p>
+      <div class="ig-opts"><div class="ig-opt"><b>1. Connecter Instagram directement</b><small>Sans passer par la Page. Le compte doit être un compte <b>professionnel</b> (Entreprise ou Créateur).</small>
+        ${ready ? `<a class="btn pri" href="meta.php?start=instagram">${ic("share", "sm")} Se connecter avec Instagram</a>`
+          : `<details class="more"${m.ig_app_id ? "" : " open"}><summary>Régler l'app Instagram (une seule fois)</summary><ol class="howto">
+              <li>Dans votre app Meta : <b>Cas d'utilisation</b> › ajouter <b>Gérer les messages et le contenu sur Instagram</b> (ou le produit Instagram), puis <b>Configuration de l'API avec la connexion Instagram</b>.</li>
+              <li>Section « Configurer la connexion entreprise d'Instagram » : ajoutez l'URI de redirection ${redir("mRedir3")}</li>
+              <li>Copiez l'<b>ID de l'app Instagram</b> et la <b>clé secrète de l'app Instagram</b> (différents de l'App ID Facebook) :</li></ol>
+            <div class="form"><div class="fld"><label for="mIgApp">ID de l'app Instagram</label><input type="text" id="mIgApp" inputmode="numeric" value="${esc(m.ig_app_id || "")}"></div><div class="fld"><label for="mIgSec">Clé secrète de l'app Instagram</label><input type="password" id="mIgSec" autocomplete="off" placeholder="${m.ig_app_id ? "Inchangée — tapez-en une nouvelle pour la remplacer" : "32 caractères"}"></div></div>
+            <div class="toolbar" style="margin:10px 0 0"><button type="button" class="btn pri" id="mIgSave">${ic("share", "sm")} Enregistrer et se connecter avec Instagram</button></div></details>`}</div>
+        <div class="ig-opt"><b>2. Relier Instagram à la Page</b><small>Meta Business Suite › Paramètres › Comptes › <b>Comptes Instagram</b> › Connecter, puis reconnectez Facebook ici : le compte apparaît avec la Page.</small></div></div></div>`;
+  };
+  const drawAds = () => {
+    if (!a.ad_accounts.length && !m.ad_accounts.length) return `<p class="muted">Aucun compte publicitaire accessible (autorisation « ads_read » non accordée, ou aucun compte sur ce profil).</p>`;
+    if (!ui.editAds && sel.ads.size) return `<div class="pick-sum multi">${tile("target", "orange", "sm")}<span><b>${num(sel.ads.size)} compte(s) publicitaire(s)</b><span class="chips" style="margin:6px 0 0">${[...sel.ads].map(id => { const x = adOf(id); return `<span class="chip static">${esc(x.name)} · ${esc(x.currency)}${x.active ? "" : ` · <span class="muted">${esc(x.status)}</span>`}</span>`; }).join("")}</span></span><span class="grow"></span><button type="button" class="btn sm" data-mx="editAds">Modifier</button></div>`;
+    const q = foldTxt(ui.q);
+    const inactive = a.ad_accounts.filter(x => !x.active && !sel.ads.has(x.id)).length;
+    const list = a.ad_accounts.filter(x => (!q || foldTxt(x.name + " " + x.id).includes(q)) && (ui.off || x.active || sel.ads.has(x.id)))
+      .sort((x, y) => (sel.ads.has(y.id) ? 1 : 0) - (sel.ads.has(x.id) ? 1 : 0));
+    return `<div class="toolbar" style="margin:0 0 10px">${search("mQa", "Rechercher un compte (ex. yinvesti)…", ui.q)}${inactive ? `<label class="check small"><input type="checkbox" id="mOffT"${ui.off ? " checked" : ""}> Afficher les comptes inactifs (${num(inactive)})</label>` : ""}<span class="grow"></span><span class="muted small">${num(sel.ads.size)} sélectionné(s)</span></div>
+      <div class="choices">${list.map(x => `<label class="choice${sel.ads.has(x.id) ? " on" : ""}"><input type="checkbox" name="mAd" value="${esc(x.id)}"${sel.ads.has(x.id) ? " checked" : ""} hidden><span class="ic">${tile("target", "orange")}</span><span class="cl">${esc(x.name)}</span><small>${esc(x.currency)} · ${x.active ? "Actif" : esc(x.status)}</small></label>`).join("")}</div>`
+      + (list.length ? "" : `<p class="muted small">Aucun compte ne correspond${ui.q ? ` à « ${esc(ui.q)} »` : ""}.${inactive && !ui.off ? " Cochez « Afficher les comptes inactifs » pour voir les autres." : ""}</p>`)
+      + `<p class="small muted" style="margin:8px 0 0">Les comptes « Paiement en attente » ou « Désactivé » gardent leur historique : vous pouvez les choisir pour importer leurs anciennes campagnes.</p>`;
+  };
+  const fxNeeded = () => [...sel.ads].map(id => adOf(id).currency).filter(c => c && c !== curr);
+  el("mAssets").innerHTML = `<h3>Page Facebook</h3><div id="mPg"></div>
+    <h3>Instagram</h3><div id="mIg"></div>
+    <h3>Comptes publicitaires</h3><div id="mAds"></div>
     <div class="form" style="margin-top:14px"><div class="fld" id="mFxBox"><label for="mFx">Taux de conversion</label><div class="fx"><span>1 <b id="mFxCur">USD</b> =</span><input type="number" id="mFx" min="0" step="any" value="${esc(m.fx)}"><span>${esc(curr)}</span></div><small>Les montants Meta (budgets, dépenses) sont convertis en ${esc(curr)}.</small></div>
       <div class="fld"><label for="mBack">Première importation</label><select id="mBack">${[30, 60, 90].map(n => `<option value="${n}"${+m.backfill === n ? " selected" : ""}>${n} derniers jours</option>`).join("")}</select></div>
       <div class="fld"><label for="mProf">Profil d'un lead impossible à classer</label><select id="mProf">${Object.entries(EN("contact_types")).map(([k, l]) => `<option value="${k}"${m.default_profile === k ? " selected" : ""}>${esc(l)}</option>`).join("")}</select></div>
       <div class="fld full"><div class="checks"><label><input type="checkbox" id="mQ"${m.questions ? " checked" : ""}> Importer les commentaires qui posent une question (dans Leads & Contacts › Questions)</label></div></div></div>
     <div class="toolbar" style="margin:14px 0 0"><button type="button" class="btn pri" id="mSave">Enregistrer ces choix</button></div>`;
-  const fxShow = () => {
-    const cs = $$("input[name=mAd]:checked", el("mAssets")).map(i => i.dataset.cur).filter(c => c && c !== curr);
+  const draw = which => {
+    if (!which || which === "page") el("mPg").innerHTML = drawPage();
+    if (!which || which === "page" || which === "ig") el("mIg").innerHTML = drawIg();
+    if (!which || which === "ads") el("mAds").innerHTML = drawAds();
+    const cs = fxNeeded();
     el("mFxBox").hidden = !cs.length;
     if (cs.length) el("mFxCur").textContent = cs[0];
   };
-  fxShow();
-  el("mAssets").addEventListener("change", e => {
-    if (e.target.name === "mPage") $$("input[name=mPage]", el("mAssets")).forEach(i => i.closest(".choice").classList.toggle("on", i.checked));
-    if (e.target.name === "mAd") { e.target.closest(".choice").classList.toggle("on", e.target.checked); fxShow(); }
+  draw();
+  const box = el("mAssets");
+  box.addEventListener("change", e => {
+    if (e.target.name === "mPage") { sel.page = e.target.value; ui.editPage = false; draw("page"); }
+    if (e.target.name === "mAd") { if (e.target.checked) sel.ads.add(e.target.value); else sel.ads.delete(e.target.value); e.target.closest(".choice").classList.toggle("on", e.target.checked); const cs = fxNeeded(); el("mFxBox").hidden = !cs.length; if (cs.length) el("mFxCur").textContent = cs[0]; box.querySelector("#mAds .toolbar .muted.small").textContent = num(sel.ads.size) + " sélectionné(s)"; }
+    if (e.target.id === "mOffT") { ui.off = e.target.checked; draw("ads"); }
+  });
+  box.addEventListener("input", e => {
+    if (e.target.id === "mQa" || e.target.id === "mQp") {
+      const k = e.target.id === "mQa" ? "q" : "qp", pos = e.target.selectionStart;
+      ui[k] = e.target.value;
+      draw(k === "q" ? "ads" : "page");
+      const inp = el(e.target.id); inp.focus(); try { inp.setSelectionRange(pos, pos); } catch (err) {}
+    }
+  });
+  box.addEventListener("click", async e => {
+    const mx = e.target.closest("[data-mx]");
+    if (mx) { ui[mx.dataset.mx] = true; draw(mx.dataset.mx === "editPage" ? "page" : "ads"); return; }
+    if (e.target.closest("#mIgSave")) {
+      const b = e.target.closest("button"); b.disabled = true;
+      try { await api("meta_save", {}, { ig_app_id: el("mIgApp").value, ig_app_secret: el("mIgSec").value }); location.href = "meta.php?start=instagram"; }
+      catch (err) { toast(err.message, "err"); b.disabled = false; }
+      return;
+    }
+    if (e.target.closest("#mIgOff")) {
+      if (!(await askDialog({ icon: ["logout", "pink"], title: "Déconnecter Instagram ?", text: "Les chiffres d'Instagram ne seront plus importés (sauf si un compte Instagram est relié à la Page). Les données déjà importées restent.", ok: "Déconnecter Instagram", cancel: "Garder la connexion", danger: true }))) return;
+      try { await api("meta_save", {}, { ig_disconnect: true }); toast("Instagram déconnecté"); route(); } catch (err) { toast(err.message, "err"); }
+    }
   });
   el("mSave").addEventListener("click", async e => {
     const b = e.target; b.disabled = true;
-    const pg = $("input[name=mPage]:checked", el("mAssets"));
     try {
-      await api("meta_save", {}, { page_id: pg ? pg.value : "", ad_accounts: $$("input[name=mAd]:checked", el("mAssets")).map(i => i.value), fx: el("mFxBox").hidden ? 1 : el("mFx").value, backfill: +el("mBack").value, default_profile: el("mProf").value, questions: el("mQ").checked });
+      await api("meta_save", {}, { page_id: sel.page, ad_accounts: [...sel.ads], fx: el("mFxBox").hidden ? 1 : el("mFx").value, backfill: +el("mBack").value, default_profile: el("mProf").value, questions: el("mQ").checked });
       toast(m.last_sync ? "Choix enregistrés" : "Choix enregistrés : lancez la première synchronisation");
       route();
     } catch (err) { toast(err.message, "err"); b.disabled = false; }
