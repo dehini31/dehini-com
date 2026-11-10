@@ -1304,9 +1304,16 @@ VIEWS["connexions/meta"] = { fn: async param => {
     : `${m.oauth_error ? `<div class="banner warn">${ic("alert", "sm")} ${esc(m.oauth_error)}</div>` : ""}
        <p class="muted" style="margin-top:0">Autorisations demandées, toutes en <b>lecture seule</b> : rien n'est publié, modifié ni dépensé chez Meta.</p>
        ${appOk ? allowBox : ""}
+       ${appOk ? `<div class="cfg"><div class="cfg-h"><label for="mCfg"><b>ID de configuration</b></label>${m.config_id ? '<span class="pill good">Enregistré</span>' : '<span class="pill warn">À renseigner si Facebook affiche « config_id est requis »</span>'}</div>
+         <p class="small muted">Nécessaire quand l'app utilise <b>Facebook Login for Business</b> : les autorisations viennent alors d'une configuration créée dans l'app.</p>
+         <div class="toolbar" style="margin:0"><input type="text" id="mCfg" inputmode="numeric" placeholder="ex. 1234567890123456" value="${esc(m.config_id || "")}" aria-label="ID de configuration"><button type="button" class="btn sm${m.config_id ? "" : " pri"}" id="mCfgSave">Enregistrer l'ID</button></div>
+         <details class="more"${m.config_id ? "" : " open"}><summary>Créer la configuration (2 minutes)</summary><ol class="howto">
+           <li>Dans ${m.app_url ? `<a href="${esc(m.app_url)}" target="_blank" rel="noopener">votre app Meta</a>` : "votre app Meta"} : <b>Facebook Login for Business</b> › <b>Configurations</b> › <b>Créer une configuration</b>.</li>
+           <li>Nom : <code>Marketing Dashboard</code> · Type de jeton : <b>Jeton d'accès utilisateur</b> · Expiration : <b>Jamais</b> si le choix existe (sinon 60 jours).</li>
+           <li>Actifs : <b>Pages</b>, <b>Comptes publicitaires</b>, <b>Comptes Instagram</b>.</li>
+           <li>Autorisations : <span class="copy"><code id="mScopes">${esc(m.scopes.join(", "))}</code><button type="button" class="icon-btn" data-copy="#mScopes" aria-label="Copier la liste" title="Copier">${ic("copy", "sm")}</button></span><br><span class="small muted">Une autorisation absente de la liste ? Ajoutez d'abord le cas d'utilisation correspondant (Pages, Instagram, API Marketing, Lead Ads) dans « Cas d'utilisation ».</span></li>
+           <li>Créez la configuration, copiez son <b>ID</b> et collez-le ci-dessus.</li></ol></details></div>` : ""}
        <a class="btn pri big${appOk ? "" : " disabled"}" ${appOk ? 'href="meta.php?start=1"' : 'aria-disabled="true"'}>${ic("link", "sm")} Se connecter avec Facebook</a>
-       ${appOk ? `<details class="more"><summary>Votre app utilise « Facebook Login for Business » ?</summary><p class="small muted">Facebook peut alors refuser les autorisations demandées (« Invalid Scopes »). Créez une <b>configuration</b> (Facebook Login for Business › Configurations, type « Jeton d'accès utilisateur », avec les autorisations ${esc(m.scopes.join(", "))}), puis collez son ID ici.</p>
-         <div class="toolbar" style="margin:0"><input type="text" id="mCfg" inputmode="numeric" placeholder="ID de configuration" value="${esc(m.config_id || "")}" aria-label="ID de configuration"><button type="button" class="btn sm" id="mCfgSave">Enregistrer</button></div></details>` : ""}
        <details class="more"><summary>Autre méthode : coller un jeton d'utilisateur système</summary>
          <p class="small muted">Business Manager › Paramètres › Utilisateurs système › Générer un jeton (avec les autorisations ${m.scopes.slice(0, 4).join(", ")}…). Ce jeton n'expire pas : idéal pour la synchronisation automatique.</p>
          <textarea id="mTok" rows="3" placeholder="EAAB…" aria-label="Jeton d'accès"></textarea><div class="toolbar" style="margin:8px 0 0"><button type="button" class="btn" id="mTokSave">Vérifier et enregistrer le jeton</button></div></details>`;
@@ -1340,9 +1347,8 @@ VIEWS["connexions/meta"] = { fn: async param => {
   });
   if (el("mCfgSave")) el("mCfgSave").addEventListener("click", async e => {
     e.target.disabled = true;
-    try { await api("meta_save", {}, { config_id: el("mCfg").value }); toast(el("mCfg").value.trim() ? "ID de configuration enregistré" : "ID de configuration retiré : les autorisations sont demandées directement"); }
-    catch (err) { toast(err.message, "err"); }
-    e.target.disabled = false;
+    try { await api("meta_save", {}, { config_id: el("mCfg").value }); toast(el("mCfg").value.trim() ? "ID de configuration enregistré : vous pouvez vous connecter" : "ID de configuration retiré : les autorisations sont demandées directement"); route(); }
+    catch (err) { toast(err.message, "err"); e.target.disabled = false; }
   });
   if (el("mTokSave")) el("mTokSave").addEventListener("click", async e => {
     e.target.disabled = true; e.target.textContent = "Vérification…";
