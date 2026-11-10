@@ -57,6 +57,7 @@ const ICONS = {
   bell: "M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 0 0 3.4 0",
   plus: "M12 5v14M5 12h14",
   calendar: "M4 5h16a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM16 3v4M8 3v4M3 10h18",
+  copy: "M9 9h11v11H9zM5 15H4V4h11v1",
   "chev-r": "M9 6l6 6-6 6", "chev-l": "M15 6l-6 6 6 6", "chev-d": "M6 9l6 6 6-6", "chev-u": "M6 15l6-6 6 6",
   upload: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12",
   download: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3",
@@ -259,6 +260,7 @@ for (const id of ["rangeFrom", "rangeTo"]) {
 const NAV = [
   { group: "Pilotage" },
   { id: "overview", ic: "home", label: "Overview", tabs: [["daily", "Daily Monitoring"], ["weekly", "Weekly Reports"], ["monthly", "Monthly Reports"], ["archives", "Archives"]] },
+  { id: "connexions", ic: "link", label: "Connexions", tabs: [["meta", "Facebook · Instagram · Ads"], ["rules", "Classement automatique"], ["history", "Historique"]] },
   { group: "Marketing" },
   { id: "comm", ic: "megaphone", label: "Communication", tabs: [["actions", "Actions"], ["performance", "Performance"], ["taxonomy", "Canaux & supports"]] },
   { id: "social", ic: "share", label: "Social Media", tabs: [["overview", "Vue d'ensemble"], ["stats", "Relevés des comptes"]] },
@@ -705,6 +707,13 @@ function dateNav(tab, type, date, label) {
     + (date !== S.today ? `<a class="btn ghost sm" href="#overview/${tab}">Revenir à aujourd'hui</a>` : "");
 }
 
+/** Carte « Meta » de l'accueil : invitation à relier les comptes, ou état de la synchronisation. */
+function metaHomeCard() {
+  const mt = S.boot.meta || {};
+  if (!mt.connected) return `<section class="card promo"><div class="card-h"><h2>${tile("link", "violet", "sm")}Remplissage automatique</h2></div><p class="small" style="margin-top:0">Reliez Facebook, Instagram et Meta Ads : relevés, publications, campagnes, leads des formulaires et questions en commentaire arrivent tout seuls, déjà classés.</p><a class="btn pri sm" href="#connexions/meta">${ic("link", "sm")} Relier mes comptes</a></section>`;
+  const st = mt.token_invalid ? '<span class="pill crit">Connexion expirée</span>' : mt.last_result && !mt.last_result.ok ? '<span class="pill warn">Dernière synchro en erreur</span>' : mt.last_sync ? '<span class="pill good">À jour</span>' : '<span class="pill">Pas encore synchronisé</span>';
+  return `<section class="card"><div class="card-h"><h2>${tile("link", "violet", "sm")}Meta</h2><a class="btn sm ghost" href="#connexions/meta">Gérer</a></div><p class="small" style="margin:0">${st} Dernière synchronisation : <b>${esc(metaWhen(mt.last_sync))}</b>${[mt.page && "Page " + mt.page.name, mt.instagram && "@" + mt.instagram.username, mt.ad_accounts && mt.ad_accounts.length && mt.ad_accounts.length + " compte(s) pub"].filter(Boolean).map(x => "<br>" + esc(x)).join("")}</p></section>`;
+}
 VIEWS["overview/daily"] = { fn: async (param, tok) => {
   const date = isDate(param) ? param : S.today;
   const [r, rec, cal] = await Promise.all([api("report", { type: "day", date }).then(d => d.report), api("recent").catch(() => ({ items: [] })), api("activity_days", { month: date.slice(0, 7) }).catch(() => ({ month: date.slice(0, 7), days: {} }))]);
@@ -754,7 +763,10 @@ VIEWS["overview/daily"] = { fn: async (param, tok) => {
   const insBody = ins.length ? `<ul class="ins">${ins.slice(0, insMax).map(i => `<li class="${i.level}"><span class="lv">${ic(LV[i.level][0])}</span><span class="it"><small>${LV[i.level][1]}</small>${esc(i.text)}</span></li>`).join("")}</ul>`
     + (ins.length > insMax ? `<details class="more"><summary>Voir les ${ins.length - insMax} autres points</summary><ul class="ins">${ins.slice(insMax).map(i => `<li class="${i.level}"><span class="lv">${ic(LV[i.level][0])}</span><span class="it"><small>${LV[i.level][1]}</small>${esc(i.text)}</span></li>`).join("")}</ul></details>` : "")
     : empty("Rien à signaler. Aucun point d'alerte aujourd'hui : tout suit son cours.", "", { icon: ["check-circle", "green"] });
-  return `<div class="hello"><div><h1>${hello}</h1><p>${intro}</p></div><div class="rep-ctrl">${dateNav("daily", "day", date, isToday ? "Aujourd'hui" : "Jour affiché")}${reportActions("day", date)}</div></div>
+  const mt = S.boot.meta || {};
+  const metaWarn = mt.connected && mt.token_invalid ? `<a class="banner warn" href="#connexions/meta">${ic("alert", "sm")} La connexion à Meta a expiré : les chiffres de Facebook, Instagram et Meta Ads ne se mettent plus à jour. Reconnectez-vous.</a>`
+    : mt.connected && mt.token_kind !== "manual" && mt.days_left != null && mt.days_left <= 7 ? `<a class="banner warn" href="#connexions/meta">${ic("clock", "sm")} La connexion à Meta expire dans ${num(Math.max(0, mt.days_left))} jour(s) : cliquez ici pour la renouveler.</a>` : "";
+  return metaWarn + `<div class="hello"><div><h1>${hello}</h1><p>${intro}</p></div><div class="rep-ctrl">${dateNav("daily", "day", date, isToday ? "Aujourd'hui" : "Jour affiché")}${reportActions("day", date)}</div></div>
     <div class="kpis k5">${["leads", "qualified", "inquiries", "posts", "project_requests"].map(x => kpiTile(k[x])).join("")}</div>
     <div class="dash"><div class="main-col">
       <section class="card"><div class="card-h"><h2>${tile("sparkles", "violet", "sm")}Analyse du jour</h2><span class="muted small">${ins.length ? num(ins.length) + " point(s), du plus urgent au plus informatif" : ""}</span></div>${insBody}</section>
@@ -764,6 +776,7 @@ VIEWS["overview/daily"] = { fn: async (param, tok) => {
     </div><div class="side-col">
       <section class="card"><div class="card-h"><h2>${tile("bell", "pink", "sm")}À traiter maintenant</h2></div><div class="alist">${att.map(a => `<a class="arow${a[5] ? "" : " zero"}" href="${a[6]}">${tile(a[3], a[4], "sm")}<span><b>${esc(a[1])}</b><small>${esc(a[2])}</small></span><span class="n">${num(a[5])}</span>${ic("chev-r", "sm chev")}</a>`).join("")}</div></section>
       <section class="card"><div class="card-h"><h2>${tile("zap", "amber", "sm")}Saisie rapide</h2><button type="button" class="btn sm ghost" data-import="contacts">${ic("upload", "sm")} Importer</button></div><div class="qa">${quick.map(q => `<button type="button" data-add="${q[0]}" data-preset="${esc(JSON.stringify({ date }))}">${tile(q[2], q[3], "sm")}${esc(q[1])}${ic("plus", "sm chev")}</button>`).join("")}</div></section>
+      ${metaHomeCard()}
       <section class="card" id="calCard">${calHtml(cal.month, cal.days, date)}</section>
       <section class="card"><div class="card-h"><h2>${tile("clock", "teal", "sm")}Activité récente</h2></div>${recentHtml(rec.items)}</section>
     </div></div>`;
@@ -873,7 +886,7 @@ const actionCols = (withCat = true) => [
   { l: "Date", h: r => fdate(r.date) },
   { l: "Canal", h: r => `<span class="chan-cat">${catIc(catOf(r.platform) || "other")}<b>${esc(chName(r.platform))}</b></span>${withCat ? `<div class="sub">${esc(catInfo(catOf(r.platform)).label)}</div>` : ""}` },
   { l: "Support", h: r => r.format ? `<span class="chan">${esc(L("supports", r.format))}</span>` : '<span class="muted">—</span>' },
-  { l: "Contenu", wrap: 1, h: r => esc(r.topic) + (r.link ? ` <a href="${esc(r.link)}" target="_blank" rel="noopener" aria-label="Ouvrir le lien">${ic("link", "xs")}</a>` : "") + `<div class="sub">${[r.objective ? L("ad_objectives", r.objective) : "", L("audiences", r.audience)].filter(Boolean).map(esc).join(" · ")}</div>` },
+  { l: "Contenu", wrap: 1, h: r => esc(r.topic) + metaTag(r) + (r.link ? ` <a href="${esc(r.link)}" target="_blank" rel="noopener" aria-label="Ouvrir le lien">${ic("link", "xs")}</a>` : "") + `<div class="sub">${[r.objective ? L("ad_objectives", r.objective) : "", L("audiences", r.audience)].filter(Boolean).map(esc).join(" · ")}</div>` },
   { l: "Portée", n: 1, h: r => num(r.reach) },
   { l: "Engagement", n: 1, h: r => num(r.engagement) + (+r.reach > 0 ? `<div class="sub">${pct(r.engagement / r.reach, 1)}</div>` : "") },
   { l: "Clics", n: 1, h: r => num(r.clicks) },
@@ -888,7 +901,7 @@ const chCell = (k, sup = "") => k ? `<span class="chan-cat">${catIc(catOf(k) || 
 function contactCols() {
   return [
     { l: "Reçu le", h: c => fdate(c.date) },
-    { l: "Lead", h: c => `<div class="who"><b>${esc(c.name)}</b><div class="sub">${esc([c.phone, c.email, c.city].filter(Boolean).join(" · "))}</div></div>` },
+    { l: "Lead", h: c => `<div class="who"><b>${esc(c.name)}</b>${metaTag(c)}<div class="sub">${esc([c.phone, c.email, c.city].filter(Boolean).join(" · "))}</div></div>` },
     { l: "Profil", h: c => esc(L("contact_types", c.type)) },
     { l: "Canal", h: c => chCell(c.source, c.support) + (c.campaign_id || c.page_id || c.email_id ? `<div class="sub">${esc([refName("campaigns", c.campaign_id), refName("pages", c.page_id), refName("emails", c.email_id)].filter(Boolean).join(" · "))}</div>` : "") },
     { l: "Commercial", h: c => inlineSel("contacts", c, "assigned_to") },
@@ -900,7 +913,7 @@ function inquiryCols() {
   return [
     { l: "Reçue le", h: q => fdate(q.date) },
     { l: "Canal", h: q => chCell(q.source) },
-    { l: "De", h: q => `<b>${esc(q.name || "Anonyme")}</b><div class="sub">${esc(q.contact || "")}${q.type ? " · " + esc(L("contact_types", q.type)) : ""}</div>` },
+    { l: "De", h: q => `<b>${esc(q.name || "Anonyme")}</b>${metaTag(q)}<div class="sub">${esc(q.contact || "")}${q.type ? " · " + esc(L("contact_types", q.type)) : ""}</div>` },
     { l: "Question", wrap: 1, h: q => `<span class="pill">${esc(L("inq_categories", q.category))}</span><div class="sub">${esc(q.question)}</div>${q.answer ? `<div class="sub">↳ ${esc(q.answer.slice(0, 160))}</div>` : ""}` },
     { l: "Pris en charge", h: q => inlineSel("inquiries", q, "assigned_to") },
     { l: "Statut", h: q => inlineSel("inquiries", q, "status") },
@@ -966,7 +979,7 @@ VIEWS["ads/campaigns"] = { fn: async () => {
   return `<div class="toolbar">${NEW_CAMPAIGN}${addBtn("ad_results", "Saisir des résultats")}<span class="grow"></span>${exportBtn("campaigns")}</div>`
     + `<div class="kpis"><div class="kpi"><small>Campagnes actives</small><b>${num(active.length)}</b><span class="d">sur ${num(rows.length)}</span></div><div class="kpi"><small>Budget des actives</small><b>${money(sum(active, "budget"))}</b><span class="d">&nbsp;</span></div><div class="kpi"><small>Dépensé (actives)</small><b>${money(sum(active, "spent"))}</b><span class="d">${pct(ratio(sum(active, "spent"), sum(active, "budget")))} du budget</span></div><div class="kpi"><small>Leads (actives)</small><b>${num(active.reduce((a, c) => a + c.totals.leads, 0))}</b><span class="d">&nbsp;</span></div></div>`
     + card("📢 Campagnes", table(rows, [
-      { l: "Campagne", h: c => `<a href="#ads/campaign/${c.id}"><b>${esc(c.name)}</b></a><div class="sub">${esc(L("ad_channels", c.platform))} · ${esc(L("ad_objectives", c.objective))}</div>` },
+      { l: "Campagne", h: c => `<a href="#ads/campaign/${c.id}"><b>${esc(c.name)}</b></a>${metaTag(c)}<div class="sub">${esc(L("ad_channels", c.platform))} · ${esc(L("ad_objectives", c.objective))}</div>` },
       { l: "Statut", h: c => `<span class="pill ${c.status === "active" ? "good" : c.status === "pause" ? "warn" : ""}">${esc(L("campaign_status", c.status))}</span>` },
       { l: "Dates", h: c => `${fdate(c.start)}<div class="sub">→ ${c.end ? fdate(c.end) : "sans fin"}</div>` },
       { l: "Budget", n: 1, h: c => money(c.budget) },
@@ -1201,7 +1214,7 @@ VIEWS["projects/funding"] = { range: true, fn: async () => {
 VIEWS.settings = { fn: async () => {
   const s = S.boot.settings;
   const cronCmd = "/usr/local/bin/php ~/public_html/marketing/cron.php > /dev/null 2>&1";
-  return `<p class="muted" style="margin-top:0">Les canaux et supports de communication se gèrent dans <a href="#comm/taxonomy">Communication › Canaux & supports</a>.</p>
+  return `<p class="muted" style="margin-top:0">Les canaux et supports de communication se gèrent dans <a href="#comm/taxonomy">Communication › Canaux & supports</a> ; la connexion à Facebook, Instagram et Meta Ads dans <a href="#connexions/meta">Connexions</a>.</p>
   <div class="set-grid">
     ${card("Vous & votre organisation", `<div class="form" style="grid-template-columns:1fr 1fr"><div class="fld full"><label for="sOwner">Votre prénom</label><input type="text" id="sOwner" maxlength="40" value="${esc(s.owner_name || "")}" placeholder="ex. Mohammed"><small>Pour vous saluer sur la page d'accueil.</small></div><div class="fld"><label for="sOrg">Nom de l'organisation</label><input type="text" id="sOrg" value="${esc(s.org)}"></div><div class="fld"><label for="sCur">Devise</label><input type="text" id="sCur" value="${esc(s.currency)}"></div>
       <div class="fld full"><label for="sCom">Commerciaux (un par ligne)</label><textarea id="sCom" rows="5">${esc(s.commercials.join("\n"))}</textarea><small>Proposés dans « Commercial responsable » des leads et des questions.</small></div></div>`)}
@@ -1229,6 +1242,213 @@ VIEWS.settings = { fn: async () => {
   $("#sTestBtn").addEventListener("click", async () => {
     try { const d = await api("test_mail", {}, { email: $("#sTest").value }); toast("Email de test envoyé à " + d.to); } catch (e) { toast(e.message, "err"); }
   });
+} };
+
+/* ================================================================ vues : Connexions (Meta) */
+/** Petit repère « importé depuis Meta » sur une ligne synchronisée. */
+const metaTag = r => r && r.ext_id && String(r.ext_id).startsWith("meta:") ? `<span class="sync" title="Importé automatiquement depuis Meta">${ic("link", "xs")}Meta</span>` : "";
+const META_BACK = {
+  connecte: ["Compte Facebook connecté. Choisissez maintenant la Page et les comptes publicitaires.", ""],
+  annule: ["Connexion annulée : rien n'a été autorisé. Recommencez quand vous voulez.", "err"],
+  expire: ["La demande de connexion a expiré. Cliquez de nouveau sur « Se connecter avec Facebook ».", "err"],
+  erreur: ["Facebook a refusé la connexion.", "err"],
+  "sans-app": ["Renseignez d'abord l'app Meta (étape 1).", "err"],
+};
+const metaWhen = ts => ts ? new Date(ts * 1000).toLocaleString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "jamais";
+const META_STEP_IC = { fb_stats: ["share", "blue"], ig_stats: ["share", "pink"], fb_posts: ["megaphone", "blue"], ig_posts: ["megaphone", "pink"], ads: ["target", "orange"], leads: ["user-plus", "green"] };
+function metaResult(res) {
+  if (!res) return empty("Aucune synchronisation pour l'instant. Lancez la première : elle importe les derniers jours d'un coup.", "", { icon: ["clock", "violet"] });
+  return `<ul class="sync-steps">${res.steps.map(s => {
+    const m = META_STEP_IC[s.key] || ["link", "violet"];
+    const counts = s.counts.map(c => `${num(c.added)} ${esc(c.label)} ajouté(s)` + (c.updated ? `, ${num(c.updated)} mis à jour` : "") + (c.linked ? `, ${num(c.linked)} relié(s) à une saisie existante` : "")).join(" · ");
+    return `<li class="${s.status}">${tile(m[0], m[1], "sm")}<span><b>${esc(s.label)}</b><small>${s.status === "skip" ? esc(s.message) : esc(counts || "Rien de nouveau")}${s.status !== "skip" && s.message ? `<br><span class="${s.status === "error" ? "bad" : ""}">${esc(s.message)}</span>` : ""}</small></span><span class="pill ${s.status === "ok" ? "good" : s.status === "error" ? "crit" : ""}">${s.status === "ok" ? "OK" : s.status === "error" ? "Erreur" : "Ignoré"}</span></li>`;
+  }).join("")}</ul>`;
+}
+
+VIEWS["connexions/meta"] = { fn: async param => {
+  if (META_BACK[param]) {
+    const [msg, kind] = META_BACK[param];
+    setTimeout(() => toast(msg, kind), 50);
+    history.replaceState(null, "", "#connexions/meta");
+  }
+  const d = await api("meta_status");
+  const m = S.meta = d.meta;
+  S.boot.meta = m;
+  const appOk = !!m.app_source, conn = m.connected, chosen = !!(m.page || m.ad_accounts.length);
+  const step = (n, done, cur, title, body, open = true) => `<section class="card mstep${done ? " done" : ""}${cur ? " cur" : ""}"><div class="card-h"><h2><span class="mnum">${done ? ic("check", "sm") : n}</span>${esc(title)}</h2></div>${open ? body : ""}</section>`;
+  const appSrc = { ecom: "L'app Meta d'ecom.dehini.com est utilisée", config: "App Meta réglée dans config.php", dashboard: "App Meta enregistrée" }[m.app_source] || "";
+  const appForm = `<div class="form"><div class="fld"><label for="mApp">Identifiant de l'app (App ID)</label><input type="text" id="mApp" inputmode="numeric" placeholder="ex. 1234567890123456" value="${esc(m.app_source === "dashboard" ? m.app_id : "")}"></div>
+      <div class="fld"><label for="mSec">Clé secrète de l'app</label><input type="password" id="mSec" autocomplete="off" placeholder="${m.app_source === "dashboard" ? "Inchangée — tapez-en une nouvelle pour la remplacer" : "32 caractères"}"></div></div>
+    <div class="toolbar" style="margin:10px 0 0"><button type="button" class="btn pri" id="mAppSave">Enregistrer l'app</button></div>`;
+  const howApp = `<ol class="howto"><li>Sur <b>developers.facebook.com</b> › Mes apps › <b>Créer une app</b> (type « Entreprise »), reliée au Business Manager de YINVESTI.</li>
+    <li>Ajoutez le produit <b>Facebook Login</b>, puis dans ses paramètres l'adresse de retour : <span class="copy"><code id="mRedir">${esc(m.redirect_uri)}</code><button type="button" class="icon-btn" data-copy="#mRedir" aria-label="Copier l'adresse" title="Copier">${ic("copy", "sm")}</button></span></li>
+    <li>Dans Paramètres › Général, copiez l'<b>App ID</b> et la <b>clé secrète</b> ci-dessous.</li></ol>`;
+  const s1 = appOk
+    ? `<p class="ok-line">${ic("check-circle", "sm")} ${esc(appSrc)}${m.app_id ? ` · ID <code>${esc(m.app_id)}</code>` : ""}</p><details class="more"><summary>Utiliser une autre app Meta</summary>${howApp}${appForm}</details>`
+    : `<p class="muted" style="margin-top:0">Une app Meta (gratuite) sert de « clé » au tableau de bord pour lire vos chiffres. À faire une seule fois.</p>${howApp}${appForm}`;
+  const exp = m.token_kind === "manual" && !m.token_expires ? "n'expire pas" : m.days_left == null ? "" : m.days_left < 0 ? "a expiré" : `expire dans ${num(m.days_left)} jour(s)`;
+  const s2 = conn
+    ? `${m.token_invalid ? `<div class="banner warn">${ic("alert", "sm")} Meta refuse la connexion (expirée ou retirée) : reconnectez-vous pour reprendre la synchronisation.</div>` : ""}
+       <div class="who-card">${tile("users", "blue")}<span><b>${esc(m.user_name || "Compte Meta")}</b><small>${m.token_kind === "manual" ? "Jeton d'utilisateur système" : "Connecté avec Facebook"}${exp ? " · " + exp : ""}</small></span>
+       <span class="grow"></span>${appOk ? `<a class="btn sm" href="meta.php?start=1">${ic("link", "sm")} Reconnecter</a>` : ""}<button type="button" class="btn sm del" id="mOff">${ic("logout", "sm")} Déconnecter</button></div>
+       ${m.days_left != null && m.days_left >= 0 && m.days_left <= 10 && m.token_kind !== "manual" ? `<p class="small" style="margin:10px 0 0">Les connexions Facebook durent environ 60 jours : cliquez sur « Reconnecter » avant l'échéance, ou utilisez un jeton d'utilisateur système qui n'expire pas.</p>` : ""}`
+    : `${m.oauth_error ? `<div class="banner warn">${ic("alert", "sm")} ${esc(m.oauth_error)}</div>` : ""}
+       <p class="muted" style="margin-top:0">Autorisations demandées, toutes en <b>lecture seule</b> : rien n'est publié, modifié ni dépensé chez Meta.</p>
+       <a class="btn pri big${appOk ? "" : " disabled"}" ${appOk ? 'href="meta.php?start=1"' : 'aria-disabled="true"'}>${ic("link", "sm")} Se connecter avec Facebook</a>
+       <details class="more"><summary>Autre méthode : coller un jeton d'utilisateur système</summary>
+         <p class="small muted">Business Manager › Paramètres › Utilisateurs système › Générer un jeton (avec les autorisations ${m.scopes.slice(0, 4).join(", ")}…). Ce jeton n'expire pas : idéal pour la synchronisation automatique.</p>
+         <textarea id="mTok" rows="3" placeholder="EAAB…" aria-label="Jeton d'accès"></textarea><div class="toolbar" style="margin:8px 0 0"><button type="button" class="btn" id="mTokSave">Vérifier et enregistrer le jeton</button></div></details>`;
+  const s3 = `<div id="mAssets"><p class="loading">Chargement de vos Pages et comptes publicitaires…</p></div>`;
+  const sync = `<section class="card" id="mSync"><div class="card-h"><h2>${tile("trend", "violet", "sm")}Synchronisation</h2><div class="ctrl"><button type="button" class="btn pri" id="mGo"${conn && chosen ? "" : " disabled"}>${ic("trend", "sm")} Synchroniser maintenant</button></div></div>
+      <p class="muted" style="margin-top:0">Dernière : <b>${esc(metaWhen(m.last_sync))}</b>${m.last_result ? ` · du ${fdate(m.last_result.from, false)} au ${fdate(m.last_result.to)}` : ""}. Automatique chaque matin avec l'envoi des rapports.</p>
+      <div id="mRes">${metaResult(m.last_result)}</div></section>`;
+  const what = [["share", "violet", "Social Media › Relevés", "Portée, vues, engagement et abonnés de la Page et du compte Instagram, jour par jour."],
+    ["megaphone", "violet", "Communication › Actions", "Chaque publication, Reel, carrousel ou story, avec ses chiffres. Cible et objectif devinés d'après le texte."],
+    ["target", "orange", "Ads Manager", "Campagnes, budgets (convertis en " + esc(m.currency) + "), dépenses, leads et conversions jour par jour."],
+    ["user-plus", "blue", "Leads & Contacts", "Les leads des formulaires Lead Ads, avec leur campagne. Profil deviné ; une personne déjà saisie est reliée, pas dupliquée."],
+    ["message", "teal", "Questions", "Les commentaires qui posent une question (français, arabe, darija), avec leur sujet."]];
+  return `<div class="hero">${tile("link", "violet")}<div><h1>Facebook · Instagram · Meta Ads</h1><p>Reliez vos comptes une fois : les chiffres arrivent tout seuls dans chaque section, déjà classés. Ce que vous complétez (statut d'un lead, commercial, objectif chiffré…) n'est jamais écrasé.</p></div></div>
+    <div class="dash"><div class="main-col">
+      ${step(1, appOk, !appOk, "App Meta", s1)}
+      ${step(2, conn && !m.token_invalid, appOk && (!conn || m.token_invalid), "Connexion au compte Facebook", s2)}
+      ${step(3, chosen, conn && !chosen, "Page, Instagram et comptes publicitaires", conn ? s3 : `<p class="muted" style="margin:0">Disponible une fois le compte connecté.</p>`)}
+      ${conn ? sync : ""}
+    </div><div class="side-col">
+      <section class="card"><div class="card-h"><h2>${tile("sparkles", "amber", "sm")}Ce qui arrive tout seul</h2></div><div class="alist">${what.map(w => `<div class="arow">${tile(w[0], w[1], "sm")}<span><b>${w[2]}</b><small>${w[3]}</small></span></div>`).join("")}</div>
+        <p class="small muted" style="margin:10px 0 0">Le classement suit vos <a href="#connexions/rules">règles de classement</a>. Une donnée importée puis supprimée n'est pas réimportée.</p></section>
+      <section class="card"><div class="card-h"><h2>${tile("clock", "teal", "sm")}Plus souvent ?</h2></div><p class="small" style="margin-top:0">Pour une mise à jour toutes les heures, ajoutez une 2e tâche dans cPanel › Tâches Cron (Minute <code>0</code>, autres champs <code>*</code>) :</p><pre class="code">/usr/local/bin/php ~/public_html/marketing/cron.php --meta-only &gt; /dev/null 2&gt;&amp;1</pre></section>
+    </div></div>`;
+}, after: async () => {
+  const m = S.meta;
+  const el = id => document.getElementById(id);
+  if (el("mAppSave")) el("mAppSave").addEventListener("click", async e => {
+    e.target.disabled = true;
+    try { await api("meta_save", {}, { app_id: el("mApp").value, app_secret: el("mSec").value }); toast("App Meta enregistrée"); route(); }
+    catch (err) { toast(err.message, "err"); e.target.disabled = false; }
+  });
+  if (el("mTokSave")) el("mTokSave").addEventListener("click", async e => {
+    e.target.disabled = true; e.target.textContent = "Vérification…";
+    try { await api("meta_token", {}, { token: el("mTok").value }); toast("Jeton accepté : compte connecté"); route(); }
+    catch (err) { toast(err.message, "err"); e.target.disabled = false; e.target.textContent = "Vérifier et enregistrer le jeton"; }
+  });
+  if (el("mOff")) el("mOff").addEventListener("click", async () => {
+    if (!(await askDialog({ icon: ["logout", "pink"], title: "Déconnecter le compte Meta ?", text: "La synchronisation s'arrête. Les données déjà importées restent dans le tableau de bord.", ok: "Déconnecter", cancel: "Rester connecté", danger: true }))) return;
+    try { await api("meta_disconnect", {}, {}); toast("Compte Meta déconnecté"); route(); } catch (err) { toast(err.message, "err"); }
+  });
+  if (el("mGo")) el("mGo").addEventListener("click", async e => {
+    const b = e.target.closest("button");
+    b.disabled = true; b.innerHTML = `<span class="spin"></span> Synchronisation… (jusqu'à une minute)`;
+    try {
+      const d = await api("meta_sync", {}, {});
+      S.boot.meta = d.meta;
+      const t = d.result.totals;
+      toast(d.result.ok ? `Synchronisé : ${num(t.added)} nouvelle(s) donnée(s), ${num(t.updated)} mise(s) à jour` : "Synchronisation terminée avec des erreurs : voir le détail", d.result.ok ? "" : "err");
+      S.cache.clear();
+      const r = await api("refs"); S.boot.refs = r.refs; S.boot.enums = r.enums;
+      route();
+    } catch (err) { toast(err.message, "err"); b.disabled = false; b.innerHTML = `${ic("trend", "sm")} Synchroniser maintenant`; }
+  });
+  if (!el("mAssets")) return;
+  let a;
+  try { a = (await api("meta_assets")).assets; }
+  catch (err) { el("mAssets").innerHTML = `<div class="banner warn">${ic("alert", "sm")} ${esc(err.message)}</div>`; return; }
+  const curr = S.boot.settings.currency;
+  const pageOpts = a.pages.length ? `<div class="choices">${a.pages.map(p => `<label class="choice${m.page && m.page.id === p.id ? " on" : ""}"><input type="radio" name="mPage" value="${esc(p.id)}"${m.page && m.page.id === p.id ? " checked" : ""} hidden><span class="ic">${tile("share", "blue")}</span><span class="cl">${esc(p.name)}</span><small>${p.instagram ? "+ Instagram @" + esc(p.instagram.username) : "Pas de compte Instagram pro relié"}</small></label>`).join("")}</div>`
+    : `<p class="muted">Aucune Page Facebook accessible avec ce compte. Vérifiez vos accès à la Page dans Meta Business Suite.</p>`;
+  const adOpts = a.ad_accounts.length ? `<div class="choices">${a.ad_accounts.map(x => { const on = m.ad_accounts.some(y => y.id === x.id); return `<label class="choice${on ? " on" : ""}"><input type="checkbox" name="mAd" value="${esc(x.id)}" data-cur="${esc(x.currency)}"${on ? " checked" : ""} hidden><span class="ic">${tile("target", "orange")}</span><span class="cl">${esc(x.name)}</span><small>${esc(x.currency)}${x.active ? "" : " · compte désactivé"}</small></label>`; }).join("")}</div>`
+    : `<p class="muted">Aucun compte publicitaire accessible (autorisation « ads_read » non accordée, ou aucun compte sur ce profil).</p>`;
+  el("mAssets").innerHTML = `<h3>Page Facebook</h3>${pageOpts}<p class="small muted">Le compte Instagram professionnel relié à la Page est importé avec elle.</p>
+    <h3>Comptes publicitaires</h3>${adOpts}
+    <div class="form" style="margin-top:14px"><div class="fld" id="mFxBox"><label for="mFx">Taux de conversion</label><div class="fx"><span>1 <b id="mFxCur">USD</b> =</span><input type="number" id="mFx" min="0" step="any" value="${esc(m.fx)}"><span>${esc(curr)}</span></div><small>Les montants Meta (budgets, dépenses) sont convertis en ${esc(curr)}.</small></div>
+      <div class="fld"><label for="mBack">Première importation</label><select id="mBack">${[30, 60, 90].map(n => `<option value="${n}"${+m.backfill === n ? " selected" : ""}>${n} derniers jours</option>`).join("")}</select></div>
+      <div class="fld"><label for="mProf">Profil d'un lead impossible à classer</label><select id="mProf">${Object.entries(EN("contact_types")).map(([k, l]) => `<option value="${k}"${m.default_profile === k ? " selected" : ""}>${esc(l)}</option>`).join("")}</select></div>
+      <div class="fld full"><div class="checks"><label><input type="checkbox" id="mQ"${m.questions ? " checked" : ""}> Importer les commentaires qui posent une question (dans Leads & Contacts › Questions)</label></div></div></div>
+    <div class="toolbar" style="margin:14px 0 0"><button type="button" class="btn pri" id="mSave">Enregistrer ces choix</button></div>`;
+  const fxShow = () => {
+    const cs = $$("input[name=mAd]:checked", el("mAssets")).map(i => i.dataset.cur).filter(c => c && c !== curr);
+    el("mFxBox").hidden = !cs.length;
+    if (cs.length) el("mFxCur").textContent = cs[0];
+  };
+  fxShow();
+  el("mAssets").addEventListener("change", e => {
+    if (e.target.name === "mPage") $$("input[name=mPage]", el("mAssets")).forEach(i => i.closest(".choice").classList.toggle("on", i.checked));
+    if (e.target.name === "mAd") { e.target.closest(".choice").classList.toggle("on", e.target.checked); fxShow(); }
+  });
+  el("mSave").addEventListener("click", async e => {
+    const b = e.target; b.disabled = true;
+    const pg = $("input[name=mPage]:checked", el("mAssets"));
+    try {
+      await api("meta_save", {}, { page_id: pg ? pg.value : "", ad_accounts: $$("input[name=mAd]:checked", el("mAssets")).map(i => i.value), fx: el("mFxBox").hidden ? 1 : el("mFx").value, backfill: +el("mBack").value, default_profile: el("mProf").value, questions: el("mQ").checked });
+      toast(m.last_sync ? "Choix enregistrés" : "Choix enregistrés : lancez la première synchronisation");
+      route();
+    } catch (err) { toast(err.message, "err"); b.disabled = false; }
+  });
+} };
+
+/* ---------- règles de classement automatique */
+const RULE_GROUPS = [
+  ["audience", "Cible (publications, campagnes) et profil (leads, questions)", { investisseurs: "Investisseurs", porteurs: "Porteurs de projets" }, "users"],
+  ["objective", "Objectif d'une publication (sinon : Notoriété)", null, "target"],
+  ["question", "Sujet d'une question (sinon : Autre)", null, "message"],
+];
+const foldTxt = s => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/’/g, "'").replace(/\s+/g, " ");
+function classifyJs(text, groups) {
+  const t = foldTxt(text);
+  let best = "", score = 0;
+  for (const [cat, words] of Object.entries(groups)) {
+    const n = words.filter(w => (w = foldTxt(w)) && t.includes(w)).length;
+    if (n > score) { best = cat; score = n; }
+  }
+  return best;
+}
+const isQuestionJs = t => { t = String(t || "").trim(); if (t.length < 4 || /^(@\S+\s*)+$/u.test(t)) return false; if (/[?؟]/.test(t)) return true; const f = " " + foldTxt(t) + " "; return [" combien", " comment ", " pourquoi", " quel ", " quelle", " quels ", " est-ce", "c'est quoi", " quand ", " info", " svp", " prix", " tarif", "شحال", "كيفاش", "واش", "بكم", "علاش", "وين", "وقتاش", "كيف", " هل ", "معلومات"].some(w => f.includes(w)); };
+
+VIEWS["connexions/rules"] = { fn: async () => {
+  const d = await api("meta_status");
+  S.meta = d.meta;
+  const R = d.meta.rules;
+  const lbl = (g, c) => g === "audience" ? { investisseurs: "Investisseurs", porteurs: "Porteurs de projets" }[c] : g === "objective" ? L("ad_objectives", c) : L("inq_categories", c);
+  return `<p class="muted" style="margin-top:0">Le tableau de bord lit le texte de chaque publication, campagne, formulaire ou commentaire importé et choisit la catégorie dont les mots-clés apparaissent le plus. Les accents et majuscules ne comptent pas ; un mot-clé peut être un début de mot (« inscri » trouve inscription, inscrivez-vous…). Les nouvelles règles s'appliquent aux prochaines données importées.</p>
+    <div class="dash"><div class="main-col">${RULE_GROUPS.map(([g, title, , icn]) => `<section class="card"><div class="card-h"><h2>${tile(icn, "violet", "sm")}${esc(title)}</h2></div><div class="form rules">${Object.keys(R[g]).map(c => `<div class="fld"><label for="r_${g}_${c}">${esc(lbl(g, c))}</label><textarea id="r_${g}_${c}" data-rg="${g}" data-rc="${c}" rows="3">${esc(R[g][c].join(", "))}</textarea></div>`).join("")}</div></section>`).join("")}
+      <div class="toolbar"><button type="button" class="btn pri" id="rSave">Enregistrer les règles</button><button type="button" class="btn ghost" id="rReset">Rétablir les règles par défaut</button></div>
+    </div><div class="side-col"><section class="card" id="rTest"><div class="card-h"><h2>${tile("sparkles", "amber", "sm")}Essayer</h2></div>
+      <p class="small muted" style="margin-top:0">Collez une légende, un nom de campagne ou un commentaire : le classement s'affiche avec les règles ci-contre, même non enregistrées.</p>
+      <textarea id="rIn" rows="4" placeholder="ex. C'est quoi le ticket minimum pour investir ?"></textarea><div id="rOut" class="rv-list"></div></section></div></div>`;
+}, after: () => {
+  const read = () => {
+    const out = {};
+    for (const t of $$("[data-rg]", V)) { (out[t.dataset.rg] = out[t.dataset.rg] || {})[t.dataset.rc] = t.value.split(/[\n,;]+/).map(s => s.trim()).filter(Boolean); }
+    return out;
+  };
+  const test = () => {
+    const txt = $("#rIn").value, R = read();
+    if (!txt.trim()) { $("#rOut").innerHTML = ""; return; }
+    const aud = (() => { const i = classifyJs(txt, { x: R.audience.investisseurs }), p = classifyJs(txt, { x: R.audience.porteurs }); return i && p ? "tous" : i ? "investisseurs" : p ? "porteurs" : ""; })();
+    const q = isQuestionJs(txt);
+    const row = (l, v) => `<div class="rv"><span class="rv-l">${l}</span><span class="rv-v">${v}</span></div>`;
+    $("#rOut").innerHTML = row("Cible", aud ? esc(L("audiences", aud)) : '<span class="muted">aucune</span>')
+      + row("Objectif", esc(L("ad_objectives", classifyJs(txt, R.objective) || "notoriete")))
+      + row("Question ?", q ? '<span class="pill good">Oui</span>' : '<span class="pill">Non</span>')
+      + (q ? row("Sujet", esc(L("inq_categories", classifyJs(txt, R.question) || "autre"))) : "");
+  };
+  $("#rIn").addEventListener("input", test);
+  $(".main-col", V).addEventListener("input", e => { if (e.target.dataset.rg) test(); });
+  $("#rSave").addEventListener("click", async e => {
+    e.target.disabled = true;
+    try { await api("meta_save", {}, { rules: read() }); toast("Règles enregistrées : elles servent dès la prochaine synchronisation"); }
+    catch (err) { toast(err.message, "err"); }
+    e.target.disabled = false;
+  });
+  $("#rReset").addEventListener("click", async () => {
+    if (!(await askDialog({ icon: ["alert", "amber"], title: "Rétablir les règles par défaut ?", text: "Vos mots-clés seront remplacés par la liste de départ.", ok: "Rétablir", cancel: "Garder mes règles" }))) return;
+    try { await api("meta_save", {}, { rules: S.meta.rules_default }); toast("Règles par défaut rétablies"); route(); } catch (err) { toast(err.message, "err"); }
+  });
+} };
+
+VIEWS["connexions/history"] = { fn: async () => {
+  const d = await api("meta_status");
+  if (!d.log.length) return empty("Aucune synchronisation pour l'instant. Elles s'afficheront ici avec ce qui a été importé à chaque fois.", `<a class="btn pri" href="#connexions/meta">${ic("link", "sm")} Relier Meta</a>`, { icon: ["clock", "violet"] });
+  return card("🔗 Synchronisations Meta", `<div class="hist">${d.log.map(x => `<details class="hist-row"><summary><span class="pill ${x.ok ? "good" : "crit"}">${x.ok ? "OK" : "Erreur"}</span><b>${esc(metaWhen(x.at))}</b><span class="muted small">du ${fdate(x.from, false)} au ${fdate(x.to)}</span><span class="grow"></span><span class="small">${num(x.added)} ajout(s) · ${num(x.updated)} mise(s) à jour</span></summary>${metaResult(x.result)}</details>`).join("")}</div>`);
 } };
 
 /* ================================================================ assistant pas à pas (wizard + stepper) */
@@ -2176,10 +2396,15 @@ function openFunnelEditor(id) {
 
 /* ================================================================ actions globales */
 document.addEventListener("click", async e => {
-  const t = e.target.closest("[data-add],[data-edit],[data-del],[data-close],[data-funnel-edit],[data-shift],[data-report],[data-archive-del],[data-import]");
+  const t = e.target.closest("[data-add],[data-edit],[data-del],[data-close],[data-funnel-edit],[data-shift],[data-report],[data-archive-del],[data-import],[data-copy]");
   if (!t) return;
   if (t.hasAttribute("data-close")) return closeModal();
   if (t.dataset.import) { $("#addMenu").hidden = true; return openImport(t.dataset.import); }
+  if (t.dataset.copy) {
+    const txt = ($(t.dataset.copy) || {}).textContent || "";
+    try { await navigator.clipboard.writeText(txt); toast("Adresse copiée"); } catch (err) { toast("Copie impossible : sélectionnez l'adresse et copiez-la à la main.", "err"); }
+    return;
+  }
   if (t.dataset.add) {
     let preset = {};
     try { preset = t.dataset.preset ? JSON.parse(t.dataset.preset) : {}; } catch (err) {}

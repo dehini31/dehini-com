@@ -323,7 +323,7 @@ function mk_campaign_snapshot(string $from, string $to, ?int $only = null): arra
         $achieved = (int) ($tot[$metric] ?? 0);
         $out[] = [
             'id' => (int) $c['id'], 'name' => $c['name'], 'platform' => $c['platform'], 'objective' => $c['objective'],
-            'status' => $c['status'], 'start' => $c['start'], 'end' => $c['end'], 'funnel_id' => $c['funnel_id'] === null ? null : (int) $c['funnel_id'],
+            'status' => $c['status'], 'start' => $c['start'], 'end' => $c['end'], 'funnel_id' => $c['funnel_id'] === null ? null : (int) $c['funnel_id'], 'ext_id' => (string) ($c['ext_id'] ?? ''),
             'budget' => $budget, 'spent' => $tot['spend'], 'remaining' => $budget > 0 ? $budget - $tot['spend'] : null,
             'budget_pct' => mk_ratio($tot['spend'], $budget), 'elapsed' => $elapsed, 'days_left' => $daysLeft,
             'target_metric' => $metric, 'target_value' => (int) $c['target_value'], 'achieved' => $achieved,

@@ -23,12 +23,19 @@
  * POST send_report {type, date, to?, emails?}
  * GET  archives / archive id / POST archive_delete {id}
  * POST settings_save {...} / POST test_mail {email}
+ * GET  meta_status                       connexion Meta (sans aucun jeton) + historique des synchronisations
+ * GET  meta_assets                       Pages Facebook (et leur Instagram) et comptes publicitaires accessibles
+ * POST meta_save   {page_id?, ad_accounts?, fx?, backfill?, questions?, default_profile?, rules?, app_id?, app_secret?}
+ * POST meta_token  {token}               connexion avec un jeton collé (utilisateur système du Business Manager)
+ * POST meta_sync   {days?}               synchronise maintenant
+ * POST meta_disconnect
  * GET  export    entity, from?, to?      CSV (Excel)
  */
 declare(strict_types=1);
 
 require __DIR__ . '/lib/core.php';
 require __DIR__ . '/lib/report.php';
+require __DIR__ . '/lib/meta.php';
 
 header('Content-Type: application/json; charset=utf-8');
 header('X-Content-Type-Options: nosniff');
@@ -116,6 +123,7 @@ try {
                     'category_supports' => array_combine(array_keys(MK_CHANNEL_CATEGORIES), array_map('mk_category_supports', array_keys(MK_CHANNEL_CATEGORIES))),
                 ],
                 'attention' => mk_backlog(false),
+                'meta' => mk_meta_public(),
                 'mail' => ['smtp' => MK_SMTP_HOST !== '', 'from' => mk_mail_from()],
                 'url' => mk_site_url(),
             ]);
@@ -398,6 +406,56 @@ try {
         case 'settings_save': {
             if (!$isPost) fail('Méthode invalide.', 405);
             ok(['settings' => mk_settings_save($b), 'enums' => mk_enums()]);
+            break;
+        }
+
+        case 'meta_status': {
+            ok(['meta' => mk_meta_public(), 'log' => mk_meta_log(15)]);
+            break;
+        }
+
+        case 'meta_assets': {
+            try {
+                ok(['assets' => mk_meta_assets()]);
+            } catch (MkMetaError $e) {
+                fail($e->userMessage(), $e->metaCode() === 190 ? 409 : 400);
+            }
+            break;
+        }
+
+        case 'meta_save': {
+            if (!$isPost) fail('Méthode invalide.', 405);
+            try {
+                ok(['meta' => mk_meta_select($b)]);
+            } catch (MkMetaError $e) {
+                fail($e->userMessage());
+            }
+            break;
+        }
+
+        case 'meta_token': {
+            if (!$isPost) fail('Méthode invalide.', 405);
+            try {
+                mk_meta_use_token((string) ($b['token'] ?? ''));
+                ok(['meta' => mk_meta_public()]);
+            } catch (MkMetaError $e) {
+                fail('Meta refuse ce jeton : ' . $e->userMessage());
+            }
+            break;
+        }
+
+        case 'meta_sync': {
+            if (!$isPost) fail('Méthode invalide.', 405);
+            ignore_user_abort(true);
+            $res = mk_meta_sync(['days' => (int) ($b['days'] ?? 0)]);
+            ok(['result' => $res, 'meta' => mk_meta_public()]);
+            break;
+        }
+
+        case 'meta_disconnect': {
+            if (!$isPost) fail('Méthode invalide.', 405);
+            mk_meta_disconnect();
+            ok(['meta' => mk_meta_public()]);
             break;
         }
 
