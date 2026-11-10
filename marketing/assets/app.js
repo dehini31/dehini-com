@@ -712,7 +712,7 @@ function metaHomeCard() {
   const mt = S.boot.meta || {};
   if (!mt.connected) return `<section class="card promo"><div class="card-h"><h2>${tile("link", "violet", "sm")}Remplissage automatique</h2></div><p class="small" style="margin-top:0">Reliez Facebook, Instagram et Meta Ads : relevés, publications, campagnes, leads des formulaires et questions en commentaire arrivent tout seuls, déjà classés.</p><a class="btn pri sm" href="#connexions/meta">${ic("link", "sm")} Relier mes comptes</a></section>`;
   const st = mt.token_invalid ? '<span class="pill crit">Connexion expirée</span>' : mt.last_result && !mt.last_result.ok ? '<span class="pill warn">Dernière synchro en erreur</span>' : mt.last_sync ? '<span class="pill good">À jour</span>' : '<span class="pill">Pas encore synchronisé</span>';
-  return `<section class="card"><div class="card-h"><h2>${tile("link", "violet", "sm")}Meta</h2><a class="btn sm ghost" href="#connexions/meta">Gérer</a></div><p class="small" style="margin:0">${st} Dernière synchronisation : <b>${esc(metaWhen(mt.last_sync))}</b>${[mt.page && "Page " + mt.page.name, mt.instagram && "@" + mt.instagram.username, mt.ad_accounts && mt.ad_accounts.length && mt.ad_accounts.length + " compte(s) pub"].filter(Boolean).map(x => "<br>" + esc(x)).join("")}</p></section>`;
+  return `<section class="card"><div class="card-h"><h2>${tile("link", "violet", "sm")}Meta</h2><a class="btn sm ghost" href="#connexions/meta">Gérer</a></div><p class="small" style="margin:0">${st} Dernière synchronisation : <b>${esc(metaWhen(mt.last_sync))}</b>${+mt.auto_sync ? `<br>Automatique : toutes les ${+mt.auto_sync >= 60 ? num(mt.auto_sync / 60) + " h" : num(mt.auto_sync) + " min"}` : "<br>Synchronisation automatique désactivée"}${[mt.page && "Page " + mt.page.name, mt.instagram && "@" + mt.instagram.username, mt.ad_accounts && mt.ad_accounts.length && mt.ad_accounts.length + " compte(s) pub"].filter(Boolean).map(x => "<br>" + esc(x)).join("")}</p></section>`;
 }
 VIEWS["overview/daily"] = { fn: async (param, tok) => {
   const date = isDate(param) ? param : S.today;
@@ -766,7 +766,8 @@ VIEWS["overview/daily"] = { fn: async (param, tok) => {
     : empty("Rien à signaler. Aucun point d'alerte aujourd'hui : tout suit son cours.", "", { icon: ["check-circle", "green"] });
   const mt = S.boot.meta || {};
   const metaWarn = mt.connected && mt.token_invalid ? `<a class="banner warn" href="#connexions/meta">${ic("alert", "sm")} La connexion à Meta a expiré : les chiffres de Facebook, Instagram et Meta Ads ne se mettent plus à jour. Reconnectez-vous.</a>`
-    : mt.connected && mt.token_kind !== "manual" && mt.days_left != null && mt.days_left <= 7 ? `<a class="banner warn" href="#connexions/meta">${ic("clock", "sm")} La connexion à Meta expire dans ${num(Math.max(0, mt.days_left))} jour(s) : cliquez ici pour la renouveler.</a>` : "";
+    : mt.connected && mt.token_kind !== "manual" && mt.days_left != null && mt.days_left <= 7 ? `<a class="banner warn" href="#connexions/meta">${ic("clock", "sm")} La connexion à Meta expire dans ${num(Math.max(0, mt.days_left))} jour(s) : cliquez ici pour la renouveler.</a>`
+    : mt.fb_connected && !mt.page ? `<a class="banner warn" href="#connexions/meta">${ic("alert", "sm")} Aucune Page Facebook choisie : Facebook, les leads et les messages ne sont pas importés. Cliquez ici pour choisir la Page.</a>` : "";
   return metaWarn + `<div class="hello"><div><h1>${hello}</h1><p>${intro}</p></div><div class="rep-ctrl">${dateNav("daily", "day", date, isToday ? "Aujourd'hui" : "Jour affiché")}${reportActions("day", date)}</div></div>
     <div class="kpis k5">${["leads", "qualified", "inquiries", "posts", "project_requests"].map(x => kpiTile(k[x])).join("")}</div>
     <div class="dash"><div class="main-col">
@@ -1432,7 +1433,10 @@ VIEWS["connexions/meta"] = { fn: async param => {
          <textarea id="mTok" rows="3" placeholder="EAAB…" aria-label="Jeton d'accès"></textarea><div class="toolbar" style="margin:8px 0 0"><button type="button" class="btn" id="mTokSave">Vérifier et enregistrer le jeton</button></div></details>`;
   const s3 = `<div id="mAssets"><p class="loading">Chargement de vos Pages et comptes publicitaires…</p></div>`;
   const sync = `<section class="card" id="mSync"><div class="card-h"><h2>${tile("trend", "violet", "sm")}Synchronisation</h2><div class="ctrl"><button type="button" class="btn pri" id="mGo"${chosen ? "" : " disabled"}>${ic("trend", "sm")} Synchroniser maintenant</button></div></div>
-      <p class="muted" style="margin-top:0">Dernière : <b>${esc(metaWhen(m.last_sync))}</b>${m.last_result ? ` · du ${fdate(m.last_result.from, false)} au ${fdate(m.last_result.to)}` : ""}. Automatique chaque matin avec l'envoi des rapports.</p>
+      ${conn && !m.page ? `<div class="banner warn">${ic("alert", "sm")}<span>Aucune Page Facebook choisie : Facebook, les leads et les messages ne sont pas importés. Choisissez la Page à l'étape 3 ci-dessus, puis « Enregistrer ces choix ».</span></div>` : ""}
+      <p class="muted" style="margin-top:0">Dernière : <b>${esc(metaWhen(m.last_sync))}</b>${m.last_result ? ` · du ${fdate(m.last_result.from, false)} au ${fdate(m.last_result.to)}` : ""}.</p>
+      <div class="auto-sync"><label for="mAuto"><b>Synchronisation automatique</b><small>Facebook, Instagram, Meta Ads, leads et messages, pendant que le tableau de bord est ouvert (même dans un onglet en arrière-plan).</small></label>
+        <select id="mAuto">${[[15, "Toutes les 15 minutes"], [30, "Toutes les 30 minutes"], [60, "Toutes les heures"], [180, "Toutes les 3 heures"], [360, "Toutes les 6 heures"], [720, "Toutes les 12 heures"], [0, "Désactivée"]].map(([v, l]) => `<option value="${v}"${+m.auto_sync === v ? " selected" : ""}>${l}</option>`).join("")}</select></div>
       <div id="mRes">${metaResult(m.last_result)}</div></section>`;
   const what = [["share", "violet", "Social Media › Relevés", "Portée, vues, engagement et abonnés de la Page et du compte Instagram, jour par jour."],
     ["megaphone", "violet", "Communication › Actions", "Chaque publication, Reel, carrousel ou story, avec ses chiffres. Cible et objectif devinés d'après le texte."],
@@ -1448,7 +1452,9 @@ VIEWS["connexions/meta"] = { fn: async param => {
     </div><div class="side-col">
       <section class="card"><div class="card-h"><h2>${tile("sparkles", "amber", "sm")}Ce qui arrive tout seul</h2></div><div class="alist">${what.map(w => `<div class="arow">${tile(w[0], w[1], "sm")}<span><b>${w[2]}</b><small>${w[3]}</small></span></div>`).join("")}</div>
         <p class="small muted" style="margin:10px 0 0">Le classement suit vos <a href="#connexions/rules">règles de classement</a>. Une donnée importée puis supprimée n'est pas réimportée.</p></section>
-      <section class="card"><div class="card-h"><h2>${tile("clock", "teal", "sm")}Plus souvent ?</h2></div><p class="small" style="margin-top:0">Pour une mise à jour toutes les heures, ajoutez une 2e tâche dans cPanel › Tâches Cron (Minute <code>0</code>, autres champs <code>*</code>) :</p><pre class="code">/usr/local/bin/php ~/public_html/marketing/cron.php --meta-only &gt; /dev/null 2&gt;&amp;1</pre></section>
+      <section class="card"><div class="card-h"><h2>${tile("clock", "teal", "sm")}Même tableau de bord fermé</h2></div><p class="small" style="margin-top:0">Pour que tout se synchronise aussi quand personne n'a ouvert le tableau de bord : dans <b>cPanel › Tâches Cron</b>, « Paramètres communs » : <b>Une fois par heure</b>, puis collez cette commande et cliquez sur « Ajouter une nouvelle tâche Cron » :</p>
+        <pre class="code" id="mCron">/usr/local/bin/php ~/public_html/marketing/cron.php --meta-only &gt; /dev/null 2&gt;&amp;1</pre><button type="button" class="btn sm" data-copy="#mCron">${ic("copy", "sm")} Copier la commande</button>
+        <p class="small muted" style="margin:10px 0 0">La tâche du matin (rapports) synchronise déjà une fois par jour ; celle-ci ajoute une synchronisation chaque heure.</p></section>
     </div></div>`;
 }, after: async () => {
   const m = S.meta;
@@ -1472,6 +1478,10 @@ VIEWS["connexions/meta"] = { fn: async param => {
     if (!(await askDialog({ icon: ["logout", "pink"], title: "Déconnecter le compte Meta ?", text: "La synchronisation s'arrête. Les données déjà importées restent dans le tableau de bord.", ok: "Déconnecter", cancel: "Rester connecté", danger: true }))) return;
     try { await api("meta_disconnect", {}, {}); toast("Compte Meta déconnecté"); route(); } catch (err) { toast(err.message, "err"); }
   });
+  if (el("mAuto")) el("mAuto").addEventListener("change", async e => {
+    try { const d = await api("meta_save", {}, { auto_sync: +e.target.value }); S.boot.meta = d.meta; toast(+e.target.value ? "Synchronisation automatique : " + e.target.selectedOptions[0].textContent.toLowerCase() : "Synchronisation automatique désactivée"); }
+    catch (err) { toast(err.message, "err"); }
+  });
   if (el("mGo")) el("mGo").addEventListener("click", async e => {
     const b = e.target.closest("button");
     b.disabled = true; b.innerHTML = `<span class="spin"></span> Synchronisation… (jusqu'à une minute)`;
@@ -1492,7 +1502,7 @@ VIEWS["connexions/meta"] = { fn: async param => {
   const curr = S.boot.settings.currency;
   const redir = id => `<span class="copy"><code id="${id}">${esc(m.redirect_uri)}</code><button type="button" class="icon-btn" data-copy="#${id}" aria-label="Copier l'adresse" title="Copier">${ic("copy", "sm")}</button></span>`;
   // Sélection en cours (enregistrée seulement au clic sur « Enregistrer ») et affichage : résumé, ou liste à choisir.
-  const sel = { page: m.page ? m.page.id : "", ads: new Set(m.ad_accounts.map(x => x.id)) };
+  const sel = { page: m.page ? m.page.id : (a.pages.length === 1 ? a.pages[0].id : ""), ads: new Set(m.ad_accounts.map(x => x.id)) };
   const ui = { editPage: !m.page, editAds: !m.ad_accounts.length, q: "", qp: "", off: false };
   const pageOf = id => a.pages.find(p => p.id === id) || null;
   const adOf = id => a.ad_accounts.find(x => x.id === id) || m.ad_accounts.find(x => x.id === id) || { id, name: "Compte " + id, currency: "", active: false, status: "Inaccessible" };
@@ -2868,6 +2878,34 @@ async function start() {
   $("#loginView").hidden = true;
   $("#app").hidden = false;
   route();
+  if (!S.autoTimer) { S.autoTimer = setInterval(autoSync, 60 * 1000); setTimeout(autoSync, 8000); }
+}
+
+/**
+ * Synchronisation Meta automatique, tant que le tableau de bord est ouvert : quand la dernière date de plus
+ * que l'intervalle réglé dans Connexions. Silencieuse, sauf s'il y a du nouveau (ou une erreur, signalée une fois).
+ */
+async function autoSync() {
+  const m = S.boot && S.boot.meta;
+  if (!m || !m.connected || !+m.auto_sync || S.autoBusy || m.token_invalid) return;
+  if (Date.now() / 1000 - (+m.last_sync || 0) < +m.auto_sync * 60) return;
+  S.autoBusy = true;
+  try {
+    const d = await api("meta_sync", {}, {});
+    S.boot.meta = d.meta;
+    const t = d.result.totals;
+    if (!d.result.ok && !S.autoWarned) { S.autoWarned = true; toast("Synchronisation automatique Meta : une étape a échoué (détail dans Connexions).", "err"); }
+    if (t.added > 0) {
+      S.cache.clear();
+      const busy = !$("#modal").hidden || !$("#dlg").hidden || (document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName));
+      toast(`Meta : ${num(t.added)} nouvelle(s) donnée(s) importée(s)` + (busy ? " — rechargez la page pour les voir" : ""));
+      if (!busy && !location.hash.startsWith("#connexions")) route();
+    }
+  } catch (err) {
+    // Synchronisation déjà en cours (onglet ou tâche cron) ou réseau coupé : on réessaiera à la prochaine minute.
+    if (err.status === 401) clearInterval(S.autoTimer);
+  }
+  S.autoBusy = false;
 }
 $("#loginForm").addEventListener("submit", async e => {
   e.preventDefault();
