@@ -1280,9 +1280,18 @@ VIEWS["connexions/meta"] = { fn: async param => {
   const appForm = `<div class="form"><div class="fld"><label for="mApp">Identifiant de l'app (App ID)</label><input type="text" id="mApp" inputmode="numeric" placeholder="ex. 1234567890123456" value="${esc(m.app_source === "dashboard" ? m.app_id : "")}"></div>
       <div class="fld"><label for="mSec">Clé secrète de l'app</label><input type="password" id="mSec" autocomplete="off" placeholder="${m.app_source === "dashboard" ? "Inchangée — tapez-en une nouvelle pour la remplacer" : "32 caractères"}"></div></div>
     <div class="toolbar" style="margin:10px 0 0"><button type="button" class="btn pri" id="mAppSave">Enregistrer l'app</button></div>`;
+  const redir = id => `<span class="copy"><code id="${id}">${esc(m.redirect_uri)}</code><button type="button" class="icon-btn" data-copy="#${id}" aria-label="Copier l'adresse" title="Copier">${ic("copy", "sm")}</button></span>`;
   const howApp = `<ol class="howto"><li>Sur <b>developers.facebook.com</b> › Mes apps › <b>Créer une app</b> (type « Entreprise »), reliée au Business Manager de YINVESTI.</li>
-    <li>Ajoutez le produit <b>Facebook Login</b>, puis dans ses paramètres l'adresse de retour : <span class="copy"><code id="mRedir">${esc(m.redirect_uri)}</code><button type="button" class="icon-btn" data-copy="#mRedir" aria-label="Copier l'adresse" title="Copier">${ic("copy", "sm")}</button></span></li>
+    <li>Ajoutez le produit <b>Facebook Login</b>, puis dans ses paramètres l'adresse de retour : ${redir("mRedir")}</li>
     <li>Dans Paramètres › Général, copiez l'<b>App ID</b> et la <b>clé secrète</b> ci-dessous.</li></ol>`;
+  // « URL bloquée » chez Facebook : l'adresse de retour n'est pas autorisée dans l'app.
+  const allowBox = `<div class="allow">${tile("alert", "amber", "sm")}<div><b>Avant de cliquer : autorisez cette adresse dans l'app Meta</b>
+      <p>Sinon Facebook affiche « URL bloquée ». Copiez-la exactement (https, sans www si vous ouvrez le tableau de bord sans www) :</p>${redir("mRedir2")}
+      <ol class="howto"><li>Ouvrez ${m.app_url ? `<a href="${esc(m.app_url)}" target="_blank" rel="noopener">votre app Meta</a>` : "votre app sur developers.facebook.com"}${m.app_id ? ` (ID <code>${esc(m.app_id)}</code>)` : ""}.</li>
+      <li>Menu de gauche : <b>Facebook Login</b> (ou <b>Facebook Login for Business</b>) › <b>Paramètres</b>.</li>
+      <li>Activez <b>Connexion OAuth cliente</b> et <b>Connexion OAuth Web</b>, collez l'adresse dans <b>URI de redirection OAuth valides</b>, puis <b>Enregistrer les modifications</b>.</li>
+      <li>Dans Paramètres › Général, ajoutez <code>dehini.com</code> aux <b>Domaines de l'app</b> (et la plateforme « Site web » avec <code>https://dehini.com/</code> si elle manque).</li></ol>
+      <p class="small muted" style="margin:0">L'adresse ne s'affiche pas avec le bon domaine ? Réglez « Adresse du tableau de bord » dans <a href="#settings">Réglages</a> (ex. <code>https://dehini.com/marketing/</code>).</p></div></div>`;
   const s1 = appOk
     ? `<p class="ok-line">${ic("check-circle", "sm")} ${esc(appSrc)}${m.app_id ? ` · ID <code>${esc(m.app_id)}</code>` : ""}</p><details class="more"><summary>Utiliser une autre app Meta</summary>${howApp}${appForm}</details>`
     : `<p class="muted" style="margin-top:0">Une app Meta (gratuite) sert de « clé » au tableau de bord pour lire vos chiffres. À faire une seule fois.</p>${howApp}${appForm}`;
@@ -1294,7 +1303,10 @@ VIEWS["connexions/meta"] = { fn: async param => {
        ${m.days_left != null && m.days_left >= 0 && m.days_left <= 10 && m.token_kind !== "manual" ? `<p class="small" style="margin:10px 0 0">Les connexions Facebook durent environ 60 jours : cliquez sur « Reconnecter » avant l'échéance, ou utilisez un jeton d'utilisateur système qui n'expire pas.</p>` : ""}`
     : `${m.oauth_error ? `<div class="banner warn">${ic("alert", "sm")} ${esc(m.oauth_error)}</div>` : ""}
        <p class="muted" style="margin-top:0">Autorisations demandées, toutes en <b>lecture seule</b> : rien n'est publié, modifié ni dépensé chez Meta.</p>
+       ${appOk ? allowBox : ""}
        <a class="btn pri big${appOk ? "" : " disabled"}" ${appOk ? 'href="meta.php?start=1"' : 'aria-disabled="true"'}>${ic("link", "sm")} Se connecter avec Facebook</a>
+       ${appOk ? `<details class="more"><summary>Votre app utilise « Facebook Login for Business » ?</summary><p class="small muted">Facebook peut alors refuser les autorisations demandées (« Invalid Scopes »). Créez une <b>configuration</b> (Facebook Login for Business › Configurations, type « Jeton d'accès utilisateur », avec les autorisations ${esc(m.scopes.join(", "))}), puis collez son ID ici.</p>
+         <div class="toolbar" style="margin:0"><input type="text" id="mCfg" inputmode="numeric" placeholder="ID de configuration" value="${esc(m.config_id || "")}" aria-label="ID de configuration"><button type="button" class="btn sm" id="mCfgSave">Enregistrer</button></div></details>` : ""}
        <details class="more"><summary>Autre méthode : coller un jeton d'utilisateur système</summary>
          <p class="small muted">Business Manager › Paramètres › Utilisateurs système › Générer un jeton (avec les autorisations ${m.scopes.slice(0, 4).join(", ")}…). Ce jeton n'expire pas : idéal pour la synchronisation automatique.</p>
          <textarea id="mTok" rows="3" placeholder="EAAB…" aria-label="Jeton d'accès"></textarea><div class="toolbar" style="margin:8px 0 0"><button type="button" class="btn" id="mTokSave">Vérifier et enregistrer le jeton</button></div></details>`;
@@ -1325,6 +1337,12 @@ VIEWS["connexions/meta"] = { fn: async param => {
     e.target.disabled = true;
     try { await api("meta_save", {}, { app_id: el("mApp").value, app_secret: el("mSec").value }); toast("App Meta enregistrée"); route(); }
     catch (err) { toast(err.message, "err"); e.target.disabled = false; }
+  });
+  if (el("mCfgSave")) el("mCfgSave").addEventListener("click", async e => {
+    e.target.disabled = true;
+    try { await api("meta_save", {}, { config_id: el("mCfg").value }); toast(el("mCfg").value.trim() ? "ID de configuration enregistré" : "ID de configuration retiré : les autorisations sont demandées directement"); }
+    catch (err) { toast(err.message, "err"); }
+    e.target.disabled = false;
   });
   if (el("mTokSave")) el("mTokSave").addEventListener("click", async e => {
     e.target.disabled = true; e.target.textContent = "Vérification…";

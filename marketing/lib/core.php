@@ -340,7 +340,9 @@ function mk_site_url(): string
     if ($set !== '') return rtrim($set, '/') . '/';
     if (MK_SITE_URL !== '') return rtrim(MK_SITE_URL, '/') . '/';
     if (PHP_SAPI === 'cli') return 'https://dehini.com/marketing/';
-    $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['SERVER_PORT'] ?? '') === '443');
+    $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['SERVER_PORT'] ?? '') === '443')
+        || strtolower((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https' || strtolower((string) ($_SERVER['REQUEST_SCHEME'] ?? '')) === 'https'
+        || strtolower((string) ($_SERVER['HTTP_X_FORWARDED_SSL'] ?? '')) === 'on';
     $host  = $_SERVER['HTTP_HOST'] ?? 'dehini.com';
     $dir   = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/marketing/api.php')), '/');
     return ($https ? 'https' : 'http') . '://' . $host . $dir . '/';
