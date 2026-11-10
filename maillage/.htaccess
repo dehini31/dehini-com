@@ -1,0 +1,18 @@
+Options -Indexes
+
+# Seuls les pages, l'API et les fichiers statiques sont accessibles.
+<FilesMatch "^(config\.php|config\.example\.php|\.user\.ini)$">
+  Require all denied
+</FilesMatch>
+
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  Header set X-Frame-Options "SAMEORIGIN"
+  # L'origine est transmise aux serveurs de tuiles OpenStreetMap, qui l'exigent.
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+  # Aucun script en ligne : le contenu saisi par les entreprises ne peut pas s'exécuter.
+  Header set Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://nominatim.openstreetmap.org; frame-ancestors 'self'; base-uri 'self'; form-action 'self'"
+  <FilesMatch "\.(html|json|js|css)$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+</IfModule>
