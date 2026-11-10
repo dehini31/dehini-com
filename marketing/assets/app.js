@@ -1251,10 +1251,11 @@ const META_BACK = {
   connecte: ["Compte Facebook connecté. Choisissez maintenant la Page et les comptes publicitaires.", ""],
   annule: ["Connexion annulée : rien n'a été autorisé. Recommencez quand vous voulez.", "err"],
   expire: ["La demande de connexion a expiré. Relancez la connexion (bouton « Se connecter avec Facebook » ou « Se connecter avec Instagram »).", "err"],
-  erreur: ["La connexion a été refusée : le détail s'affiche dans l'encadré ci-dessous.", "err"],
+  erreur: ["Facebook a refusé la connexion : le détail s'affiche à l'étape « Connexion au compte Facebook ».", "err"],
   "sans-app": ["Renseignez d'abord l'app Meta (étape 1).", "err"],
   "instagram-connecte": ["Compte Instagram connecté : ses chiffres seront importés à la prochaine synchronisation.", ""],
   "sans-app-instagram": ["Renseignez d'abord l'ID et la clé secrète de l'app Instagram (étape 3).", "err"],
+  "instagram-erreur": ["Instagram a refusé la connexion : le détail s'affiche dans la carte Instagram (étape 3).", "err"],
 };
 const metaWhen = ts => ts ? new Date(ts * 1000).toLocaleString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "jamais";
 const META_STEP_IC = { fb_stats: ["share", "blue"], ig_stats: ["share", "pink"], fb_posts: ["megaphone", "blue"], ig_posts: ["megaphone", "pink"], ads: ["target", "orange"], leads: ["user-plus", "green"] };
@@ -1299,7 +1300,7 @@ VIEWS["connexions/meta"] = { fn: async param => {
     : `<p class="muted" style="margin-top:0">Une app Meta (gratuite) sert de « clé » au tableau de bord pour lire vos chiffres. À faire une seule fois.</p>${howApp}${appForm}`;
   const exp = m.token_kind === "manual" && !m.token_expires ? "n'expire pas" : m.days_left == null ? "" : m.days_left < 0 ? "a expiré" : `expire dans ${num(m.days_left)} jour(s)`;
   const s2 = conn
-    ? `${m.token_invalid ? `<div class="banner warn">${ic("alert", "sm")} Meta refuse la connexion (expirée ou retirée) : reconnectez-vous pour reprendre la synchronisation.</div>` : ""}
+    ? `${m.token_invalid ? `<div class="banner warn">${ic("alert", "sm")} Meta refuse la connexion (expirée ou retirée) : reconnectez-vous pour reprendre la synchronisation.</div>` : ""}${m.oauth_error ? `<div class="banner warn">${ic("alert", "sm")}<span>Dernière tentative refusée : ${esc(m.oauth_error)}</span></div>` : ""}
        <div class="who-card">${tile("users", "blue")}<span><b>${esc(m.user_name || "Compte Meta")}</b><small>${m.token_kind === "manual" ? "Jeton d'utilisateur système" : "Connecté avec Facebook"}${exp ? " · " + exp : ""}</small></span>
        <span class="grow"></span>${appOk ? `<a class="btn sm" href="meta.php?start=1">${ic("link", "sm")} Reconnecter</a>` : ""}<button type="button" class="btn sm del" id="mOff">${ic("logout", "sm")} Déconnecter</button></div>
        ${m.days_left != null && m.days_left >= 0 && m.days_left <= 10 && m.token_kind !== "manual" ? `<p class="small" style="margin:10px 0 0">Les connexions Facebook durent environ 60 jours : cliquez sur « Reconnecter » avant l'échéance, ou utilisez un jeton d'utilisateur système qui n'expire pas.</p>` : ""}`
@@ -1405,7 +1406,7 @@ VIEWS["connexions/meta"] = { fn: async param => {
     if (p && p.instagram) return sum("share", "pink", "@" + esc(p.instagram.username), "Relié à la Page " + esc(p.name) + " : importé avec elle", "");
     const igIsFb = !!m.ig_app_id && m.ig_app_id === m.app_id; // ID Facebook collé à la place de l'ID Instagram
     const ready = m.ig_app_ready && !igIsFb;
-    return `<div class="ig-box"><p style="margin:0 0 10px">${p ? `Aucun compte Instagram professionnel n'est relié à la Page <b>${esc(p.name)}</b>.` : "Choisissez d'abord une Page, ou connectez Instagram directement."} Deux solutions :</p>
+    return `<div class="ig-box">${m.ig_oauth_error ? `<div class="banner warn">${ic("alert", "sm")}<span>${esc(m.ig_oauth_error)}</span></div>` : ""}<p style="margin:0 0 10px">${p ? `Aucun compte Instagram professionnel n'est relié à la Page <b>${esc(p.name)}</b>.` : "Choisissez d'abord une Page, ou connectez Instagram directement."} Deux solutions :</p>
       <div class="ig-opts"><div class="ig-opt"><b>1. Connecter Instagram directement</b><small>Sans passer par la Page. Le compte doit être un compte <b>professionnel</b> (Entreprise ou Créateur).</small>
         ${ready ? `<a class="btn pri" href="meta.php?start=instagram">${ic("share", "sm")} Se connecter avec Instagram</a>` : ""}
         ${igIsFb ? `<div class="banner warn" style="margin:6px 0 0">${ic("alert", "sm")}<span>L'ID enregistré est l'App ID <b>Facebook</b> : Instagram répond alors « Invalid platform app ». Collez ci-dessous l'ID de l'app <b>Instagram</b>.</span></div>` : ""}
