@@ -430,6 +430,7 @@ function mk_meta_select(array $in): array
         $id = preg_replace('/\D/', '', (string) ($in['ig_app_id'] ?? ''));
         $sec = trim((string) ($in['ig_app_secret'] ?? ''));
         if (strlen($id) < 5) throw new MkInputError("L'identifiant de l'app Instagram est un long nombre : copiez-le depuis votre app Meta › Instagram › Configuration de l'API avec la connexion Instagram (« ID de l'app Instagram »). Il est différent de l'App ID Facebook.");
+        if ($id === mk_meta_app()[0]) throw new MkInputError("Ce numéro est l'App ID Facebook, pas l'ID de l'app Instagram (c'est ce qui provoque « Invalid platform app »). Dans votre app Meta › Cas d'utilisation › Instagram › Configuration de l'API avec la connexion Instagram, copiez « ID de l'app Instagram » et « Clé secrète de l'app Instagram ».");
         if ($sec !== '' && !preg_match('/^[a-f0-9]{32}$/i', $sec)) throw new MkInputError("La clé secrète de l'app Instagram compte 32 caractères (chiffres et lettres a à f) : cliquez sur « Afficher » à côté de « Clé secrète de l'app Instagram » puis copiez-la en entier.");
         if ($sec === '' && mk_meta_state()['ig_app_secret'] === '') throw new MkInputError("Ajoutez aussi la clé secrète de l'app Instagram.");
         $patch['ig_app_id'] = $id;
