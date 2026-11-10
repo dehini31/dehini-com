@@ -9,6 +9,7 @@
 /metakpis/config.php
 /marketing/config.php
 /swanbida/config.php
+/maillage/config.php
 
 # Images envoyées depuis /admin.
 /uploads/*
@@ -23,3 +24,8 @@
 # Logos des pages pro du défi Impact (envoyés depuis le site).
 /impact/uploads/pros/*
 !/impact/uploads/pros/.gitkeep
+
+# Photos de produits et logos envoyés depuis l'espace entreprise de Maillage.
+/maillage/media/*
+!/maillage/media/.gitkeep
+!/maillage/media/.htaccess

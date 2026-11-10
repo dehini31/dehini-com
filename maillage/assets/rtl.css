@@ -1,0 +1,105 @@
+/*
+ * Maillage — arabe (RTL). Chargé en dernier sur chaque page, actif seulement sous `[dir="rtl"]`
+ * (posé sur <html> par i18n.js). La plupart des mises en page basculent déjà seules avec `dir`
+ * (flex-direction, text-align logique…) ; ce fichier ne corrige que les endroits où le CSS du
+ * site utilise des propriétés physiques (left/right) qui doivent être inversées, plus les
+ * quelques ajustements propres à l'écriture arabe (police, graisse, chiffres).
+ */
+
+[dir="rtl"] {
+  --font: 'Readex Pro', 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --display: 'Readex Pro', 'Bricolage Grotesque', system-ui, sans-serif;
+}
+/* Readex Pro est un peu plus léger visuellement à poids égal : on compense sur le texte courant. */
+[dir="rtl"] body { font-weight: 450; }
+[dir="rtl"] .btn, [dir="rtl"] .chip, [dir="rtl"] .badge, [dir="rtl"] .tile-value, [dir="rtl"] h1, [dir="rtl"] h2, [dir="rtl"] h3 { font-weight: 600; }
+/* Les montants (DA, pourcentages, dates) restent en chiffres occidentaux, lus normalement en contexte arabe d'Algérie. */
+[dir="rtl"] .num, [dir="rtl"] .price, [dir="rtl"] .tile-value, [dir="rtl"] .ch-tick, [dir="rtl"] .ch-end { direction: ltr; unicode-bidi: isolate; }
+
+/* Icônes directionnelles (flèches, chevrons, itinéraire…) : retournées en miroir, voir i18n.js. */
+[dir="rtl"] .ico-dir { transform: scaleX(-1); }
+
+/* --------------------------------------------------------------------- base.css */
+[dir="rtl"] .input-icon > .ico { left: auto; right: 14px; }
+[dir="rtl"] .input-icon > .input { padding-left: 14px; padding-right: 42px; }
+[dir="rtl"] .select { background-position: left 13px center; padding-right: 14px; padding-left: 38px; }
+[dir="rtl"] .switch input:checked + i::after { transform: translateX(-18px); }
+[dir="rtl"] .pv .pv-tag { left: auto; right: 8px; }
+[dir="rtl"] .pv::before { inset: -30% auto auto -30%; }
+[dir="rtl"] #toasts { direction: rtl; }
+[dir="rtl"] .modal-foot { justify-content: flex-start; }
+[dir="rtl"] .back .ico { transform: scaleX(-1); }
+
+/* ----------------------------------------------------------------------- carte */
+[dir="rtl"] .leaflet-control-attribution { border-radius: 0 6px 0 0; }
+/* Les contrôles Leaflet (zoom…) restent posés par la bibliothèque elle-même (position fixe en px) : on les ramène au coin gauche, symétrique de l'original. */
+[dir="rtl"] .leaflet-right { left: 10px; right: auto; }
+[dir="rtl"] .leaflet-right .leaflet-control { margin-left: 10px; margin-right: 0; }
+[dir="rtl"] .map-legend, [dir="rtl"] .mv-map .map-legend { left: auto; right: 10px; }
+@media (min-width: 900px) { [dir="rtl"] .map-legend { right: 16px; left: auto; } }
+
+/* ------------------------------------------------------------------- landing.css */
+[dir="rtl"] .pill span { order: 1; }
+[dir="rtl"] .hero h1 em::after { left: auto; right: 0; }
+[dir="rtl"] .c-avail { left: auto; right: -2%; }
+[dir="rtl"] .c-order { right: auto; left: -2%; }
+[dir="rtl"] .c-chart { right: auto; left: 4%; }
+[dir="rtl"] .art-search .ico { order: -1; }
+[dir="rtl"] .nav-burger { transform: scaleX(-1); }
+[dir="rtl"] .mini-near { right: auto; left: 12px; }
+[dir="rtl"] .opp-rank { order: 0; }
+[dir="rtl"] .lang-switch { direction: ltr; }
+
+/* -------------------------------------------------------------------- explorer.css */
+[dir="rtl"] .loc-chip .ico { order: 1; }
+[dir="rtl"] .mv-list, [dir="rtl"] .pager { direction: rtl; }
+[dir="rtl"] .scard-actions .btn-soft { margin-left: 0; margin-right: auto; }
+[dir="rtl"] .av-actions .btn-ghost { margin-left: 0; margin-right: auto; }
+[dir="rtl"] .p-gallery { direction: ltr; } /* les vignettes gardent un ordre de lecture gauche→droite, plus naturel pour une galerie photo */
+[dir="rtl"] .p-gallery > * { direction: rtl; }
+[dir="rtl"] body.facets-open .facets { direction: rtl; }
+[dir="rtl"] .store-brands .chips, [dir="rtl"] .scard-brands { direction: rtl; }
+
+/* ---------------------------------------------------------------------- espace.css */
+/* Menu mobile en tiroir : glisse depuis la droite plutôt que la gauche. Seulement sous le seuil
+   où .side est encore un tiroir (espace.css le change en colonne fixe à 1000px et plus). */
+@media (max-width: 999.98px) {
+  [dir="rtl"] .side { right: 0; left: auto; transform: translateX(102%); }
+  body.side-open[dir="rtl"] .side { transform: none; }
+}
+@media (min-width: 1000px) {
+  [dir="rtl"] .app { grid-template-columns: minmax(0, 1fr) 264px; }
+  [dir="rtl"] .side { order: 2; }
+}
+[dir="rtl"] .side-nav em, [dir="rtl"] .mtab em { margin-left: 0; margin-right: auto; }
+[dir="rtl"] .mtab em { left: auto; right: 54%; }
+[dir="rtl"] .tile.is-hot, [dir="rtl"] .scard.is-on, [dir="rtl"] .stock-rows li.is-changed { box-shadow: inset -3px 0 0 #fab219; }
+[dir="rtl"] .stock-rows li.is-changed { box-shadow: none; border-inline-end: 3px solid #fab219; }
+[dir="rtl"] .orow-end, [dir="rtl"] .prow-meta { direction: rtl; }
+[dir="rtl"] .pager, [dir="rtl"] .tbl-wrap { direction: rtl; }
+[dir="rtl"] .savebar { direction: rtl; }
+[dir="rtl"] .photo .badge { left: auto; right: 5px; }
+[dir="rtl"] .photo-btn { right: auto; left: 5px; }
+[dir="rtl"] .photo-btn.is-first { left: auto; right: 5px; }
+[dir="rtl"] .steps li, [dir="rtl"] .ohist li { direction: rtl; }
+[dir="rtl"] .steps li::before, [dir="rtl"] .ohist li::before { left: auto; right: 14px; }
+[dir="rtl"] .avail .av-map, [dir="rtl"] .zone-grid .zone-map { direction: ltr; } /* carte : la géographie ne se reflète pas */
+[dir="rtl"] .onboard-steps i { direction: ltr; }
+
+/* RTL : table des analyses, textes de cellule à droite, nombres isolés en LTR (déjà posé ci-dessus). */
+[dir="rtl"] .tbl th, [dir="rtl"] .tbl td { text-align: right; }
+[dir="rtl"] .tbl .r { text-align: left; }
+
+/*
+ * Contenu saisi par les entreprises et les clients (souvent en français : caractéristiques,
+ * adresses, notes, références) : laissé à l'algorithme bidirectionnel standard plutôt que
+ * réordonné par le sens de la page, pour éviter qu'un chiffre suivi d'une unité (« 28 h »,
+ * « 100 % coton ») ne s'affiche dans le mauvais ordre au milieu d'une page en arabe.
+ */
+[dir="rtl"] .specs dd, [dir="rtl"] .specs dt, [dir="rtl"] .onote, [dir="rtl"] .scard-addr,
+[dir="rtl"] .facts li span, [dir="rtl"] .stock-name span, [dir="rtl"] .av-opts,
+[dir="rtl"] .pcard h3, [dir="rtl"] .p-info h1, [dir="rtl"] .brand-hero h1, [dir="rtl"] .p-about,
+[dir="rtl"] .brand-about, [dir="rtl"] .card-sub, [dir="rtl"] .prow small, [dir="rtl"] .lines li span,
+[dir="rtl"] .tbl td b, [dir="rtl"] .tbl td small {
+  unicode-bidi: plaintext;
+}
