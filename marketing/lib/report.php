@@ -638,11 +638,13 @@ function mk_insights(array $r, array $cur, array $prv): array
 
     // Funnels : étape où l'on perd le plus
     foreach ($r['funnels'] as $f) {
-        if ($f['worst'] === null || $f['worst'] < 1) continue;
-        $a = $f['stages'][$f['worst'] - 1];
-        $s = $f['stages'][$f['worst']];
-        if ($a['value'] <= 0) continue;
-        $add($s['drop'] >= 0.8 ? 'warning' : 'info', "Funnel « {$f['name']} » : la plus forte perte est entre « {$a['name']} » et « {$s['name']} » (" . mk_pct($s['drop']) . ' d\'abandon, ' . mk_num($s['lost']) . ' prospects perdus).', 'funnels');
+        $s = $f['worst'] !== null ? $f['stages'][$f['worst']] : null;
+        if ($s && $s['parents_value'] && $s['drop'] > 0) {
+            $add($s['drop'] >= 0.8 ? 'warning' : 'info', "Funnel « {$f['name']} » : la plus forte perte est entre « {$s['from_name']} » et « {$s['name']} » (" . mk_pct($s['drop']) . ' d\'abandon, ' . mk_num($s['lost']) . ' prospects perdus).', 'funnels');
+        }
+        if (!empty($f['branched']) && $f['best_path'] !== null && ($bp = $f['paths'][$f['best_path']]) && $bp['start'] > 0) {
+            $add('good', "Funnel « {$f['name']} » : le circuit qui convertit le mieux est « " . implode(' → ', $bp['names']) . ' » (' . mk_pct($bp['conv'], 1) . ').', 'funnels');
+        }
     }
 
     // Website : tendance et pages
@@ -823,7 +825,7 @@ function mk_report_email(array $r, string $link = ''): array
     $funnelHtml = '';
     foreach ($r['funnels'] as $f) {
         $rows = [];
-        foreach ($f['stages'] as $s) $rows[] = [$s['name'] . ($s['channels'] ? ' — ' . implode(', ', array_map(fn ($c) => mk_label('sources', $c), $s['channels'])) : ''), mk_num($s['value']), mk_pct($s['conv_prev']), mk_pct($s['drop']), $s['target'] ? mk_pct($s['target_pct']) . ' de ' . mk_num($s['target']) : '—'];
+        foreach ($f['stages'] as $s) $rows[] = [($s['from_name'] !== '' ? $s['from_name'] . ' → ' : '') . $s['name'] . ($s['branch'] !== '' ? ' (' . $s['branch'] . ')' : '') . ($s['channels'] ? ' — ' . implode(', ', array_map(fn ($c) => mk_label('sources', $c), $s['channels'])) : ''), mk_num($s['value']), mk_pct($s['conv_prev']), mk_pct($s['drop']), $s['target'] ? mk_pct($s['target_pct']) . ' de ' . mk_num($s['target']) : '—'];
         $funnelHtml .= '<p style="font-weight:bold;margin:12px 0 4px;font-size:14px">' . mk_h($f['name']) . ($f['overall'] !== null ? ' — conversion globale ' . mk_h(mk_pct($f['overall'], 1)) : '') . '</p>'
             . $table(['Étape', 'Prospects', 'Conversion', 'Abandon', 'Objectif'], $rows, [1, 2, 3]);
     }
