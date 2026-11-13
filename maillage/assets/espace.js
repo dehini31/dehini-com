@@ -207,7 +207,7 @@
   const ACT_ICONS = { order: 'shopping-bag', status: 'refresh-cw', stock: 'boxes', store: 'store', product: 'package', brand: 'tag', partner: 'handshake' };
   E.activityList = (list) => (list.length ? html`<ul class="feed">${list.map((a) => html`<li><span class="feed-ic">${icon(ACT_ICONS[a.kind] || 'circle')}</span><span class="grow">${a.detail}${a.own ? '' : html`<small class="muted"> · ${a.company}</small>`}</span><small class="dim nowrap">${fmt.ago(a.created)}</small></li>`)}</ul>` : html`<p class="muted">${ML.t("L'activité de votre réseau apparaîtra ici.")}</p>`);
 
-  const radarBanner = (n) => (n ? html`<a class="radar-banner" href="#/radar">${icon('target')}<span><b>${fmt.plural(n, 'commande à proximité', 'commandes à proximité')}</b><small>${ML.t('Des clients près de vos points de vente attendent : le premier point de vente qui prend la commande la traite.')}</small></span>${icon('chevron-right', 'ico-sm')}</a>` : '');
+  const radarBanner = (orders, searches) => (orders || searches ? html`<a class="radar-banner" href="#/radar">${icon('target')}<span><b>${[orders ? fmt.plural(orders, 'commande à proximité', 'commandes à proximité') : '', searches ? fmt.plural(searches, 'recherche de client', 'recherches de clients') : ''].filter(Boolean).join(' · ')}</b><small>${orders ? ML.t('Des clients près de vos points de vente attendent : le premier point de vente qui prend la commande la traite.') : ML.t('Des clients cherchent un produit : répondez si vous l\'avez.')}</small></span>${icon('chevron-right', 'ico-sm')}</a>` : '');
 
   /** Vue d'ensemble d'un compte limité à un point de vente. */
   async function storeHome() {
@@ -215,17 +215,17 @@
     const d = await api('overview');
     const t = d.tiles;
     E.todo(t.to_process);
-    E.radarBadge(t.radar);
+    E.radarBadge(t.radar + (t.research || 0));
     const s = d.store || {};
     const tile = (label, value, sub, href, extra) => html`<a class="tile ${extra || ''}" href="${href}"><span class="tile-label">${label}</span><b class="tile-value">${value}</b>${sub ? html`<span class="tile-sub">${sub}</span>` : ''}</a>`;
     view().innerHTML = html`
       ${E.head(s.name || ML.t('Mon point de vente'), ML.joinList([ML.communeLabel(s.commune, s.commune_ar), ML.storeZone(s)]),
         html`<a class="btn btn-line" href="#/disponibilite">${icon('boxes')}${ML.t('Mettre à jour le stock')}</a><a class="btn btn-primary" href="#/commandes">${icon('receipt-text')}${ML.t('Commandes')}${t.to_process ? ' · ' + t.to_process : ''}</a>`)}
       ${s.status === 'unlocated' ? html`<a class="notice" href="#/points-de-vente">${icon('map-pin')}<span><b>${ML.t('Placez votre point de vente sur la carte.')}</b> ${ML.t('Il apparaîtra sur la carte publique, avec vos horaires et votre téléphone.')}</span></a>` : ''}
-      ${radarBanner(t.radar)}
+      ${radarBanner(t.radar, t.research || 0)}
       <div class="tiles is-6">
         ${tile(ML.t('Commandes à traiter'), fmt.num(t.to_process), t.in_progress ? fmt.plural(t.in_progress, 'en cours', 'en cours') : ML.t('Rien en attente'), '#/commandes', t.to_process ? 'is-hot' : '')}
-        ${tile(ML.t('Radar'), fmt.num(t.radar), ML.t('Commandes à proximité'), '#/radar', t.radar ? 'is-hot' : '')}
+        ${tile(ML.t('Radar'), fmt.num(t.radar + (t.research || 0)), t.research ? fmt.plural(t.research, 'recherche de client', 'recherches de clients') : ML.t('Commandes à proximité'), '#/radar', t.radar || t.research ? 'is-hot' : '')}
         ${tile(ML.t('Commandes · 30 jours'), fmt.num(t.orders30), fmt.compact(t.revenue30) + ' ' + ML.boot.config.currency, '#/commandes?s=all')}
         ${tile(ML.t('Références en stock'), fmt.num(t.instock) + ' / ' + fmt.num(t.refs), t.low_stock ? fmt.plural(t.low_stock, 'référence', 'références') + ' ' + ML.t('à réapprovisionner') : ML.t('Stock à jour'), '#/disponibilite')}
       </div>
@@ -247,7 +247,7 @@
     const d = await api('overview');
     const t = d.tiles;
     E.todo(t.to_process);
-    E.radarBadge(t.radar);
+    E.radarBadge(t.radar + (t.research || 0));
     const brand = isBrand();
     const pos = E.me.company.kind === 'pos';
     const steps = brand
@@ -268,7 +268,7 @@
           </div>
           <ol class="onboard-steps">${steps.map(([k, title, sub, href], i) => html`<li class="${d.steps[k] ? 'is-done' : ''} ${next && next[0] === k ? 'is-next' : ''}"><a href="${href}"><i>${d.steps[k] ? icon('check', 'ico-sm') : i + 1}</i><span><b>${title}</b><small>${sub}</small></span>${icon('chevron-right', 'ico-sm')}</a></li>`)}</ol>
         </section>` : ''}
-      ${radarBanner(t.radar)}
+      ${radarBanner(t.radar, t.research || 0)}
       <div class="tiles is-6">
         ${tile(ML.t('Commandes à traiter'), fmt.num(t.to_process), t.in_progress ? fmt.plural(t.in_progress, 'en cours', 'en cours') : ML.t('Rien en attente'), '#/commandes', t.to_process ? 'is-hot' : '')}
         <a class="tile" href="#/analyses"><span class="tile-label">${ML.t('Commandes · 30 jours')}</span><b class="tile-value">${fmt.num(t.orders30)}</b><span class="tile-sub">${ML.charts.spark(d.trend.orders, ML.charts.C.orders)}<span class="sr">${ML.t('Évolution sur 14 jours')}</span></span></a>
@@ -449,14 +449,15 @@
 
   /* ================================================================ RADAR */
   const RANKS = () => ({ 1: ML.t('Votre commune'), 2: ML.t('Votre wilaya'), 3: ML.t('Plus loin') });
-  const placeOf = (o) => ML.joinList([ML.communeLabel(o.commune, o.commune_ar), o.wilaya && ML.zones[o.wilaya] ? ML.zoneName(ML.zones[o.wilaya]) : o.zone]);
+  const placeOf = (o) => ML.placeLabel(o);
   const itemOf = (i) => html`<b>${i.qty > 1 ? i.qty + ' × ' : ''}${i.name}</b><small class="muted">${[i.size, i.color].filter(Boolean).join(' · ')}${i.brand ? ' · ' + i.brand : ''}</small>`;
 
   E.views.radar = async () => {
     E.loading();
     const load = async () => {
       const d = await api('radar');
-      E.radarBadge(d.nearby.length);
+      const searches = d.research || [];
+      E.radarBadge(d.nearby.length + searches.filter((x) => !x.replied).length);
       const step = d.step_min;
       const company = !isStore();
       const levels = html`
@@ -497,6 +498,22 @@
           <span class="orow-end">${state}<small class="dim">${fmt.ago(o.created)}</small></span>
         </button></li>`;
       };
+      const wanted = (r) => html`
+        <li class="rcard rs ${r.replied ? 'is-replied' : ''} ${r.stores.length ? 'rank-' + r.rank : ''}">
+          <div class="rcard-top">
+            ${r.image ? html`<button class="rs-img" type="button" data-act="rs-zoom" data-src="${ML.media(r.image, 1200)}" aria-label="${ML.t('Agrandir la photo')}"><img src="${ML.media(r.image, 480)}" alt="" loading="lazy"></button>` : ML.visual({ name: r.name, category: r.category }, { cls: 'pv-row' })}
+            <span class="grow rcard-item"><b>${r.name}</b><small class="muted">${[r.brand, ML.cats[r.category]].filter(Boolean).join(' · ')}</small>${r.details ? html`<small class="rs-details">${r.details}</small>` : ''}</span>
+          </div>
+          <div class="rcard-meta">
+            ${r.stores.length ? html`<span class="badge ${r.rank === 1 ? 'badge-good' : r.rank === 2 ? 'badge-info' : ''}">${icon('map-pin')}${RANKS()[r.rank]}</span>` : html`<span class="badge badge-line">${icon('tag')}${ML.t('Votre rayon')}</span>`}
+            <span class="rcard-place">${icon('map-pin', 'ico-sm')}${placeOf(r)}</span>
+            <small class="dim">${r.ref} · ${fmt.ago(r.created)}${r.replies ? ' · ' + fmt.plural(r.replies, 'réponse', 'réponses') : ''}</small>
+          </div>
+          ${r.replied ? html`
+            <p class="rs-replied">${icon('circle-check', 'ico-sm')}<span>${ML.t('Réponse envoyée')} · ${r.contact ? html`<b>${r.contact.name}</b> <a class="link" href="tel:${r.contact.phone}">${r.contact.phone}</a>` : ML.t('le client vous contactera')}</span></p>
+            <div class="rcard-act"><button class="btn btn-ghost btn-sm" type="button" data-act="rs-dismiss" data-id="${r.id}">${ML.t('Retirer ma réponse')}</button><button class="btn btn-line btn-sm" type="button" data-act="rs-reply" data-id="${r.id}">${ML.t('Modifier ma réponse')}</button></div>`
+            : html`<div class="rcard-act"><button class="btn btn-ghost" type="button" data-act="rs-dismiss" data-id="${r.id}">${ML.t('Je ne l\'ai pas')}</button><button class="btn btn-primary" type="button" data-act="rs-reply" data-id="${r.id}">${icon('check')}${ML.t('J\'ai ce produit')}</button></div>`}
+        </li>`;
       const waiting = d.received.filter((o) => o.waiting);
       view().innerHTML = html`
         ${E.head(ML.t('Radar'), ML.t('Les commandes passées sans choisir de point de vente (fiche produit, page de vente) sont proposées aux points de vente qui ont l\'article, du plus proche du client au plus loin. Le premier qui la prend la traite.'))}
@@ -505,12 +522,75 @@
           <div class="card-head"><div><h2 class="card-title">${ML.t('À proximité')}</h2><p class="card-sub">${company ? ML.t("Commandes que vos points de vente peuvent prendre (l'article est en stock).") : ML.t("Commandes que votre point de vente peut prendre (l'article est en stock).")}</p></div><button class="btn btn-ghost btn-sm" type="button" data-act="radar-refresh">${icon('refresh-cw', 'ico-sm')}${ML.t('Actualiser')}</button></div>
           ${d.nearby.length ? html`<ul class="rlist">${d.nearby.map(card)}</ul>` : html`<div class="empty">${icon('target')}<h3>${ML.t('Aucune commande à proximité pour le moment')}</h3><p>${ML.t("Gardez votre stock à jour : dès qu'un client proche commande un article que vous avez, la commande apparaît ici (et par email).")}</p><a class="btn btn-line btn-sm" href="#/disponibilite">${ML.t('Mettre à jour le stock')}</a></div>`}
         </section>
+        <section class="card card-pad" data-research>
+          <div class="card-head"><div><h2 class="card-title">${ML.t('Recherches actives des clients')}</h2><p class="card-sub">${ML.t("Des clients n'ont pas trouvé un produit et le cherchent dans le réseau, photo à l'appui. Si vous l'avez, répondez : ils voient votre réponse tout de suite.")}</p></div></div>
+          ${searches.length ? html`<ul class="rlist">${searches.map(wanted)}</ul>` : html`<p class="muted">${ML.t('Aucune recherche de client pour le moment.')}</p>`}
+        </section>
         ${company && (d.received.length || isBrand()) ? html`<section class="card card-pad">
           <div class="card-head"><div><h2 class="card-title">${ML.t('Commandes reçues par vos pages')}</h2><p class="card-sub">${waiting.length ? fmt.plural(waiting.length, 'commande', 'commandes') + ' ' + ML.t('encore sur le radar') + ' · ' : ''}${ML.t('Fiches produit et pages de vente de vos produits.')}</p></div><a class="link" href="#/catalogue">${ML.t('Pages de vente')}</a></div>
           ${d.received.length ? html`<ul class="olist olist-radar">${d.received.map(recv)}</ul>` : html`<p class="muted">${ML.t('Partagez la page de vente de vos produits (Catalogue → un produit → Page de vente) : les commandes reçues apparaissent ici.')}</p>`}
         </section>` : ''}`;
+      E.radarSearches = searches;
     };
     ML.actions['radar-refresh'] = () => load().catch(() => {});
+    ML.actions['rs-zoom'] = (el) => ML.modal({ title: ML.t('Photo du client'), wide: true, body: html`<img class="rs-zoom" src="${el.dataset.src}" alt="">` });
+    ML.actions['rs-dismiss'] = async (el) => {
+      ML.busy(el, true);
+      if (await E.send('research_dismiss', { id: +el.dataset.id })) { ML.toast(ML.t('Recherche écartée.'), 'good'); load().catch(() => {}); } else ML.busy(el, false);
+    };
+    ML.actions['rs-reply'] = async (el) => {
+      const r = (E.radarSearches || []).find((x) => x.id === +el.dataset.id);
+      if (!r) return;
+      ML.busy(el, true);
+      let stores = [];
+      try { stores = (await api('dash_stores')).stores; } catch (e) { ML.busy(el, false); if (!(e instanceof Stale)) ML.fail(e); return; }
+      ML.busy(el, false);
+      const own = isStore();
+      const pre = (r.replied && r.replied.store_id) || (r.stores[0] && r.stores[0].id) || (stores[0] && stores[0].id) || 0;
+      const m = ML.modal({
+        title: ML.t('J\'ai ce produit'),
+        body: html`
+          <form class="stack" data-form="rs-reply" novalidate>
+            <div class="order-sum">${r.image ? html`<img class="rs-thumb" src="${ML.media(r.image, 480)}" alt="">` : ML.visual({ name: r.name, category: r.category }, { cls: 'pv-xs' })}<div class="grow"><b>${r.name}</b><br><span class="muted">${placeOf(r)}</span></div></div>
+            ${own || !stores.length ? '' : html`<div class="field"><label for="rr-store">${ML.t('Point de vente qui a le produit')}</label><select class="select" id="rr-store" name="store_id">${stores.map((st) => html`<option value="${st.id}" ${st.id === pre ? ML.raw('selected') : ''}>${st.name}</option>`)}${isBrand() ? html`<option value="0">${ML.t('Aucun en particulier (réponse de la marque)')}</option>` : ''}</select></div>`}
+            <div class="field"><label for="rr-product">${ML.t('Fiche du catalogue')} <span class="dim">(${ML.t('facultatif')})</span></label><select class="select" id="rr-product" name="product_id"><option value="0">${ML.t('Chargement…')}</option></select><span class="hint muted">${ML.t('Le client pourra ouvrir la fiche et commander.')}</span></div>
+            <div class="form-grid cols-2">
+              <div class="field"><label for="rr-price">${ML.t('Prix (')}${ML.boot.config.currency}) <span class="dim">(${ML.t('facultatif')})</span></label><input class="input" id="rr-price" name="price" type="number" min="0" step="any" inputmode="decimal" value="${r.replied && r.replied.price != null ? r.replied.price : ''}"></div>
+            </div>
+            <div class="field"><label for="rr-msg">${ML.t('Message au client')} <span class="dim">(${ML.t('facultatif')})</span></label><textarea class="textarea" id="rr-msg" name="message" rows="2" maxlength="300" placeholder="${ML.t('Ex. disponible en magasin, taille 42')}">${r.replied ? r.replied.message : ''}</textarea></div>
+            <p class="form-error" data-error hidden></p>
+          </form>`,
+        foot: html`<button class="btn btn-line" type="button" data-close>${ML.t('Annuler')}</button><button class="btn btn-primary" type="button" data-send>${icon('check')}${ML.t('Envoyer ma réponse')}</button>`,
+      });
+      const form = $('form', m.el);
+      // Fiches proposées : celles que le point de vente choisi peut référencer (ou le catalogue de la marque).
+      const fill = async () => {
+        const sel = $('#rr-product', form);
+        const sid = own ? 0 : +((form.store_id || {}).value || 0);
+        let list = [];
+        try {
+          if (own || sid) list = (await ML.api('stock', { params: { store: sid } })).products.map((p) => ({ id: p.id, name: p.name, brand: p.brand }));
+          else list = (await ML.api('dash_products')).products.map((p) => ({ id: p.id, name: p.name, brand: p.brand.name }));
+        } catch (e) { list = []; }
+        const cur = r.replied ? r.replied.product_id : 0;
+        sel.innerHTML = html`<option value="0">${ML.t('Aucune fiche (produit hors catalogue)')}</option>${list.map((p) => html`<option value="${p.id}" ${p.id === cur ? ML.raw('selected') : ''}>${p.name} — ${p.brand}</option>`)}`;
+      };
+      if (form.store_id) form.store_id.addEventListener('change', fill);
+      fill();
+      const send = async () => {
+        const d = ML.formData(form);
+        const btn = $('[data-send]', m.el);
+        ML.busy(btn, true);
+        const res = await E.send('research_reply', { id: r.id, store_id: +(d.store_id || 0), product_id: +(d.product_id || 0), price: d.price, message: d.message }, form);
+        ML.busy(btn, false);
+        if (!res) return;
+        m.close();
+        ML.toast(ML.t('Réponse envoyée : le client la voit dans son suivi.'), 'good');
+        load().catch(() => {});
+      };
+      $('[data-send]', m.el).addEventListener('click', send);
+      ML.forms['rs-reply'] = send;
+    };
     ML.actions.claim = async (el) => {
       const sel = $(`[data-claim-store="${el.dataset.id}"]`);
       const storeId = sel ? +sel.value : +el.dataset.store;

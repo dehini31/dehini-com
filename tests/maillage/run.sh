@@ -8,6 +8,8 @@ DIR=${1:-$(mktemp -d)}
 PORT=${2:-8096}
 "$HERE/setup.sh" "$DIR" >/dev/null
 php -r '$i = imagecreatetruecolor(600, 600); imagefill($i, 0, 0, imagecolorallocate($i, 230, 120, 80)); imagepng($i, $argv[1]);' "$DIR/photo.png"
+php -r '$i = imagecreatetruecolor(640, 480); imagefill($i, 0, 0, imagecolorallocate($i, 235, 235, 230)); imagefilledellipse($i, 300, 260, 380, 150, imagecolorallocate($i, 37, 99, 235)); imagejpeg($i, $argv[1], 90);' "$DIR/photo2.jpg"
+echo "pas une image" > "$DIR/faux.jpg"
 if curl -s -o /dev/null "http://127.0.0.1:$PORT/"; then echo "Le port $PORT est déjà utilisé : choisir un autre port (2e argument)."; exit 1; fi
 # Le serveur et ses processus de travail sont arrêtés ensemble, et on attend leur fin (port libéré).
 cleanup() { pkill -P "${P1:-0}" 2>/dev/null || true; kill "${P1:-0}" 2>/dev/null || true; wait "${P1:-0}" 2>/dev/null || true; }

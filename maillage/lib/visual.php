@@ -301,12 +301,14 @@ function visual_identify($im, string $lang): array
 
 /* ------------------------------------------------------------------ recherche */
 
-/** Mots utiles d'un texte (sans accents, sans mots vides, 2 caractères au moins). */
+/** Mots utiles d'un texte (sans accents, sans mots vides, 2 caractères au moins ; pluriels en -s / -x ramenés au singulier). */
 function vis_tokens(string $s): array
 {
     $out = [];
     foreach (preg_split('/[^\p{L}\p{N}]+/u', norm($s)) ?: [] as $t) {
-        if (mb_strlen($t) >= 2 && !in_array($t, VIS_STOPWORDS, true)) $out[$t] = true;
+        if (mb_strlen($t) < 2 || in_array($t, VIS_STOPWORDS, true)) continue;
+        if (mb_strlen($t) > 3 && preg_match('/^[a-z]+[sx]$/', $t)) $t = substr($t, 0, -1);
+        $out[$t] = true;
     }
     return array_keys($out);
 }
@@ -367,19 +369,21 @@ function visual_search($im, array $q, ?float $lat, ?float $lng): array
             foreach ($toks as $t) { if (strpos($hay, $t) !== false) $n++; }
             return $n;
         };
-        $nameCov = $nameTok ? $hit($nameTok) / count($nameTok) : 0.0;
+        // Le nom du produit pèse plus que le reste de sa fiche : un mot du rayon ne fait pas un « nom proche ».
+        $nameCov = $nameTok ? count(array_intersect($nameTok, $pname)) / count($nameTok) : 0.0;
+        $textCov = $nameTok ? $hit($nameTok) / count($nameTok) : 0.0;
         $backCov = $pname && $all ? count(array_intersect($pname, $all)) / count($pname) : 0.0;
         $otherCov = $otherTok ? $hit($otherTok) / count($otherTok) : 0.0;
         $brandHit = $brandTok && count(array_intersect($brandTok, vis_tokens((string) $p['b_name']))) === count($brandTok);
         $sameCat = $q['category'] !== '' && $p['category'] === $q['category'];
-        $text = 0.5 * $nameCov + 0.3 * $backCov + 0.2 * $otherCov;
-        if ($text > 0) $text = min(1.0, $text + ($brandHit ? 0.15 : 0) + ($sameCat ? 0.08 : 0));
+        $text = 0.45 * $nameCov + 0.15 * $textCov + 0.25 * $backCov + 0.15 * $otherCov;
+        if ($nameCov > 0 || $backCov > 0 || $otherCov >= 0.5) $text = min(1.0, $text + ($brandHit ? 0.15 : 0) + ($sameCat ? 0.08 : 0));
         $vis = $visual[$pid] ?? null;
         $vscore = $vis ? $vis['score'] : 0.0;
         $score = $vis ? max(0.65 * $text + 0.35 * $vscore, $vscore >= 0.75 ? $vscore : 0) : 0.85 * $text;
         $why = [];
         if ($vis && $vscore >= 0.6) $why[] = 'photo';
-        if ($nameCov >= 0.5 || $backCov >= 0.5) $why[] = 'name';
+        if ($nameCov >= 0.5 || ($backCov >= 0.5 && $nameCov > 0)) $why[] = 'name';
         if ($brandHit) $why[] = 'brand';
         if ($sameCat) $why[] = 'category';
         // Même produit sans ambiguïté : photo identique à celle du catalogue, ou nom (et marque) identiques.
@@ -417,10 +421,11 @@ function visual_search($im, array $q, ?float $lat, ?float $lng): array
             // L'IA écarte les candidats sans rapport et ordonne les autres.
             $order = array_values(array_filter(array_map('intval', (array) ($verdict['similar_ids'] ?? [])), function ($id) use ($ids) { return in_array($id, $ids, true); }));
             if ($possible && !in_array($possible, $order, true)) array_unshift($order, $possible);
+            // Restent : ce que l'IA a retenu parmi ceux qu'elle a vus, et les candidats solides qu'elle n'a pas vus.
             $top = array_map(function ($c) { return (int) $c['p']['id']; }, array_slice($cands, 0, 5));
             $cands = array_values(array_filter($cands, function ($c) use ($order, $top, $exact) {
                 $id = (int) $c['p']['id'];
-                return ($exact && $id === (int) $exact['p']['id']) || in_array($id, $order, true) || !in_array($id, $top, true);
+                return ($exact && $id === (int) $exact['p']['id']) || in_array($id, $order, true) || (!in_array($id, $top, true) && $c['score'] >= 0.45);
             }));
             usort($cands, function ($a, $b) use ($order) {
                 $ia = array_search((int) $a['p']['id'], $order, true);

@@ -1197,6 +1197,30 @@ analyses et les autres magasins lui sont fermés, côté serveur). Un **point de
 `point-de-vente/` : il choisit sa wilaya, sa commune et les marques qu'il veut vendre (chaque marque reçoit une
 demande de partenariat à accepter dans Réseau) ; sa fiche est créée tout de suite, à placer sur la carte.
 
+**Recherche par photo** (`explorer/#/photo`, entrée « Photo » du menu) — le client prend une photo (appareil photo du
+téléphone, webcam sur ordinateur) ou choisit une image :
+
+1. **Identification.** Avec une clé de l'API Claude, l'image est décrite (rayon, nom, marque lisible, détails) ; c'est
+   une **proposition à vérifier**, affichée comme telle, que le client corrige. Sans clé, il décrit lui-même le produit.
+2. **Recherche** avec l'image *et* la description : mots du nom et des détails, et ressemblance de la photo avec
+   celles du catalogue (signature visuelle calculée à l'enregistrement de chaque photo de produit).
+3. **Produit trouvé** seulement avec une preuve, affichée : photo identique à celle du catalogue, nom identique, ou
+   produit reconnu par l'IA en comparant la photo du client à celles des candidats (avec une mise en garde). La fiche
+   montre alors les points de vente qui l'ont en stock (du plus proche au plus loin), la marque, et les boutons
+   fiche produit / points de vente proches / marque / produits similaires.
+4. Sinon, les **produits les plus proches**, clairement présentés comme similaires ; et un message clair s'il n'y a rien.
+5. **Recherche active (Radar)** : le client envoie sa photo et sa description au réseau. La demande apparaît dans le
+   **Radar** des points de vente (commune, puis wilaya, puis tous, même délai que les commandes) et des marques du
+   rayon ; chacun répond « J'ai ce produit » (magasin, fiche du catalogue, prix, message) ou l'écarte. Le client suit
+   sa recherche (`RS-XXXXXX` + téléphone, ou lien, dans « Suivi ») et la clôt quand il a trouvé. Son téléphone n'est
+   montré qu'aux comptes qui ont répondu, s'il l'a accepté. Une recherche se clôt seule après 14 jours.
+
+L'image n'est conservée que si une recherche active est lancée (`media/r/`, supprimée un mois après la clôture).
+**Clé d'IA** : `admin.html` → Réglages → « Recherche par photo » (clé `sk-ant-…`, bouton « Tester la clé », plafond
+d'appels par jour, 500 par défaut), ou `MLG_AI_KEY` dans `maillage/config.php`. Modèle : `MLG_AI_MODEL`
+(`claude-opus-5-5` par défaut). L'appel est un simple HTTPS vers l'API Messages (pas de dépendance à installer),
+avec sortie JSON structurée ; si l'IA échoue, refuse ou dépasse le plafond, la recherche continue sans elle.
+
 **Français / arabe** — toutes les pages (landings, plateforme publique, page de vente, espace, administration) sont
 bilingues : un bouton FR/AR (en haut de chaque page) bascule la langue, mémorisée par appareil (`localStorage`),
 avec mise en page RTL (sens de lecture, icônes directionnelles, carte, tableaux) et police Readex Pro (déjà
@@ -1213,7 +1237,8 @@ en français faute du code de wilaya transmis à ces endroits précis.
 - `maillage/point-de-vente/` + `assets/pos.{css,js}` — la landing des points de vente.
 - `maillage/offre/` + `assets/offre.{css,js}` — la page de vente d'un produit ; `assets/cod.js` — le formulaire de
   commande livrée (radar), partagé avec la fiche produit.
-- `maillage/explorer/` + `assets/explorer.{css,js}` — la plateforme publique.
+- `maillage/explorer/` + `assets/explorer.{css,js}` — la plateforme publique ; `assets/visual.{css,js}` — la
+  recherche par photo et le suivi d'une recherche active.
 - `maillage/espace/` + `assets/espace*.{css,js}`, `assets/charts.js` — l'espace entreprise et ses graphiques.
 - `maillage/admin.html` + `assets/admin.js` — l'administration.
 - `maillage/assets/core.js`, `base.css`, `icons.js` — socle commun (appels à l'API, gabarits HTML échappés,
@@ -1221,6 +1246,7 @@ en français faute du code de wilaya transmis à ces endroits précis.
 - `maillage/api.php` — l'API (la liste des actions est en tête du fichier).
 - `maillage/lib/` — `core.php` (configuration, base, emails), `auth.php` (comptes, sessions), `catalog.php`
   (côté public, recherche, suivi des recherches), `orders.php`, `radar.php` (commandes sans point de vente choisi),
+  `visual.php` (recherche par photo : signatures, appel à l'IA), `research.php` (recherches actives),
   `dash.php` (espace entreprise et point de vente), `analytics.php`, `media.php` (photos), `seed.php`
   (démonstration), `data/zones.json` (wilayas et coordonnées de leur chef-lieu), `data/communes.json` (communes).
 - La base se met à jour toute seule (version 2 : commune, radar, accès des points de vente, pages de vente) au
@@ -1289,7 +1315,8 @@ Faux hébergement neuf, puis parcours complet dans Chromium (Playwright) : inscr
 landing, produit avec photo, point de vente placé sur la carte, stock, validation par le propriétaire, recherche et
 réservation côté client sur mobile, traitement de la commande, annulation par le client, distributeur et
 partenariat, analyses, radar (page de vente, commune obligatoire, niveaux commune → wilaya → partout, prise,
-remise, livraison), accès privé d'un point de vente, inscription depuis la landing des points de vente, mot de passe
+remise, livraison), recherche par photo (IA remplacée par `tests/maillage/mock-ai.php`, qui refuse une requête mal
+formée) et recherche active, accès privé d'un point de vente, inscription depuis la landing des points de vente, mot de passe
 oublié, démonstration en lecture seule, cloisonnement entre entreprises,
 fichiers internes interdits, politique de sécurité (CSP), absence d'erreur JavaScript et de défilement horizontal.
 Voir `tests/maillage/README.md`.

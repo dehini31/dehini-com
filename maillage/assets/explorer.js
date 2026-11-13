@@ -6,6 +6,7 @@
  *   #/produit/<adresse>     fiche produit et « où le trouver » ; commande ou réservation
  *   #/marques, #/marque/…   pages des marques
  *   #/suivi[/<jeton>]       suivi d'une commande
+ *   #/photo, #/recherche/…  recherche par photo et suivi d'une recherche active (visual.js)
  */
 (function () {
   'use strict';
@@ -44,6 +45,7 @@
         <nav class="topnav" aria-label="Navigation principale">
           <a href="#/carte" data-nav="carte">${ML.t('Carte')}</a>
           <a href="#/produits" data-nav="produits">${ML.t('Produits')}</a>
+          <a href="#/photo" data-nav="photo">${ML.t('Recherche par photo')}</a>
           <a href="#/marques" data-nav="marques">${ML.t('Marques')}</a>
           <a href="#/suivi" data-nav="suivi">${ML.t('Suivi de commande')}</a>
         </nav>
@@ -54,6 +56,7 @@
       <nav class="tabbar" aria-label="Navigation">
         <a href="#/carte" data-nav="carte">${icon('map')}<span>${ML.t('Carte')}</span></a>
         <a href="#/produits" data-nav="produits">${icon('shopping-bag')}<span>${ML.t('Produits')}</span></a>
+        <a href="#/photo" data-nav="photo">${icon('camera')}<span>${ML.t('Photo')}</span></a>
         <a href="#/marques" data-nav="marques">${icon('tag')}<span>${ML.t('Marques')}</span></a>
         <a href="#/suivi" data-nav="suivi">${icon('package-check')}<span>${ML.t('Suivi')}</span></a>
       </nav>`);
@@ -92,6 +95,7 @@
       else if (name === 'marques') { setNav('marques'); await brandsView(); }
       else if (name === 'marque') { setNav('marques'); await brandView(r.parts[1] || ''); }
       else if (name === 'suivi') { setNav('suivi'); await trackView(r.parts[1] || ''); }
+      else if (X.routes[name]) { setNav(X.navOf[name] || name); await X.routes[name](r); }
       else notFound();
     } catch (e) {
       if (my !== S.seq || e instanceof Stale) return;
@@ -100,9 +104,11 @@
     }
   }
   ML.actions.reload = () => route();
+  /** Ce que les pages ajoutées par un autre fichier (visual.js) utilisent : routes, appels, morceaux communs. */
+  const X = ML.X = { routes: {}, navOf: {}, S, Stale, api, view, loading, notFound, setNav };
 
   /* --------------------------------------------------- morceaux communs */
-  const openBadge = (s) => {
+  const openBadge = X.openBadge = (s) => {
     const st = ML.openState(s.hours);
     if (st.open === null) return '';
     return html`<span class="open ${st.open ? 'is-open' : 'is-closed'}"><i></i>${st.label}</span>`;
@@ -113,7 +119,7 @@
     ${s.pickup ? html`<span class="svc">${icon('shopping-bag')}${ML.t('Retrait')}</span>` : ''}
     ${s.reserve ? html`<span class="svc">${icon('bookmark-check')}${ML.t('Réservation')}</span>` : ''}
     ${s.delivery ? html`<span class="svc">${icon('truck')}${ML.t('Livraison')}</span>` : ''}`;
-  const contactButtons = (s, small) => html`
+  const contactButtons = X.contactButtons = (s, small) => html`
     ${s.phone ? html`<a class="btn btn-line ${small ? 'btn-sm' : ''}" href="tel:${s.phone}" data-track="call" data-id="${s.id}">${icon('phone')}${ML.t('Appeler')}</a>` : ''}
     <a class="btn btn-line ${small ? 'btn-sm' : ''}" href="${ML.routeUrl(s)}" target="_blank" rel="noopener" data-track="route" data-id="${s.id}">${icon('navigation')}${ML.t('Itinéraire')}</a>`;
   document.addEventListener('click', (e) => {
@@ -121,7 +127,7 @@
     if (t) api('event', { body: { kind: t.dataset.track, id: +t.dataset.id } }).catch(() => {});
   });
 
-  const productCard = (p) => html`
+  const productCard = X.productCard = (p) => html`
     <a class="pcard" href="#/produit/${p.slug}">
       ${ML.visual(p)}
       <div class="pcard-body">
@@ -351,6 +357,7 @@
             <div class="input-icon grow">${icon('search')}<input class="input" type="search" name="q" placeholder="${ML.t('Chaussure de running, bouilloire, parure de lit…')}" autocomplete="off" data-input="catq" aria-label="${ML.t('Chercher un produit')}"></div>
             <button class="btn btn-primary" type="submit">${ML.t('Chercher')}</button>
           </form>
+          <a class="cat-photo" href="#/photo">${icon('camera')}${ML.t('Chercher avec une photo')}</a>
         </div>
         <div class="cat-body">
           <aside class="facets" data-facets aria-label="${ML.t('Filtres')}"></aside>
@@ -780,7 +787,7 @@
 
   /* ================================================================== SUIVI */
   /** Adresse de livraison : adresse (facultative), commune, wilaya. */
-  const deliveryText = (d) => ML.joinList([d.address, ML.communeLabel(d.commune || d.city, d.commune_ar), d.wilaya && ML.zones[d.wilaya] ? ML.zoneName(ML.zones[d.wilaya]) : d.zone]);
+  const deliveryText = (d) => ML.joinList([d.address, ML.placeLabel(d)]);
 
   function steps(o) {
     const list = o.mode === 'delivery'
@@ -797,9 +804,10 @@
 
   async function trackView(token) {
     const mine = ML.ls.get('orders', []);
+    const searches = ML.ls.get('researches', []);
     const formHtml = html`
       <div class="page track">
-        <div class="page-head"><h1>${ML.t('Suivre une commande')}</h1><p class="muted">${ML.t('Avec le numéro reçu à la validation et le téléphone donné au point de vente.')}</p></div>
+        <div class="page-head"><h1>${ML.t('Suivre une commande')}</h1><p class="muted">${ML.t('Avec le numéro reçu à la validation et le téléphone donné au point de vente.')} ${ML.t('Le numéro d\'une recherche active (RS-…) se suit ici aussi.')}</p></div>
         <div class="track-grid">
           <form class="card card-pad stack" data-form="track">
             <div class="field"><label for="t-ref">${ML.t('Numéro de commande')}</label><input class="input" id="t-ref" name="ref" placeholder="ML-XXXXXX" autocapitalize="characters" autocomplete="off" required></div>
@@ -811,6 +819,7 @@
             <h2 class="card-title">${ML.t('Mes demandes sur cet appareil')}</h2>
             ${mine.length ? html`<ul class="mine">${mine.map((o) => html`<li><a href="#/suivi/${o.token}"><span><b>${o.ref}</b><small class="muted">${o.name}</small></span><span class="dim">${fmt.day(o.at)}</span>${icon('chevron-right', 'ico-sm')}</a></li>`)}</ul>`
               : html`<p class="muted" style="margin-top:8px">${ML.t('Vos commandes et réservations passées depuis cet appareil apparaîtront ici.')}</p>`}
+            ${searches.length ? html`<h2 class="card-title" style="margin-top:18px">${ML.t('Mes recherches actives')}</h2><ul class="mine">${searches.map((o) => html`<li><a href="#/recherche/${o.token}"><span><b>${o.ref}</b><small class="muted">${o.name}</small></span><span class="dim">${fmt.day(o.at)}</span>${icon('chevron-right', 'ico-sm')}</a></li>`)}</ul>` : ''}
           </div>
         </div>
       </div>`;
@@ -858,6 +867,12 @@
     };
     ML.forms.track = async (f) => {
       const btn = $('button[type=submit]', f);
+      // Un numéro RS-… est celui d'une recherche active (recherche par photo).
+      if (/^\s*RS-/i.test(f.ref.value) && X.researchByRef) {
+        ML.busy(btn, true);
+        try { await X.researchByRef(f.ref.value.trim(), f.phone.value.trim()); } catch (e) { ML.fail(e, f); ML.busy(btn, false); }
+        return;
+      }
       ML.busy(btn, true);
       try { detail((await api('track', { params: { ref: f.ref.value.trim(), phone: f.phone.value.trim() } })).order, ''); } catch (e) { ML.fail(e, f); }
       ML.busy(btn, false);
