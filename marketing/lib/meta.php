@@ -46,7 +46,7 @@ const MK_META_SCOPES = [
     'pages_messaging', 'pages_manage_metadata', 'instagram_manage_messages',
 ];
 /** Autorisations de « Se connecter avec Instagram » (lecture seule). */
-const MK_META_IG_SCOPES = ['instagram_business_basic', 'instagram_business_manage_insights', 'instagram_business_manage_comments'];
+const MK_META_IG_SCOPES = ['instagram_business_basic', 'instagram_business_manage_insights', 'instagram_business_manage_comments', 'instagram_business_manage_messages'];
 /** État d'un compte publicitaire Meta (account_status) → libellé. */
 const MK_META_AD_STATUS = [1 => 'Actif', 2 => 'Désactivé', 3 => 'Paiement en attente', 7 => 'En vérification', 8 => 'Règlement en attente', 9 => 'Période de grâce', 100 => 'Fermeture en cours', 101 => 'Fermé', 201 => 'Actif', 202 => 'Fermé'];
 /** Devises sans centimes pour l'API publicitaire (budgets envoyés en unités). */
@@ -109,7 +109,7 @@ function mk_meta_state(bool $reload = false): array
         'ig_via' => '', 'ig_app_id' => '', 'ig_app_secret' => '', 'ig_token' => '', 'ig_token_expires' => 0, 'ig_connected_at' => 0, 'ig_oauth_error' => '',
         'ig_node' => '', 'ig_diag' => '',
         // Temps réel : jeton de vérification des webhooks, état de l'abonnement, dernière vérification rapide.
-        'wh_token' => '', 'webhook' => [], 'last_light' => 0,
+        'wh_token' => '', 'webhook' => [], 'last_light' => 0, 'msg_diag' => [],
     ], is_array($d) ? $d : []);
     return $cache;
 }
@@ -1716,11 +1716,41 @@ function mk_meta_wh_ig_comment(array $v): bool
     return true;
 }
 
-/** Messages Messenger (Page) et Instagram (compte relié à la Page) depuis la Page Facebook. */
+/**
+ * Champs demandés pour la liste des conversations, du plus complet au plus simple : selon le compte
+ * (Messenger, Instagram) Meta en refuse certains ; on passe alors au suivant, et on s'en souvient.
+ */
+const MK_META_CONV_FIELDS = [
+    'id,updated_time,link,participants,message_count,messages.limit(25){id,message,from,created_time,sticker,attachments{mime_type,name}}',
+    'id,updated_time,link,participants,messages.limit(25){id,message,from,created_time}',
+    'id,updated_time,participants,messages.limit(25){id,message,from,created_time}',
+    'id,updated_time,participants,messages{id,message,from,created_time}',
+];
+
+/** Accès possibles aux messages d'une plateforme : [nom, nœud, jeton, base]. */
+function mk_meta_msg_routes(string $platform): array
+{
+    $st = mk_meta_state();
+    $r = [];
+    if ($st['page_id'] !== '' && $st['page_token'] !== '') $r[] = ['Page Facebook', $st['page_id'], mk_unseal($st['page_token']), ''];
+    // Instagram relié par « Se connecter avec Instagram » : ses messages se lisent aussi avec son propre jeton.
+    if ($platform === 'instagram' && $st['ig_via'] === 'instagram' && $st['ig_token'] !== '') $r[] = ['compte Instagram', $st['ig_node'] !== '' ? $st['ig_node'] : 'me', mk_unseal($st['ig_token']), 'ig'];
+    return $r;
+}
+
+/** Ce qu'il faut faire quand Meta refuse de donner les messages. */
+function mk_meta_msg_hint(string $platform, MkMetaError $e): string
+{
+    $c = $e->metaCode();
+    if (in_array($c, [4, 17, 32, 613, 80006], true)) return 'Meta limite les requêtes pour le moment : nouvel essai au prochain passage.';
+    if ($platform === 'instagram') return "Vérifiez : 1) l'autorisation instagram_manage_messages (et pages_manage_metadata) dans la configuration Facebook Login for Business, puis « Reconnecter » ; 2) dans l'application Instagram : Paramètres › Messages et réponses aux stories › Outils connectés › « Autoriser l'accès aux messages ».";
+    return "Vérifiez que pages_messaging et pages_manage_metadata sont dans la configuration Facebook Login for Business, puis cliquez sur « Reconnecter » (Connexions, étape 2).";
+}
+
+/** Messages Messenger (Page) et Instagram (compte relié à la Page, ou relié par « Se connecter avec Instagram »). */
 function mk_meta_sync_messages(string $from, string $to): array
 {
     $st = mk_meta_state();
-    $tok = mk_unseal($st['page_token']);
     $out = [];
     $full = mk_meta_full();
     $since = $full ? 0 : strtotime(mk_add_days($from, -1) . ' 00:00:00');
@@ -1728,49 +1758,97 @@ function mk_meta_sync_messages(string $from, string $to): array
         if ($platform === 'instagram' && $st['ig_id'] === '') continue;
         $c = mk_meta_counter($platform === 'messenger' ? 'conversations Messenger' : 'conversations Instagram');
         $c['messages'] = 0;
+        $c['platform'] = $platform;
         if (mk_meta_more()) { $out[] = $c; continue; } // plus le temps : Instagram au lot suivant
-        $params = ['platform' => $platform, 'fields' => 'id,updated_time,link,participants,message_count,messages.limit(25){id,message,from,created_time}', 'limit' => 25];
-        // « Tout l'historique » sur plusieurs lots : on reprend la liste là où le lot précédent s'est arrêté.
-        $cursor = $full ? (string) (mk_meta_state()['full_cursor'][$platform] ?? '') : '';
-        if ($cursor !== '') $params['after'] = $cursor;
-        try {
-            for ($page = 0; $page < ($full ? 400 : 40); $page++) {
-                $d = mk_graph($st['page_id'] . '/conversations', $params, $tok);
-                $stop = false;
-                foreach (($d['data'] ?? []) as $cv) {
-                    if (strtotime((string) ($cv['updated_time'] ?? 'now')) < $since) { $stop = true; break; }
-                    if (mk_meta_time_left() < 6) { mk_meta_more(true); break 2; }
-                    mk_meta_count($c, mk_meta_store_conversation($cv, $platform, $channel, $tok, $c['messages']));
+        $routes = mk_meta_msg_routes($platform);
+        $lastErr = null;
+        foreach ($routes as [$via, $node, $tok, $base]) {
+            $level = (int) (mk_meta_state()['metrics']['conv_fields_' . $platform . $base] ?? 0);
+            $params = ['platform' => $platform, 'limit' => 25];
+            $cursor = $full ? (string) (mk_meta_state()['full_cursor'][$platform] ?? '') : '';
+            if ($cursor !== '') $params['after'] = $cursor;
+            try {
+                for ($page = 0; $page < ($full ? 400 : 40); $page++) {
+                    // Champs refusés par Meta : on réessaie avec une liste plus simple, et on la garde pour la suite.
+                    for (;;) {
+                        $params['fields'] = MK_META_CONV_FIELDS[min($level, count(MK_META_CONV_FIELDS) - 1)];
+                        try {
+                            $d = mk_graph("$node/conversations", $params, $tok, $base);
+                            break;
+                        } catch (MkMetaError $e) {
+                            if ($level >= count(MK_META_CONV_FIELDS) - 1 || !in_array($e->metaCode(), [1, 2, 12, 100], true)) throw $e;
+                            $level++;
+                            mk_meta_put(['metrics' => array_merge((array) mk_meta_state()['metrics'], ['conv_fields_' . $platform . $base => $level])]);
+                        }
+                    }
+                    $stop = false;
+                    foreach (($d['data'] ?? []) as $cv) {
+                        if (strtotime((string) ($cv['updated_time'] ?? 'now')) < $since) { $stop = true; break; }
+                        if (mk_meta_time_left() < 6) { mk_meta_more(true); break 2; }
+                        // Une conversation illisible ne bloque pas les autres.
+                        try {
+                            mk_meta_count($c, mk_meta_store_conversation($cv, $platform, $channel, $tok, $c['messages'], $base));
+                        } catch (MkMetaError $e) {
+                            if (in_array($e->metaCode(), [190, 4, 17, 32, 613, 80006], true)) throw $e;
+                            $c['errors']++;
+                            if ($c['note'] === '') $c['note'] = 'Une conversation n\'a pas pu être lue (« ' . rtrim($e->getMessage(), '.') . ' »).';
+                        }
+                    }
+                    $after = $d['paging']['cursors']['after'] ?? null;
+                    if ($stop || !$after || empty($d['paging']['next'])) break;
+                    $params['after'] = $after;
                 }
-                $after = $d['paging']['cursors']['after'] ?? null;
-                if ($stop || !$after || empty($d['paging']['next'])) break;
-                $params['after'] = $after;
+                if ($full) {
+                    // Lot interrompu : on reprendra à la page en cours (ses conversations déjà lues passent vite).
+                    $fc = (array) (mk_meta_state()['full_cursor'] ?? []);
+                    if (mk_meta_more()) $fc[$platform] = (string) ($params['after'] ?? ''); else unset($fc[$platform]);
+                    mk_meta_put(['full_cursor' => $fc]);
+                }
+                $c['via'] = $via;
+                $lastErr = null;
+                break; // cet accès marche : pas besoin du suivant
+            } catch (MkMetaError $e) {
+                if ($e->metaCode() === 190) throw $e;
+                $lastErr = $e;
             }
-            if ($full) {
-                // Lot interrompu : on reprendra à la page en cours (ses conversations déjà lues passent vite).
-                $fc = (array) (mk_meta_state()['full_cursor'] ?? []);
-                if (mk_meta_more()) $fc[$platform] = (string) ($params['after'] ?? ''); else unset($fc[$platform]);
-                mk_meta_put(['full_cursor' => $fc]);
-            }
-        } catch (MkMetaError $e) {
-            if ($e->metaCode() === 190) throw $e;
-            $c['note'] = ($platform === 'messenger' ? 'Messages Messenger' : 'Messages Instagram') . ' inaccessibles (« ' . rtrim($e->getMessage(), '.') . ' »).'
-                . ' Ajoutez ' . ($platform === 'messenger' ? 'pages_messaging et pages_manage_metadata' : 'instagram_manage_messages et pages_manage_metadata')
-                . ' à la configuration Facebook Login for Business, puis cliquez sur « Reconnecter ».';
+        }
+        if (!$routes) $c['note'] = $platform === 'messenger' ? 'Aucune Page Facebook choisie (Connexions, étape 3).' : 'Aucun accès au compte Instagram.';
+        if ($lastErr || !$routes) {
+            if ($lastErr) $c['note'] = ($platform === 'messenger' ? 'Messages Messenger' : 'Messages Instagram') . ' inaccessibles : Meta répond « ' . rtrim($lastErr->getMessage(), '.') . ' ». ' . mk_meta_msg_hint($platform, $lastErr);
             $c['failed'] = true;
         }
         $out[] = $c;
     }
+    // Bilan affiché dans Leads › Messages (et gardé même pour les vérifications rapides).
+    mk_meta_put(['msg_diag' => ['at' => time(), 'items' => array_map(fn ($c) => ['label' => $c['platform'] === 'instagram' ? 'Instagram' : 'Messenger', 'ok' => empty($c['failed']),
+        'added' => (int) $c['added'], 'updated' => (int) $c['updated'], 'messages' => (int) $c['messages'], 'errors' => (int) $c['errors'], 'note' => (string) $c['note'], 'via' => (string) ($c['via'] ?? '')], $out)]]);
     // Aucune messagerie lisible : l'étape est en erreur, avec la marche à suivre.
     if ($out && !array_filter($out, fn ($c) => empty($c['failed']))) throw new MkInputError(implode(' ', array_column($out, 'note')));
     return $out;
 }
 
+/** Texte d'un message : son texte, ou ce qu'il contient (photo, vocal, autocollant…). */
+function mk_meta_msg_text(array $m): string
+{
+    $t = trim((string) ($m['message'] ?? ''));
+    if ($t !== '') return $t;
+    if (!empty($m['sticker'])) return '[autocollant]';
+    $a = $m['attachments']['data'][0] ?? null;
+    if (is_array($a)) {
+        $mime = (string) ($a['mime_type'] ?? '');
+        if (strpos($mime, 'image/') === 0) return '[photo]';
+        if (strpos($mime, 'video/') === 0) return '[vidéo]';
+        if (strpos($mime, 'audio/') === 0) return '[message vocal]';
+        if (!empty($a['name'])) return '[fichier : ' . mb_substr((string) $a['name'], 0, 80) . ']';
+    }
+    return '[pièce jointe]';
+}
+
 /** Enregistre une conversation et ses derniers messages, puis l'analyse. Renvoie added / updated / same. */
-function mk_meta_store_conversation(array $cv, string $platform, string $channel, string $tok, int &$msgCount): string
+function mk_meta_store_conversation(array $cv, string $platform, string $channel, string $tok, int &$msgCount, string $base = ''): string
 {
     $st = mk_meta_state();
-    $own = [$st['page_id'], $st['ig_id']];
+    $own = array_values(array_filter([$st['page_id'], $st['ig_id'], $st['ig_node'] !== 'me' ? $st['ig_node'] : '']));
     $who = null;
     foreach (($cv['participants']['data'] ?? []) as $p) if (!in_array((string) ($p['id'] ?? ''), $own, true)) { $who = $p; break; }
     $msgs = $cv['messages']['data'] ?? [];
@@ -1778,7 +1856,7 @@ function mk_meta_store_conversation(array $cv, string $platform, string $channel
     if ($msgs && !array_key_exists('message', $msgs[0]) && !array_key_exists('from', $msgs[0])) {
         $full = [];
         foreach (array_slice($msgs, 0, 20) as $m) {
-            try { $full[] = mk_graph((string) $m['id'], ['fields' => 'id,message,from,created_time'], $tok); } catch (MkMetaError $e) { if ($e->metaCode() === 190) throw $e; }
+            try { $full[] = mk_graph((string) $m['id'], ['fields' => 'id,message,from,created_time'], $tok, $base); } catch (MkMetaError $e) { if ($e->metaCode() === 190) throw $e; }
         }
         $msgs = $full;
     }
@@ -1812,8 +1890,7 @@ function mk_meta_store_conversation(array $cv, string $platform, string $channel
     $store = function (array $list) use ($id, $own, $whoName, $whoUser): int {
         $n = 0;
         foreach ($list as $m) {
-            $text = trim((string) ($m['message'] ?? ''));
-            if ($text === '') $text = '[pièce jointe]';
+            $text = mk_meta_msg_text($m);
             $fromId = (string) ($m['from']['id'] ?? '');
             $fromMe = in_array($fromId, $own, true) ? 1 : 0;
             $s = db()->prepare('INSERT OR IGNORE INTO conversation_messages (conv_id, ext_id, from_me, text, at) VALUES (?, ?, ?, ?, ?)');
@@ -1837,12 +1914,17 @@ function mk_meta_store_conversation(array $cv, string $platform, string $channel
     // Tout l'historique : on lit les pages tant qu'il manque des messages (Meta donne leur nombre).
     $total = isset($cv['message_count']) ? (int) $cv['message_count'] : null;
     $missing = fn () => $total === null || (int) qv('SELECT COUNT(*) FROM conversation_messages WHERE conv_id = ?', [$id]) < $total;
-    for ($p = 0; $msgs && $p < ($full ? 200 : 40) && !empty($paging['next']) && !empty($paging['cursors']['after']) && ($full ? $missing() : $n >= count($msgs)) && mk_meta_time_left() > 4; $p++) {
-        $d = mk_graph((string) $cv['id'] . '/messages', ['fields' => 'id,message,from,created_time', 'limit' => 100, 'after' => $paging['cursors']['after']], $tok);
-        $msgs = $d['data'] ?? [];
-        $n = $store($msgs);
-        $new += $n;
-        $paging = $d['paging'] ?? [];
+    try {
+        for ($p = 0; $msgs && $p < ($full ? 200 : 40) && !empty($paging['next']) && !empty($paging['cursors']['after']) && ($full ? $missing() : $n >= count($msgs)) && mk_meta_time_left() > 4; $p++) {
+            $d = mk_graph((string) $cv['id'] . '/messages', ['fields' => 'id,message,from,created_time', 'limit' => 100, 'after' => $paging['cursors']['after']], $tok, $base);
+            $msgs = $d['data'] ?? [];
+            $n = $store($msgs);
+            $new += $n;
+            $paging = $d['paging'] ?? [];
+        }
+    } catch (MkMetaError $e) {
+        // Les messages plus anciens n'ont pas pu être lus : on garde ceux déjà importés.
+        if (in_array($e->metaCode(), [190, 4, 17, 32, 613], true)) throw $e;
     }
     $msgCount += $new;
     if ($new) mk_conv_reopen($id);
