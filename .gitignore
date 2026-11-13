@@ -29,3 +29,6 @@
 /maillage/media/*
 !/maillage/media/.gitkeep
 !/maillage/media/.htaccess
+
+# Python
+__pycache__/
