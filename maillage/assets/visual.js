@@ -4,10 +4,11 @@
  *                           produits similaires, ou recherche active (Radar)
  *   #/recherche/<jeton>     suivi d'une recherche active et réponses des points de vente
  *
- * Tout se fait dans la plateforme : la photo est comparée à celles du catalogue. La description
- * proposée n'est jamais présentée comme vérifiée (le client la corrige), et un produit n'est
- * annoncé « trouvé » qu'avec la raison affichée (photo identique, nom identique). Le reste est
- * « similaire ».
+ * Tout se fait dans la plateforme, sans service extérieur : la photo est comparée à celles du
+ * catalogue (serveur) et reconnue par le modèle d'image exécuté dans le navigateur (vision.js).
+ * La description proposée n'est jamais présentée comme vérifiée (le client la corrige), et un
+ * produit n'est annoncé « trouvé » qu'avec la raison affichée (photo identique, nom identique).
+ * Le reste est « similaire ».
  */
 (function () {
   'use strict';
@@ -17,7 +18,7 @@
   const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
   const EMPTY = () => ({ category: '', name: '', brand: '', details: '', terms: [], confidence: '' });
   // L'image choisie et l'avancement vivent le temps de la visite (une photo ne se garde pas d'une visite à l'autre).
-  const V = { blob: null, url: '', info: EMPTY(), auto: false, res: null, phase: 'start', editing: true };
+  const V = { blob: null, url: '', info: EMPTY(), auto: false, src: '', alts: [], proposed: '', vision: '', res: null, phase: 'start', editing: true };
 
   const placeText = (o) => ML.placeLabel(o);
   const myResearches = () => ML.ls.get('researches', []);
@@ -86,7 +87,7 @@
   /* ------------------------------------------------------------------ étapes */
   function reset() {
     if (V.url) URL.revokeObjectURL(V.url);
-    Object.assign(V, { blob: null, url: '', info: EMPTY(), auto: false, res: null, phase: 'start', editing: true });
+    Object.assign(V, { blob: null, url: '', info: EMPTY(), auto: false, src: '', alts: [], proposed: '', vision: '', res: null, phase: 'start', editing: true });
   }
 
   async function take(file) {
@@ -104,25 +105,91 @@
     paint();
     const fd = new FormData();
     fd.append('file', blob, 'photo.jpg');
+    const vision = ML.Vision && ML.Vision.supported()
+      ? ML.Vision.analyze(blob, progress).catch((e) => { console.warn('vision', e); return null; })
+      : Promise.resolve(null);
+    let cat = null;
     try {
-      const r = await X.api('visual_identify', { body: fd });
-      Object.assign(V, { auto: r.auto, info: r.info });
+      cat = await X.api('visual_identify', { body: fd });
     } catch (e) {
       if (e instanceof X.Stale) return;
       // Image refusée par le serveur (format, taille) : retour au choix de l'image, avec le motif.
       if (e.status === 400) { reset(); paint(); const box = $('[data-vs-error]'); if (box) { box.textContent = e.message; box.hidden = false; } return; }
-      Object.assign(V, { auto: false, info: EMPTY() });
     }
+    const seen = await vision;
+    if (V.blob !== blob || V.phase !== 'analyzing') return; // autre image choisie, ou le client n'a pas attendu
+    propose(cat, seen);
     V.phase = 'edit';
     V.editing = true;
     paint();
+  }
+
+  /** Avancement du premier téléchargement du modèle d'image. */
+  function progress(x) {
+    const el = $('[data-vs-progress]');
+    if (!el) return;
+    el.hidden = false;
+    el.querySelector('i').style.width = Math.round(x * 100) + '%';
+    el.querySelector('span').textContent = ML.t('Préparation de la reconnaissance d\'image (une seule fois) :') + ' ' + Math.round(x * 100) + ' %';
+  }
+
+  /**
+   * Choisit la proposition : une fiche du catalogue dont la photo est identique ou très
+   * ressemblante, sinon ce que reconnaît le modèle d'image, sinon rien (le client décrit le produit).
+   */
+  function propose(cat, seen) {
+    const ar = ML.lang === 'ar';
+    V.vision = seen ? (seen.other && !seen.brand ? 'none' : 'ok') : (ML.Vision && ML.Vision.supported() ? 'fail' : 'off');
+    if (cat && cat.auto && cat.info.confidence !== 'low') {
+      Object.assign(V, { auto: true, src: 'catalog', info: cat.info, alts: [], proposed: cat.info.name });
+      return;
+    }
+    const info = EMPTY();
+    let alts = [];
+    if (seen && V.vision === 'ok') {
+      const top = seen.types[0];
+      const nm = (t) => (ar ? t.ar : t.fr);
+      if (seen.brand && seen.brand.fr) {
+        info.name = ar ? seen.brand.ar : seen.brand.fr;
+        info.category = seen.brand.cat;
+        info.confidence = 'medium';
+      } else if (top && top.p >= 0.35) {
+        info.name = nm(top);
+        info.category = top.cat;
+        info.confidence = top.p >= 0.7 ? 'high' : 'medium';
+      } else {
+        // Pas de type net : le rayon, si les types probables s'y accordent.
+        const by = {};
+        seen.types.slice(0, 8).forEach((t) => { by[t.cat] = (by[t.cat] || 0) + t.p; });
+        const best = Object.entries(by).sort((a, b) => b[1] - a[1])[0];
+        if (best && best[1] >= 0.5) { info.category = best[0]; info.confidence = 'low'; }
+      }
+      if (seen.brand) {
+        info.brand = seen.brand.name;
+        if (!info.category) info.category = seen.brand.cat;
+      }
+      if (seen.color && info.name) info.details = (ar ? 'اللون: ' : 'Couleur : ') + (ar ? seen.color.ar : seen.color.fr);
+      // Les mots de recherche valent dans les deux langues (le catalogue peut être en français ou en arabe).
+      const used = seen.types.find((t) => nm(t) === info.name) || (seen.brand && seen.brand.fr ? { fr: seen.brand.fr, ar: seen.brand.ar } : null);
+      info.terms = used ? [used.fr, used.ar] : [];
+      alts = seen.types.filter((t) => t.p >= 0.05 && nm(t) !== info.name).slice(0, 4).map((t) => ({ name: nm(t), cat: t.cat, fr: t.fr, ar: t.ar }));
+    }
+    if (info.name || info.category || info.brand) {
+      Object.assign(V, { auto: true, src: 'vision', info, alts, proposed: info.name });
+    } else if (cat && cat.auto) {
+      Object.assign(V, { auto: true, src: 'catalog', info: cat.info, alts: [], proposed: cat.info.name });
+    } else {
+      Object.assign(V, { auto: false, src: '', info, alts: [], proposed: '' });
+    }
   }
 
   async function search() {
     const f = $('[data-form="vs-info"]');
     if (f) {
       const d = ML.formData(f);
-      V.info = { category: d.category, name: d.name.trim(), brand: d.brand.trim(), details: d.details.trim(), terms: [], confidence: V.info.confidence };
+      // Les mots de recherche proposés ne valent que pour le nom proposé : un nom corrigé les annule.
+      const same = V.proposed && ML.norm(d.name) === ML.norm(V.proposed);
+      V.info = { category: d.category, name: d.name.trim(), brand: d.brand.trim(), details: d.details.trim(), terms: same ? V.info.terms || [] : [], confidence: V.info.confidence };
     }
     V.phase = 'searching';
     V.editing = false;
@@ -130,6 +197,7 @@
     const fd = new FormData();
     fd.append('file', V.blob, 'photo.jpg');
     ['category', 'name', 'brand', 'details'].forEach((k) => fd.append(k, V.info[k] || ''));
+    fd.append('terms', JSON.stringify(V.info.terms || []));
     if (ML.loc) { fd.append('lat', ML.loc.lat); fd.append('lng', ML.loc.lng); fd.append('zone', ML.loc.zone || ''); }
     try {
       V.res = await X.api('visual_search', { body: fd });
@@ -164,28 +232,38 @@
       </div>
       <ol class="vs-how">
         <li><b>1</b><span><strong>${ML.t('Votre photo')}</strong>${ML.t('Le produit bien visible, de préférence seul et bien éclairé.')}</span></li>
-        <li><b>2</b><span><strong>${ML.t('La description')}</strong>${ML.t('Si votre photo ressemble à un produit du catalogue, la plateforme propose sa description ; sinon vous l\'indiquez.')}</span></li>
+        <li><b>2</b><span><strong>${ML.t('La description')}</strong>${ML.t('La plateforme reconnaît le produit et propose son rayon, son nom et sa couleur : vous les corrigez si besoin.')}</span></li>
         <li><b>3</b><span><strong>${ML.t('Le résultat')}</strong>${ML.t('Le produit et ses points de vente, des produits similaires, ou une recherche active dans le réseau.')}</span></li>
       </ol>
       ${myResearches().length ? html`<p class="vs-mine"><a class="btn btn-soft" href="#/suivi">${icon('target')}${ML.t('Suivre mes recherches actives')}</a></p>` : ''}
-      <p class="vs-privacy muted">${icon('lock', 'ico-sm')}<span>${ML.t('Votre image sert à cette recherche et n\'est pas conservée, sauf si vous lancez une recherche active.')}${' ' + ML.t('Elle est comparée au catalogue sur la plateforme, sans service extérieur.')}</span></p>
+      <p class="vs-privacy muted">${icon('lock', 'ico-sm')}<span>${ML.t('Votre image sert à cette recherche et n\'est pas conservée, sauf si vous lancez une recherche active.')}${' ' + ML.t('Elle est analysée sur la plateforme et dans votre navigateur, sans service extérieur.')}</span></p>
     </div>`;
 
   /** Bandeau au-dessus de la description : d'où elle vient et ce qu'elle vaut. */
   function infoNotice() {
-    if (V.auto && V.info.confidence === 'low') return html`<p class="notice">${icon('scan-search')}<span><b>${ML.t('Rayon proposé d\'après des produits ressemblants du catalogue.')}</b> ${ML.t('Vérifiez-le, puis indiquez le nom et les détails du produit.')}</span></p>`;
-    if (V.auto) return html`<p class="notice">${icon('scan-search')}<span><b>${ML.t('Description proposée d\'après une photo ressemblante du catalogue, à vérifier.')}</b> ${ML.t('Corrigez ce qui ne correspond pas : la recherche utilise votre photo et ces informations.')}</span></p>`;
+    const check = ML.t('Corrigez ce qui ne correspond pas : la recherche utilise votre photo et ces informations.');
+    if (V.src === 'catalog' && V.info.confidence === 'low') return html`<p class="notice">${icon('scan-search')}<span><b>${ML.t('Rayon proposé d\'après des produits ressemblants du catalogue.')}</b> ${ML.t('Vérifiez-le, puis indiquez le nom et les détails du produit.')}</span></p>`;
+    if (V.src === 'catalog') return html`<p class="notice">${icon('scan-search')}<span><b>${ML.t('Description proposée d\'après une photo ressemblante du catalogue, à vérifier.')}</b> ${check}</span></p>`;
+    if (V.src === 'vision' && !V.info.name) return html`<p class="notice">${icon('scan-search')}<span><b>${ML.t('Rayon proposé d\'après l\'image.')}</b> ${ML.t('Vérifiez-le, puis indiquez le nom et les détails du produit.')}</span></p>`;
+    if (V.src === 'vision' && V.info.confidence !== 'high') return html`<p class="notice is-warn">${icon('triangle-alert')}<span><b>${ML.t('Reconnaissance incertaine, à vérifier.')}</b> ${check}</span></p>`;
+    if (V.src === 'vision') return html`<p class="notice">${icon('scan-search')}<span><b>${ML.t('Description proposée par la reconnaissance d\'image, à vérifier.')}</b> ${check}</span></p>`;
+    if (V.vision === 'none') return html`<p class="notice is-warn">${icon('triangle-alert')}<span><b>${ML.t('Nous n\'avons pas reconnu de produit sur cette image.')}</b> ${ML.t('Décrivez-le ci-dessous, ou essayez une autre photo.')}</span></p>`;
+    if (V.vision === 'fail') return html`<p class="notice is-warn">${icon('triangle-alert')}<span><b>${ML.t('La reconnaissance d\'image n\'a pas pu se lancer sur cet appareil.')}</b> ${ML.t('Décrivez le produit : la recherche utilise votre description et la ressemblance de votre photo avec celles du catalogue.')}</span></p>`;
     return html`<p class="notice">${icon('pencil')}<span>${ML.t('Décrivez le produit : la recherche utilise votre description et la ressemblance de votre photo avec celles du catalogue.')}</span></p>`;
   }
 
+  /** Autres possibilités reconnues : un geste pour remplacer le nom et le rayon proposés. */
+  const altsHtml = () => (V.alts.length ? html`
+    <div class="vs-alts"><span class="muted">${V.info.name ? ML.t('Ce n\'est pas ça ? Peut-être :') : ML.t('Est-ce l\'un de ces produits ?')}</span>${V.alts.map((a, i) => html`<button class="chip" type="button" data-act="vs-alt" data-i="${i}">${a.name}</button>`)}</div>` : '');
+
   const infoForm = () => html`
     <form class="stack" data-form="vs-info" novalidate>
-      <div class="row between row-wrap"><h2 class="card-title">${ML.t('Informations du produit')}</h2>${V.auto ? html`<span class="badge badge-info">${icon('scan-search')}${ML.t('Proposition du catalogue')}</span>` : ''}</div>
+      <div class="row between row-wrap"><h2 class="card-title">${ML.t('Informations du produit')}</h2>${V.auto ? html`<span class="badge badge-info">${icon('scan-search')}${V.src === 'catalog' ? ML.t('Proposition du catalogue') : ML.t('Proposition de la reconnaissance d\'image')}</span>` : ''}</div>
       ${infoNotice()}
       <div class="form-grid cols-2">
         <div class="field"><label for="v-cat">${ML.t('Rayon')}</label><select class="select" id="v-cat" name="category"><option value="">${ML.t('Je ne sais pas')}</option>${ML.boot.categories.map((c) => html`<option value="${c.key}" ${V.info.category === c.key ? ML.raw('selected') : ''}>${c.label}</option>`)}</select></div>
         <div class="field"><label for="v-brand">${ML.t('Marque')} <span class="dim">(${ML.t('si vous la connaissez')})</span></label><input class="input" id="v-brand" name="brand" maxlength="60" autocomplete="off" value="${V.info.brand}"></div>
-        <div class="field span-2"><label for="v-name">${ML.t('Nom du produit')}</label><input class="input" id="v-name" name="name" maxlength="120" autocomplete="off" placeholder="${ML.t('Ex. chaussure de running bleue')}" value="${V.info.name}"></div>
+        <div class="field span-2"><label for="v-name">${ML.t('Nom du produit')}</label><input class="input" id="v-name" name="name" maxlength="120" autocomplete="off" placeholder="${ML.t('Ex. chaussure de running bleue')}" value="${V.info.name}">${altsHtml()}</div>
         <div class="field span-2"><label for="v-details">${ML.t('Détails')} <span class="dim">(${ML.t('couleur, matière, modèle, taille…')})</span></label><textarea class="textarea" id="v-details" name="details" rows="3" maxlength="600">${V.info.details}</textarea></div>
       </div>
       <p class="form-error" data-error hidden></p>
@@ -309,7 +387,7 @@
           </aside>
           <div class="vs-main">
             <section class="card card-pad" data-info>${V.phase === 'analyzing'
-              ? html`<div class="vs-wait"><div class="spinner"></div><p>${ML.t('Comparaison avec le catalogue…')}</p></div>`
+              ? html`<div class="vs-wait"><div class="spinner"></div><p>${ML.t('Reconnaissance du produit…')}</p><p class="vs-progress" data-vs-progress hidden><span></span><b><i></i></b><button class="btn btn-ghost btn-sm" type="button" data-act="vs-skip">${ML.t('Ne pas attendre : décrire le produit moi-même')}</button></p></div>`
               : V.editing ? infoForm() : infoSummary()}</section>
             <div data-results>${resultsHtml()}</div>
           </div>
@@ -332,8 +410,11 @@
     if (item) { e.preventDefault(); take(item.getAsFile()); }
   };
 
-  ML.actions['vs-pick'] = () => $('[data-vs-file="pick"]').click();
+  // Le modèle d'image se télécharge pendant que le client choisit ou cadre sa photo.
+  const warm = () => { if (ML.Vision && ML.Vision.supported()) ML.Vision.load().catch(() => {}); };
+  ML.actions['vs-pick'] = () => { warm(); $('[data-vs-file="pick"]').click(); };
   ML.actions['vs-camera'] = async () => {
+    warm();
     // Téléphone et tablette : l'appareil photo du système. Ordinateur : la webcam, dans la page.
     const desktop = window.matchMedia('(pointer: fine)').matches && navigator.mediaDevices && navigator.mediaDevices.getUserMedia;
     if (!desktop) { $('[data-vs-file="camera"]').click(); return; }
@@ -344,6 +425,29 @@
   ML.actions['vs-new'] = () => { reset(); paint(); window.scrollTo(0, 0); };
   ML.actions['vs-edit'] = () => { V.editing = true; V.phase = 'edit'; paint(); const n = $('#v-name'); if (n) n.focus(); };
   ML.forms['vs-info'] = () => search();
+  // Premier téléchargement du modèle sur un réseau lent : le client peut décrire le produit sans attendre.
+  ML.actions['vs-skip'] = () => {
+    if (V.phase !== 'analyzing') return;
+    Object.assign(V, { phase: 'edit', editing: true, auto: false, src: '', vision: '', alts: [], info: EMPTY() });
+    paint();
+  };
+  ML.actions['vs-alt'] = (el) => {
+    const a = V.alts[+el.dataset.i];
+    if (!a) return;
+    const name = $('#v-name');
+    const prev = { name: name.value, cat: $('#v-cat').value };
+    name.value = a.name;
+    $('#v-cat').value = a.cat;
+    V.proposed = a.name;
+    V.info.terms = [a.fr, a.ar];
+    // Le choix précédent devient à son tour une possibilité.
+    const was = V.alts.findIndex((x) => x === a);
+    V.alts.splice(was, 1, prev.name ? { name: prev.name, cat: prev.cat, fr: prev.name, ar: prev.name } : a);
+    if (!prev.name) V.alts.splice(was, 1);
+    const box = $('.vs-alts');
+    if (box) box.outerHTML = String(altsHtml());
+    name.focus();
+  };
   ML.actions['vs-similar'] = () => { const s = $('[data-similar]'); if (s) s.scrollIntoView({ behavior: 'smooth', block: 'start' }); else ML.toast(ML.t('Aucun produit similaire pour le moment.')); };
   ML.actions['vs-near'] = async () => {
     if (!ML.loc) await ML.pickLocation();

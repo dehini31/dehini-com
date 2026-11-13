@@ -466,14 +466,43 @@ const mails = () => (fs.existsSync(path.join(DIR, 'mail.jsonl')) ? fs.readFileSy
   await noOverflow(cp, 'résultat de la recherche par photo (mobile)');
   await cp.screenshot({ path: path.join(SHOTS, '14-photo-resultat.png'), fullPage: true });
 
-  // Photo inconnue du catalogue : rien n'est proposé, le client décrit le produit.
-  await cp.click('[data-act="vs-new"]');
-  await cp.waitForSelector('[data-drop]');
-  await cp.setInputFiles('[data-vs-file="pick"]', path.join(DIR, 'photo2.jpg'));
-  await cp.waitForSelector('[data-form="vs-info"]');
-  ok(await cp.locator('[data-form="vs-info"] .badge-info').count() === 0 && await cp.inputValue('#v-name') === '', 'photo inconnue : rien n\'est proposé, le client décrit le produit');
+  // Reconnaissance d'image dans le navigateur : le vrai modèle tourne (WebAssembly, CSP, types de fichiers).
+  const real = await cp.evaluate(async (bytes) => {
+    const blob = new Blob([new Uint8Array(bytes)], { type: 'image/jpeg' });
+    const t0 = performance.now();
+    const r = await ML.Vision.analyze(blob);
+    return { n: r.types.length, sum: r.types.reduce((a, t) => a + t.p, 0), top: r.types[0], ms: performance.now() - t0 };
+  }, Array.from(fs.readFileSync(path.join(DIR, 'photo2.jpg'))));
+  ok(real.n > 100 && real.sum > 0 && real.sum <= 1.001 && real.top.fr && real.top.ar && real.top.cat, 'reconnaissance d\'image exécutée dans le navigateur, sans service extérieur (' + Math.round(real.ms) + ' ms)', real);
+  // Le comportement de la page avec ce que reconnaît le modèle (résultats fixés pour le test).
+  const visionStub = (r) => cp.evaluate((r) => { ML.Vision.analyze = async () => r; }, r);
+  const tryPhoto = async () => {
+    await cp.click('[data-act="vs-new"]');
+    await cp.waitForSelector('[data-drop]');
+    await cp.setInputFiles('[data-vs-file="pick"]', path.join(DIR, 'photo2.jpg'));
+    await cp.waitForSelector('[data-form="vs-info"]');
+  };
+  await visionStub({ types: [{ fr: 'Boisson gazeuse', ar: 'مشروب غازي', cat: 'alimentation', p: 0.62 }, { fr: 'Eau minérale', ar: 'مياه معدنية', cat: 'alimentation', p: 0.3 }], other: false,
+    brand: { name: 'Selecto', cat: 'alimentation', fr: 'Boisson gazeuse', ar: 'مشروب غازي' }, color: { fr: 'transparent', ar: 'شفاف' } });
+  await tryPhoto();
+  ok(await cp.inputValue('#v-name') === 'Boisson gazeuse' && await cp.inputValue('#v-brand') === 'Selecto' && await cp.inputValue('#v-cat') === 'alimentation' && /transparent/.test(await cp.inputValue('#v-details')),
+    'photo reconnue : rayon, nom, marque et couleur remplis, modifiables');
+  ok(/Proposition de la reconnaissance/.test(await cp.locator('[data-form="vs-info"] .badge-info').innerText()) && /à vérifier/.test(await cp.locator('[data-form="vs-info"] .notice').innerText()), 'présentés comme une proposition à vérifier');
+  await cp.click('.vs-alts .chip');
+  ok(await cp.inputValue('#v-name') === 'Eau minérale' && await cp.locator('.vs-alts .chip').innerText() === 'Boisson gazeuse', 'autre possibilité choisie en un geste');
+  await cp.screenshot({ path: path.join(SHOTS, '13b-photo-reconnue.png'), fullPage: true });
+  await visionStub({ types: [{ fr: 'Sel de table', ar: 'ملح الطعام', cat: 'alimentation', p: 0.24 }, { fr: 'Épices', ar: 'توابل', cat: 'alimentation', p: 0.16 }, { fr: 'Sauce', ar: 'صلصة', cat: 'alimentation', p: 0.12 }], other: false, brand: null, color: null });
+  await tryPhoto();
+  ok(await cp.inputValue('#v-name') === '' && await cp.inputValue('#v-cat') === 'alimentation' && await cp.locator('.vs-alts .chip').count() === 3, 'reconnaissance incertaine : le rayon seulement, et les produits possibles à choisir');
+  await visionStub({ types: [{ fr: 'Chemise', ar: 'قميص', cat: 'mode', p: 0.1 }], other: true, brand: null, color: null });
+  await tryPhoto();
+  ok(await cp.inputValue('#v-name') === '' && /pas reconnu de produit/.test(await cp.locator('[data-form="vs-info"] .notice').innerText()), 'pas un produit : message clair, le client décrit le produit');
+  await visionStub(null);
+  await cp.evaluate(() => { ML.Vision.analyze = async () => { throw new Error('test'); }; });
+  await tryPhoto();
+  ok(await cp.locator('[data-form="vs-info"] .badge-info').count() === 0 && await cp.inputValue('#v-name') === '' && /pas pu se lancer/.test(await cp.locator('[data-form="vs-info"] .notice').innerText()), 'reconnaissance indisponible : le client décrit le produit');
   const unknown = await fd('visual_identify', 'photo2.jpg', {});
-  ok(unknown.auto === false && unknown.info.name === '', 'identification interne : aucune proposition sans ressemblance', unknown);
+  ok(unknown.auto === false && unknown.info.name === '', 'comparaison au catalogue : aucune fiche proposée sans ressemblance', unknown);
   const pname = (await fd('visual_identify', 'photo.png', {})).info.name;
   const simName = pname.replace(/<[^>]*>/g, ' ').split(/\s+/).filter((w) => w.length > 3).slice(0, 2).join(' ');
   const sim = await fd('visual_search', 'photo2.jpg', { name: simName + ' modèle' });

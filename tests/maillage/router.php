@@ -22,7 +22,16 @@ if (is_file($file) && substr($file, -5) === '.html') {
     header('Content-Type: text/html; charset=utf-8');
     header('X-Content-Type-Options: nosniff');
     header('Referrer-Policy: strict-origin-when-cross-origin');
-    header("Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://nominatim.openstreetmap.org; frame-ancestors 'self'; base-uri 'self'; form-action 'self'");
+    header("Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://nominatim.openstreetmap.org; frame-ancestors 'self'; base-uri 'self'; form-action 'self'");
+    readfile($file);
+    return true;
+}
+// Reconnaissance d'image : mêmes types que maillage/.htaccess (le serveur intégré ne les connaît pas tous).
+$types = ['mjs' => 'text/javascript', 'wasm' => 'application/wasm', 'onnx' => 'application/octet-stream'];
+$ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+if (isset($types[$ext]) && is_file($file)) {
+    header('Content-Type: ' . $types[$ext]);
+    header('Content-Length: ' . filesize($file));
     readfile($file);
     return true;
 }

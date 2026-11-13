@@ -1200,10 +1200,12 @@ demande de partenariat à accepter dans Réseau) ; sa fiche est créée tout de 
 **Recherche par photo** (`explorer/#/photo`, entrée « Photo » du menu) — le client prend une photo (appareil photo du
 téléphone, webcam sur ordinateur) ou choisit une image :
 
-1. **Identification interne.** La photo est comparée à celles du catalogue, sur la plateforme (aucun service
-   extérieur, aucune clé, aucun coût). Si elle ressemble nettement à un produit, sa fiche est proposée (rayon, nom,
-   marque) ; sinon le rayon des produits ressemblants ; sinon le client décrit le produit. C'est toujours une
-   **proposition à vérifier**, affichée comme telle, que le client corrige.
+1. **Identification, sans service extérieur.** La photo est reconnue dans le navigateur du client par un modèle
+   d'image hébergé sur le site (TinyCLIP, licence MIT ; voir `tools/vision/README.md`) : type de produit (≈ 250, en
+   français et en arabe), rayon, couleur. Si elle ressemble nettement à une photo du catalogue, cette fiche est
+   proposée en priorité. C'est toujours une **proposition à vérifier**, affichée comme telle, avec d'autres
+   possibilités à choisir en un geste ; si rien n'est reconnu, le client décrit le produit. Le modèle (≈ 37 Mo) se
+   télécharge à la première recherche par photo, avec une barre d'avancement et un bouton pour ne pas attendre.
 2. **Recherche** avec l'image *et* la description : mots du nom et des détails, et ressemblance de la photo avec
    celles du catalogue (signature visuelle calculée à l'enregistrement de chaque photo de produit).
 3. **Produit trouvé** seulement avec une preuve, affichée : photo identique à celle du catalogue, ou nom (et marque) identiques. La fiche
@@ -1240,7 +1242,8 @@ en français faute du code de wilaya transmis à ces endroits précis.
 - `maillage/offre/` + `assets/offre.{css,js}` — la page de vente d'un produit ; `assets/cod.js` — le formulaire de
   commande livrée (radar), partagé avec la fiche produit.
 - `maillage/explorer/` + `assets/explorer.{css,js}` — la plateforme publique ; `assets/visual.{css,js}` — la
-  recherche par photo et le suivi d'une recherche active.
+  recherche par photo et le suivi d'une recherche active ; `assets/vision.js` + `assets/vision/` — la
+  reconnaissance d'image dans le navigateur (construite par `tools/vision/build.py`).
 - `maillage/espace/` + `assets/espace*.{css,js}`, `assets/charts.js` — l'espace entreprise et ses graphiques.
 - `maillage/admin.html` + `assets/admin.js` — l'administration.
 - `maillage/assets/core.js`, `base.css`, `icons.js` — socle commun (appels à l'API, gabarits HTML échappés,

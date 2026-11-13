@@ -1,0 +1,11 @@
+# Reconnaissance d'image de la recherche par photo : fichiers lourds (≈ 25 Mo), versionnés par
+# « ?v= » dans vision.js. Le navigateur les garde un mois au lieu de les revérifier à chaque visite.
+<IfModule mod_headers.c>
+  <FilesMatch "\.(onnx|wasm|mjs|js|json)$">
+    Header set Cache-Control "public, max-age=2592000"
+  </FilesMatch>
+</IfModule>
+# Le moteur WebAssembly se compresse bien (11 Mo → 3 Mo).
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE application/wasm text/javascript application/json
+</IfModule>
