@@ -55,6 +55,7 @@
         ${tile(ML.t('Produits'), c.products, ML.t('Hors démonstration'))}
         ${tile(ML.t('Commandes'), c.orders, ML.t('Hors démonstration'))}
         ${tile(ML.t('Recherches · 7 jours'), c.searches7, ML.t('Toute la plateforme'))}
+        ${tile(ML.t('Recherches actives'), c.research, ML.t('Clients qui cherchent un produit'))}
       </div>
       <section class="card card-pad">
         <div class="card-head"><div><h2 class="card-title">${ML.t('Entreprises inscrites')}</h2><p class="card-sub">${ML.t('Une inscription validée apparaît sur la carte et dans le catalogue public.')}</p></div></div>
@@ -67,7 +68,7 @@
           <div class="field"><label for="a-mail">${ML.t('Email prévenu à chaque inscription')}</label><input class="input" id="a-mail" name="notify_email" type="email" placeholder="vous@exemple.com" value="${d.settings.notify_email}"><span class="hint muted">${d.mail ? ML.t('Envoyé par le compte email du site.') : ML.t("Aucun compte SMTP n'est configuré : l'envoi passe par la fonction mail() du serveur (voir README).")}</span></div>
           <div class="field"><label for="a-radar">${ML.t('Radar : minutes avant d\'élargir une commande')}</label><input class="input" id="a-radar" name="radar_step_min" type="number" min="0" max="1440" inputmode="numeric" value="${d.settings.radar_step_min}"><span class="hint muted">${ML.t("Une commande sans point de vente choisi est d'abord proposée aux points de vente de la commune du client, puis de sa wilaya, puis à tous. 0 : à tous tout de suite.")}</span></div>
           <p class="form-error" data-error hidden></p>
-          <div><button class="btn btn-primary" type="submit">${ML.t('Enregistrer')}</button></div>
+          <div class="row row-wrap"><button class="btn btn-primary" type="submit">${ML.t('Enregistrer')}</button></div>
         </form>
         <section class="card card-pad stack">
           <div><h2 class="card-title">${ML.t('Réseau de démonstration')}</h2><p class="card-sub">${ML.t("Trois marques et deux distributeurs fictifs, pour montrer la plateforme avant l'arrivée des premières entreprises.")}</p></div>
@@ -95,7 +96,7 @@
     if (await post('adm_demo', { action: el.dataset.do }, el)) { ML.toast(del ? ML.t('Démonstration supprimée.') : ML.t('Démonstration chargée.'), 'good'); load(); }
   };
   ML.forms.settings = async (f) => {
-    try { await api('adm_settings', { body: ML.formData(f) }); ML.toast(ML.t('Réglages enregistrés.'), 'good'); } catch (e) { ML.fail(e, f); }
+    try { await api('adm_settings', { body: ML.formData(f) }); ML.toast(ML.t('Réglages enregistrés.'), 'good'); load(); } catch (e) { ML.fail(e, f); }
   };
 
   ML.bootstrap().then(load).catch((e) => { app().innerHTML = html`<div class="empty" style="padding-top:120px">${icon('wifi-off')}<h3>${ML.t('Chargement impossible')}</h3><p>${e.message}</p></div>`; });

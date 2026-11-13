@@ -8,11 +8,15 @@
  *
  * Public   GET  bootstrap | stores | store {id} | brand {slug} | products {q,brand,category,size,color,pmin,pmax,store,instock,sort,page,log}
  *          GET  product {slug} | availability {product,size,color,lat,lng,zone,log} | track {token | ref,phone} | communes {zone}
+ *          GET  research_get {token | ref,phone}
  *          POST order {…} | order_radar {…} | order_cancel {token} | event {kind,id} | log_map {brand,zone,lat,lng,results}
+ *          POST visual_identify (multipart : file) | visual_search (multipart : file + description) — recherche par photo
+ *          POST research_create (multipart : file + description + coordonnées) | research_close {token | ref,phone, found}
  * Comptes  GET  me    POST signup (marque, distributeur ou point de vente) | login | logout | forgot | reset | demo_login
  * Espace   GET  overview | brands | dash_products | dash_product {id} | dash_stores | stock {store} | orders | order_get {id} | network | analytics {days} | radar
  *          POST brand_save | brand_delete | product_save | product_delete | upload (multipart) | store_save | store_delete | stock_save
- *          POST order_status | radar_claim | radar_release | partner_request | partner_respond | partner_remove | company_save | account_save | password
+ *          POST order_status | radar_claim | radar_release | research_reply | research_dismiss
+ *          POST partner_request | partner_respond | partner_remove | company_save | account_save | password
  * Admin    GET  adm_overview    POST adm_company | adm_open | adm_demo | adm_settings   (session de /admin)
  *
  * Un compte limité à un point de vente (users.store_id) n'accède qu'à son magasin : vue d'ensemble,
@@ -26,6 +30,8 @@ require __DIR__ . '/lib/media.php';
 require __DIR__ . '/lib/catalog.php';
 require __DIR__ . '/lib/orders.php';
 require __DIR__ . '/lib/radar.php';
+require __DIR__ . '/lib/visual.php';
+require __DIR__ . '/lib/research.php';
 require __DIR__ . '/lib/dash.php';
 require __DIR__ . '/lib/analytics.php';
 require __DIR__ . '/lib/seed.php';
@@ -42,6 +48,7 @@ try {
     db();
     seed_maybe();
     orders_expire();
+    research_expire();
 } catch (Throwable $e) {
     error_log('maillage db: ' . $e->getMessage());
     fail('Le service est momentanément indisponible.', 500, 'server');
@@ -51,13 +58,26 @@ if ($isPost && ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') !== 'maillage') fail('R
 
 const POST_ONLY = ['order', 'order_radar', 'order_cancel', 'event', 'log_map', 'signup', 'login', 'logout', 'forgot', 'reset', 'demo_login',
     'brand_save', 'brand_delete', 'product_save', 'product_delete', 'upload', 'store_save', 'store_delete', 'stock_save', 'order_status',
-    'radar_claim', 'radar_release',
+    'radar_claim', 'radar_release', 'visual_identify', 'visual_search', 'research_create', 'research_close', 'research_reply', 'research_dismiss',
     'partner_request', 'partner_respond', 'partner_remove', 'company_save', 'account_save', 'password',
     'adm_company', 'adm_open', 'adm_demo', 'adm_settings'];
 if (in_array($action, POST_ONLY, true) && !$isPost) fail('Méthode non autorisée.', 405, 'method');
 
-$b = $isPost && $action !== 'upload' ? input_json() : [];
+// Les envois de fichier arrivent en multipart : leurs champs sont dans $_POST.
+const MULTIPART = ['upload', 'visual_identify', 'visual_search', 'research_create'];
+$b = !$isPost ? [] : (in_array($action, MULTIPART, true) ? $_POST : input_json());
 $pdo = db();
+
+/** Image envoyée par un visiteur (recherche par photo) : vérifiée et ouverte. InvalidArgumentException si ce n'est pas une image acceptée. */
+function visitor_image()
+{
+    $f = $_FILES['file'] ?? null;
+    if (!$f || !is_array($f) || ($f['error'] ?? 1) !== UPLOAD_ERR_OK || !is_uploaded_file((string) $f['tmp_name'])) {
+        fail('L\'envoi de l\'image a échoué. Réessayez avec une autre image.');
+    }
+    if ((int) $f['size'] > MEDIA_MAX_BYTES) fail('Image trop lourde (' . (int) (MEDIA_MAX_BYTES / 1048576) . ' Mo maximum).');
+    return image_open((string) $f['tmp_name'], 64);
+}
 
 function g(string $k): string
 {
@@ -201,6 +221,68 @@ try {
             $res = radar_create($b);
             radar_notify_created($res);
             ok(['ref' => $res['order']['ref'], 'token' => $res['token'], 'order' => order_view($res['order'])]);
+        }
+
+        /* ------------------------------------------------- recherche par photo */
+
+        // 1. La photo est comparée à celles du catalogue : une proposition de description, à vérifier par le client.
+        case 'visual_identify': {
+            rate('visual', 40, 3600);
+            $im = visitor_image();
+            $res = visual_identify($im);
+            imagedestroy($im);
+            ok($res);
+        }
+
+        // 2. Recherche avec l'image et la description (corrigée par le client).
+        case 'visual_search': {
+            rate('vsearch', 80, 3600);
+            $im = visitor_image();
+            $terms = json_decode(is_string($b['terms'] ?? null) ? $b['terms'] : '[]', true);
+            $lat = coord($b['lat'] ?? null, 90);
+            $lng = coord($b['lng'] ?? null, 180);
+            if ($lat === null || $lng === null) { $lat = null; $lng = null; }
+            $res = visual_search($im, ['category' => $b['category'] ?? '', 'name' => $b['name'] ?? '', 'brand' => $b['brand'] ?? '', 'details' => $b['details'] ?? '',
+                'terms' => is_array($terms) ? $terms : []], $lat, $lng);
+            imagedestroy($im);
+            // Comptée comme une recherche du catalogue : sans résultat, c'est une « demande sans réponse » dans les analyses.
+            if ($res['info']['name'] !== '' && rate('search', 150, 3600, '', true)) {
+                log_search('catalog', ['q' => $res['info']['name'], 'category' => $res['info']['category'], 'results' => ($res['exact'] ? 1 : 0) + count($res['similar']),
+                    'zone' => $b['zone'] ?? '', 'lat' => $lat, 'lng' => $lng], $res['companies']);
+            }
+            unset($res['companies']);
+            ok($res);
+        }
+
+        // 3. Recherche active : la demande part dans le Radar des points de vente et des marques.
+        case 'research_create': {
+            rate('research', 8, 3600);
+            if (!empty($b['website'])) ok(['ref' => 'RS-000000', 'token' => str_repeat('0', 40)]); // champ piège rempli par un robot
+            $im = visitor_image();
+            $path = research_image($im);
+            imagedestroy($im);
+            try {
+                $res = research_create($b, $path, !empty($b['auto']));
+            } catch (Throwable $e) {
+                research_image_delete($path);
+                throw $e;
+            }
+            research_notify_created($res);
+            ok(['ref' => $res['research']['ref'], 'token' => $res['token'], 'research' => research_view($res['research'])]);
+        }
+
+        case 'research_get': {
+            rate('track', 40, 600);
+            $r = research_find(g('token'), g('ref'), g('phone'));
+            if (!$r) fail('Aucune recherche ne correspond. Vérifiez le numéro et le téléphone.', 404, 'notfound');
+            ok(['research' => research_view($r)]);
+        }
+
+        case 'research_close': {
+            rate('track', 40, 600);
+            $r = research_find((string) ($b['token'] ?? ''), (string) ($b['ref'] ?? ''), (string) ($b['phone'] ?? ''));
+            if (!$r) fail('Recherche introuvable.', 404, 'notfound');
+            ok(['research' => research_view(research_close($r, !empty($b['found']) ? 'found' : 'closed'))]);
         }
 
         case 'order_cancel': {
@@ -495,7 +577,8 @@ try {
             $u = require_user();
             $cid = (int) $u['company_id'];
             $sid = user_store($u);
-            ok(['nearby' => radar_nearby($cid, $sid), 'received' => $sid ? [] : radar_received($cid), 'step_min' => intdiv(radar_step(), 60)]);
+            ok(['nearby' => radar_nearby($cid, $sid), 'received' => $sid ? [] : radar_received($cid), 'step_min' => intdiv(radar_step(), 60),
+                'research' => research_nearby($cid, (string) $u['c_kind'], $sid)]);
         }
         case 'radar_claim': {
             $u = require_user();
@@ -510,6 +593,21 @@ try {
             $o = own_order($cid, (int) ($b['id'] ?? 0), user_store($u));
             if (!$o || (int) $o['seller_cid'] !== $cid) fail('Commande introuvable.', 404, 'notfound');
             radar_release($o, (string) ($b['note'] ?? ''));
+            ok();
+        }
+
+        // Recherches actives des clients : « j'ai ce produit » ou « je ne l'ai pas ».
+        case 'research_reply': {
+            $u = require_user();
+            $cid = (int) $u['company_id'];
+            $sid = user_store($u);
+            $item = research_reply($cid, (string) $u['c_kind'], (int) ($b['id'] ?? 0), $b, $sid);
+            research_notify_reply((int) $item['id'], $cid, (int) $item['replied']['store_id']);
+            ok(['research' => $item]);
+        }
+        case 'research_dismiss': {
+            $u = require_user();
+            research_dismiss((int) $u['company_id'], (int) ($b['id'] ?? 0), user_store($u));
             ok();
         }
 
@@ -592,6 +690,7 @@ try {
                     'products' => $one('SELECT COUNT(*) FROM products p JOIN companies c ON c.id = p.company_id WHERE c.demo = 0'),
                     'orders' => $one('SELECT COUNT(*) FROM orders o JOIN companies c ON c.id = o.seller_cid WHERE c.demo = 0'),
                     'searches7' => $one("SELECT COUNT(*) FROM searches WHERE created >= $week"),
+                    'research' => $one("SELECT COUNT(*) FROM research WHERE demo = 0 AND status = 'open'"),
                 ],
                 'settings' => ['moderation' => moderation_on(), 'notify_email' => setting('notify_email'), 'radar_step_min' => intdiv(radar_step(), 60)],
                 'demo' => demo_exists(),

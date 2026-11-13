@@ -26,6 +26,9 @@ $defaults = [
     'MLG_RESERVATION_HOURS' => 48,          // durée pendant laquelle un article réservé est mis de côté
     'MLG_COVER_KM'          => 30,          // au-delà, une zone est considérée comme non couverte
     'MLG_RADAR_STEP_MIN'    => 30,          // radar : minutes avant d'élargir une commande (commune → wilaya → partout)
+    'MLG_RESEARCH_DAYS'     => 14,          // durée d'une recherche active avant sa clôture automatique
+    // Recherche par photo : identification du produit par l'API Claude. Sans clé (ici ou dans
+    // l'administration), la recherche reste possible : description saisie + ressemblance des photos.
     'MLG_TILES_URL'         => 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
     'MLG_TILES_ATTR'        => '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>',
     'MLG_MAP_CENTER'        => [34.6, 3.2], // vue de départ de la carte
@@ -117,7 +120,7 @@ function tx_rollback(): void
 /** Schéma compatible avec les vieilles versions de SQLite des hébergeurs mutualisés. */
 function migrate(PDO $pdo): void
 {
-    if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= 2) return;
+    if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= 3) return;
     // Deux premières visites simultanées : la seconde attend la fin de la création, puis ne fait rien.
     $pdo->exec('BEGIN IMMEDIATE');
     try {
@@ -382,6 +385,60 @@ function migrate(PDO $pdo): void
                 if ($c !== '') $up->execute([$c, $st['id']]);
             }
             $pdo->exec('PRAGMA user_version = 2');
+        }
+        if ($v < 3) {
+            // Recherche par photo : signatures visuelles des photos du catalogue, et recherches
+            // actives (un client cherche un produit ; le réseau répond) suivies comme une commande.
+            $pdo->exec(<<<SQL
+        CREATE TABLE IF NOT EXISTS image_sigs (
+            path TEXT PRIMARY KEY,
+            product_id INTEGER NOT NULL,
+            dhash TEXT NOT NULL DEFAULT '',
+            hist TEXT NOT NULL DEFAULT '',
+            created INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS image_sigs_p ON image_sigs(product_id);
+        -- auto = 1 : description proposée par la plateforme (non vérifiée) ; demo = 1 : exemple de la démonstration.
+        CREATE TABLE IF NOT EXISTS research (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ref TEXT NOT NULL UNIQUE,
+            thash TEXT NOT NULL UNIQUE,
+            name TEXT NOT NULL,
+            category TEXT NOT NULL DEFAULT 'autre',
+            brand TEXT NOT NULL DEFAULT '',
+            details TEXT NOT NULL DEFAULT '',
+            image TEXT NOT NULL DEFAULT '',
+            auto INTEGER NOT NULL DEFAULT 0,
+            cname TEXT NOT NULL,
+            cphone TEXT NOT NULL,
+            cemail TEXT NOT NULL DEFAULT '',
+            call_ok INTEGER NOT NULL DEFAULT 1,
+            wilaya TEXT NOT NULL DEFAULT '',
+            commune TEXT NOT NULL DEFAULT '',
+            status TEXT NOT NULL DEFAULT 'open',
+            demo INTEGER NOT NULL DEFAULT 0,
+            created INTEGER NOT NULL,
+            updated INTEGER NOT NULL,
+            expires INTEGER NOT NULL DEFAULT 0
+        );
+        CREATE INDEX IF NOT EXISTS research_s ON research(status, created);
+        -- kind : have (« j'ai ce produit ») ou none (écartée par ce compte).
+        CREATE TABLE IF NOT EXISTS research_replies (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            research_id INTEGER NOT NULL REFERENCES research(id) ON DELETE CASCADE,
+            company_id INTEGER NOT NULL,
+            store_id INTEGER NOT NULL DEFAULT 0,
+            product_id INTEGER NOT NULL DEFAULT 0,
+            kind TEXT NOT NULL DEFAULT 'have',
+            price REAL,
+            message TEXT NOT NULL DEFAULT '',
+            created INTEGER NOT NULL,
+            UNIQUE (research_id, company_id, store_id)
+        );
+        CREATE INDEX IF NOT EXISTS research_replies_r ON research_replies(research_id);
+        CREATE INDEX IF NOT EXISTS research_replies_c ON research_replies(company_id);
+        SQL);
+            $pdo->exec('PRAGMA user_version = 3');
         }
         $pdo->exec('COMMIT');
     } catch (Throwable $e) {

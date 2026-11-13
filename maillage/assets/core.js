@@ -241,6 +241,12 @@
   };
   /** Liste « commune, wilaya » avec la virgule de la langue affichée. */
   ML.joinList = (arr) => arr.filter(Boolean).join(ML.lang === 'ar' ? '، ' : ', ');
+  /** « Commune, wilaya » d'un lieu ({commune, commune_ar, wilaya, zone}) ; une seule fois quand elles portent le même nom. */
+  ML.placeLabel = (o) => {
+    const c = ML.communeLabel(o.commune || o.city, o.commune_ar);
+    const z = o.wilaya && ML.zones && ML.zones[o.wilaya] ? ML.zoneName(ML.zones[o.wilaya]) : (o.zone || '');
+    return c && z && ML.norm(c) === ML.norm(z) ? z : ML.joinList([c, z]);
+  };
   /** Nom d'une commune dans la langue affichée (le serveur envoie le nom et, à côté, sa version arabe). */
   ML.communeLabel = (fr, ar) => (ML.lang === 'ar' && ar ? ar : (fr || ''));
   /**

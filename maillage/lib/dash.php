@@ -241,6 +241,8 @@ function product_save(int $cid, array $b): array
         tx_rollback();
         throw $e;
     }
+    // Signatures visuelles des photos : elles servent à la recherche par photo.
+    try { vis_index_product($id, $images); } catch (Throwable $e) { error_log('maillage signatures: ' . $e->getMessage()); }
     if ($old) {
         foreach (array_diff(array_filter(jdec($old['images']), 'is_string'), $images) as $gone) media_delete($gone, $cid);
     } else {
@@ -254,6 +256,7 @@ function product_delete(int $cid, int $id): void
     $p = own_row('products', $cid, $id);
     if (!$p) bad('Produit introuvable.');
     db()->prepare('DELETE FROM products WHERE id = ?')->execute([$id]); // les lignes de commande gardent leur copie
+    db()->prepare('DELETE FROM image_sigs WHERE product_id = ?')->execute([$id]);
     foreach (array_filter(jdec($p['images']), 'is_string') as $im) media_delete($im, $cid);
 }
 
@@ -772,6 +775,7 @@ function dash_overview(int $cid, string $kind): array
         'tiles' => [
             'to_process' => orders_todo($cid),
             'radar' => radar_count($cid),
+            'research' => research_count($cid, $kind),
             'in_progress' => (int) $one("SELECT COUNT(*) FROM orders WHERE seller_cid = ? AND status IN ('confirmed','ready','shipped')", [$cid]),
             'orders30' => $orders30, 'revenue30' => $rev, 'searches30' => $searches30,
             'stores' => $own, 'network_stores' => count(network_stores($cid, $kind)),
@@ -808,6 +812,7 @@ function store_overview(int $cid, int $sid): array
             'to_process' => orders_todo($cid, $sid),
             'in_progress' => (int) $one("SELECT COUNT(*) FROM orders WHERE seller_cid = ? AND store_id = ? AND status IN ('confirmed','ready','shipped')", [$cid, $sid]),
             'radar' => radar_count($cid, $sid),
+            'research' => research_count($cid, '', $sid),
             'orders30' => (int) $one('SELECT COUNT(*) FROM orders WHERE seller_cid = ? AND store_id = ? AND created >= ?', [$cid, $sid, $since]),
             'revenue30' => (float) $one("SELECT COALESCE(SUM(total), 0) FROM orders WHERE seller_cid = ? AND store_id = ? AND created >= ? AND status <> 'cancelled'", [$cid, $sid, $since]),
             'refs' => (int) $one('SELECT COUNT(*) FROM stock WHERE store_id = ?', [$sid]),
@@ -853,6 +858,8 @@ function company_delete(int $cid): void
         $pdo->prepare('DELETE FROM orders WHERE seller_cid = ?')->execute([$cid]);
         $pdo->prepare('UPDATE orders SET brand_cid = 0 WHERE brand_cid = ?')->execute([$cid]); // commandes radar prises par un autre vendeur : il les garde
         $pdo->prepare('DELETE FROM search_hits WHERE company_id = ?')->execute([$cid]);
+        $pdo->prepare('DELETE FROM research_replies WHERE company_id = ?')->execute([$cid]);
+        $pdo->prepare('DELETE FROM image_sigs WHERE product_id IN (SELECT id FROM products WHERE company_id = ?)')->execute([$cid]);
         $pdo->prepare('DELETE FROM activity WHERE company_id = ? OR about_cid = ?')->execute([$cid, $cid]);
         $pdo->prepare('DELETE FROM companies WHERE id = ?')->execute([$cid]); // cascade : comptes, marques, produits, magasins, stock, partenariats
         $pdo->exec('DELETE FROM searches WHERE id NOT IN (SELECT search_id FROM search_hits)');

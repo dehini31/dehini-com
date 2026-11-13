@@ -26,6 +26,9 @@ tests/maillage/run.sh /tmp/mlg-test
   tous quand le délai est à 0 ; email au point de vente ; coordonnées du client cachées avant la prise en charge ;
 - espace privé d'un point de vente (accès créé dans sa fiche) : menu limité, catalogue, réseau et analyses refusés,
   prise de la commande radar (stock baissé), seconde prise refusée, remise sur le radar (stock rétabli), livraison ;
+- recherche par photo : photo du catalogue reconnue (description proposée et marquée « à vérifier », produit trouvé
+  avec la raison), photo inconnue (rien de proposé), nom proche présenté comme similaire ; recherche active :
+  lancement, Radar du magasin de la commune, réponse, suivi, clôture, confidentialité, apprentissage de la photo ;
 - landing des points de vente : inscription avec commune et choix d'une marque (demande de partenariat envoyée) ;
 - mot de passe oublié (lien reçu par email, anciennes sessions fermées), espace ouvert depuis l'administration,
   suppression de la démonstration ;

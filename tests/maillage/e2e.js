@@ -4,7 +4,8 @@
  *   le propriétaire → recherche et réservation côté client (mobile) → traitement de la commande →
  *   annulation par le client → distributeur et partenariat → analyses → démonstration en lecture
  *   seule → radar (commande sans point de vente, niveaux commune / wilaya / partout, prise et
- *   remise par le point de vente) → accès privé d'un point de vente → inscription d'un point de
+ *   remise par le point de vente) → recherche par photo (identification interne, apprentissage) et recherche
+ *   active → accès privé d'un point de vente → inscription d'un point de
  *   vente indépendant → cloisonnement entre entreprises, contenu saisi non exécuté, fichiers internes interdits.
  *   node tests/maillage/e2e.js <adresse> <dossier>
  */
@@ -127,7 +128,7 @@ const mails = () => (fs.existsSync(path.join(DIR, 'mail.jsonl')) ? fs.readFileSy
   await bp.click('[data-act="st-all"][data-q="10"]');
   ok(/6/.test(await bp.locator('[data-nchanges]').innerText()), '6 modifications en attente');
   await bp.click('[data-act="st-save"]');
-  await bp.waitForSelector('.stock-rows .badge-good');
+  await bp.waitForFunction(() => document.querySelectorAll('.stock-rows .badge-good').length === 6, null, { timeout: 8000 }).catch(() => {});
   ok(await bp.locator('.stock-rows .badge-good').count() === 6, 'stock enregistré : 6 déclinaisons en stock');
   await bp.screenshot({ path: path.join(SHOTS, '02-stock.png'), fullPage: true });
 
@@ -435,6 +436,122 @@ const mails = () => (fs.existsSync(path.join(DIR, 'mail.jsonl')) ? fs.readFileSy
   const bnet = await call(bp, 'network');
   ok(bnet.partners.some((x) => x.status === 'pending' && !x.mine && x.company.name === 'Boutique Essai'), 'la marque choisie reçoit sa demande de partenariat');
 
+  /* ------------------------------------------------------ recherche par photo */
+  step('Recherche par photo : identification interne, produit trouvé, similaires');
+  const fd = async (action, file, fields) => cp.evaluate(async ({ action, fields, bytes }) => {
+    const f = new FormData();
+    f.append('file', new Blob([new Uint8Array(bytes)], { type: 'image/jpeg' }), 'p.jpg');
+    Object.entries(fields || {}).forEach(([k, v]) => f.append(k, v));
+    try { return await ML.api(action, { body: f }); } catch (e) { return { error: e.code, message: e.message, status: e.status }; }
+  }, { action, fields, bytes: Array.from(fs.readFileSync(path.join(DIR, file))) });
+  await cp.goto(B + 'explorer/#/photo');
+  await cp.waitForSelector('[data-drop]');
+  await noOverflow(cp, 'recherche par photo (mobile)');
+  ok(await cp.locator('.tabbar a[data-nav="photo"].is-on').count() === 1, 'entrée « Photo » dans la navigation');
+  await cp.setInputFiles('[data-vs-file="pick"]', path.join(DIR, 'faux.jpg'));
+  await cp.waitForSelector('[data-vs-error]:not([hidden])');
+  ok(true, 'fichier qui n\'est pas une image refusé avec un message');
+  // Photo identique à celle d'une fiche : la plateforme propose sa description, à vérifier.
+  await cp.setInputFiles('[data-vs-file="pick"]', path.join(DIR, 'photo.png'));
+  await cp.waitForSelector('[data-form="vs-info"] .badge-info');
+  ok((await cp.inputValue('#v-name')).length > 2 && await cp.inputValue('#v-cat') !== '', 'photo du catalogue reconnue : rayon et nom proposés, modifiables');
+  ok(/à vérifier/.test(await cp.locator('[data-form="vs-info"] .notice').innerText()), 'la proposition est présentée comme non vérifiée');
+  await cp.screenshot({ path: path.join(SHOTS, '13-photo-description.png'), fullPage: true });
+  await cp.click('[data-form="vs-info"] button[type=submit]');
+  await cp.waitForSelector('[data-exact]');
+  ok(/Photo identique/.test(await cp.locator('.vs-exact-head').innerText()), 'photo identique à celle du catalogue : produit trouvé, avec la raison affichée');
+  ok(/<img/.test(await cp.locator('[data-exact] h2').innerText()) && await cp.locator('[data-exact] img[src=x]').count() === 0, 'nom du produit trouvé affiché comme du texte');
+  ok(await cp.locator('[data-near] li').count() === 2, 'points de vente qui l\'ont en stock');
+  ok(await cp.locator('.vs-actions .btn').count() === 4 && await cp.locator('[data-act="vs-research"]').count() === 1, 'boutons : fiche, points de vente, marque, similaires, recherche active');
+  await noOverflow(cp, 'résultat de la recherche par photo (mobile)');
+  await cp.screenshot({ path: path.join(SHOTS, '14-photo-resultat.png'), fullPage: true });
+
+  // Photo inconnue du catalogue : rien n'est proposé, le client décrit le produit.
+  await cp.click('[data-act="vs-new"]');
+  await cp.waitForSelector('[data-drop]');
+  await cp.setInputFiles('[data-vs-file="pick"]', path.join(DIR, 'photo2.jpg'));
+  await cp.waitForSelector('[data-form="vs-info"]');
+  ok(await cp.locator('[data-form="vs-info"] .badge-info').count() === 0 && await cp.inputValue('#v-name') === '', 'photo inconnue : rien n\'est proposé, le client décrit le produit');
+  const unknown = await fd('visual_identify', 'photo2.jpg', {});
+  ok(unknown.auto === false && unknown.info.name === '', 'identification interne : aucune proposition sans ressemblance', unknown);
+  const pname = (await fd('visual_identify', 'photo.png', {})).info.name;
+  const simName = pname.replace(/<[^>]*>/g, ' ').split(/\s+/).filter((w) => w.length > 3).slice(0, 2).join(' ');
+  const sim = await fd('visual_search', 'photo2.jpg', { name: simName + ' modèle' });
+  ok(sim.exact === null && sim.similar.some((x) => x.id === productId), 'nom proche, photo différente : présenté comme similaire, pas comme le produit', { simName, sim });
+
+  step('Recherche active (Radar) : lancement, réponse d\'un point de vente, suivi');
+  await cp.fill('#v-name', 'Perceuse à percussion');
+  await cp.selectOption('#v-cat', 'bricolage');
+  await cp.fill('#v-details', '');
+  await cp.click('[data-form="vs-info"] button[type=submit]');
+  await cp.waitForSelector('[data-nothing]');
+  ok(/Aucun produit correspondant/.test(await cp.locator('[data-nothing]').innerText()), 'ni produit ni alternative : message clair');
+  await cp.click('[data-act="vs-research"]');
+  await cp.waitForSelector('[data-form="vs-research"]');
+  await cp.fill('#rs-cname', 'Karim Client');
+  await cp.fill('#rs-phone', '0661 22 33 44');
+  await cp.fill('#rs-email', 'karim@client.example');
+  await cp.waitForFunction(() => !document.querySelector('#rs-commune').disabled);
+  ok(await cp.inputValue('#rs-zone') === '16' && await cp.inputValue('#rs-commune') === 'Bab Ezzouar', 'wilaya et commune reprises de la dernière commande du client');
+  await cp.selectOption('#rs-commune', 'Alger Centre');
+  const noPlace = await fd('research_create', 'photo2.jpg', { name: 'Perceuse', cname: 'Karim', phone: '0661223344' });
+  ok(noPlace.error && /wilaya/.test(noPlace.message), 'wilaya et commune obligatoires pour lancer une recherche');
+  await cp.click('[data-form="vs-research"] [data-submit]');
+  await cp.waitForSelector('.order-done');
+  const sref = (await cp.locator('.done-ref b').innerText()).trim();
+  ok(/^RS-[A-Z2-9]{6}$/.test(sref), 'recherche active lancée : ' + sref);
+  await cp.click('.order-done a.btn-primary');
+  await cp.waitForSelector('.vs-track');
+  ok(/votre commune/.test(await cp.locator('.notice.is-radar').innerText()), 'suivi : proposée d\'abord aux points de vente de la commune');
+  const stoken = cp.url().split('/recherche/')[1];
+  ok(mails().some((m) => m.to === 'alger@atelier-test.example' && /Un client cherche/.test(m.subject)), 'email au point de vente de la commune');
+  ok(mails().some((m) => m.to === 'karim@client.example' && m.subject.includes(sref)), 'email de confirmation au client');
+
+  let rr = await call(bp, 'radar');
+  const mineR = rr.research.find((x) => x.ref === sref);
+  ok(mineR && mineR.rank === 1 && mineR.image && mineR.contact === null && mineR.name === 'Perceuse à percussion', 'dans le Radar du point de vente de la commune, sans les coordonnées du client', mineR);
+  ok(!(await call(dp, 'radar')).research.some((x) => x.ref === sref), 'pas encore proposée au point de vente d\'une autre wilaya');
+  ok((await call(sp, 'radar')).research.some((x) => x.ref === sref), 'visible aussi depuis l\'accès privé du magasin');
+  await bp.goto(B + 'espace/#/radar');
+  await bp.waitForSelector('[data-research] .rcard');
+  ok(await bp.locator('.side-nav [data-radar]').innerText() === '1', 'pastille du Radar : 1 recherche en attente');
+  await bp.click('[data-research] [data-act="rs-reply"]');
+  await bp.waitForSelector('[data-form="rs-reply"]');
+  await bp.waitForFunction(() => document.querySelectorAll('#rr-product option').length === 2);
+  await bp.selectOption('#rr-product', String(productId));
+  await bp.fill('#rr-price', '8900');
+  await bp.fill('#rr-msg', 'Disponible en <b>magasin</b>');
+  await bp.screenshot({ path: path.join(SHOTS, '15-radar-reponse.png') });
+  await bp.click('.modal [data-send]');
+  await bp.waitForSelector('.rs-replied');
+  ok(/Karim Client/.test(await bp.locator('.rs-replied').innerText()), 'après la réponse : le client (qui l\'a accepté) peut être appelé');
+  ok(mails().some((m) => m.to === 'karim@client.example' && /Une réponse/.test(m.subject)), 'email au client : une réponse est arrivée');
+  await cp.click('[data-act="rs-refresh"]');
+  await cp.waitForSelector('.vs-replies li');
+  const reply = await cp.locator('.vs-replies li').innerText();
+  ok(/Atelier Test Alger/.test(reply) && /8.900/.test(reply.replace(/\s/g, '.')) && /<b>magasin<\/b>/.test(reply), 'le client voit la réponse : magasin, prix, message (affiché comme du texte)');
+  ok(await cp.locator('.vs-reply-product').count() === 1, 'avec la fiche du produit proposé');
+  await noOverflow(cp, 'suivi d\'une recherche (mobile)');
+  await cp.screenshot({ path: path.join(SHOTS, '16-recherche-suivi.png'), fullPage: true });
+  const pubR = await call(cp, 'research_get', undefined, { ref: sref, phone: '0661223344' });
+  ok(pubR.research && !/0661223344|karim@client/.test(JSON.stringify(pubR)), 'suivi par numéro + téléphone, sans exposer les coordonnées');
+  ok((await call(cp, 'research_get', undefined, { ref: sref, phone: '0550000000' })).status === 404, 'suivi refusé avec un mauvais téléphone');
+  await cp.goto(B + 'explorer/#/suivi');
+  await cp.waitForSelector('.mine');
+  ok((await cp.locator('.card').last().innerText()).includes(sref), 'la recherche figure dans « Suivi »');
+  await cp.goto(B + 'explorer/#/recherche/' + stoken);
+  await cp.waitForSelector('[data-act="rs-close"][data-found="1"]');
+  await cp.click('[data-act="rs-close"][data-found="1"]');
+  await cp.waitForSelector('.track-head .badge-good');
+  rr = await call(bp, 'radar');
+  ok(!rr.research.some((x) => x.ref === sref), 'recherche close par le client : elle quitte le Radar');
+  ok(fs.readdirSync(path.join(DIR, 'public_html/maillage/media/r')).length === 2, 'seule la photo de la recherche lancée est conservée');
+  // Apprentissage : la recherche trouvée rattache la photo du client à la fiche proposée par le point de vente.
+  const learned = await fd('visual_identify', 'photo2.jpg', {});
+  ok(learned.auto === true && learned.info.name === pname && learned.info.confidence === 'medium', 'la plateforme apprend : la même photo propose désormais ce produit', learned);
+  const learnedS = await fd('visual_search', 'photo2.jpg', { name: 'autre chose' });
+  ok(learnedS.exact === null && learnedS.similar.some((x) => x.id === productId), 'une photo apprise rapproche le produit sans le déclarer « trouvé »', learnedS);
+
   /* ------------------------------------------------------------ démonstration */
   step('Démonstration en lecture seule');
   const demoCtx = await browser.newContext({ ...devices['iPhone 13'] });
@@ -447,6 +564,8 @@ const mails = () => (fs.existsSync(path.join(DIR, 'mail.jsonl')) ? fs.readFileSy
   await noOverflow(mp, 'vue d\'ensemble (mobile)');
   await mp.screenshot({ path: path.join(SHOTS, '09-demo-mobile.png') });
   const ro = await call(mp, 'stock_save', { store_id: 1, items: [] });
+  const demoRadar = await call(mp, 'radar');
+  ok(demoRadar.research.length > 0 && demoRadar.research.every((x) => !/Perceuse/.test(x.name)), 'la démonstration ne voit que ses recherches d\'exemple, jamais celles des vrais clients');
   ok(ro.error === 'demo' && ro.status === 403, 'aucune écriture possible en démonstration');
   for (const r of ['commandes', 'radar', 'catalogue', 'points-de-vente', 'disponibilite', 'reseau', 'analyses', 'analyses?t=demande', 'analyses?t=performance', 'parametres']) {
     await mp.goto(B + 'espace/#/' + r);
