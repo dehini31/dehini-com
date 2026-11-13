@@ -892,7 +892,7 @@ section ; l'Overview et les rapports la reprennent automatiquement. Le menu est 
 | 🏠 Overview | **Daily Monitoring** (page d'accueil) : « Bonjour, *prénom* », les 5 indicateurs du jour comparés à la veille, l'analyse du jour (les 5 points les plus urgents, les autres sur demande), ce qui a été saisi ce jour-là (onglets Leads, Questions, Actions, Projets), les leads en attente, la liste « À traiter maintenant » (leads sans contact depuis 48 h, à traiter, sans commercial, questions sans réponse, projets à étudier), la saisie rapide, un calendrier du mois (un point sous chaque jour où quelque chose a été saisi ; cliquer un jour ouvre son suivi) et l'activité récente. **Weekly Reports** et **Monthly Reports** : 16 indicateurs comparés à la période précédente, analyse & décisions, leads (évolution, sources, qualité, commerciaux, raisons de non-qualification), questions, projets en cours de financement et montants levés, website, social media, publicité (résultats, budgets, objectifs), emails, communication par canal et support, et funnels. Envoi par email, archivage, CSV, impression / PDF. **Archives** : rapports figés. |
 | 🔗 Connexions | **Facebook · Instagram · Ads** : relier la Page, le compte Instagram et les comptes Meta Ads, synchroniser ; **Classement automatique** : mots-clés de classement (cible, objectif, sujet des questions) ; **Historique** des synchronisations. Voir « Connexion Meta » plus bas. |
 | 📣 Communication | **Actions** : chaque action de communication, saisie avec un assistant pas à pas (voir plus bas). **Performance** (niveau 3) : comparer les canaux, puis les supports à l'intérieur d'un canal (ex. Reels contre carrousels sur Instagram), tableau dépliable catégorie ▸ canal ▸ support, constats « où concentrer les efforts ». **Canaux & supports** (niveaux 1 et 2) : gérer les canaux par catégorie et les supports par type. |
-| 📊 Funnel Analytics | Création d'un funnel (modèle Publicité → Landing Page → Inscription → Investissement), étapes avec objectif chiffré, tags et **canaux de communication** (cochés pour chaque étape, par catégorie : c'est le seul endroit où l'on relie un funnel à des canaux, réseaux sociaux compris), association aux campagnes publicitaires, landing pages et emails. Chaque étape prend ses chiffres dans une **saisie manuelle** ou **automatiquement** dans les éléments associés (clics des campagnes, visites ou inscriptions des pages, ouvertures d'emails, leads liés…), ou dans **les canaux de l'étape** (actions de communication, portée, engagement, clics et conversions de ces actions, leads, leads qualifiés, questions reçues par ces canaux, et relevés des comptes sociaux de ces canaux). Prospects par étape, taux de conversion, taux d'abandon, étape où l'on perd le plus. |
+| 📊 Funnel Analytics | **Des parcours à branches, pas une ligne droite** : un funnel peut avoir plusieurs points d'entrée (publicité, Instagram, messages, salon…), des **aiguillages** (qualifié / sinon, investisseurs / porteurs, ou branches libres) et des circuits qui se **rejoignent** plus loin. **Funnels** : chaque parcours dessiné avec ses chiffres. **Parcours & suivi** : entrées, arrivées à l'objectif, conversion globale, plus forte perte, le parcours chiffré (épaisseur des liens = prospects qui passent, part de chaque branche, meilleur circuit en vert, plus forte perte en orange), chaque **circuit** complet comparé aux autres, le détail par étape (vient de, canaux, source, conversion depuis l'étape précédente et depuis l'entrée, objectif) et les chiffres saisis à la main. **Conversions** : circuits et étapes de tous les funnels. Chaque étape prend ses chiffres dans une **saisie manuelle**, **automatiquement** dans les éléments associés (clics des campagnes, visites ou inscriptions des pages, emails, leads liés), dans **les canaux de l'étape** (actions, portée, engagement, clics, leads, questions, relevés des comptes sociaux, conversations Messenger / Instagram, conversations chaudes, prospects créés depuis les messages) ou dans le **total des étapes précédentes** (aiguillage). Une étape qui compte des leads peut se limiter à un **segment** (investisseurs, porteurs, qualifiés, non qualifiés, convertis). |
 | 📱 Social Media | Les canaux de la catégorie « Réseaux sociaux » : **Vue d'ensemble** (portée, engagement, abonnés comparés à la période précédente, résultats par réseau, formats qui engagent le plus, dernières actions, liens vers les leads et les actions des réseaux) et **Relevés des comptes** (portée, impressions, engagement, abonnés, clics — à saisir chaque semaine). Les leads, questions et actions des réseaux ne sont pas dupliqués ici : ils sont dans Leads & Contacts et Communication, filtrés sur les réseaux sociaux. |
 | 📢 Ads Manager | Chaque campagne est rattachée à un canal de la catégorie « Publicité digitale » (Meta Ads, Google Ads…). **Campagnes** (liste et fiche de chaque campagne : objectifs, budget, résultats, funnel, leads), **Budgets & objectifs** (prévu, dépensé, restant, rythme, et avancement de chaque objectif comparé au temps écoulé), **Résultats** (dépense, impressions, clics, leads, conversions, CTR, coût par lead / conversion). |
 | 🌐 Website Analytics | **Site** (site principal), **Landing pages** (visites et conversion par page), **Inscriptions** (investisseurs et porteurs de projets). Chiffres de Google Analytics saisis par jour ou par semaine. Les leads venus du site sont dans Leads & Contacts (filtre « Web »). |
@@ -948,6 +948,49 @@ utilisés dans des données (Facebook, Site web, Téléphone…) sont repris, et
 les canaux Meta Ads, Google Ads, LinkedIn Ads, TikTok Ads. L'ancien champ « Réseaux sociaux associés » d'un funnel
 (en double avec les canaux de chaque étape) disparaît : ses réseaux sont recopiés sur la première étape du funnel si
 aucune étape n'avait encore de canal.
+
+**Funnel Studio** (Funnel Analytics › « Créer un funnel » ou « Modifier le parcours »). On part d'un modèle
+(parcours simple, plusieurs points d'entrée, qualifié / sinon, investisseurs / porteurs, messages → prospects, ou de
+zéro), puis on dessine le parcours sur un canevas :
+
+- le **+** d'une étape ajoute la suite : étape suivante, aiguillage (qualifié / sinon, investisseurs / porteurs, libre),
+  objectif final, ou « relier à une étape existante » ;
+- **glisser ce +** jusqu'à une autre étape relie les deux (deux circuits se rejoignent) ; « Ajouter une entrée » crée
+  un autre point d'entrée ;
+- cliquer sur une étape ouvre ses réglages : rôle (étape, aiguillage, objectif final), nom, libellé affiché sur la
+  flèche (« Qualifié », « Sinon »…), étapes dont elle vient (plusieurs = circuits qui se rejoignent), source des
+  chiffres, segment de leads, canaux, objectif, tags. L'onglet « Funnel & associations » règle l'objectif, la cible, le
+  statut et les campagnes, pages et emails associés ;
+- un parcours ne peut pas tourner en rond (une étape ne peut pas mener à une étape qui la précède) ; supprimer une
+  étape relie ses suivantes à ses précédentes ; zoom et « ajuster à l'écran » ; `Suppr` retire l'étape choisie,
+  `Échap` annule ;
+- tant que le parcours n'est pas enregistré, une barre le rappelle et quitter la page demande confirmation.
+
+**Ce qu'affiche la case de chaque étape.** Dans ses réglages, chaque étape choisit :
+
+- ses **canaux de communication** et ses **supports** (Reel, carrousel, newsletter… : ceux des canaux cochés d'abord,
+  les autres sur demande) ; les actions et les leads comptés pour l'étape se limitent à ces supports ;
+- ses **KPIs affichés dans la case** (12 au plus, dans l'ordre choisi, chacun avec un objectif facultatif) :
+  - **KPIs calculés** (une quarantaine) : actions publiées, portée, impressions, engagement, taux d'engagement, clics,
+    taux de clic, conversions, coût des actions (canaux et supports de l'étape) ; abonnés, nouveaux abonnés, portée et
+    engagement des comptes ; leads, leads qualifiés, convertis, taux de qualification et de conversion, questions ;
+    conversations, conversations chaudes, prospects issus des messages, commentaires, taux de réponse aux
+    commentaires ; dépense, impressions, clics, CTR, leads, coût par lead et conversions des campagnes associées ;
+    visites, inscriptions, formulaires et taux d'inscription des pages associées ; envois, ouvertures, taux
+    d'ouverture, clics et taux de clic des emails associés. Une nouvelle étape reçoit d'office les KPIs qui vont avec
+    sa source de chiffres ;
+  - **KPIs manuels** : on leur donne un nom (« Rendez-vous pris », « Appels passés »…), un type (nombre, pourcentage,
+    montant) et un calcul sur la période (total, ou dernière valeur saisie).
+
+Dans le suivi, chaque case montre ses KPIs avec leur valeur sur la période (coche verte quand l'objectif est atteint),
+le détail par étape les reprend tous, et **« Saisir des chiffres »** ouvre une fenêtre avec une date et un champ par
+chiffre manuel (prospects des étapes en saisie manuelle et KPIs manuels), groupés par étape ; une date déjà saisie
+s'affiche pour être corrigée. Retirer un KPI manuel supprime ses chiffres saisis.
+
+Sur téléphone, le parcours se lit de haut en bas et les réglages s'affichent sous le canevas. Les funnels existants
+(en ligne droite) sont repris tels quels à la mise à jour : chaque étape suit la précédente, et on peut ensuite leur
+ajouter des branches. Les rapports (écran et email) indiquent pour chaque étape d'où elle vient et signalent le
+circuit qui convertit le mieux.
 
 **Design.** Fond lavande, cartes blanches arrondies, couleur principale violette, icônes au trait dans des tuiles
 pastel (une couleur par domaine : leads bleu, questions turquoise, communication violet, publicité orange, projets
@@ -1012,10 +1055,12 @@ Ce que la synchronisation remplit (bouton « Synchroniser maintenant », et chaq
 | Publications, Reels, carrousels, stories | Communication › Actions (portée, vues, engagement, clics, lien) | support (Post, Carrousel, Reel, Story, Live), cible et objectif d'après le texte |
 | Campagnes Meta Ads | Ads Manager › Campagnes (nom, statut, dates, budget converti) et Résultats jour par jour (dépense, impressions, clics, leads, conversions) | objectif Meta → objectif du tableau de bord, cible d'après le nom |
 | Formulaires Lead Ads | Leads & Contacts (nom, téléphone, email, ville, réponses dans les notes, campagne et funnel) | profil investisseur / porteur, canal Meta Ads (ou Facebook / Instagram si organique), support Formulaire |
+| Tous les commentaires Facebook et Instagram, avec leurs réponses | Leads & Contacts › Commentaires | sujet, profil, question posée, téléphone / email / wilaya laissés, « la Page a répondu » |
 | Commentaires qui posent une question (français, arabe, darija) | Leads & Contacts › Questions | sujet (investissement, projet, plateforme, partenariat, réclamation) et profil |
 
 **Messages Messenger et Instagram** (Leads & Contacts › **Messages**). Les conversations de la Page (Messenger) et du
-compte Instagram relié sont importées à chaque synchronisation (25 derniers messages par conversation) et analysées :
+compte Instagram relié sont importées à chaque synchronisation, **avec tous leurs messages** (une longue conversation
+est lue page par page jusqu'aux messages déjà importés), et analysées :
 sujet (investissement, projet, plateforme…), profil (investisseur / porteur), question posée, intention forte (« je
 veux investir », « rappelez-moi », numéro laissé…), **téléphone** (format algérien, chiffres arabes compris),
 **email** et **wilaya** trouvés dans les messages, temps de première réponse, et une **chaleur** (Chaud / Tiède /
@@ -1026,6 +1071,21 @@ lien et derniers messages dans les notes) ; une personne déjà enregistrée (m�
 lieu d'être recréée. Le tableau de bord ne fait que lire : on répond depuis Meta Business Suite (bouton « Répondre »).
 Autorisations à ajouter à la configuration Facebook Login for Business : `pages_messaging`, `pages_manage_metadata`,
 `instagram_manage_messages`, puis « Reconnecter ». L'accueil affiche les messages sans réponse.
+
+**Commentaires Facebook et Instagram** (Leads & Contacts › **Commentaires**). Tous les commentaires des publications,
+avec leurs réponses (celles de la Page sont marquées « Vous (la Page) »), et pas seulement ceux qui posent une
+question. À chaque synchronisation, les publications des 3 derniers mois dont le nombre de commentaires a changé sont
+relues : les nouveaux commentaires des anciennes publications arrivent aussi. Indicateurs (commentaires, sans réponse
+de la Page, répondus, questions, coordonnées laissées, prospects créés), sujets, réseaux, profils ; filtres (sans
+réponse, questions, avec coordonnées, Facebook, Instagram, prospects, traités, ignorés) ; recherche ; pour chaque
+commentaire : « Créer le prospect » (formulaire prérempli), « Répondre » (ouvre le commentaire chez Meta), « Traité »,
+« Ignorer ». L'accueil affiche les commentaires sans réponse.
+
+**Tout afficher, tout importer.** Messages et Commentaires ont un choix « *période* / **Tout l'historique** » (toutes
+les conversations ou tous les commentaires importés, quelle que soit la date) et un bouton « Afficher plus » (100 par
+100). Le bouton **« Importer tout l'historique »** (dans Messages, Commentaires et Connexions › Synchronisation) relit
+chez Meta toutes les conversations avec tous leurs messages, et tous les commentaires des publications des 2 dernières
+années ; cela peut prendre plusieurs minutes, et s'il s'arrête avant la fin il suffit de le relancer.
 
 **Noms des commentateurs.** Meta ne donne le nom de l'auteur d'un commentaire Facebook qu'aux apps qui ont
 `pages_read_user_content` et sont « en ligne » (mode Live) ; sinon la question s'affiche « Nom masqué par Meta » avec

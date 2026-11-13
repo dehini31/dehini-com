@@ -95,6 +95,12 @@ const ICONS = {
   rocket: "M5 19c1-3 3-5 6-6M14 4c4 0 6 2 6 6-2 4-6 7-9 8l-5-5c1-3 4-7 8-9zM15 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2z",
   inbox: "M22 12h-6l-2 3h-4l-2-3H2M5.5 5h13l3.5 7v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6z",
   grid: "M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z",
+  "play-c": "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM10 8.5l5.5 3.5-5.5 3.5z",
+  branch: "M6 3v12M18 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM18 9a9 9 0 0 1-9 9",
+  merge: "M18 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 21V9a9 9 0 0 0 9 9",
+  flag: "M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7",
+  minus: "M5 12h14",
+  maximize: "M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3",
 };
 document.body.insertAdjacentHTML("afterbegin", `<svg width="0" height="0" style="position:absolute" aria-hidden="true">${Object.entries(ICONS).map(([k, d]) => `<symbol id="i-${k}" viewBox="0 0 24 24"><path d="${d}"/></symbol>`).join("")}</svg>`);
 const ic = (n, cls = "") => `<svg class="i ${cls}" aria-hidden="true"><use href="#i-${n}"/></svg>`;
@@ -267,14 +273,14 @@ const NAV = [
   { id: "ads", ic: "target", label: "Ads Manager", tabs: [["campaigns", "Campagnes"], ["budgets", "Budgets & objectifs"], ["results", "Résultats"]] },
   { id: "web", ic: "globe", label: "Website Analytics", tabs: [["website", "Site"], ["pages", "Landing pages"], ["registrations", "Inscriptions"]] },
   { id: "email", ic: "mail", label: "Email Marketing", tabs: [["campaigns", "Campagnes"], ["performance", "Performance"]] },
-  { id: "funnels", ic: "funnel", label: "Funnel Analytics", tabs: [["list", "Funnels"], ["stages", "Étapes & canaux"], ["conversions", "Conversions"]] },
+  { id: "funnels", ic: "funnel", label: "Funnel Analytics", tabs: [["list", "Funnels"], ["stages", "Parcours & suivi"], ["conversions", "Conversions"]] },
   { group: "Commercial" },
-  { id: "leads", ic: "users", label: "Leads & Contacts", tabs: [["contacts", "Leads"], ["messages", "Messages"], ["questions", "Questions"], ["profiles", "Profils"], ["sources", "Qualité par canal"], ["assignment", "Assignation"], ["treatment", "Traitement"]] },
+  { id: "leads", ic: "users", label: "Leads & Contacts", tabs: [["contacts", "Leads"], ["messages", "Messages"], ["comments", "Commentaires"], ["questions", "Questions"], ["profiles", "Profils"], ["sources", "Qualité par canal"], ["assignment", "Assignation"], ["treatment", "Traitement"]] },
   { id: "projects", ic: "folder", label: "Projets", tabs: [["requests", "Demandes"], ["funding", "En financement"]] },
   { id: "settings", ic: "settings", label: "Réglages", tabs: [], hidden: true },
 ];
 const SECTIONS = NAV.filter(n => n.id);
-const ALIAS = { "ads/campaign": "campaigns" }; // onglet surligné pour une page sans onglet propre
+const ALIAS = { "ads/campaign": "campaigns", "funnels/edit": "list" }; // onglet surligné pour une page sans onglet propre
 /** Anciennes adresses (avant la suppression des doublons) → nouvelle place. */
 const REDIRECT = {
   "social/leads": p => "leads/contacts/" + (p || "social"), "social/inquiries": p => "leads/questions" + (p && p !== "all" && p !== "social" ? "/" + p : ""),
@@ -304,6 +310,14 @@ async function route() {
     if (!leave) { location.hash = "#comm/taxonomy"; return; }
     S.tx = null;
   }
+  if (S.fb && !location.hash.startsWith("#funnels/edit")) {
+    if (S.fb.dirty) {
+      const leave = await askDialog({ icon: ["alert", "amber"], title: "Quitter sans enregistrer ?", text: "Votre parcours n'est pas enregistré. Si vous quittez le Funnel Studio, les changements seront perdus.", ok: "Quitter sans enregistrer", cancel: "Rester dans le Studio", danger: true });
+      if (!leave) { location.hash = "#funnels/edit/" + S.fb.param; return; }
+    }
+    S.fb = null;
+    fbCloseMenu();
+  }
   const { sec, tab, param } = parseHash();
   if (REDIRECT[sec + "/" + tab]) { location.replace("#" + REDIRECT[sec + "/" + tab](param)); return; }
   const def = SECTIONS.find(n => n.id === sec) || SECTIONS[0];
@@ -327,12 +341,13 @@ async function route() {
     if (tok !== S.tok) return;
     if (typeof html === "string") V.innerHTML = html;
     if (view.after) view.after(param);
+    drawFlows();
   } catch (e) {
     if (tok === S.tok && e.status !== 401) V.innerHTML = empty("Cette page n'a pas pu s'afficher. " + e.message, `<button type="button" class="btn" onclick="location.reload()">${ic("trend", "sm")} Recharger</button>`, { icon: ["alert-c", "pink"] });
   }
 }
 window.addEventListener("hashchange", route);
-window.addEventListener("beforeunload", e => { if (S.tx && S.tx.dirty) { e.preventDefault(); e.returnValue = ""; } });
+window.addEventListener("beforeunload", e => { if ((S.tx && S.tx.dirty) || (S.fb && S.fb.dirty)) { e.preventDefault(); e.returnValue = ""; } });
 $("#burger").addEventListener("click", () => $("#side").classList.toggle("open"));
 
 /* ================================================================ briques d'affichage */
@@ -586,28 +601,259 @@ function emailTable(list) {
 }
 const ESTIMATE = '<p class="small muted" style="margin:8px 0 0">* Les ouvertures sont des estimations : certaines messageries (Apple Mail, protections de la vie privée) bloquent ou faussent leur mesure.</p>';
 
-function funnelChart(f) {
-  if (!f.stages.length) return empty("Ce funnel n'a pas encore d'étapes.");
-  const max = Math.max(1, ...f.stages.map(s => s.value));
-  const ramp = ["--o1", "--o2", "--o3", "--o4", "--o5"];
-  return `<div class="funnel">${f.stages.map((s, i) => {
-    const color = ramp[Math.min(ramp.length - 1, Math.round(i * (ramp.length - 1) / Math.max(1, f.stages.length - 1)))];
-    const conv = i > 0 ? `<div class="fs-conv${f.worst === i ? " worst" : ""}">↓ ${pct(s.conv_prev, 1)} passent à l'étape suivante · abandon ${pct(s.drop, 1)}${s.lost ? " (" + num(s.lost) + " perdus)" : ""}${f.worst === i ? " · <b>plus forte perte</b>" : ""}</div>` : "";
-    const tip = `<b>${esc(s.name)}</b>${s.channels.length ? "Canaux : " + s.channels.map(k => esc(L("sources", k))).join(", ") + "<br>" : ""}Prospects : ${num(s.value)}${s.conv_start != null ? "<br>Depuis l'entrée : " + pct(s.conv_start, 1) : ""}${s.target ? "<br>Objectif : " + num(s.target) + " (" + pct(s.target_pct) + ")" : ""}<br>Source : ${esc(L("stage_sources", s.source))}`;
-    return conv + `<div data-tip="${esc(tip)}"><div class="fs-h"><span class="n">${i + 1}. ${esc(s.name)} ${s.tags.map(t => `<span class="tag">#${esc(t)}</span>`).join("")} ${chanChips(s.channels)}</span><span class="v">${num(s.value)}${s.target ? ` <span class="muted small">/ ${num(s.target)}</span>` : ""}</span></div><div class="fs-bar"><i style="width:${(100 * s.value / max).toFixed(1)}%;background:var(${color})"></i></div></div>`;
-  }).join("")}</div>`;
+/* ---------- KPIs des étapes : catalogue (calculés) et KPIs manuels (saisis) */
+const parseKpis = v => { try { const a = typeof v === "string" ? JSON.parse(v || "[]") : v; return Array.isArray(a) ? a : []; } catch (e) { return []; } };
+const kpiLabel = kd => String(kd.k).startsWith("m_") ? kd.l : L("stage_kpis", kd.k);
+const kpiFmtOf = kd => String(kd.k).startsWith("m_") ? kd.f : EN("stage_kpi_fmt")[kd.k] || "num";
+const kpiVal = (v, fmt) => v == null ? "—" : fmt === "pct" ? pct(v, 1) : fmt === "pctv" ? num(v, 1) + " %" : fmt === "money" ? money(Math.round(v)) : num(v, v % 1 ? 1 : 0);
+const kpiTarget = k => k.target == null ? "" : k.fmt === "pct" || k.fmt === "pctv" ? num(k.target, 1) + " %" : k.fmt === "money" ? money(k.target) : num(k.target);
+/** KPIs proposés d'office selon la source des chiffres d'une étape. */
+const KPI_DEFAULTS = { stage_posts: ["reach", "engagement_rate"], stage_reach: ["reach", "engagement_rate", "clicks"], stage_engagement: ["reach", "engagement", "engagement_rate"],
+  stage_clicks: ["clicks", "ctr"], stage_conversions: ["conversions", "clicks"], stage_leads: ["leads", "qual_rate"], stage_leads_qualified: ["leads", "qual_rate"], stage_inquiries: ["inquiries"],
+  stage_conversations: ["conversations", "conversations_hot"], stage_conversations_hot: ["conversations_hot", "prospects_messages"], stage_prospects_messages: ["prospects_messages"],
+  ads_impressions: ["ads_spend", "ads_ctr"], ads_clicks: ["ads_spend", "ads_ctr"], ads_leads: ["ads_spend", "ads_cpl"], ads_conversions: ["ads_spend", "ads_conversions"],
+  social_reach: ["social_reach", "new_followers"], social_engagement: ["social_engagement", "followers"], social_clicks: ["social_reach"],
+  page_visits: ["page_visits", "page_conv_rate"], page_registrations: ["page_registrations", "page_conv_rate"], page_forms: ["page_forms"],
+  email_sent: ["email_sent", "open_rate"], email_opens: ["open_rate", "click_rate"], email_clicks: ["click_rate"], email_conversions: ["click_rate"],
+  contacts_qualified: ["qual_rate"], contacts_converted: ["conv_rate"] };
+const kpiDefaults = src => (KPI_DEFAULTS[src] || []).filter(k => EN("stage_kpis")[k]).map(k => ({ k, t: 0 }));
+const supChips = keys => (keys || []).map(k => `<span class="chan sup${supportOf(k) ? "" : " gone"}">${ic("layers", "xs")}${esc(L("supports", k))}</span>`).join("");
+
+/* ---------- parcours : un funnel est un réseau d'étapes (plusieurs entrées, aiguillages, circuits qui se rejoignent) */
+const KIND_META = { entry: ["play-c", "green", "Point d'entrée"], step: ["layers", "violet", "Étape"], split: ["branch", "blue", "Aiguillage"], goal: ["flag", "orange", "Objectif final"] };
+/** Sources de chiffres qui comptent des leads : on peut les limiter à un segment (investisseurs, qualifiés…). */
+const LEAD_SRC = src => /^(contacts|stage_leads|stage_inquiries)/.test(src || "");
+const FL = new Map(); // connecteurs de chaque parcours affiché (dessinés une fois les étapes en place)
+let flSeq = 0;
+
+/**
+ * Colonnes du dessin : une étape se place juste après la plus lointaine des étapes qui y mènent ;
+ * dans une colonne, chaque étape se range près de ses étapes précédentes (moins de croisements).
+ */
+function flowLayout(nodes) {
+  const by = new Map(nodes.map(n => [n.key, n]));
+  const lvl = new Map();
+  const level = (k, depth = 0) => {
+    if (lvl.has(k)) return lvl.get(k);
+    const ps = by.get(k).parents.filter(p => by.has(p));
+    const v = ps.length && depth < 60 ? 1 + Math.max(...ps.map(p => level(p, depth + 1))) : 0;
+    lvl.set(k, v);
+    return v;
+  };
+  nodes.forEach(n => level(n.key));
+  const cols = [];
+  nodes.forEach(n => (cols[lvl.get(n.key)] = cols[lvl.get(n.key)] || []).push(n));
+  const pos = new Map();
+  const bary = n => { const ps = n.parents.filter(p => pos.has(p)); return ps.length ? ps.reduce((s, p) => s + pos.get(p), 0) / ps.length : .5; };
+  return cols.filter(Boolean).map((col, l) => {
+    if (l) col.sort((a, b) => bary(a) - bary(b) || nodes.indexOf(a) - nodes.indexOf(b));
+    col.forEach((n, i) => pos.set(n.key, col.length > 1 ? i / (col.length - 1) : .5));
+    return col;
+  });
 }
+
+/** Étapes d'un funnel calculé (api « funnel », rapports) au format du dessin. Un ancien rapport archivé est en ligne droite. */
+const flowNodes = f => {
+  const legacy = !f.stages.some(s => Array.isArray(s.parents));
+  return f.stages.map((s, i) => Object.assign({ kind: i ? "step" : "entry", branch: "", segment: "", channels: [], tags: [], from_name: "" }, s, {
+    key: String(s.id != null ? s.id : i),
+    parents: legacy ? (i ? [String(f.stages[i - 1].id != null ? f.stages[i - 1].id : i - 1)] : []) : s.parents.map(String),
+  }));
+};
+
+function flowNode(n, o) {
+  const km = KIND_META[n.kind] || KIND_META.step;
+  const cls = "fn k-" + (KIND_META[n.kind] ? n.kind : "step") + (o.sel === n.key ? " sel" : "") + (o.worst === n.key ? " worst" : "") + (o.best && o.best.has(n.key) ? " best" : "")
+    + (o.linkOk && o.linkOk.has(n.key) ? " target" : "") + (o.linkFrom === n.key ? " origin" : "");
+  const seg = n.segment ? `<span class="fn-seg">${esc(L("stage_segments", n.segment))}</span>` : "";
+  const head = `<div class="fn-top">${tile(km[0], km[1], "xs")}<span class="fn-kind">${esc(km[2])}</span>${seg}</div><b class="fn-name">${esc(n.name || "Sans nom")}</b>`;
+  if (o.mini) return `<div class="${cls}" data-k="${esc(n.key)}">${head}</div>`;
+  const ch = n.channels || [], sp = n.supports || [];
+  const chips = ch.length || sp.length ? `<div class="fn-ch">${chanChips(ch.slice(0, 3))}${ch.length > 3 ? `<span class="chan">+${ch.length - 3}</span>` : ""}${supChips(sp.slice(0, 2))}${sp.length > 2 ? `<span class="chan sup">+${sp.length - 2}</span>` : ""}</div>` : "";
+  if (o.data) {
+    const conv = n.parents.length
+      ? `<div class="fn-conv">${o.worst === n.key ? ic("alert", "xs") + " " : ""}<b>${pct(n.conv_prev, 1)}</b> de « ${esc(n.from_name || "l'étape précédente")} »</div>`
+      : `<div class="fn-conv">Entrée du parcours</div>`;
+    const tipTxt = `<b>${esc(n.name)}</b>${esc(km[2])} · ${esc(L("stage_sources", n.source))}<br>Prospects : ${num(n.value)}`
+      + (n.parents.length ? `<br>Depuis « ${esc(n.from_name)} » : ${pct(n.conv_prev, 1)}${n.lost ? " · " + num(n.lost) + " non passés" : ""}` : "")
+      + (n.conv_start != null ? "<br>Depuis l'entrée : " + pct(n.conv_start, 1) : "")
+      + (n.target ? "<br>Objectif : " + num(n.target) + " (" + pct(n.target_pct) + ")" : "")
+      + (ch.length ? "<br>Canaux : " + ch.map(k => esc(L("sources", k))).join(", ") : "")
+      + (sp.length ? "<br>Supports : " + sp.map(k => esc(L("supports", k))).join(", ") : "")
+      + (n.kpis || []).map(k => "<br>" + esc(k.label) + " : <b>" + kpiVal(k.value, k.fmt) + "</b>" + (k.target ? " / " + kpiTarget(k) : "")).join("")
+      + (n.segment ? "<br>Segment : " + esc(L("stage_segments", n.segment)) : "")
+      + (o.worst === n.key ? "<br><b>Plus forte perte du parcours</b>" : "");
+    const kps = (n.kpis || []).slice(0, o.compact ? 2 : 6);
+    const kpiBox = kps.length ? `<div class="fn-kpis">${kps.map(k => `<span class="fn-kpi${k.target_pct == null ? "" : k.target_pct >= 1 ? " ok" : " ko"}"><small>${esc(k.label)}</small><b>${kpiVal(k.value, k.fmt)}</b></span>`).join("")}${n.kpis.length > kps.length ? `<span class="fn-kpi more"><small>+ ${n.kpis.length - kps.length} autre(s) KPI au survol</small></span>` : ""}</div>` : "";
+    return `<div class="${cls}" data-k="${esc(n.key)}" data-tip="${esc(tipTxt)}">${head}<div class="fn-val"><b>${num(n.value)}</b>${n.target ? `<span>/ ${num(n.target)}</span>` : ""}</div>${conv}${n.target ? meter(n.target_pct, n.target_pct >= 1 ? "good" : "") : ""}${kpiBox}${o.compact ? "" : chips}</div>`;
+  }
+  // Constructeur : la source des chiffres, les canaux, et le « + » pour ajouter ou relier la suite.
+  const warn = needsCh(n.source) && !ch.length ? `<div class="fn-warn">${ic("alert", "xs")} Aucun canal choisi</div>` : "";
+  const kd = n.kpis || [];
+  const kpiTags = kd.length ? `<div class="fn-ktags">${kd.slice(0, 4).map(k => `<span class="ktag">${ic("chart", "xs")}${esc(kpiLabel(k))}</span>`).join("")}${kd.length > 4 ? `<span class="ktag">+${kd.length - 4}</span>` : ""}</div>` : "";
+  return `<div class="${cls}" data-k="${esc(n.key)}" tabindex="0" role="button" aria-label="${esc(km[2] + " : " + (n.name || "sans nom"))}">${head}<div class="fn-src">${esc(L("stage_sources", n.source))}</div>${chips}${kpiTags}${warn}`
+    + `<button type="button" class="fn-port" data-fa="${esc(n.key)}" title="Ajouter la suite (ou glisser jusqu'à une étape pour la relier)" aria-label="Ajouter après « ${esc(n.name || "cette étape")} »">${ic("plus", "xs")}</button></div>`;
+}
+
+/**
+ * Dessin d'un parcours : colonnes d'étapes reliées par des courbes. En suivi (o.data), l'épaisseur
+ * d'un lien suit le nombre de prospects qui passent, et chaque branche d'un aiguillage affiche sa part.
+ */
+function flowHtml(nodes, o = {}) {
+  if (!nodes.length) return empty("Ce funnel n'a pas encore d'étapes.");
+  const id = "fl" + ++flSeq;
+  const by = new Map(nodes.map(n => [n.key, n]));
+  const kids = new Map();
+  nodes.forEach(n => n.parents.forEach(p => kids.set(p, (kids.get(p) || 0) + 1)));
+  const top = o.data ? Math.max(1, ...nodes.map(n => +n.value || 0)) : 1;
+  const edges = [];
+  for (const n of nodes) for (const p of n.parents) {
+    const a = by.get(p);
+    if (!a) continue;
+    const e = { from: p, to: n.key, label: o.mini ? "" : n.branch || "" };
+    if (o.data) {
+      const sum = n.parents.reduce((s, q) => s + (+(by.get(q) || {}).value || 0), 0);
+      const flow = sum > 0 ? (+n.value || 0) * (+a.value || 0) / sum : 0;
+      e.w = 2 + 12 * Math.min(1, flow / top);
+      if (n.parents.length === 1 && +a.value > 0 && kids.get(p) > 1 && n.value <= a.value) e.pct = n.value / a.value;
+      e.tip = `<b>${esc(a.name)} → ${esc(n.name)}</b>${n.branch ? "Branche « " + esc(n.branch) + " »<br>" : ""}${n.parents.length > 1 ? "≈ " : ""}${num(flow)} prospect(s)`;
+    }
+    if (o.bestEdges && o.bestEdges.has(p + ">" + n.key)) e.best = true;
+    edges.push(e);
+  }
+  FL.set(id, { edges, zoom: o.zoom || 1, edit: !!o.edit, fit: !!o.mini, auto: !!o.data });
+  if (FL.size > 200) FL.delete(FL.keys().next().value);
+  return `<div class="fl${o.edit ? " edit" : ""}${o.data ? " data" : ""}${edges.some(e => e.label || e.pct != null) ? " lb" : ""}${o.compact ? " compact" : ""}${o.mini ? " mini" : ""}${o.linkFrom ? " linking" : ""}" data-fl="${id}"><div class="fl-scroll"><div class="fl-sizer"><div class="fl-stage"><svg class="fl-svg"></svg>`
+    + flowLayout(nodes).map(c => `<div class="fl-col">${c.map(n => flowNode(n, o)).join("")}</div>`).join("") + `</div></div></div></div>`;
+}
+
+/** Trace les liens d'un parcours affiché (après la mise en page : positions réelles des étapes). */
+function drawFlow(fl) {
+  const data = FL.get(fl.dataset.fl);
+  const stage = $(".fl-stage", fl);
+  if (!data || !stage || !fl.isConnected) return;
+  // Écran étroit : le parcours se lit de haut en bas.
+  const vert = !fl.classList.contains("mini") && fl.clientWidth < (fl.classList.contains("compact") ? 560 : 700);
+  fl.classList.toggle("v", vert);
+  const W = stage.offsetWidth, H = stage.offsetHeight;
+  // Aperçu (modèles) : tout tient dans la carte. Suivi chiffré : réduit au besoin (pas en dessous de 70 %).
+  const avail = $(".fl-scroll", fl).clientWidth - 8;
+  const z = data.fit ? Math.min(1, Math.max(.3, avail / W)) : data.auto ? Math.min(1, Math.max(.7, avail / W)) : data.zoom || 1;
+  stage.style.transform = z !== 1 ? `scale(${z})` : "";
+  const sizer = $(".fl-sizer", fl);
+  sizer.style.width = z !== 1 ? Math.ceil(W * z) + "px" : "";
+  sizer.style.height = z !== 1 ? Math.ceil(H * z) + "px" : "";
+  const box = new Map($$(".fn", stage).map(n => [n.dataset.k, [n.offsetLeft, n.offsetTop, n.offsetWidth, n.offsetHeight]]));
+  const svg = $(".fl-svg", stage);
+  svg.setAttribute("width", W);
+  svg.setAttribute("height", H);
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  $$(".fl-el", stage).forEach(x => x.remove());
+  const mk = fl.dataset.fl + "a";
+  let g = `<defs><marker id="${mk}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0L10 5L0 10z" class="fl-arrow"/></marker></defs>`;
+  const labels = [];
+  for (const e of data.edges) {
+    const a = box.get(e.from), b = box.get(e.to);
+    if (!a || !b) continue;
+    let p;
+    if (vert) {
+      const x1 = a[0] + a[2] / 2, y1 = a[1] + a[3], x2 = b[0] + b[2] / 2, y2 = b[1] - 1, d = Math.max(26, (y2 - y1) / 2);
+      p = [x1, y1, x1, y1 + d, x2, y2 - d, x2, y2];
+    } else {
+      const x1 = a[0] + a[2], y1 = a[1] + a[3] / 2, x2 = b[0] - 1, y2 = b[1] + b[3] / 2, d = Math.max(34, (x2 - x1) / 2);
+      p = [x1, y1, x1 + d, y1, x2 - d, y2, x2, y2];
+    }
+    const d = `M${p.map(v => v.toFixed(1)).slice(0, 2).join(",")} C${p.slice(2).map(v => v.toFixed(1)).join(" ")}`;
+    const ek = esc(e.from + ">" + e.to);
+    g += `<path class="fl-e${e.best ? " best" : ""}" d="${d}" data-e="${ek}"${e.w ? ` style="stroke-width:${e.w.toFixed(1)}px"` : ` marker-end="url(#${mk})"`}/>`;
+    if (e.best && e.w) g += `<path class="fl-run" d="${d}"/>`;
+    if (e.tip) g += `<path class="fl-hit" d="${d}" data-tip="${esc(e.tip)}"/>`;
+    if (e.label || e.pct != null) {
+      const mx = (p[0] + 3 * p[2] + 3 * p[4] + p[6]) / 8, my = (p[1] + 3 * p[3] + 3 * p[5] + p[7]) / 8;
+      const txt = (e.label ? `<b>${esc(e.label)}</b>` : "") + (e.pct != null ? `<span>${pct(e.pct)}</span>` : "");
+      labels.push(data.edit
+        ? `<button type="button" class="fl-el" style="left:${mx.toFixed(0)}px;top:${my.toFixed(0)}px" data-fe="${esc(e.to)}" title="Renommer la branche">${txt}</button>`
+        : `<span class="fl-el${e.best ? " best" : ""}" style="left:${mx.toFixed(0)}px;top:${my.toFixed(0)}px">${txt}</span>`);
+    }
+  }
+  svg.innerHTML = g;
+  if (labels.length) stage.insertAdjacentHTML("beforeend", labels.join(""));
+  // Parcours plus large que l'écran (téléphone) : on montre d'abord son milieu.
+  const sc = $(".fl-scroll", fl);
+  if (!data.centered && sc.scrollWidth > sc.clientWidth + 4) { data.centered = true; if (vert) sc.scrollLeft = (sc.scrollWidth - sc.clientWidth) / 2; }
+}
+/** Redessine tous les parcours de la page ; suit les changements de taille (écran, rotation, polices). */
+const flRO = window.ResizeObserver ? new ResizeObserver(list => requestAnimationFrame(() => list.forEach(x => drawFlow(x.target)))) : null;
+function drawFlows() {
+  if (flRO) flRO.disconnect();
+  $$(".fl[data-fl]").forEach(fl => { drawFlow(fl); if (flRO) flRO.observe(fl); });
+}
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => drawFlows());
+// Survol d'une étape : ses liens entrants et sortants ressortent.
+let flHover = null;
+document.addEventListener("mouseover", e => {
+  const n = e.target.closest && e.target.closest(".fl .fn");
+  if (n === flHover) return;
+  if (flHover) $$(".fl-e.hl", flHover.closest(".fl") || document).forEach(p => p.classList.remove("hl"));
+  flHover = n;
+  if (n) $$(".fl-e", n.closest(".fl")).forEach(p => { const [a, b] = p.dataset.e.split(">"); if (a === n.dataset.k || b === n.dataset.k) p.classList.add("hl"); });
+});
+
+/** Options de dessin d'un funnel calculé : plus forte perte, et meilleur circuit quand il y en a plusieurs. */
+function flowOpts(f, extra = {}) {
+  const o = Object.assign({ data: true }, extra);
+  if (f.worst != null && f.stages[f.worst] && f.stages[f.worst].drop > 0) o.worst = String(f.stages[f.worst].id);
+  if (f.paths && f.paths.length > 1 && f.best_path != null && f.paths[f.best_path]) {
+    const ids = f.paths[f.best_path].ids.map(String);
+    o.best = new Set(ids);
+    o.bestEdges = new Set(ids.slice(1).map((x, i) => ids[i] + ">" + x));
+  }
+  return o;
+}
+const FLOW_LEGEND = `<div class="fl-legend">${["entry", "step", "split", "goal"].map(k => `<span><i class="k-${k}"></i>${esc(KIND_META[k][2])}</span>`).join("")}<span class="muted">L'épaisseur d'un lien suit le nombre de prospects qui passent · survolez une étape pour le détail.</span></div>`;
+
 function funnelTable(f) {
   return table(f.stages, [
-    { l: "Étape", h: s => `<b>${esc(s.name)}</b>${s.tags.length ? "<div>" + s.tags.map(t => `<span class="tag">#${esc(t)}</span>`).join("") + "</div>" : ""}` },
-    { l: "Canaux de communication", wrap: 1, h: s => s.channels.length ? chanChips(s.channels) : '<span class="muted">—</span>' },
+    { l: "Étape", h: s => `<b>${esc(s.name)}</b><div class="small muted">${esc((KIND_META[s.kind] || KIND_META.step)[2])}${s.segment ? " · " + esc(L("stage_segments", s.segment)) : ""}</div>${s.tags.length ? "<div>" + s.tags.map(t => `<span class="tag">#${esc(t)}</span>`).join("") + "</div>" : ""}` },
+    { l: "Vient de", h: s => (s.parents || []).length ? esc(s.from_name) + (s.branch ? ` <span class="tag">${esc(s.branch)}</span>` : "") : '<span class="muted">Entrée</span>' },
+    { l: "Canaux & supports", wrap: 1, h: s => s.channels.length || (s.supports || []).length ? chanChips(s.channels) + supChips(s.supports) : '<span class="muted">—</span>' },
+    { l: "KPIs", wrap: 1, h: s => (s.kpis || []).length ? s.kpis.map(k => `<div class="small nowrap"><span class="muted">${esc(k.label)} :</span> <b>${kpiVal(k.value, k.fmt)}</b>${k.target ? ` <span class="muted">/ ${kpiTarget(k)}</span>` : ""}</div>`).join("") : '<span class="muted">—</span>' },
     { l: "Source des chiffres", h: s => `<span class="small">${esc(L("stage_sources", s.source))}</span>` + (needsCh(s.source) && !s.channels.length ? '<div><span class="pill warn">Aucun canal</span></div>' : "") },
     { l: "Prospects", n: 1, h: s => num(s.value) },
-    { l: "Conv. étape préc.", n: 1, h: s => pct(s.conv_prev, 1) },
-    { l: "Conv. depuis l'entrée", n: 1, h: s => pct(s.conv_start, 1) },
-    { l: "Abandon", n: 1, h: s => s.drop == null ? "—" : (s === f.stages[f.worst] ? `<span class="pill warn">${pct(s.drop, 1)}</span>` : pct(s.drop, 1)) },
+    { l: "Conversion", n: 1, h: s => pct(s.conv_prev, 1) },
+    { l: "Depuis l'entrée", n: 1, h: s => pct(s.conv_start, 1) },
+    { l: "Non passés", n: 1, h: s => s.drop == null ? "—" : (s === f.stages[f.worst] ? `<span class="pill warn">${pct(s.drop, 1)}</span>` : pct(s.drop, 1)) },
     { l: "Objectif", h: s => s.target ? `<div class="mcell">${meter(s.target_pct, s.target_pct >= 1 ? "good" : "")}<span>${pct(s.target_pct)}</span></div>` : '<span class="muted">—</span>' },
   ]);
+}
+/** Chaque circuit complet (d'une entrée à une fin), du plus performant au moins performant. */
+function funnelPaths(f) {
+  if (!f.paths || !f.paths.length) return "";
+  const byId = new Map(f.stages.map(s => [String(s.id), s]));
+  const top = Math.max(1e-9, ...f.paths.map(p => p.conv || 0));
+  const rows = f.paths.map((p, i) => Object.assign({ i, est: p.ids.some(id => ((byId.get(String(id)) || {}).parents || []).length > 1) }, p));
+  rows.sort((a, b) => (b.conv == null ? -1 : b.conv) - (a.conv == null ? -1 : a.conv));
+  return table(rows, [
+    { l: "Circuit", wrap: 1, h: p => `<div class="path">${p.names.map(n => `<span>${esc(n)}</span>`).join(ic("chev-r", "xs"))}</div>${p.i === f.best_path && f.paths.length > 1 ? '<span class="pill good">Meilleur circuit</span>' : ""}` },
+    { l: "Au départ", n: 1, h: p => num(p.start) },
+    { l: "Arrivées", n: 1, h: p => p.flow == null ? "—" : (p.est ? "≈ " : "") + num(p.flow) },
+    { l: "Conversion du circuit", h: p => p.conv == null ? '<span class="muted">—</span>' : `<div class="mcell">${meter(p.conv / top, p.i === f.best_path ? "good" : "")}<span>${pct(p.conv, 1)}</span></div>` },
+  ]) + (rows.some(p => p.est) ? '<p class="small muted" style="margin:8px 0 0">≈ Quand des circuits se rejoignent, les arrivées sont estimées au prorata de ce que chaque circuit apporte.</p>' : "");
+}
+/** Chiffres clés d'un parcours : entrées, arrivées, conversion globale, plus forte perte. */
+function funnelKpis(f) {
+  const roots = f.stages.filter(s => !(s.parents || []).length);
+  const goals = f.stages.filter(s => s.kind === "goal");
+  const ends = goals.length ? goals : f.stages.filter(s => !(s.children || []).length);
+  const sum = l => l.reduce((a, s) => a + (+s.value || 0), 0);
+  const names = l => esc(l.map(s => s.name).join(" · "));
+  const w = f.worst != null ? f.stages[f.worst] : null;
+  const best = f.paths && f.paths.length > 1 && f.best_path != null ? f.paths[f.best_path] : null;
+  const kt = (l, v, m, sub) => `<div class="kpi">${tile(m[0], m[1])}<small>${esc(l)}</small><b>${v}</b><span class="d">${sub || "&nbsp;"}</span></div>`;
+  return `<div class="kpis">${kt(roots.length > 1 ? `Entrées (${roots.length} points)` : "Entrées", num(sum(roots)), ["play-c", "green"], names(roots))}`
+    + kt("Arrivées à l'objectif", num(sum(ends)), ["flag", "orange"], names(ends))
+    + kt("Conversion globale", pct(f.overall, 1), ["trend", "violet"], best ? "meilleur circuit : " + pct(best.conv, 1) : num((f.paths || []).length) + " circuit")
+    + kt("Plus forte perte", w && w.drop > 0 ? pct(w.drop) : "—", ["alert", "amber"], w && w.drop > 0 ? esc(w.from_name) + " → " + esc(w.name) : "aucune sur la période") + `</div>`;
 }
 function funnelCard(f, extra = "") {
   const links = [];
@@ -615,8 +861,9 @@ function funnelCard(f, extra = "") {
   if (f.links.pages) links.push(f.links.pages + " page(s)");
   if (f.links.emails) links.push(f.links.emails + " email(s)");
   if ((f.links.channels || []).length) links.push(f.links.channels.length + " canal(aux)");
-  const head = `<p class="sub" style="margin:-4px 0 12px">${f.objective ? esc(f.objective) + " · " : ""}${links.length ? "Associé à : " + esc(links.join(" · ")) : "Aucune association"}${f.overall != null ? ` · <b>conversion globale ${pct(f.overall, 1)}</b>` : ""}</p>`;
-  return card(`📊 ${esc(f.name)}`, head + funnelChart(f) + extra, `<a class="btn sm" href="#funnels/stages/${f.id}">Ouvrir</a>`);
+  const n = (f.paths || []).length;
+  const head = `<p class="sub" style="margin:-4px 0 12px">${f.objective ? esc(f.objective) + " · " : ""}${links.length ? "Associé à : " + esc(links.join(" · ")) : "Aucune association"}${n > 1 ? ` · ${num(n)} circuits` : ""}${f.overall != null ? ` · <b>conversion globale ${pct(f.overall, 1)}</b>` : ""}</p>`;
+  return card(`📊 ${esc(f.name)}`, head + flowHtml(flowNodes(f), flowOpts(f, { compact: true })) + extra, `<a class="btn sm" href="#funnels/stages/${f.id}">Ouvrir</a>`);
 }
 
 /** En-tête d'un rapport : période, navigation, actions. */
@@ -755,6 +1002,7 @@ VIEWS["overview/daily"] = { fn: async (param, tok) => {
     ["untreated", "Leads à traiter", "Nouveaux ou contactés, pas encore qualifiés", "users", "orange", b.untreated, "#leads/treatment/nouveau"],
     ["unassigned", "Leads sans commercial", "À confier à un commercial", "user-plus", "blue", b.unassigned, "#leads/assignment"],
     ["messages", "Messages sans réponse", "Messenger et Instagram : à répondre ou à transformer en prospect", "message", "blue", +S.boot.messages_waiting || 0, "#leads/messages/attente"],
+    ["comments", "Commentaires sans réponse", "Facebook et Instagram : la Page n'a pas encore répondu", "message", "violet", +S.boot.comments_waiting || 0, "#leads/comments/attente"],
     ["open_inquiries", "Questions sans réponse", "Nouvelles ou en cours", "message", "teal", b.open_inquiries, "#leads/questions"],
     ["pending_projects", "Projets à étudier", "Demandes reçues ou en étude", "folder", "violet", b.pending_projects, "#projects/requests"],
   ];
@@ -836,25 +1084,25 @@ function funnelPicker(selected, base) {
   const fs = REF("funnels");
   return `<select data-goto="${base}" aria-label="Funnel">${fs.map(f => `<option value="${f.id}"${+f.id === +selected ? " selected" : ""}>${esc(f.name)}${f.status !== "actif" ? " (" + esc(L("funnel_status", f.status)) + ")" : ""}</option>`).join("")}</select>`;
 }
-const NEW_FUNNEL = `<button type="button" class="btn pri" data-funnel-edit="0">${ic("plus", "sm")} Créer un funnel</button>`;
+const NEW_FUNNEL = `<a class="btn pri" href="#funnels/edit/new">${ic("plus", "sm")} Créer un funnel</a>`;
 
 VIEWS["funnels/list"] = { range: true, fn: async () => {
   const fs = REF("funnels");
-  const intro = `<p class="muted" style="margin-top:0">Un funnel suit les étapes d'un parcours (ex. Publicité → Landing Page → Inscription → Investissement). Chaque étape prend ses chiffres dans une saisie manuelle ou automatiquement dans les campagnes, pages, emails ou réseaux associés. Période : ${esc(rangeLabel())}.</p>`;
-  if (!fs.length) return intro + empty("Aucun funnel pour l'instant.", NEW_FUNNEL);
+  const intro = `<div class="fb-intro">${tile("branch", "violet")}<div><b>Des parcours, pas une ligne droite.</b><p>Un funnel peut avoir plusieurs points d'entrée (publicité, Instagram, messages, salon…), se séparer en branches (qualifié / sinon, investisseurs / porteurs) et se rejoindre plus loin. Chaque étape se remplit toute seule (campagnes, pages, emails, canaux, messages, leads) ou par saisie. Période : ${esc(rangeLabel())}.</p></div></div>`;
+  if (!fs.length) return intro + empty("Aucun funnel pour l'instant. Créez votre premier parcours à partir d'un modèle : simple, à plusieurs entrées ou à branches.", NEW_FUNNEL, { icon: ["branch", "violet"] });
   const [from, to] = curRange();
   const data = await Promise.all(fs.map(f => cached("funnel", { id: f.id, from, to })));
   return intro + `<div class="toolbar">${NEW_FUNNEL}</div>` + data.map(d => funnelCard(d.data,
-    `<div class="toolbar" style="margin:12px 0 0"><span class="pill ${d.funnel.status === "actif" ? "good" : ""}">${esc(L("funnel_status", d.funnel.status))}</span><span class="grow"></span><button type="button" class="btn sm" data-funnel-edit="${d.funnel.id}">${ic("edit", "sm")} Modifier</button><button type="button" class="btn sm del" data-del="funnels:${d.funnel.id}">${ic("trash", "sm")} Supprimer</button></div>`)).join("");
+    `<div class="toolbar" style="margin:12px 0 0"><span class="pill ${d.funnel.status === "actif" ? "good" : ""}">${esc(L("funnel_status", d.funnel.status))}</span><span class="grow"></span><a class="btn sm" href="#funnels/edit/${d.funnel.id}">${ic("edit", "sm")} Modifier le parcours</a><button type="button" class="btn sm del" data-del="funnels:${d.funnel.id}">${ic("trash", "sm")} Supprimer</button></div>`)).join("");
 } };
 
 VIEWS["funnels/stages"] = { range: true, fn: async param => {
   const fs = REF("funnels");
-  if (!fs.length) return empty("Aucun funnel pour l'instant.", NEW_FUNNEL);
+  if (!fs.length) return empty("Aucun funnel pour l'instant.", NEW_FUNNEL, { icon: ["branch", "violet"] });
   const id = +param || +fs[0].id;
   const [from, to] = curRange();
   const d = await cached("funnel", { id, from, to });
-  const f = d.funnel;
+  const f = d.funnel, D = d.data;
   remember("funnel_entries", d.entries);
   const manual = f.stages.filter(s => s.source === "manual");
   const L_links = [
@@ -862,39 +1110,81 @@ VIEWS["funnels/stages"] = { range: true, fn: async param => {
     ...REF("pages").filter(p => f.links.pages.includes(+p.id)).map(p => `<span class="tag">${ic("globe", "xs")} ${esc(p.name)}</span>`),
     ...REF("emails").filter(e => f.links.emails.includes(+e.id)).map(e => `<span class="tag">${ic("mail", "xs")} ${esc(e.name)}</span>`),
   ];
-  return `<div class="toolbar">${funnelPicker(id, "funnels/stages")}<span class="grow"></span><button type="button" class="btn" data-funnel-edit="${f.id}">${ic("edit", "sm")} Modifier le funnel</button>${NEW_FUNNEL}</div>`
-    + card(`📊 ${esc(f.name)}`, `<p class="sub" style="margin:-4px 0 10px">${esc(f.objective || "")} · ${esc(L("audiences", f.audience) || "Toutes cibles")} · ${esc(L("funnel_status", f.status))}${f.description ? "<br>" + esc(f.description) : ""}</p>
-      <h3>Associé à</h3><div>${L_links.join(" ") || '<span class="muted">Aucune campagne, page ou email associé. Les canaux de communication se choisissent étape par étape, dans « Modifier le funnel ».</span>'}</div>
-      <h3>Étapes (${esc(rangeLabel())})</h3>${funnelTable(d.data)}`)
-    + card("Évolution des prospects par étape", funnelChart(d.data))
-    + card("✍️ Chiffres saisis à la main", (manual.length ? `<p class="sub" style="margin:-4px 0 10px">Étapes en saisie manuelle : ${manual.map(s => "« " + esc(s.name) + " »").join(", ")}. Les autres étapes se remplissent toutes seules.</p>` : '<p class="sub">Toutes les étapes se remplissent automatiquement.</p>')
-      + table(d.entries, [{ l: "Date", h: e => fdate(e.date) }, { l: "Étape", h: e => esc(refName("funnel_stages", e.stage_id)) }, { l: "Prospects", n: 1, h: e => num(e.count) }, { l: "Note", h: e => esc(e.notes || "") }], { entity: "funnel_entries", emptyMsg: "Aucun chiffre saisi." }),
-      manual.length ? addBtn("funnel_entries", "Saisir des chiffres", { funnel_id: f.id, stage_id: manual[0].id }, "btn sm pri") : "");
+  return `<div class="toolbar">${funnelPicker(id, "funnels/stages")}<span class="grow"></span><a class="btn" href="#funnels/edit/${f.id}">${ic("edit", "sm")} Modifier le parcours</a>${NEW_FUNNEL}</div>`
+    + funnelKpis(D)
+    + card(`📊 ${esc(f.name)}`, `<p class="sub" style="margin:-4px 0 10px">${f.objective ? esc(f.objective) + " · " : ""}${esc(L("audiences", f.audience) || "Toutes cibles")} · ${esc(L("funnel_status", f.status))} · ${esc(rangeLabel())}${f.description ? "<br>" + esc(f.description) : ""}</p>`
+      + flowHtml(flowNodes(D), flowOpts(D)) + FLOW_LEGEND, `<a class="btn sm" href="#funnels/edit/${f.id}">${ic("edit", "sm")} Modifier</a>`)
+    + (D.paths.length > 1 ? card("🎯 Circuits du parcours", `<p class="sub" style="margin:-4px 0 10px">Chaque chemin complet, d'un point d'entrée jusqu'à une fin : comparez-les pour savoir où mettre vos efforts.</p>` + funnelPaths(D)) : "")
+    + card(`Détail des étapes · ${esc(rangeLabel())}`, `<p class="sub" style="margin:-4px 0 10px">Associé à : ${L_links.join(" ") || "aucune campagne, page ou email. Les canaux de communication se choisissent étape par étape, dans « Modifier le parcours »."}</p>` + funnelTable(D))
+    + (() => {
+      S.fTrack = d;
+      const mk = manualInputs(f);
+      const kpiName = e => { if (!e.kpi) return "Prospects"; const st = f.stages.find(x => +x.id === +e.stage_id); const k = st && parseKpis(st.kpis).find(x => x.k === e.kpi); return k ? k.l : e.kpi; };
+      const kpiUnit = e => { if (!e.kpi) return num(e.count); const st = f.stages.find(x => +x.id === +e.stage_id); const k = st && parseKpis(st.kpis).find(x => x.k === e.kpi); return kpiVal(+e.count, k ? k.f : "num"); };
+      const names = [...new Set(mk.map(x => "« " + x.stage.name + " »" + (x.kpi ? " · " + x.label : "")))];
+      return card("✍️ Chiffres saisis à la main", (mk.length ? `<p class="sub" style="margin:-4px 0 10px">À saisir : ${names.map(esc).join(", ")}. Le reste se remplit tout seul.</p>` : '<p class="sub">Tout se remplit automatiquement. Pour suivre un chiffre que le tableau de bord ne connaît pas (rendez-vous, appels…), ajoutez un KPI manuel à une étape dans « Modifier le parcours ».</p>')
+        + table(d.entries, [{ l: "Date", h: e => fdate(e.date) }, { l: "Étape", h: e => esc(refName("funnel_stages", e.stage_id)) }, { l: "Chiffre", h: e => esc(kpiName(e)) }, { l: "Valeur", n: 1, h: kpiUnit }, { l: "Note", h: e => esc(e.notes || "") }], { entity: "funnel_entries", emptyMsg: "Aucun chiffre saisi." }),
+        mk.length ? `<button type="button" class="btn sm pri" id="feOpen">${ic("edit", "sm")} Saisir des chiffres</button>` : "");
+    })();
+}, after: () => {
+  const b = $("#feOpen");
+  if (b && S.fTrack) b.addEventListener("click", () => openFunnelEntry(S.fTrack.funnel, S.fTrack.entries));
 } };
+
+/** Ce qui se saisit à la main dans un funnel : prospects des étapes « saisie manuelle » et KPIs manuels. */
+function manualInputs(f) {
+  const out = [];
+  for (const st of f.stages) {
+    if (st.source === "manual") out.push({ stage: st, kpi: "", label: "Prospects", fmt: "num", agg: "sum" });
+    for (const k of parseKpis(st.kpis)) if (String(k.k).startsWith("m_")) out.push({ stage: st, kpi: k.k, label: k.l, fmt: k.f, agg: k.a });
+  }
+  return out;
+}
+/** Fenêtre de saisie : une date, puis un champ par chiffre manuel, regroupés par étape. */
+function openFunnelEntry(f, entries = []) {
+  const ins = manualInputs(f);
+  if (!ins.length) return toast("Rien à saisir dans ce funnel : ajoutez un KPI manuel ou une étape en saisie manuelle dans « Modifier le parcours ».", "err");
+  const groups = [];
+  ins.forEach((x, i) => { x.i = i; let g = groups.find(y => y.stage === x.stage); if (!g) groups.push(g = { stage: x.stage, ins: [] }); g.ins.push(x); });
+  const unit = x => x.fmt === "pctv" ? "%" : x.fmt === "money" ? cur() : "";
+  openModal(`<div class="imp">${tile("edit", "violet")}<h2>Saisir des chiffres</h2>
+    <p class="muted" style="margin-top:-4px">« ${esc(f.name)} » : laissez vide ce que vous ne connaissez pas. Un chiffre déjà saisi pour cette date est remplacé.</p>
+    <form id="feForm" novalidate><div class="form"><div class="fld"><label for="feD">Date</label><input type="date" id="feD" value="${S.today}" max="${S.today}"></div><div class="fld"><label for="feN">Note (facultatif)</label><input type="text" id="feN" maxlength="200" placeholder="ex. salon Djazagro"></div></div>
+    ${groups.map(g => `<h3>${esc(g.stage.name)}</h3><div class="form">${g.ins.map(x => `<div class="fld"><label for="fe${x.i}">${esc(x.label)}${x.agg === "last" ? ' <span class="muted">(valeur à cette date)</span>' : ""}</label><div class="in-unit"><input type="text" inputmode="decimal" id="fe${x.i}" placeholder="—" autocomplete="off">${unit(x) ? `<em>${esc(unit(x))}</em>` : ""}</div></div>`).join("")}</div>`).join("")}
+    </form><p class="form-err" id="feErr"></p>
+    <div class="form-foot"><button type="button" class="btn" data-close>Annuler</button><button type="button" class="btn pri" id="feGo">${ic("check", "sm")} Enregistrer</button></div></div>`);
+  // Date déjà saisie : ses chiffres s'affichent pour être corrigés.
+  const fill = () => {
+    const dt = $("#feD").value;
+    ins.forEach(x => { const e = entries.find(y => y.date === dt && +y.stage_id === +x.stage.id && (y.kpi || "") === x.kpi); $("#fe" + x.i).value = e ? String(+e.count).replace(".", ",") : ""; });
+  };
+  fill();
+  $("#feD").addEventListener("change", fill);
+  $("#fe0").focus();
+  $("#feGo").addEventListener("click", async e => {
+    e.target.disabled = true;
+    try {
+      const r = await api("funnel_entries_save", {}, { funnel_id: +f.id, date: $("#feD").value, notes: $("#feN").value, values: ins.map(x => ({ stage_id: +x.stage.id, kpi: x.kpi, value: $("#fe" + x.i).value })) });
+      closeModal();
+      toast(`${num(r.saved)} chiffre(s) enregistré(s)`);
+      S.cache.clear();
+      route();
+    } catch (err) { $("#feErr").textContent = err.message; e.target.disabled = false; }
+  });
+}
 
 VIEWS["funnels/conversions"] = { range: true, fn: async param => {
   const fs = REF("funnels");
-  if (!fs.length) return empty("Aucun funnel pour l'instant.", NEW_FUNNEL);
+  if (!fs.length) return empty("Aucun funnel pour l'instant.", NEW_FUNNEL, { icon: ["branch", "violet"] });
   const [from, to] = curRange();
   const list = param ? fs.filter(f => +f.id === +param) : fs;
   const data = await Promise.all(list.map(f => cached("funnel", { id: f.id, from, to })));
   const chips = `<div class="chips"><a class="chip${param ? "" : " on"}" href="#funnels/conversions">Tous</a>${fs.map(f => `<a class="chip${+param === +f.id ? " on" : ""}" href="#funnels/conversions/${f.id}">${esc(f.name)}</a>`).join("")}</div>`;
-  return chips + `<p class="muted" style="margin-top:0">Prospects par étape, taux de conversion, taux d'abandon et étape où l'on perd le plus — ${esc(rangeLabel())}.</p>`
-    + data.map(d => card(`📊 ${esc(d.data.name)}${d.data.overall != null ? ` <span class="pill blue">conversion globale ${pct(d.data.overall, 1)}</span>` : ""}`, funnelTable(d.data) + `<div style="margin-top:14px">${funnelChart(d.data)}</div>`, `<a class="btn sm" href="#funnels/stages/${d.data.id}">Étapes & tags</a>`)).join("");
+  return chips + `<p class="muted" style="margin-top:0">Prospects par étape, conversion depuis l'étape précédente et depuis l'entrée, circuits les plus efficaces et étape où l'on perd le plus — ${esc(rangeLabel())}.</p>`
+    + data.map(d => card(`📊 ${esc(d.data.name)}${d.data.overall != null ? ` <span class="pill blue">conversion globale ${pct(d.data.overall, 1)}</span>` : ""}`,
+      (d.data.paths.length > 1 ? `<h3 style="margin-top:0">Circuits</h3>${funnelPaths(d.data)}<h3>Étapes</h3>` : "") + funnelTable(d.data),
+      `<a class="btn sm" href="#funnels/stages/${d.data.id}">Voir le parcours</a>`)).join("");
 } };
-
-/** Colonnes d'une action de communication : Canal → Support → Contenu (objectif · cible) → KPI. */
-const actionCols = (withCat = true) => [
-  { l: "Date", h: r => fdate(r.date) },
-  { l: "Canal", h: r => `<span class="chan-cat">${catIc(catOf(r.platform) || "other")}<b>${esc(chName(r.platform))}</b></span>${withCat ? `<div class="sub">${esc(catInfo(catOf(r.platform)).label)}</div>` : ""}` },
-  { l: "Support", h: r => r.format ? `<span class="chan">${esc(L("supports", r.format))}</span>` : '<span class="muted">—</span>' },
-  { l: "Contenu", wrap: 1, h: r => esc(r.topic) + metaTag(r) + (r.link ? ` <a href="${esc(r.link)}" target="_blank" rel="noopener" aria-label="Ouvrir le lien">${ic("link", "xs")}</a>` : "") + `<div class="sub">${[r.objective ? L("ad_objectives", r.objective) : "", L("audiences", r.audience)].filter(Boolean).map(esc).join(" · ")}</div>` },
-  { l: "Portée", n: 1, h: r => num(r.reach) },
-  { l: "Engagement", n: 1, h: r => num(r.engagement) + (+r.reach > 0 ? `<div class="sub">${pct(r.engagement / r.reach, 1)}</div>` : "") },
-  { l: "Clics", n: 1, h: r => num(r.clicks) },
-  { l: "Leads", n: 1, h: r => num(r.leads) },
-  { l: "Coût", n: 1, h: r => +r.cost ? money(r.cost) : '<span class="muted">—</span>' },
-];
 
 /* ================================================================ vues : leads, questions, réseaux sociaux */
 const socialKeys = () => Object.keys(EN("platforms"));
@@ -929,6 +1219,41 @@ function catChips(base, sel, rows, key) {
 }
 const inCat = (sel, key) => r => !sel || sel === "all" ? true : (catOf(r[key]) || "other") === sel;
 
+/* ---------- messages et commentaires : période choisie ou tout l'historique, import complet, « afficher plus » */
+const histAll = () => { try { return localStorage.getItem("mk_hist") === "all"; } catch (e) { return false; } };
+const histToggle = () => {
+  const all = histAll();
+  return `<div class="seg" role="group" aria-label="Période affichée"><button type="button" data-hist="range" aria-selected="${!all}">${ic("calendar", "sm")} ${esc(rangeLabel())}</button><button type="button" data-hist="all" aria-selected="${all}">${ic("archive", "sm")} Tout l'historique</button></div>`;
+};
+const fullBtn = what => `<button type="button" class="btn" data-fullsync="${what}">${ic("download", "sm")} Importer tout l'historique</button>`;
+const MORE = 100;
+const moreBtn = (shown, total) => total > shown
+  ? `<div class="more-row"><button type="button" class="btn" data-more>${ic("chev-d", "sm")} Afficher ${num(Math.min(MORE, total - shown))} de plus <span class="muted">· ${num(total - shown)} restant${total - shown > 1 ? "s" : ""}</span></button></div>`
+  : total > MORE ? `<p class="small muted more-row">Tout est affiché : ${num(total)}.</p>` : "";
+document.addEventListener("click", async e => {
+  const h = e.target.closest("[data-hist]");
+  if (h) { try { localStorage.setItem("mk_hist", h.dataset.hist); } catch (err) {} return route(); }
+  const b = e.target.closest("[data-fullsync]");
+  if (!b) return;
+  const what = b.dataset.fullsync.split(",");
+  const ok = await askDialog({ icon: ["download", "blue"], title: "Importer tout l'historique ?",
+    text: (what.includes("messages") ? "Toutes les conversations Messenger et Instagram, avec tous leurs messages" : "") + (what.length > 1 ? ", et " : "") + (what.includes("comments") ? "tous les commentaires (et leurs réponses) des publications des 2 dernières années" : "")
+      + " sont relus chez Meta. Cela peut prendre plusieurs minutes : gardez la page ouverte. S'il s'arrête avant la fin, relancez-le simplement.",
+    ok: "Importer tout", cancel: "Annuler" });
+  if (!ok) return;
+  b.disabled = true;
+  b.innerHTML = `<span class="spin dark"></span> Import en cours… (plusieurs minutes)`;
+  try {
+    const d = await api("meta_sync", {}, { only: what, full: true });
+    S.boot.meta = d.meta;
+    const t = d.result.totals;
+    toast(d.result.ok ? `Historique importé : ${num(t.added)} nouveauté(s), ${num(t.updated)} mise(s) à jour` : "Import terminé avec des erreurs : détail dans Connexions › Historique", d.result.ok ? "" : "err");
+    try { localStorage.setItem("mk_hist", "all"); } catch (err) {}
+    S.cache.clear();
+    route();
+  } catch (err) { toast(err.message, "err"); b.disabled = false; b.innerHTML = `${ic("download", "sm")} Importer tout l'historique`; }
+});
+
 /* ================================================================ vue : Messages (Messenger, Instagram) */
 const HEAT = { chaud: ["Chaud", "crit"], tiede: ["Tiède", "warn"], froid: ["Froid", ""] };
 const PLAT = { messenger: ["Messenger", "message", "blue"], instagram: ["Instagram", "share", "pink"] };
@@ -941,15 +1266,17 @@ const initial = s => (String(s || "?").replace(/^@/, "").trim().charAt(0) || "?"
 
 VIEWS["leads/messages"] = { range: true, fn: async param => {
   const [from, to] = curRange();
-  const d = await api("conversations", { from, to });
+  const all = histAll();
+  const d = await api("conversations", all ? { all: 1 } : { from, to });
   S.convs = d.rows;
   const st = d.stats, f = CONV_FILTERS.some(x => x[0] === param) ? param : "all";
   if (!d.meta.connected) return empty("Les messages arrivent de Meta. Connectez votre Page Facebook (et son compte Instagram) dans Connexions : les conversations Messenger et Instagram s'afficheront ici, analysées.", `<a class="btn pri" href="#connexions/meta">${ic("link", "sm")} Relier Facebook et Instagram</a>`, { icon: ["message", "teal"] });
-  if (!d.rows.length) return `${!d.meta.messages ? `<div class="banner warn">${ic("alert", "sm")}<span>L'import des messages est désactivé : activez-le dans <a href="#connexions/meta">Connexions</a> › étape 3.</span></div>` : ""}`
-    + empty("Aucune conversation sur la période. Lancez une synchronisation dans Connexions : il faut les autorisations pages_messaging et instagram_manage_messages dans votre configuration Facebook Login for Business.", `<a class="btn pri" href="#connexions/meta">${ic("trend", "sm")} Synchroniser</a>`, { icon: ["message", "teal"] });
+  const bar = `<div class="toolbar">${histToggle()}<span class="grow"></span>${fullBtn("messages")}</div>`;
+  if (!d.rows.length) return bar + `${!d.meta.messages ? `<div class="banner warn">${ic("alert", "sm")}<span>L'import des messages est désactivé : activez-le dans <a href="#connexions/meta">Connexions</a> › étape 3.</span></div>` : ""}`
+    + empty(all ? "Aucune conversation importée. Lancez « Importer tout l'historique » : il faut les autorisations pages_messaging et instagram_manage_messages dans votre configuration Facebook Login for Business." : "Aucune conversation sur la période. Choisissez « Tout l'historique » pour voir toutes les conversations importées, ou lancez une synchronisation dans Connexions.", `<a class="btn pri" href="#connexions/meta">${ic("trend", "sm")} Synchroniser</a>`, { icon: ["message", "teal"] });
   const t = (l, v, sub, m, cls = "") => `<div class="kpi ${cls}">${tile(m[0], m[1])}<small>${esc(l)}</small><b>${v}</b><span class="d">${sub}</span></div>`;
   const counts = Object.fromEntries(CONV_FILTERS.map(([k]) => [k, d.rows.filter(c => convIn(k, c)).length]));
-  return `<div class="kpis k6">${t("Conversations", num(st.total), esc(rangeLabel()), ["message", "teal"])}${t("Sans réponse", num(st.waiting), st.waiting ? "le dernier message vient de la personne" : "tout le monde a eu une réponse", ["clock", "amber"], st.waiting ? "warn" : "")}`
+  return bar + `<div class="kpis k6">${t("Conversations", num(st.total), all ? "tout l'historique" : esc(rangeLabel()), ["message", "teal"])}${t("Sans réponse", num(st.waiting), st.waiting ? "le dernier message vient de la personne" : "tout le monde a eu une réponse", ["clock", "amber"], st.waiting ? "warn" : "")}`
     + `${t("Conversations chaudes", num(st.hot), "intention forte ou coordonnées laissées", ["zap", "pink"])}${t("Avec téléphone ou email", num(st.with_contact), pct(ratio(st.with_contact, st.total)) + " des conversations", ["phone", "green"])}`
     + `${t("Prospects créés", num(st.prospects), pct(ratio(st.prospects, st.total)) + " des conversations", ["user-plus", "blue"])}${t("Première réponse", minutes(st.reply_median), "délai médian", ["send", "violet"])}</div>`
     + `<div class="grid3">${card("💬 Sujets", mapBars(st.by_category, "inq_categories", st.total))}${card("🔥 Chaleur", hbars(["chaud", "tiede", "froid"].filter(k => st.by_heat[k]).map(k => ({ label: HEAT[k][0], value: st.by_heat[k], sub: pct(st.by_heat[k] / st.total) }))))}${card("👥 Profils détectés", hbars(Object.entries(st.by_profile).map(([k, v]) => ({ label: k === "autre" ? "Non détecté" : L("contact_types", k), value: v, sub: pct(v / st.total) }))))}</div>`
@@ -959,10 +1286,11 @@ VIEWS["leads/messages"] = { range: true, fn: async param => {
   const f = CONV_FILTERS.some(x => x[0] === param) ? param : "all";
   const list = $("#cvList");
   if (!list) return;
+  let shown = MORE;
   const draw = () => {
     const q = foldTxt($("#cvQ").value || "");
     const rows = S.convs.filter(c => convIn(f, c) && (!q || foldTxt([convWho(c), c.snippet, c.phone, c.email, c.city].join(" ")).includes(q)));
-    list.innerHTML = rows.length ? `<div class="inbox">${rows.map(c => {
+    list.innerHTML = rows.length ? `<div class="inbox">${rows.slice(0, shown).map(c => {
       const p = PLAT[c.platform] || PLAT.messenger, h = HEAT[c.heat] || HEAT.froid;
       return `<div class="cv${+c.last_from_me ? "" : " waiting"}" data-cv="${c.id}">
         <span class="av t-${p[2]}">${esc(initial(convWho(c)))}<i>${ic(p[1], "xs")}</i></span>
@@ -971,10 +1299,11 @@ VIEWS["leads/messages"] = { range: true, fn: async param => {
           <span class="cv-tags"><span class="pill ${h[1]}">${h[0]} · ${num(c.score)}</span>${c.category && c.category !== "autre" ? `<span class="pill blue">${esc(L("inq_categories", c.category))}</span>` : ""}${c.profile ? `<span class="pill">${esc(L("contact_types", c.profile))}</span>` : ""}${c.phone ? `<span class="chip static">${ic("phone", "xs")} ${esc(c.phone)}</span>` : ""}${c.email ? `<span class="chip static">${ic("mail", "xs")} ${esc(c.email)}</span>` : ""}${c.city ? `<span class="chip static">${ic("globe", "xs")} ${esc(c.city)}</span>` : ""}${+c.last_from_me ? "" : '<span class="pill warn">Sans réponse</span>'}</span></span>
         <span class="cv-act">${c.contact_id ? `<a class="btn sm" href="javascript:void 0" data-edit="contacts:${c.contact_id}">${ic("check-circle", "sm")} Prospect</a>` : c.status === "ignore" ? `<button type="button" class="btn sm ghost" data-cvst="${c.id}:a_traiter">Rétablir</button>` : `<button type="button" class="btn sm pri" data-cvp="${c.id}">${ic("user-plus", "sm")} Créer le prospect</button>`}
           <button type="button" class="btn sm" data-cvo="${c.id}">${ic("eye", "sm")} Lire</button></span></div>`;
-    }).join("")}</div>` : empty("Aucune conversation ne correspond à ce filtre.", "", { icon: ["search", "violet"] });
+    }).join("")}</div>${moreBtn(shown, rows.length)}` : empty("Aucune conversation ne correspond à ce filtre.", "", { icon: ["search", "violet"] });
   };
-  $("#cvQ").addEventListener("input", draw);
+  $("#cvQ").addEventListener("input", () => { shown = MORE; draw(); });
   list.addEventListener("click", async e => {
+    if (e.target.closest("[data-more]")) { shown += MORE; return draw(); }
     const o = e.target.closest("[data-cvo]"), p = e.target.closest("[data-cvp]"), s2 = e.target.closest("[data-cvst]");
     if (o) return openConversation(+o.dataset.cvo);
     if (p) return openProspect(+p.dataset.cvp);
@@ -1004,23 +1333,32 @@ async function openConversation(id) {
   });
 }
 
-/** Formulaire du prospect, prérempli avec ce que l'analyse a trouvé (à relire avant d'enregistrer). */
+/** Formulaire du prospect d'une conversation, prérempli avec ce que l'analyse a trouvé (à relire avant d'enregistrer). */
 async function openProspect(id, d = null) {
   if (!d) { try { d = await api("conversation", { id }); } catch (err) { return toast(err.message, "err"); } }
   const c = d.conversation;
-  const source = c.platform === "instagram" ? "instagram" : (channelOf("messenger") ? "messenger" : "facebook");
+  prospectDialog({ endpoint: "conv_prospect", id, source: c.platform === "instagram" ? "instagram" : (channelOf("messenger") ? "messenger" : "facebook"),
+    name: c.who_name || (c.who_username ? "@" + c.who_username : ""), profile: c.profile, phone: c.phone, email: c.email, city: c.city,
+    intro: `Prérempli avec la conversation ${c.platform === "instagram" ? "Instagram" : "Messenger"}`, notes: "Le lien de la conversation et ses derniers messages sont ajoutés tout seuls aux notes du prospect.", what: "Conversation reliée" });
+}
+/** Formulaire du prospect d'un commentaire. */
+function openCommentProspect(c) {
+  prospectDialog({ endpoint: "comment_prospect", id: c.id, source: c.platform === "instagram" ? "instagram" : "facebook",
+    name: c.name === "Nom masqué par Meta" ? "" : (c.who_name || (c.who_username ? "@" + c.who_username : "")), profile: c.profile, phone: c.phone, email: c.email, city: c.city,
+    intro: `Prérempli avec le commentaire ${c.platform === "instagram" ? "Instagram" : "Facebook"}${c.name === "Nom masqué par Meta" ? " (Meta cache le nom : ouvrez le commentaire pour le lire)" : ""}`, notes: "Le lien du commentaire et son texte sont ajoutés tout seuls aux notes du prospect.", what: "Commentaire relié" });
+}
+function prospectDialog(o) {
   const opts = (en, v, empty) => (empty ? `<option value="">${esc(empty)}</option>` : "") + Object.entries(EN(en)).map(([k, l]) => `<option value="${esc(k)}"${k === v ? " selected" : ""}>${esc(l)}</option>`).join("");
-  const name = c.who_name || (c.who_username ? "@" + c.who_username : "");
   openModal(`<div class="imp">${tile("user-plus", "blue")}<h2>Créer le prospect</h2>
-    <p class="muted" style="margin-top:-4px">Prérempli avec la conversation ${c.platform === "instagram" ? "Instagram" : "Messenger"} : vérifiez, complétez, puis enregistrez. Si la même personne existe déjà (même téléphone ou email), elle est reliée au lieu d'être recréée.</p>
+    <p class="muted" style="margin-top:-4px">${esc(o.intro)} : vérifiez, complétez, puis enregistrez. Si la même personne existe déjà (même téléphone ou email), elle est reliée au lieu d'être recréée.</p>
     <form id="pForm" class="form" novalidate>
-      <div class="fld"><label for="pN">Nom complet <span class="req">*</span></label><input type="text" id="pN" value="${esc(name)}" placeholder="Nom de la personne"></div>
-      <div class="fld"><label for="pT">Profil</label><select id="pT">${opts("contact_types", c.profile || S.boot.meta.default_profile || "investisseur")}</select></div>
-      <div class="fld"><label for="pP">Téléphone</label><input type="text" id="pP" value="${esc(c.phone)}" placeholder="0X XX XX XX XX"></div>
-      <div class="fld"><label for="pE">Email</label><input type="email" id="pE" value="${esc(c.email)}"></div>
-      <div class="fld"><label for="pC">Wilaya / ville</label><input type="text" id="pC" value="${esc(c.city)}"></div>
+      <div class="fld"><label for="pN">Nom complet <span class="req">*</span></label><input type="text" id="pN" value="${esc(o.name)}" placeholder="Nom de la personne"></div>
+      <div class="fld"><label for="pT">Profil</label><select id="pT">${opts("contact_types", o.profile || S.boot.meta.default_profile || "investisseur")}</select></div>
+      <div class="fld"><label for="pP">Téléphone</label><input type="text" id="pP" value="${esc(o.phone)}" placeholder="0X XX XX XX XX"></div>
+      <div class="fld"><label for="pE">Email</label><input type="email" id="pE" value="${esc(o.email)}"></div>
+      <div class="fld"><label for="pC">Wilaya / ville</label><input type="text" id="pC" value="${esc(o.city)}"></div>
       <div class="fld"><label for="pA">Commercial responsable</label><select id="pA">${opts("commercials", "", "Non assigné")}</select></div>
-      <div class="fld full"><label for="pO">Note (facultatif)</label><textarea id="pO" rows="2" placeholder="ex. veut investir 100 000 DA, rappeler après 18 h"></textarea><small>Le lien de la conversation et ses derniers messages sont ajoutés tout seuls aux notes du prospect.</small></div>
+      <div class="fld full"><label for="pO">Note (facultatif)</label><textarea id="pO" rows="2" placeholder="ex. veut investir 100 000 DA, rappeler après 18 h"></textarea><small>${esc(o.notes)}</small></div>
     </form><p class="form-err" id="pErr"></p>
     <div class="form-foot"><button type="button" class="btn" data-close>Annuler</button><button type="button" class="btn pri" id="pGo">${ic("user-plus", "sm")} Créer le prospect</button></div></div>`);
   $("#pN").focus();
@@ -1028,14 +1366,89 @@ async function openProspect(id, d = null) {
     if (!$("#pN").value.trim()) { $("#pErr").textContent = "Donnez au moins un nom (même provisoire) au prospect."; return; }
     e.target.disabled = true;
     try {
-      const r = await api("conv_prospect", {}, { id, contact: { name: $("#pN").value, type: $("#pT").value, phone: $("#pP").value, email: $("#pE").value, city: $("#pC").value, assigned_to: $("#pA").value, notes: $("#pO").value, source } });
+      const r = await api(o.endpoint, {}, { id: o.id, contact: { name: $("#pN").value, type: $("#pT").value, phone: $("#pP").value, email: $("#pE").value, city: $("#pC").value, assigned_to: $("#pA").value, notes: $("#pO").value, source: o.source } });
       closeModal();
-      toast(r.linked ? `Conversation reliée au lead existant « ${r.contact.name} »` : `Prospect « ${r.contact.name} » créé dans Leads & Contacts`);
+      toast(r.linked ? `${o.what} au lead existant « ${r.contact.name} »` : `Prospect « ${r.contact.name} » créé dans Leads & Contacts`);
       S.cache.clear();
       route();
     } catch (err) { $("#pErr").textContent = err.message; e.target.disabled = false; }
   });
 }
+
+/* ================================================================ vue : Commentaires (Facebook, Instagram) */
+const CPLAT = { facebook: ["Facebook", "share", "blue"], instagram: ["Instagram", "share", "pink"] };
+const CMT_FILTERS = [["all", "Tous"], ["attente", "Sans réponse"], ["questions", "Questions"], ["coordonnees", "Avec coordonnées"], ["facebook", "Facebook"], ["instagram", "Instagram"], ["prospects", "Prospects créés"], ["traite", "Traités"], ["ignore", "Ignorés"]];
+const cmtWaiting = c => !+c.from_me && !+c.page_replied && c.status === "a_traiter" && !c.contact_id;
+const cmtIn = (f, c) => f === "attente" ? cmtWaiting(c) : f === "questions" ? !!+c.is_question && c.status !== "ignore" : f === "coordonnees" ? !!(c.phone || c.email) && c.status !== "ignore"
+  : f === "facebook" || f === "instagram" ? c.platform === f && c.status !== "ignore" : f === "prospects" ? !!c.contact_id
+  : f === "traite" ? c.status === "traite" && !+c.from_me : f === "ignore" ? c.status === "ignore" : c.status !== "ignore";
+const atTs = v => Date.parse(String(v).replace(" ", "T")) / 1000;
+
+VIEWS["leads/comments"] = { range: true, fn: async param => {
+  const [from, to] = curRange();
+  const all = histAll();
+  const d = await api("comments", all ? { all: 1 } : { from, to });
+  S.cmts = d;
+  const f = CMT_FILTERS.some(x => x[0] === param) ? param : "all";
+  if (!d.meta.connected) return empty("Les commentaires arrivent de Meta. Connectez votre Page Facebook et son compte Instagram dans Connexions : tous les commentaires de vos publications s'afficheront ici, avec leurs réponses.", `<a class="btn pri" href="#connexions/meta">${ic("link", "sm")} Relier Facebook et Instagram</a>`, { icon: ["message", "violet"] });
+  const bar = `<div class="toolbar">${histToggle()}<span class="grow"></span>${fullBtn("comments")}</div>`;
+  if (!d.rows.length) return bar + empty(all ? "Aucun commentaire importé pour l'instant. Lancez « Importer tout l'historique » : tous les commentaires des publications des 2 dernières années seront récupérés, avec leurs réponses." : "Aucun commentaire sur la période. Choisissez « Tout l'historique » pour voir tous les commentaires importés, ou lancez une synchronisation dans Connexions.", "", { icon: ["message", "violet"] });
+  const st = d.stats;
+  const t = (l, v, sub, m, cls = "") => `<div class="kpi ${cls}">${tile(m[0], m[1])}<small>${esc(l)}</small><b>${v}</b><span class="d">${sub}</span></div>`;
+  const counts = Object.fromEntries(CMT_FILTERS.map(([k]) => [k, d.rows.filter(c => cmtIn(k, c)).length]));
+  return bar + `<div class="kpis k6">${t("Commentaires", num(st.total), all ? "tout l'historique" : esc(rangeLabel()), ["message", "violet"])}${t("Sans réponse", num(st.waiting), st.waiting ? "la Page n'a pas encore répondu" : "la Page a répondu à tout", ["clock", "amber"], st.waiting ? "warn" : "")}`
+    + `${t("Répondus par la Page", num(st.replied), pct(ratio(st.replied, st.total)) + " des commentaires", ["send", "green"])}${t("Questions", num(st.questions), pct(ratio(st.questions, st.total)) + " des commentaires", ["info", "teal"])}`
+    + `${t("Avec téléphone ou email", num(st.with_contact), "coordonnées laissées en public", ["phone", "blue"])}${t("Prospects créés", num(st.prospects), pct(ratio(st.prospects, st.total)) + " des commentaires", ["user-plus", "pink"])}</div>`
+    + `<div class="grid3">${card("💬 Sujets", mapBars(st.by_category, "inq_categories", st.total))}${card("📱 Réseaux", hbars(Object.entries(st.by_platform).map(([k, v]) => ({ label: (CPLAT[k] || [k])[0], value: v, sub: pct(v / st.total) }))))}${card("👥 Profils détectés", hbars(Object.entries(st.by_profile).map(([k, v]) => ({ label: k === "autre" ? "Non détecté" : L("contact_types", k), value: v, sub: pct(v / st.total) }))))}</div>`
+    + `<div class="chips">${CMT_FILTERS.map(([k, l]) => `<a class="chip${f === k ? " on" : ""}" href="#leads/comments${k === "all" ? "" : "/" + k}">${esc(l)} (${num(counts[k])})</a>`).join("")}</div>`
+    + `<section class="card"><div class="card-h"><h2>${tile("message", "violet", "sm")}Commentaires et réponses</h2><div class="ctrl"><label class="field-search">${ic("search", "sm")}<input type="search" id="cmQ" placeholder="Nom, commentaire, publication…" aria-label="Rechercher un commentaire"></label></div></div>`
+    + (d.stats.total && d.rows.some(c => c.name === "Nom masqué par Meta") ? `<p class="small muted" style="margin:-6px 0 8px">« Nom masqué par Meta » : Meta ne donne pas toujours le nom des personnes qui commentent sur Facebook. Ouvrez le commentaire avec « Répondre » pour le voir.</p>` : "")
+    + `<div id="cmList"></div></section>`;
+}, after: param => {
+  const f = CMT_FILTERS.some(x => x[0] === param) ? param : "all";
+  const list = $("#cmList");
+  if (!list) return;
+  const reps = {};
+  for (const r of S.cmts.replies) (reps[r.parent_ext] = reps[r.parent_ext] || []).push(r);
+  let shown = MORE;
+  const row = c => {
+    const p = CPLAT[c.platform] || CPLAT.facebook, masked = c.name === "Nom masqué par Meta", wait = cmtWaiting(c), link = c.link || c.post_link, post = c.post_topic || c.post_text || "";
+    const rs = reps[c.ext_id] || [];
+    return `<div class="cv cm${wait ? " waiting" : ""}">
+      <span class="av t-${p[2]}">${esc(masked ? "?" : initial(c.name))}<i>${ic(p[1], "xs")}</i></span>
+      <span class="cv-main"><span class="cv-top"><b${masked ? ' class="muted"' : ""}>${esc(c.name)}</b><span class="muted small">${esc(p[0])} · ${esc(ago(atTs(c.at)))}${+c.likes ? ` · ${ic("heart", "xs")} ${num(c.likes)}` : ""}</span></span>
+        <span class="cm-text"><bdi dir="auto">${esc(c.text)}</bdi></span>
+        ${post || c.post_link ? `<span class="cm-post">${ic("file", "xs")} Sur ${c.post_link ? `<a href="${esc(c.post_link)}" target="_blank" rel="noopener">« ${esc(post.slice(0, 90) || "la publication")} »</a>` : `« ${esc(post.slice(0, 90))} »`}</span>` : ""}
+        <span class="cv-tags">${+c.is_question ? `<span class="pill blue">Question · ${esc(L("inq_categories", c.category || "autre"))}</span>` : ""}${c.profile ? `<span class="pill">${esc(L("contact_types", c.profile))}</span>` : ""}${c.phone ? `<span class="chip static">${ic("phone", "xs")} ${esc(c.phone)}</span>` : ""}${c.email ? `<span class="chip static">${ic("mail", "xs")} ${esc(c.email)}</span>` : ""}${c.city ? `<span class="chip static">${ic("globe", "xs")} ${esc(c.city)}</span>` : ""}${+c.page_replied ? '<span class="pill good">La Page a répondu</span>' : wait ? '<span class="pill warn">Sans réponse</span>' : ""}${c.status === "traite" && !+c.page_replied && !c.contact_id && !+c.from_me ? '<span class="pill">Traité</span>' : ""}${c.status === "ignore" ? '<span class="pill">Ignoré</span>' : ""}</span>
+        ${rs.length ? `<span class="cm-reps">${rs.map(r => `<span class="cm-rep${+r.from_me ? " me" : ""}"><b>${esc(r.name)}</b> <bdi dir="auto">${esc(r.text)}</bdi> <small class="muted">· ${esc(ago(atTs(r.at)))}</small></span>`).join("")}</span>` : ""}</span>
+      <span class="cv-act">${c.contact_id ? `<a class="btn sm" href="javascript:void 0" data-edit="contacts:${c.contact_id}">${ic("check-circle", "sm")} Prospect</a>` : +c.from_me ? "" : `<button type="button" class="btn sm pri" data-cmp="${c.id}">${ic("user-plus", "sm")} Créer le prospect</button>`}
+        ${link ? `<a class="btn sm" href="${esc(link)}" target="_blank" rel="noopener">${ic("send", "sm")} Répondre</a>` : ""}
+        ${+c.from_me || c.contact_id ? "" : c.status === "a_traiter" ? `<button type="button" class="btn sm ghost" data-cmst="${c.id}:traite">${ic("check", "sm")} Traité</button><button type="button" class="btn sm ghost" data-cmst="${c.id}:ignore">Ignorer</button>` : `<button type="button" class="btn sm ghost" data-cmst="${c.id}:a_traiter">Rétablir</button>`}</span></div>`;
+  };
+  const draw = () => {
+    const q = foldTxt($("#cmQ").value || "");
+    const rows = S.cmts.rows.filter(c => cmtIn(f, c) && (!q || foldTxt([c.name, c.text, c.post_topic, c.post_text, c.phone, c.email, c.city, ...(reps[c.ext_id] || []).map(r => r.text)].join(" ")).includes(q)));
+    list.innerHTML = rows.length ? `<div class="inbox">${rows.slice(0, shown).map(row).join("")}</div>${moreBtn(shown, rows.length)}` : empty("Aucun commentaire ne correspond à ce filtre.", "", { icon: ["search", "violet"] });
+  };
+  $("#cmQ").addEventListener("input", () => { shown = MORE; draw(); });
+  list.addEventListener("click", async e => {
+    if (e.target.closest("[data-more]")) { shown += MORE; return draw(); }
+    const pr = e.target.closest("[data-cmp]"), stb = e.target.closest("[data-cmst]");
+    if (pr) return openCommentProspect(S.cmts.rows.find(c => +c.id === +pr.dataset.cmp));
+    if (stb) {
+      const [id, st] = stb.dataset.cmst.split(":");
+      try {
+        await api("comment_status", {}, { id: +id, status: st });
+        const c = S.cmts.rows.find(x => +x.id === +id);
+        if (c) c.status = st;
+        toast(st === "ignore" ? "Commentaire ignoré" : st === "traite" ? "Commentaire marqué comme traité" : "Commentaire rétabli");
+        S.cache.clear();
+        draw();
+      } catch (err) { toast(err.message, "err"); }
+    }
+  });
+  draw();
+} };
 
 VIEWS["leads/questions"] = { range: true, fn: async param => {
   const all = await rangeList("inquiries");
@@ -1432,10 +1845,10 @@ VIEWS["connexions/meta"] = { fn: async param => {
          <p class="small muted">Business Manager › Paramètres › Utilisateurs système › Générer un jeton (avec les autorisations ${m.scopes.slice(0, 4).join(", ")}…). Ce jeton n'expire pas : idéal pour la synchronisation automatique.</p>
          <textarea id="mTok" rows="3" placeholder="EAAB…" aria-label="Jeton d'accès"></textarea><div class="toolbar" style="margin:8px 0 0"><button type="button" class="btn" id="mTokSave">Vérifier et enregistrer le jeton</button></div></details>`;
   const s3 = `<div id="mAssets"><p class="loading">Chargement de vos Pages et comptes publicitaires…</p></div>`;
-  const sync = `<section class="card" id="mSync"><div class="card-h"><h2>${tile("trend", "violet", "sm")}Synchronisation</h2><div class="ctrl"><button type="button" class="btn pri" id="mGo"${chosen ? "" : " disabled"}>${ic("trend", "sm")} Synchroniser maintenant</button></div></div>
+  const sync = `<section class="card" id="mSync"><div class="card-h"><h2>${tile("trend", "violet", "sm")}Synchronisation</h2><div class="ctrl">${chosen ? fullBtn("messages,comments") : ""}<button type="button" class="btn pri" id="mGo"${chosen ? "" : " disabled"}>${ic("trend", "sm")} Synchroniser maintenant</button></div></div>
       ${conn && !m.page ? `<div class="banner warn">${ic("alert", "sm")}<span>Aucune Page Facebook choisie : Facebook, les leads et les messages ne sont pas importés. Choisissez la Page à l'étape 3 ci-dessus, puis « Enregistrer ces choix ».</span></div>` : ""}
       <p class="muted" style="margin-top:0">Dernière : <b>${esc(metaWhen(m.last_sync))}</b>${m.last_result ? ` · du ${fdate(m.last_result.from, false)} au ${fdate(m.last_result.to)}` : ""}.</p>
-      <div class="auto-sync"><label for="mAuto"><b>Synchronisation automatique</b><small>Facebook, Instagram, Meta Ads, leads et messages, pendant que le tableau de bord est ouvert (même dans un onglet en arrière-plan).</small></label>
+      <div class="auto-sync"><label for="mAuto"><b>Synchronisation automatique</b><small>Facebook, Instagram, Meta Ads, leads, messages et commentaires, pendant que le tableau de bord est ouvert (même dans un onglet en arrière-plan).</small></label>
         <select id="mAuto">${[[15, "Toutes les 15 minutes"], [30, "Toutes les 30 minutes"], [60, "Toutes les heures"], [180, "Toutes les 3 heures"], [360, "Toutes les 6 heures"], [720, "Toutes les 12 heures"], [0, "Désactivée"]].map(([v, l]) => `<option value="${v}"${+m.auto_sync === v ? " selected" : ""}>${l}</option>`).join("")}</select></div>
       <div id="mRes">${metaResult(m.last_result)}</div></section>`;
   const what = [["share", "violet", "Social Media › Relevés", "Portée, vues, engagement et abonnés de la Page et du compte Instagram, jour par jour."],
@@ -1559,7 +1972,7 @@ VIEWS["connexions/meta"] = { fn: async param => {
     <div class="form" style="margin-top:14px"><div class="fld" id="mFxBox"><label for="mFx">Taux de conversion</label><div class="fx"><span>1 <b id="mFxCur">USD</b> =</span><input type="number" id="mFx" min="0" step="any" value="${esc(m.fx)}"><span>${esc(curr)}</span></div><small>Les montants Meta (budgets, dépenses) sont convertis en ${esc(curr)}.</small></div>
       <div class="fld"><label for="mBack">Première importation</label><select id="mBack">${[30, 60, 90].map(n => `<option value="${n}"${+m.backfill === n ? " selected" : ""}>${n} derniers jours</option>`).join("")}</select></div>
       <div class="fld"><label for="mProf">Profil d'un lead impossible à classer</label><select id="mProf">${Object.entries(EN("contact_types")).map(([k, l]) => `<option value="${k}"${m.default_profile === k ? " selected" : ""}>${esc(l)}</option>`).join("")}</select></div>
-      <div class="fld full"><div class="checks"><label><input type="checkbox" id="mQ"${m.questions ? " checked" : ""}> Importer les commentaires qui posent une question (dans Leads & Contacts › Questions)</label><label><input type="checkbox" id="mM"${m.messages ? " checked" : ""}> Importer et analyser les messages Messenger et Instagram (dans Leads & Contacts › Messages)</label></div></div></div>
+      <div class="fld full"><div class="checks"><label><input type="checkbox" id="mQ"${m.questions ? " checked" : ""}> Créer une question à traiter pour chaque commentaire qui pose une question (Leads & Contacts › Questions ; tous les commentaires restent dans « Commentaires »)</label><label><input type="checkbox" id="mM"${m.messages ? " checked" : ""}> Importer et analyser les messages Messenger et Instagram (dans Leads & Contacts › Messages)</label></div></div></div>
     <div class="toolbar" style="margin:14px 0 0"><button type="button" class="btn pri" id="mSave">Enregistrer ces choix</button></div>`;
   const draw = which => {
     if (!which || which === "page") el("mPg").innerHTML = drawPage();
@@ -2460,7 +2873,11 @@ const FORM_TITLES = { contacts: "lead / contact", inquiries: "question / inquiry
 function openForm(entity, row = null, preset = {}) {
   if (entity === "funnels") return openFunnelEditor(row ? row.id : 0);
   if (entity === "posts") return openActionWizard(row, preset);
-  if (entity === "funnel_entries" && !REF("funnels").some(f => f.stages.some(s => s.source === "manual"))) return toast("Aucune étape de funnel en saisie manuelle.");
+  if (entity === "funnel_entries" && !row) {
+    const f = REF("funnels").find(x => +x.id === +preset.funnel_id && manualInputs(x).length) || REF("funnels").find(x => manualInputs(x).length);
+    if (!f) return toast("Rien à saisir : aucun funnel n'a d'étape en saisie manuelle ni de KPI manuel.");
+    return api("funnel", { id: f.id }).then(d => openFunnelEntry(d.funnel, d.entries)).catch(err => toast(err.message, "err"));
+  }
   for (const [k, f] of Object.entries(SC(entity).fields)) {
     if (f.t === "ref" && f.req && f.ref !== "funnel_stages" && !REF(f.ref).length) {
       return toast(`Créez d'abord ${f.ref === "campaigns" ? "une campagne publicitaire" : f.ref === "pages" ? "une page (site ou landing page)" : "un funnel"}.`);
@@ -2515,107 +2932,595 @@ function openForm(entity, row = null, preset = {}) {
   });
 }
 
-/* ---------- éditeur de funnel : étapes, tags, sources, associations */
-const FUNNEL_TEMPLATE = [
-  { name: "Publicité", source: "ads_clicks", target: 0, tags: "" },
-  { name: "Landing Page", source: "page_visits", target: 0, tags: "" },
-  { name: "Inscription", source: "page_registrations", target: 0, tags: "" },
-  { name: "Investissement", source: "manual", target: 0, tags: "" },
-];
+/* ---------- Funnel Studio : dessiner un parcours (entrées, étapes, aiguillages, circuits qui se rejoignent) */
 /** Canaux d'une étape affichés en petites étiquettes. */
 const chanChips = keys => (keys || []).map(k => `<span class="chan${channelOf(k) ? "" : " gone"}">${catIc(catOf(k) || "other")}${esc(L("sources", k))}</span>`).join("");
 /** Sources de chiffres calculées à partir des canaux de l'étape (il faut donc au moins un canal). */
 const needsCh = src => /^(stage_|social_)/.test(src || "");
-const splitKeys = v => Array.isArray(v) ? v : String(v || "").split(",").filter(Boolean);
-/** Groupes de la liste « Source des chiffres » d'une étape (par préfixe de clé). */
-const STAGE_SRC_GROUPS = [["manual", "Saisie"], ["stage_", "Canaux de l'étape"], ["ads_", "Campagnes publicitaires liées"], ["social_", "Canaux de l'étape · relevés des comptes"], ["page_", "Pages liées"], ["email_", "Emails liés"], ["contacts", "Leads liés au funnel"]];
+const splitKeys = v => Array.isArray(v) ? v.map(String) : String(v || "").split(",").filter(Boolean);
+/** Groupes de la liste « Source des chiffres » d'une étape. */
+const STAGE_SRC_GROUPS = [
+  [k => k === "manual", "Saisie"],
+  [k => k === "parents_sum", "Aiguillage"],
+  [k => /^stage_/.test(k) && !/conversations|messages/.test(k), "Canaux de l'étape"],
+  [k => /^stage_(conversations|prospects_messages)/.test(k), "Messages Messenger / Instagram (canaux de l'étape)"],
+  [k => /^social_/.test(k), "Canaux de l'étape · relevés des comptes"],
+  [k => /^ads_/.test(k), "Campagnes publicitaires associées"],
+  [k => /^page_/.test(k), "Pages associées"],
+  [k => /^email_/.test(k), "Emails associés"],
+  [k => /^contacts/.test(k), "Leads liés au funnel"],
+];
+const srcHelp = (s, root) => s === "parents_sum" ? (root ? "Cette étape n'a pas d'étape précédente : choisissez une autre source, ou cochez une étape dans « Vient de »." : "Additionne les prospects des étapes qui mènent ici : idéal pour un aiguillage qui regroupe plusieurs entrées.")
+  : needsCh(s) ? "Calculé à partir des canaux cochés plus bas." : s === "manual" ? "Saisie à la main dans « Chiffres saisis à la main » (page de suivi du funnel)."
+  : /^ads_/.test(s) ? "Calculé à partir des campagnes associées (onglet « Funnel & associations »)." : /^page_/.test(s) ? "Calculé à partir des pages associées (onglet « Funnel & associations »)."
+  : /^email_/.test(s) ? "Calculé à partir des emails associés (onglet « Funnel & associations »)." : "Leads rattachés à ce funnel, à ses campagnes, pages, emails ou aux canaux de ses étapes.";
 
-function openFunnelEditor(id) {
-  const f = id ? REF("funnels").find(x => +x.id === +id) : null;
-  let stages = (f ? f.stages : FUNNEL_TEMPLATE).map(s => ({ id: s.id || 0, name: s.name, source: s.source, target: +s.target || 0, tags: s.tags || "", channels: splitKeys(s.channels) }));
-  const links = f ? f.links : { campaigns: [], pages: [], emails: [], channels: [] };
-  const vals = Object.assign(defaults("funnels"), f || {});
-  const srcOpts = v => STAGE_SRC_GROUPS.map(([pre, label]) => {
-    const list = Object.entries(EN("stage_sources")).filter(([k]) => k.startsWith(pre));
+const FB_TEMPLATES = [
+  { key: "simple", name: "Parcours simple", text: "Une entrée, des étapes en ligne droite. Idéal pour suivre une campagne.", ic: ["trend", "violet"], nodes: [
+    ["a", "Publicité", "entry", "ads_clicks", [], []], ["b", "Landing page", "step", "page_visits", [], ["a"]],
+    ["c", "Inscription", "step", "page_registrations", [], ["b"]], ["d", "Investissement", "goal", "manual", [], ["c"]]] },
+  { key: "multi", name: "Plusieurs points d'entrée", text: "Facebook, Instagram et le site apportent des leads qui se rejoignent, puis se qualifient.", ic: ["merge", "teal"], nodes: [
+    ["a", "Facebook", "entry", "stage_leads", ["facebook"], []], ["b", "Instagram", "entry", "stage_leads", ["instagram"], []],
+    ["c", "Site web", "entry", "stage_leads", ["site", "landing"], []], ["d", "Leads reçus", "step", "parents_sum", [], ["a", "b", "c"]],
+    ["e", "Leads qualifiés", "step", "contacts_qualified", [], ["d"]], ["f", "Convertis", "goal", "contacts_converted", [], ["e"]]] },
+  { key: "qualif", name: "Qualifié / sinon", text: "Les leads qualifiés vont au commercial ; les autres passent par une relance avant de revenir.", ic: ["branch", "blue"], nodes: [
+    ["a", "Formulaire reçu", "entry", "contacts", [], []], ["b", "Qualification", "split", "parents_sum", [], ["a"]],
+    ["c", "Appel commercial", "step", "contacts_qualified", [], ["b"], "Qualifié"], ["d", "Relance (nurturing)", "step", "contacts", [], ["b"], "Sinon", "non_qualifie"],
+    ["e", "Email de relance cliqué", "step", "email_clicks", [], ["d"]], ["f", "Investissement", "goal", "contacts_converted", [], ["c", "e"]]] },
+  { key: "profils", name: "Investisseurs / porteurs", text: "Publicité et messages alimentent les leads, puis chaque profil suit son propre circuit.", ic: ["users", "pink"], nodes: [
+    ["a", "Publicité Meta", "entry", "ads_leads", [], []], ["b", "Messages Messenger / Instagram", "entry", "stage_conversations", ["messenger", "instagram"], []],
+    ["c", "Leads", "split", "parents_sum", [], ["a", "b"]],
+    ["d", "Investisseurs qualifiés", "step", "contacts_qualified", [], ["c"], "Investisseur", "investisseur"], ["e", "Porteurs qualifiés", "step", "contacts_qualified", [], ["c"], "Porteur", "porteur"],
+    ["f", "Investissement", "goal", "contacts_converted", [], ["d"], "", "investisseur"], ["g", "Projet déposé", "goal", "contacts_converted", [], ["e"], "", "porteur"]] },
+  { key: "messages", name: "Messages → prospects", text: "Conversations Messenger et Instagram, les plus chaudes, puis transformées en prospects.", ic: ["message", "teal"], nodes: [
+    ["a", "Messenger", "entry", "stage_conversations", ["messenger"], []], ["b", "Instagram Direct", "entry", "stage_conversations", ["instagram"], []],
+    ["c", "Conversations chaudes", "step", "stage_conversations_hot", ["messenger", "instagram"], ["a", "b"]],
+    ["d", "Prospects créés", "step", "stage_prospects_messages", ["messenger", "instagram"], ["c"]], ["e", "Convertis", "goal", "contacts_converted", [], ["d"]]] },
+  { key: "blank", name: "Partir de zéro", text: "Un point d'entrée, et vous dessinez la suite comme vous voulez.", ic: ["sparkles", "amber"], nodes: [
+    ["a", "Point d'entrée", "entry", "manual", [], []]] },
+];
+const tplNodes = t => t.nodes.map(([key, name, kind, source, channels, parents, branch = "", segment = ""]) => ({ key, id: 0, name, kind, source, channels: channels.filter(k => channelOf(k)), supports: [], kpis: kpiDefaults(source), target: 0, tags: "", branch, segment, parents: [...parents] }));
+
+/** Ancien point d'appel (formulaires, menu « Nouveau ») : ouvre le Funnel Studio. */
+function openFunnelEditor(id) { location.hash = "#funnels/edit/" + (+id || "new"); }
+
+function fbState(f) {
+  const funnel = {};
+  for (const k of Object.keys(SC("funnels").fields)) funnel[k] = f[k] == null ? "" : f[k];
+  return { param: String(f.id), id: +f.id, funnel, links: { campaigns: [...f.links.campaigns], pages: [...f.links.pages], emails: [...f.links.emails] },
+    nodes: f.stages.map(s => ({ key: "id" + s.id, id: +s.id, name: s.name, kind: s.kind || "step", source: s.source, channels: splitKeys(s.channels), supports: splitKeys(s.supports), kpis: parseKpis(s.kpis), target: +s.target || 0, tags: s.tags || "",
+      branch: s.branch || "", segment: s.segment || "", parents: splitKeys(s.parents).map(p => "id" + p) })),
+    sel: null, tab: "node", dirty: false, seq: 0, zoom: 1, link: null };
+}
+const fbNode = k => S.fb.nodes.find(n => n.key === k);
+const fbKids = k => S.fb.nodes.filter(n => n.parents.includes(k));
+/** Étapes qui suivent (directement ou non) une étape : elles ne peuvent pas la précéder. */
+function fbDesc(k) {
+  const out = new Set(), todo = [k];
+  while (todo.length) { const x = todo.pop(); for (const n of S.fb.nodes) if (n.parents.includes(x) && !out.has(n.key)) { out.add(n.key); todo.push(n.key); } }
+  return out;
+}
+const fbLinkTargets = from => { const ok = new Set(); for (const n of S.fb.nodes) if (n.key !== from && !n.parents.includes(from) && !fbDesc(n.key).has(from)) ok.add(n.key); return ok; };
+/** Une étape sans étape précédente est un point d'entrée ; une étape qui en a une n'en est plus un. */
+const fbFixKinds = () => S.fb.nodes.forEach(n => { if (!n.parents.length) n.kind = "entry"; else if (n.kind === "entry") n.kind = "step"; });
+function fbCircuits(nodes) {
+  const memo = new Map();
+  const cnt = k => {
+    if (memo.has(k)) return memo.get(k);
+    memo.set(k, 0);
+    const c = nodes.filter(n => n.parents.includes(k));
+    const v = c.length ? c.reduce((s, x) => s + cnt(x.key), 0) : 1;
+    memo.set(k, v);
+    return v;
+  };
+  return nodes.filter(n => !n.parents.length).reduce((s, n) => s + cnt(n.key), 0);
+}
+function fbDirty() { S.fb.dirty = true; const b = $("#fbSave"); if (b) b.hidden = false; }
+const fbNew = (o = {}) => Object.assign({ key: "n" + ++S.fb.seq, id: 0, name: "Nouvelle étape", kind: "step", source: "manual", channels: [], supports: [], kpis: [], target: 0, tags: "", branch: "", segment: "", parents: [] }, o);
+
+function fbTemplatesPage() {
+  return `<div class="fb-tpl-h"><a class="icon-btn round" href="#funnels/list" aria-label="Retour aux funnels">${ic("chev-l")}</a><div><h2>Créer un funnel</h2><p class="muted">Choisissez un point de départ : vous pourrez tout changer ensuite (étapes, branches, sources des chiffres, canaux).</p></div></div>
+    <div class="fb-tpls">${FB_TEMPLATES.map(t => `<div class="fb-tpl" role="button" tabindex="0" data-tpl="${t.key}">${flowHtml(tplNodes(t), { mini: true })}<div class="fb-tpl-t">${tile(t.ic[0], t.ic[1], "sm")}<span><b>${esc(t.name)}</b><small>${esc(t.text)}</small></span></div></div>`).join("")}</div>`;
+}
+function fbTplMount() {
+  const box = $(".fb-tpls");
+  if (!box) return;
+  const pick = el => {
+    const t = FB_TEMPLATES.find(x => x.key === el.dataset.tpl);
+    const nodes = tplNodes(t);
+    S.fb = { param: "new", id: 0, funnel: Object.assign(defaults("funnels"), { name: "" }), links: { campaigns: [], pages: [], emails: [] }, nodes, sel: null, tab: "node", dirty: true, seq: 0, zoom: 1, link: null };
+    V.innerHTML = fbPage();
+    fbMount();
+    $("#fbName").focus();
+  };
+  box.addEventListener("click", e => { const el = e.target.closest("[data-tpl]"); if (el) pick(el); });
+  box.addEventListener("keydown", e => { const el = e.target.closest("[data-tpl]"); if (el && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); pick(el); } });
+}
+
+function fbPage() {
+  const fb = S.fb;
+  const leg = ["entry", "step", "split", "goal"].map(k => `<span><i class="k-${k}"></i>${esc(KIND_META[k][2])}</span>`).join("");
+  return `<div id="fb" class="fb">
+    <div class="fb-bar">
+      <a class="icon-btn round" href="${fb.id ? "#funnels/stages/" + fb.id : "#funnels/list"}" aria-label="Retour">${ic("chev-l")}</a>
+      <div class="fb-title"><small>${ic("branch", "xs")} Funnel Studio · ${fb.id ? "modifier le parcours" : "nouveau parcours"}</small><input id="fbName" type="text" value="${esc(fb.funnel.name)}" maxlength="80" placeholder="Nommez ce funnel (ex. Acquisition investisseurs)" aria-label="Nom du funnel"></div>
+      <span class="fb-count" id="fbCount"></span>
+      <button type="button" class="btn" data-fbact="cancel">Annuler</button>
+      <button type="button" class="btn pri" data-fbact="save">${ic("check", "sm")} ${fb.id ? "Enregistrer" : "Créer le funnel"}</button>
+    </div>
+    <div class="fb-grid">
+      <section class="fb-board">
+        <div class="fb-tools">
+          <button type="button" class="btn sm" data-fbact="entry">${ic("play-c", "sm")} Ajouter une entrée</button>
+          <span class="fl-legend">${leg}</span><span class="grow"></span>
+          <span class="fb-zoom"><button type="button" class="icon-btn" data-fbact="zoom-out" aria-label="Dézoomer" title="Dézoomer">${ic("minus", "sm")}</button><span id="fbZ">100 %</span><button type="button" class="icon-btn" data-fbact="zoom-in" aria-label="Zoomer" title="Zoomer">${ic("plus", "sm")}</button><button type="button" class="icon-btn" data-fbact="fit" aria-label="Ajuster à l'écran" title="Ajuster à l'écran">${ic("maximize", "sm")}</button></span>
+        </div>
+        <div class="fb-linkbar" id="fbLink" hidden></div>
+        <div class="fb-canvas" id="fbCanvas"></div>
+        <p class="fb-tip">${ic("info", "xs")} Le <b>+</b> d'une étape ajoute la suite ; glissez-le jusqu'à une autre étape pour relier deux circuits. Cliquez sur une étape pour la régler. <kbd>Suppr</kbd> retire l'étape choisie, <kbd>Échap</kbd> annule.</p>
+      </section>
+      <aside class="fb-insp card" id="fbInsp" aria-label="Réglages"></aside>
+    </div>
+    <div class="savebar" id="fbSave"${fb.dirty ? "" : " hidden"}><span>Parcours modifié, pas encore enregistré</span><span class="grow"></span><button type="button" class="btn" data-fbact="cancel">Annuler</button><button type="button" class="btn pri" data-fbact="save">Enregistrer</button></div>
+  </div>`;
+}
+
+function fbDrawCanvas() {
+  const fb = S.fb, c = $("#fbCanvas");
+  if (!c) return;
+  const old = $(".fl-scroll", c), keep = old ? [old.scrollLeft, old.scrollTop] : null;
+  c.innerHTML = flowHtml(fb.nodes, { edit: true, sel: fb.sel, zoom: fb.zoom, linkFrom: fb.link, linkOk: fb.link ? fbLinkTargets(fb.link) : null });
+  drawFlows();
+  if (keep) { const s = $(".fl-scroll", c); s.scrollLeft = keep[0]; s.scrollTop = keep[1]; }
+  $("#fbZ").textContent = Math.round(fb.zoom * 100) + " %";
+  const n = fbCircuits(fb.nodes);
+  $("#fbCount").textContent = `${fb.nodes.length} étape${fb.nodes.length > 1 ? "s" : ""} · ${n} circuit${n > 1 ? "s" : ""}`;
+  const lb = $("#fbLink"), from = fb.link && fbNode(fb.link);
+  lb.hidden = !from;
+  if (from) lb.innerHTML = `${ic("link", "sm")}<span>Cliquez sur l'étape qui doit suivre « ${esc(from.name)} » (les étapes possibles sont en pointillés).</span><span class="grow"></span><button type="button" class="btn sm" data-fbact="unlink">Annuler</button>`;
+}
+/**
+ * Nom ou libellé de branche modifié : on met à jour l'étape et ses liens sur place, sans redessiner
+ * tout le parcours (un clic sur une autre étape juste après n'est ainsi jamais perdu).
+ */
+function fbPatch(n) {
+  const fl = $("#fbCanvas .fl");
+  if (!fl) return;
+  const el = $$(".fn", fl).find(x => x.dataset.k === n.key);
+  if (el) $(".fn-name", el).textContent = n.name || "Sans nom";
+  const data = FL.get(fl.dataset.fl);
+  if (data) data.edges.forEach(e => { if (e.to === n.key) e.label = n.branch || ""; });
+  cancelAnimationFrame(fbPatch.raf);
+  fbPatch.raf = requestAnimationFrame(() => drawFlow(fl));
+}
+function fbSelect(k, scroll = false) {
+  const fb = S.fb;
+  fb.sel = k;
+  if (k) fb.tab = "node";
+  $$("#fbCanvas .fn").forEach(x => x.classList.toggle("sel", x.dataset.k === k));
+  fbDrawInsp();
+  if (scroll && k && window.innerWidth <= 1100) $("#fbInsp").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function fbDrawInsp() {
+  const fb = S.fb, el = $("#fbInsp");
+  if (!el) return;
+  const n = fb.sel && fbNode(fb.sel);
+  const tabs = `<div class="fb-tabs" role="tablist"><button type="button" role="tab" data-fbtab="node" aria-selected="${fb.tab === "node"}" class="${fb.tab === "node" ? "on" : ""}">${ic("layers", "sm")} Étape</button><button type="button" role="tab" data-fbtab="funnel" aria-selected="${fb.tab === "funnel"}" class="${fb.tab === "funnel" ? "on" : ""}">${ic("settings", "sm")} Funnel & associations</button></div>`;
+  el.innerHTML = tabs + (fb.tab === "funnel" ? fbFunnelPane() : n ? fbNodePane(n) : fbHelpPane());
+}
+function fbHelpPane() {
+  return `<div class="fb-help">${tile("sparkles", "violet")}<b>Dessinez votre parcours</b><p class="muted small">Comme un circuit : des entrées, des étapes, des aiguillages, et des branches qui se rejoignent.</p><ul>
+    <li>${tile("plus", "violet", "xs")}<span>Le <b>+</b> à droite d'une étape ajoute la suite : une étape, un aiguillage (qualifié / sinon, investisseurs / porteurs) ou l'objectif final.</span></li>
+    <li>${tile("link", "amber", "xs")}<span>Glissez ce <b>+</b> jusqu'à une autre étape pour les relier : deux circuits se rejoignent.</span></li>
+    <li>${tile("play-c", "green", "xs")}<span><b>Point d'entrée</b> ajoute une autre source de prospects : publicité, Instagram, messages, salon…</span></li>
+    <li>${tile("edit", "blue", "xs")}<span>Cliquez sur une étape pour choisir d'où viennent ses chiffres, ses canaux, son segment et son objectif.</span></li></ul></div>`;
+}
+function fbSrcOpts(v, root) {
+  const all = Object.entries(EN("stage_sources")).filter(([k]) => !(root && k === "parents_sum" && v !== k));
+  return STAGE_SRC_GROUPS.map(([test, label]) => {
+    const list = all.filter(([k]) => test(k));
     return list.length ? `<optgroup label="${esc(label)}">${list.map(([k, l]) => `<option value="${k}"${k === v ? " selected" : ""}>${esc(l)}</option>`).join("")}</optgroup>` : "";
   }).join("");
-  const chSummary = s => (s.channels.length ? chanChips(s.channels) : '<span class="muted">aucun canal</span>')
-    + (needsCh(s.source) && !s.channels.length ? ' <span class="pill warn">Choisissez au moins un canal</span>' : "");
-  const chPicker = (s, i) => {
-    const box = (k, l) => `<label><input type="checkbox" data-k="ch" value="${esc(k)}"${s.channels.includes(k) ? " checked" : ""}> ${esc(l)}</label>`;
-    const gone = s.channels.filter(k => !channelOf(k)); // canaux retirés mais encore cochés sur cette étape
-    // Divulgation progressive : une catégorie s'ouvre seulement si elle contient des canaux cochés.
-    const groups = TX().categories.map(c => [c, channelsIn(c.key)]).filter(g => g[1].length).map(([c, list]) => {
-      const n = list.filter(x => s.channels.includes(x.key)).length;
-      return `<details class="ch-cat"${n ? " open" : ""}><summary>${catIc(c.key)} ${esc(c.label)}${n ? ` <span class="pill blue">${n}</span>` : ""}</summary><div class="ch-list">${list.map(x => box(x.key, x.label)).join("")}</div></details>`;
-    }).join("");
-    return `<details class="stage-ch"${s.open ? " open" : ""}><summary><span class="lab">${ic("megaphone", "sm")} Canaux</span><span class="ch-sum">${chSummary(s)}</span><span class="ch-edit">Choisir</span></summary>
-      <div class="ch-pick">${groups}${gone.length ? `<details class="ch-cat" open><summary>${ic("archive", "sm")} Canaux retirés</summary><div class="ch-list">${gone.map(k => box(k, L("sources", k))).join("")}</div></details>` : ""}</div></details>`;
-  };
-  const box = (t, label, list) => `<div class="fld"><label>${label}</label><div class="linkbox">${list.length ? list.map(x => `<label><input type="checkbox" name="link_${t}" value="${x.id}"${links[t].includes(+x.id) ? " checked" : ""}> ${esc(x.name)}</label>`).join("") : '<span class="muted small">Rien à associer pour l\'instant.</span>'}</div></div>`;
-  openModal(`<h2>${f ? "Modifier le funnel" : "Créer un funnel"}</h2><form id="fForm" novalidate>
-    <div class="form">${Object.entries(SC("funnels").fields).map(([k, fd]) => fieldHtml("funnels", k, fd, vals[k], vals)).join("")}</div>
-    <h3>Étapes & objectifs</h3>
-    <p class="small muted" style="margin-top:-4px">Chaque étape a ses <b>canaux de communication</b> et une source pour ses chiffres : saisie à la main, ses canaux (actions, portée, leads, questions, relevés des comptes sociaux…) ou les campagnes, pages et emails associés plus bas. Séparez les tags par des virgules.</p>
-    <div class="stage-row stage-head"><span></span><span>Nom de l'étape</span><span>Source des chiffres</span><span>Objectif</span><span>Tags</span><span></span></div>
-    <div class="stages" id="stagesBox"></div>
-    <button type="button" class="btn sm" id="addStage" style="margin-top:8px">${ic("plus", "sm")} Ajouter une étape</button>
-    <h3>Associations</h3>
-    <div class="form">${box("campaigns", "Campagnes publicitaires", REF("campaigns"))}${box("pages", "Landing pages / site", REF("pages"))}${box("emails", "Campagnes email", REF("emails"))}</div>
-    <p class="form-err" id="fErr"></p>
-    <div class="form-foot"><button type="button" class="btn" data-close>Annuler</button><button type="submit" class="btn pri">${f ? "Enregistrer le funnel" : "Créer le funnel"}</button></div></form>`);
-  const form = $("#fForm");
-  const sync = () => {
-    stages = $$(".stage-row[data-i]", form).map(r => ({ id: +r.dataset.id || 0, name: $("[data-k=name]", r).value, source: $("[data-k=source]", r).value, target: +$("[data-k=target]", r).value || 0, tags: $("[data-k=tags]", r).value,
-      channels: $$("[data-k=ch]:checked", r).map(c => c.value), open: $(".stage-ch", r).open }));
-  };
-  const draw = () => {
-    $("#stagesBox").innerHTML = stages.map((s, i) => `<div class="stage-row" data-i="${i}" data-id="${s.id}"><span class="num">${i + 1}</span>
-      <input type="text" data-k="name" value="${esc(s.name)}" placeholder="ex. Landing Page" aria-label="Nom de l'étape ${i + 1}">
-      <select data-k="source" class="src" aria-label="Source des chiffres">${srcOpts(s.source)}</select>
-      <input type="number" data-k="target" min="0" value="${s.target || ""}" placeholder="—" aria-label="Objectif">
-      <input type="text" data-k="tags" value="${esc(s.tags)}" placeholder="ex. meta" aria-label="Tags">
-      <span class="ctrl"><button type="button" class="icon-btn" data-mv="${i}:-1" title="Monter" aria-label="Monter l'étape">${ic("chev-u", "sm")}</button><button type="button" class="icon-btn" data-mv="${i}:1" title="Descendre" aria-label="Descendre l'étape">${ic("chev-d", "sm")}</button><button type="button" class="icon-btn del" data-rm="${i}" title="Retirer" aria-label="Retirer l'étape">${ic("trash", "sm")}</button></span>
-      ${chPicker(s, i)}</div>`).join("");
-  };
-  draw();
-  // Cocher un canal ou changer de source met à jour le résumé de l'étape sans tout redessiner.
-  form.addEventListener("change", e => {
-    const row = e.target.closest(".stage-row[data-i]");
-    if (!row || !(e.target.dataset.k === "ch" || e.target.dataset.k === "source")) return;
-    const st = { source: $("[data-k=source]", row).value, channels: $$("[data-k=ch]:checked", row).map(c => c.value) };
-    $(".ch-sum", row).innerHTML = chSummary(st);
-    if (e.target.dataset.k === "source" && needsCh(st.source) && !st.channels.length) $(".stage-ch", row).open = true;
+}
+function fbChPicker(n) {
+  const box = (k, l) => `<label><input type="checkbox" data-fbch value="${esc(k)}"${n.channels.includes(k) ? " checked" : ""}> ${esc(l)}</label>`;
+  const gone = n.channels.filter(k => !channelOf(k)); // canaux retirés des Réglages mais encore cochés sur cette étape
+  const groups = TX().categories.map(c => [c, channelsIn(c.key)]).filter(g => g[1].length).map(([c, list]) => {
+    const k = list.filter(x => n.channels.includes(x.key)).length;
+    return `<details class="ch-cat"${k ? " open" : ""}><summary>${catIc(c.key)} ${esc(c.label)}${k ? ` <span class="pill blue">${k}</span>` : ""}</summary><div class="ch-list">${list.map(x => box(x.key, x.label)).join("")}</div></details>`;
+  }).join("");
+  return `<div class="banner warn fb-chwarn"${needsCh(n.source) && !n.channels.length ? "" : " hidden"}>${ic("alert", "sm")}<span>Cette source compte les données de ses canaux : cochez au moins un canal.</span></div>`
+    + `<div class="ch-pick fb-ch">${groups}${gone.length ? `<details class="ch-cat" open><summary>${ic("archive", "sm")} Canaux retirés</summary><div class="ch-list">${gone.map(k => box(k, L("sources", k))).join("")}</div></details>` : ""}</div>`;
+}
+function fbSupPicker(n) {
+  const own = [...new Set(n.channels.flatMap(ch => supportsOfChannel(ch)))];
+  const others = SUPPORTS().map(x => x.key).filter(k => !own.includes(k));
+  const gone = n.supports.filter(k => !supportOf(k));
+  const box = k => `<label><input type="checkbox" data-fbsup value="${esc(k)}"${n.supports.includes(k) ? " checked" : ""}> ${esc(L("supports", k))}</label>`;
+  const nOther = others.filter(k => n.supports.includes(k)).length;
+  return `<div class="ch-pick fb-ch">${own.length ? `<p class="small muted" style="margin:6px 0 2px">Supports des canaux cochés :</p><div class="ch-list fb-sup">${own.map(box).join("")}</div>` : `<p class="small muted" style="margin:6px 0">Cochez d'abord des canaux : leurs supports (Reel, carrousel, newsletter…) s'afficheront ici.</p>`}
+    <details class="ch-cat"${nOther ? " open" : ""}><summary>${ic("layers", "sm")} ${own.length ? "Autres supports" : "Tous les supports"}${nOther ? ` <span class="pill blue">${nOther}</span>` : ""}</summary><div class="ch-list">${others.map(box).join("")}</div></details>
+    ${gone.length ? `<details class="ch-cat" open><summary>${ic("archive", "sm")} Supports retirés</summary><div class="ch-list">${gone.map(box).join("")}</div></details>` : ""}</div>
+    <small>Les actions et les leads comptés pour cette étape se limitent à ces supports. Aucun coché : tous les supports.</small>`;
+}
+function fbKpiEditor(n) {
+  const groups = EN("stage_kpi_groups"), grpOf = EN("stage_kpi_group");
+  const used = new Set(n.kpis.map(k => k.k));
+  const rows = n.kpis.map((kd, i) => {
+    const man = String(kd.k).startsWith("m_"), fmt = kpiFmtOf(kd);
+    const unit = fmt === "pct" || fmt === "pctv" ? "%" : fmt === "money" ? cur() : "";
+    return `<div class="kpi-row"><span class="kpi-l"><b>${esc(kpiLabel(kd))}</b><small>${man ? `KPI manuel · ${kd.a === "last" ? "dernière valeur saisie" : "total de la période"}` : esc(groups[grpOf[kd.k]] || "")}</small></span>
+      <span class="kpi-t"><input type="number" min="0" step="any" data-fbkt="${i}" value="${kd.t || ""}" placeholder="Objectif" aria-label="Objectif de ${esc(kpiLabel(kd))}">${unit ? `<em>${esc(unit)}</em>` : ""}</span>
+      <span class="kpi-mv">${i ? `<button type="button" class="icon-btn" data-fbkmv="${i}" title="Monter" aria-label="Monter ${esc(kpiLabel(kd))}">${ic("chev-u", "sm")}</button>` : ""}<button type="button" class="icon-btn del" data-fbkdel="${i}" title="Retirer" aria-label="Retirer ${esc(kpiLabel(kd))}">${ic("x", "sm")}</button></span></div>`;
+  }).join("");
+  const opts = Object.entries(groups).map(([g, gl]) => {
+    const ks = Object.keys(EN("stage_kpis")).filter(k => grpOf[k] === g && !used.has(k));
+    return ks.length ? `<optgroup label="${esc(gl)}">${ks.map(k => `<option value="${k}">${esc(L("stage_kpis", k))}</option>`).join("")}</optgroup>` : "";
+  }).join("");
+  return `<div class="kpi-list">${rows || '<p class="small muted" style="margin:0">Aucun KPI : la case affiche le nombre de prospects de l\'étape.</p>'}</div>
+    ${n.kpis.length < 12 ? `<div class="kpi-add"><select id="fbKAdd" aria-label="Ajouter un KPI calculé"><option value="">+ Ajouter un KPI calculé…</option>${opts}</select>
+      <details class="kpi-man"><summary>${ic("edit", "sm")} Créer un KPI manuel</summary><div class="kpi-man-f">
+        <input type="text" id="fbKmL" maxlength="60" placeholder="Nom (ex. Rendez-vous pris)" aria-label="Nom du KPI manuel">
+        <select id="fbKmF" aria-label="Type de valeur"><option value="num">Nombre</option><option value="pctv">Pourcentage</option><option value="money">Montant (${esc(cur())})</option></select>
+        <select id="fbKmA" aria-label="Calcul sur la période"><option value="sum">Total de la période</option><option value="last">Dernière valeur saisie</option></select>
+        <button type="button" class="btn sm" data-fbact="kman">${ic("plus", "sm")} Ajouter ce KPI</button></div>
+        <small>Ses chiffres se saisissent dans le suivi du funnel, bouton « Saisir des chiffres ».</small></details></div>` : '<p class="small muted">12 KPIs au plus par étape.</p>'}
+    <small>Chaque KPI s'affiche dans la case avec sa valeur sur la période choisie ; avec un objectif, il passe au vert une fois atteint.</small>`;
+}
+function fbNodePane(n) {
+  const fb = S.fb, km = KIND_META[n.kind] || KIND_META.step, root = !n.parents.length;
+  const desc = fbDesc(n.key);
+  const cands = fb.nodes.filter(x => x.key !== n.key && !desc.has(x.key));
+  const kinds = root
+    ? `<p class="fb-note small">${ic("play-c", "sm")}<span><b>Point d'entrée</b> : aucune étape ne mène ici. Pour la placer après une autre, cochez celle-ci dans « Vient de ».</span></p>`
+    : `<div class="fld"><label>Rôle dans le parcours</label><div class="fb-kinds">${["step", "split", "goal"].map(k => `<button type="button" data-fbkind="${k}" class="${n.kind === k ? "on" : ""}" aria-pressed="${n.kind === k}">${tile(KIND_META[k][0], KIND_META[k][1], "xs")}${esc(KIND_META[k][2])}</button>`).join("")}</div></div>`;
+  return `<div class="fb-head">${tile(km[0], km[1])}<div><small>${esc(km[2])}</small><b id="fbHeadName">${esc(n.name || "Sans nom")}</b></div></div>${kinds}
+    <div class="fld"><label for="fbN">Nom de l'étape</label><input id="fbN" type="text" data-fbf="name" value="${esc(n.name)}" maxlength="80" placeholder="ex. Landing page"></div>
+    ${root ? "" : `<div class="fld"><label for="fbB">Libellé sur la flèche <span class="muted">(facultatif)</span></label><input id="fbB" type="text" data-fbf="branch" value="${esc(n.branch)}" maxlength="40" placeholder="ex. Qualifié, Sinon, Investisseur"><small>S'affiche sur la flèche qui arrive ici : pour nommer les branches d'un aiguillage.</small></div>`}
+    <div class="fld"><label>Vient de</label><div class="linkbox fb-parents">${cands.length ? cands.map(x => `<label><input type="checkbox" data-fbp="${esc(x.key)}"${n.parents.includes(x.key) ? " checked" : ""}> ${esc(x.name || "Sans nom")}</label>`).join("") : '<span class="muted small">Aucune autre étape possible.</span>'}</div><small>Cochez plusieurs étapes quand des circuits se rejoignent ici. Les étapes qui suivent celle-ci ne sont pas proposées (le parcours tournerait en rond).</small></div>
+    <div class="fld"><label for="fbS">Source des chiffres</label><select id="fbS" data-fbf="source">${fbSrcOpts(n.source, root)}</select><small>${esc(srcHelp(n.source, root))}</small></div>
+    ${LEAD_SRC(n.source) ? `<div class="fld"><label for="fbG">Leads comptés</label><select id="fbG" data-fbf="segment">${Object.entries(EN("stage_segments")).map(([k, l]) => `<option value="${esc(k)}"${k === n.segment ? " selected" : ""}>${esc(l)}</option>`).join("")}</select><small>Pour une branche « Investisseurs » ou « Qualifié » : seuls ces leads sont comptés.</small></div>` : ""}
+    <div class="fld"><label>Canaux de communication</label>${fbChPicker(n)}</div>
+    <div class="fld"><label>Supports de communication</label><div id="fbSupBox">${fbSupPicker(n)}</div></div>
+    <div class="fld"><label>KPIs affichés dans la case</label>${fbKpiEditor(n)}</div>
+    <div class="form fb-2"><div class="fld"><label for="fbT">Objectif</label><input id="fbT" type="number" min="0" inputmode="numeric" data-fbf="target" value="${n.target || ""}" placeholder="—"></div><div class="fld"><label for="fbTg">Tags</label><input id="fbTg" type="text" data-fbf="tags" value="${esc(n.tags)}" placeholder="ex. meta, retargeting"></div></div>
+    <div class="fb-acts"><button type="button" class="btn sm pri" data-fbact="add">${ic("plus", "sm")} Ajouter la suite</button><button type="button" class="btn sm" data-fbact="link">${ic("link", "sm")} Relier à…</button><button type="button" class="btn sm del" data-fbact="del">${ic("trash", "sm")} Supprimer</button></div>`;
+}
+function fbFunnelPane() {
+  const fb = S.fb;
+  const fields = Object.entries(SC("funnels").fields).filter(([k]) => k !== "name").map(([k, fd]) => fieldHtml("funnels", k, fd, fb.funnel[k], fb.funnel)).join("");
+  const box = (t, label, list) => `<div class="fld"><label>${label}</label><div class="linkbox">${list.length ? list.map(x => `<label><input type="checkbox" data-fbl="${t}" value="${x.id}"${fb.links[t].includes(+x.id) ? " checked" : ""}> ${esc(x.name)}</label>`).join("") : '<span class="muted small">Rien à associer pour l\'instant.</span>'}</div></div>`;
+  return `<form id="fbForm" class="form fb-form" novalidate>${fields}</form><h3>Associations</h3><p class="small muted" style="margin-top:-4px">Les étapes dont la source est « campagnes », « pages » ou « emails associés » comptent ce que vous cochez ici.</p>
+    <div class="form fb-form">${box("campaigns", "Campagnes publicitaires", REF("campaigns"))}${box("pages", "Landing pages / site", REF("pages"))}${box("emails", "Campagnes email", REF("emails"))}</div>`;
+}
+
+/* ---------- actions du constructeur */
+function fbAddAfter(key, what) {
+  const fb = S.fb, n = fbNode(key);
+  if (!n) return;
+  if (what === "link") return fbStartLink(key);
+  const had = fbKids(key).length;
+  let added = [];
+  if (what === "next") added = [fbNew({ parents: [key] })];
+  if (what === "goal") added = [fbNew({ name: "Objectif atteint", kind: "goal", source: "contacts_converted", kpis: kpiDefaults("contacts_converted"), parents: [key] })];
+  if (what === "split-qual") added = [fbNew({ name: "Leads qualifiés", source: "contacts_qualified", kpis: kpiDefaults("contacts_qualified"), branch: "Qualifié", parents: [key] }), fbNew({ name: "Relance (nurturing)", source: "contacts", segment: "non_qualifie", branch: "Sinon", parents: [key] })];
+  if (what === "split-prof") added = [fbNew({ name: "Investisseurs", source: "contacts", segment: "investisseur", branch: "Investisseur", parents: [key] }), fbNew({ name: "Porteurs de projets", source: "contacts", segment: "porteur", branch: "Porteur", parents: [key] })];
+  if (what === "split-free") added = [fbNew({ name: "Étape A", branch: "Branche A", parents: [key] }), fbNew({ name: "Étape B", branch: "Branche B", parents: [key] })];
+  if (!added.length) return;
+  // Une étape qui part dans plusieurs directions devient un aiguillage.
+  if (n.kind === "goal") n.kind = "step";
+  if (had + added.length > 1 && n.kind === "step") n.kind = "split";
+  fb.nodes.push(...added);
+  fbFixKinds();
+  fbDirty();
+  fb.sel = added[0].key;
+  fb.tab = "node";
+  fbDrawCanvas();
+  fbDrawInsp();
+  const el = $(`#fbCanvas .fn[data-k="${added[0].key}"]`);
+  if (el) el.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
+  const name = $("#fbN");
+  if (name && window.innerWidth > 1100) { name.focus(); name.select(); }
+}
+function fbStartLink(key) {
+  const fb = S.fb;
+  if (!fbLinkTargets(key).size) return toast("Aucune étape ne peut suivre celle-ci : toutes la précèdent déjà, ou y sont déjà reliées.", "err");
+  fb.link = key;
+  fbDrawCanvas();
+}
+function fbTryLink(from, to) {
+  const fb = S.fb, a = fbNode(from), b = fbNode(to);
+  if (!a || !b || from === to) return;
+  if (b.parents.includes(from)) { toast(`« ${b.name} » suit déjà « ${a.name} ».`); return; }
+  if (fbDesc(to).has(from)) { toast(`Impossible : « ${b.name} » mène déjà à « ${a.name} », le parcours tournerait en rond.`, "err"); return; }
+  b.parents.push(from);
+  if (b.source === "manual" && b.parents.length > 1 && !b.id) b.source = "parents_sum";
+  fbFixKinds();
+  fb.link = null;
+  fbDirty();
+  fb.sel = to;
+  fb.tab = "node";
+  fbDrawCanvas();
+  fbDrawInsp();
+  toast(`« ${a.name} » mène maintenant à « ${b.name} »`);
+}
+async function fbDelete(key) {
+  const fb = S.fb, n = fbNode(key);
+  if (!n) return;
+  if (fb.nodes.length < 2) return toast("Un funnel garde au moins une étape.", "err");
+  const kids = fbKids(key);
+  const ok = await askDialog({ icon: ["trash", "pink"], title: `Supprimer l'étape « ${n.name || "sans nom"} » ?`,
+    text: (kids.length ? "Les étapes qui la suivent seront reliées à celles qui la précèdent. " : "") + (n.id ? "Ses chiffres saisis à la main seront supprimés à l'enregistrement du funnel." : "Elle n'est pas encore enregistrée."),
+    ok: "Supprimer l'étape", cancel: "Garder l'étape", danger: true });
+  if (!ok || S.fb !== fb) return;
+  fb.nodes = fb.nodes.filter(x => x !== n);
+  for (const x of fb.nodes) if (x.parents.includes(key)) x.parents = [...new Set(x.parents.filter(p => p !== key).concat(n.parents))];
+  fbFixKinds();
+  fb.sel = null;
+  fbDirty();
+  fbDrawCanvas();
+  fbDrawInsp();
+}
+function fbCloseMenu() { const m = $(".fb-menu"); if (m) m.remove(); }
+function fbMenu(anchor, key) {
+  fbCloseMenu();
+  const n = fbNode(key);
+  if (!n) return;
+  const items = [["next", "plus", "violet", "Étape suivante", "Une étape après celle-ci"],
+    ["split-qual", "branch", "blue", "Aiguillage qualifié / sinon", "Deux branches selon la qualification du lead"],
+    ["split-prof", "users", "pink", "Aiguillage investisseurs / porteurs", "Une branche par profil"],
+    ["split-free", "branch", "teal", "Aiguillage libre", "Deux branches à nommer vous-même"],
+    ["goal", "flag", "orange", "Objectif final", "Fin du circuit : investissement, projet déposé…"],
+    ["link", "link", "amber", "Relier à une étape existante", "Pour que deux circuits se rejoignent"]];
+  const m = document.createElement("div");
+  m.className = "fb-menu";
+  m.dataset.at = Date.now();
+  m.setAttribute("role", "menu");
+  m.innerHTML = `<p class="grp-h">Après « ${esc(n.name || "cette étape")} »</p>` + items.map(([k, i, t, l, s]) => `<button type="button" role="menuitem" data-fbadd="${k}">${tile(i, t, "sm")}<span><b>${esc(l)}</b><small>${esc(s)}</small></span></button>`).join("");
+  document.body.append(m);
+  const r = anchor.getBoundingClientRect();
+  m.style.left = Math.max(8, Math.min(r.left, innerWidth - m.offsetWidth - 8)) + "px";
+  m.style.top = (r.bottom + 6 + m.offsetHeight > innerHeight - 8 ? Math.max(8, r.top - m.offsetHeight - 6) : r.bottom + 6) + "px";
+  m.addEventListener("click", e => { const b = e.target.closest("[data-fbadd]"); if (b) { fbCloseMenu(); fbAddAfter(key, b.dataset.fbadd); } });
+  m.addEventListener("keydown", e => {
+    const bs = $$("button", m), i = bs.indexOf(document.activeElement);
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); bs[(i + (e.key === "ArrowDown" ? 1 : bs.length - 1)) % bs.length].focus(); }
+    if (e.key === "Escape") { fbCloseMenu(); anchor.focus(); }
   });
-  form.addEventListener("click", async e => {
-    const mv = e.target.closest("[data-mv]"), rm = e.target.closest("[data-rm]");
-    if (e.target.id === "addStage") { sync(); stages.push({ id: 0, name: "", source: "manual", target: 0, tags: "", channels: [], open: true }); draw(); $$("[data-k=name]", form).pop().focus(); }
-    if (mv) { sync(); const [i, d] = mv.dataset.mv.split(":").map(Number); const j = i + d; if (j >= 0 && j < stages.length) { [stages[i], stages[j]] = [stages[j], stages[i]]; draw(); } }
-    if (rm) {
-      sync();
-      const k = +rm.dataset.rm;
-      if (stages.length < 2) { toast("Un funnel garde au moins une étape.", "error"); return; }
-      if (stages[k].id && !(await askDialog({ icon: ["trash", "pink"], title: `Retirer l'étape « ${stages[k].name || k + 1} » ?`, text: "Les chiffres saisis à la main pour cette étape seront supprimés à l'enregistrement du funnel.", ok: "Retirer l'étape", cancel: "Garder l'étape", danger: true }))) return;
-      stages.splice(k, 1); draw();
+  $("button", m).focus();
+}
+document.addEventListener("pointerdown", e => { if (!e.target.closest(".fb-menu, [data-fa], [data-fbact=add]")) fbCloseMenu(); });
+window.addEventListener("resize", fbCloseMenu);
+// La page défile : le menu ne serait plus à côté de son « + » (le défilement causé par son ouverture ne compte pas).
+document.addEventListener("scroll", e => { const m = $(".fb-menu"); if (m && e.target === document && Date.now() - +m.dataset.at > 300) fbCloseMenu(); }, true);
+
+async function fbSave() {
+  const fb = S.fb;
+  fb.funnel.name = $("#fbName").value.trim();
+  if (!fb.funnel.name) { $("#fbName").focus(); return toast("Donnez un nom au funnel (en haut de la page).", "err"); }
+  const fail = (n, m) => { fb.sel = n.key; fb.tab = "node"; fbDrawCanvas(); fbDrawInsp(); toast(m, "err"); };
+  for (const n of fb.nodes) {
+    if (!n.name.trim()) return fail(n, "Une étape n'a pas de nom : donnez-lui un nom.");
+    if (needsCh(n.source) && !n.channels.length) return fail(n, `« ${n.name} » : ses chiffres viennent de ses canaux, mais aucun canal n'est coché.`);
+    if (n.source === "parents_sum" && !n.parents.length) return fail(n, `« ${n.name} » additionne les étapes précédentes, mais aucune ne mène ici : choisissez une autre source.`);
+  }
+  const order = flowLayout(fb.nodes).flat();
+  const btns = $$("[data-fbact=save]");
+  btns.forEach(b => { b.disabled = true; });
+  try {
+    const d = await api("funnel_save", {}, { id: fb.id, funnel: fb.funnel, links: fb.links,
+      stages: order.map(n => ({ key: n.key, id: n.id, name: n.name.trim(), kind: n.kind, source: n.source, channels: n.channels, supports: n.supports, kpis: n.kpis, target: +n.target || 0, tags: n.tags, branch: n.branch, segment: n.segment, parents: n.parents })) });
+    fb.dirty = false;
+    S.fb = null;
+    S.cache.clear();
+    const r = await api("refs");
+    S.boot.refs = r.refs;
+    S.boot.enums = r.enums;
+    toast(fb.id ? "Parcours enregistré" : "Funnel créé : voici son suivi");
+    location.hash = "#funnels/stages/" + d.funnel.id;
+  } catch (err) {
+    toast(err.message, "err");
+    btns.forEach(b => { b.disabled = false; });
+  }
+}
+
+function fbMount() {
+  const root = $("#fb");
+  if (!root) return;
+  $("#title").textContent = "Funnel Studio";
+  document.title = "Funnel Studio — Marketing Dashboard";
+  // Petit écran : le parcours tient dans la largeur au premier affichage.
+  fbDrawCanvas();
+  fbDrawInsp();
+  const fitNow = () => {
+    const st = $("#fbCanvas .fl-stage"), sc = $("#fbCanvas .fl-scroll");
+    if (!st || !sc) return;
+    S.fb.zoom = Math.max(.4, Math.min(1, Math.floor((sc.clientWidth - 16) / st.offsetWidth * 20) / 20));
+    fbDrawCanvas();
+  };
+  if (window.innerWidth <= 700) fitNow();
+
+  root.addEventListener("click", async e => {
+    const fb = S.fb, t = e.target;
+    if (!fb) return;
+    const port = t.closest("[data-fa]");
+    if (port) { e.stopPropagation(); if (Date.now() - (fb.dragEnd || 0) < 400) return; if (fb.link) return fbTryLink(fb.link, port.dataset.fa); return fbMenu(port, port.dataset.fa); }
+    const act = t.closest("[data-fbact]");
+    if (act) {
+      const a = act.dataset.fbact, n = fb.sel && fbNode(fb.sel);
+      if (a === "save") return fbSave();
+      if (a === "cancel") {
+        if (fb.dirty && !(await askDialog({ icon: ["alert", "amber"], title: "Abandonner les changements ?", text: "Les étapes et réglages modifiés depuis le dernier enregistrement seront perdus.", ok: "Abandonner", cancel: "Continuer à modifier", danger: true }))) return;
+        S.fb = null;
+        location.hash = fb.id ? "#funnels/stages/" + fb.id : "#funnels/list";
+        return;
+      }
+      if (a === "entry") {
+        const x = fbNew({ name: "Nouveau point d'entrée", kind: "entry" });
+        fb.nodes.push(x);
+        fbDirty(); fb.sel = x.key; fb.tab = "node"; fbDrawCanvas(); fbDrawInsp();
+        const el = $(`#fbCanvas .fn[data-k="${x.key}"]`);
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
+        return;
+      }
+      if (a === "zoom-in" || a === "zoom-out") { fb.zoom = Math.max(.4, Math.min(1.5, Math.round((fb.zoom + (a === "zoom-in" ? .1 : -.1)) * 10) / 10)); return fbDrawCanvas(); }
+      if (a === "fit") return fitNow();
+      if (a === "unlink") { fb.link = null; return fbDrawCanvas(); }
+      if (!n) return;
+      if (a === "add") return fbMenu(act, n.key);
+      if (a === "link") return fbStartLink(n.key);
+      if (a === "del") return fbDelete(n.key);
+      if (a === "kman") {
+        const l = $("#fbKmL").value.trim();
+        if (!l) { $("#fbKmL").focus(); return toast("Donnez un nom au KPI manuel (ex. Rendez-vous pris).", "err"); }
+        let k = "m_" + slugify(l).slice(0, 30), i = 2;
+        while (n.kpis.some(x => x.k === k)) k = "m_" + slugify(l).slice(0, 28) + "_" + i++;
+        n.kpis.push({ k, l, f: $("#fbKmF").value, a: $("#fbKmA").value, t: 0 });
+        fbDirty(); fbDrawCanvas(); fbDrawInsp();
+        return toast(`KPI « ${l} » ajouté : saisissez ses chiffres dans le suivi du funnel`);
+      }
+      return;
+    }
+    const kdel = t.closest("[data-fbkdel]"), kmv = t.closest("[data-fbkmv]");
+    if ((kdel || kmv) && fb.sel) {
+      const n = fbNode(fb.sel);
+      if (kmv) { const i = +kmv.dataset.fbkmv; [n.kpis[i - 1], n.kpis[i]] = [n.kpis[i], n.kpis[i - 1]]; }
+      if (kdel) {
+        const kd = n.kpis[+kdel.dataset.fbkdel];
+        if (String(kd.k).startsWith("m_") && n.id && !(await askDialog({ icon: ["trash", "pink"], title: `Retirer le KPI « ${kd.l} » ?`, text: "Ses chiffres saisis à la main seront supprimés à l'enregistrement du funnel.", ok: "Retirer le KPI", cancel: "Garder le KPI", danger: true }))) return;
+        n.kpis.splice(+kdel.dataset.fbkdel, 1);
+      }
+      fbDirty(); fbDrawCanvas(); return fbDrawInsp();
+    }
+    const tab = t.closest("[data-fbtab]");
+    if (tab) { fb.tab = tab.dataset.fbtab; return fbDrawInsp(); }
+    const kind = t.closest("[data-fbkind]");
+    if (kind && fb.sel) { fbNode(fb.sel).kind = kind.dataset.fbkind; fbDirty(); fbDrawCanvas(); return fbDrawInsp(); }
+    const lab = t.closest("[data-fe]");
+    if (lab) { fbSelect(lab.dataset.fe, true); const b = $("#fbB"); if (b) { b.focus(); b.select(); } return; }
+    const node = t.closest("#fbCanvas .fn");
+    if (node) { if (fb.link) return fbTryLink(fb.link, node.dataset.k); return fbSelect(node.dataset.k, true); }
+    if (t.closest("#fbCanvas") && !fb.link && fb.sel) fbSelect(null);
+  });
+  root.addEventListener("keydown", e => {
+    const fb = S.fb;
+    if (!fb) return;
+    const node = e.target.closest && e.target.closest("#fbCanvas .fn");
+    if (e.key === "Escape") { if (fb.link) { fb.link = null; fbDrawCanvas(); } else if (fb.sel) fbSelect(null); return; }
+    if (!node || e.target !== node) return;
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); if (fb.link) fbTryLink(fb.link, node.dataset.k); else fbSelect(node.dataset.k, true); }
+    if (e.key === "Delete" || e.key === "Backspace") { e.preventDefault(); fbDelete(node.dataset.k); }
+  });
+  root.addEventListener("input", e => {
+    const fb = S.fb, t = e.target;
+    if (!fb) return;
+    if (t.id === "fbName") { fb.funnel.name = t.value; return fbDirty(); }
+    if (t.closest("#fbForm")) { Object.assign(fb.funnel, readForm($("#fbForm"), "funnels"), { name: fb.funnel.name }); return fbDirty(); }
+    const n = fb.sel && fbNode(fb.sel);
+    if (n && t.dataset.fbkt !== undefined) { n.kpis[+t.dataset.fbkt].t = Math.max(0, +t.value || 0); return fbDirty(); }
+    if (!n || !t.dataset.fbf || t.tagName === "SELECT") return;
+    const k = t.dataset.fbf;
+    n[k] = k === "target" ? Math.max(0, +t.value || 0) : t.value;
+    if (k === "name") $("#fbHeadName").textContent = t.value || "Sans nom";
+    fbDirty();
+    if (k === "name" || k === "branch") fbPatch(n);
+  });
+  root.addEventListener("change", e => {
+    const fb = S.fb, t = e.target;
+    if (!fb) return;
+    if (t.dataset.fbl) { const l = fb.links[t.dataset.fbl], v = +t.value; fb.links[t.dataset.fbl] = t.checked ? [...new Set([...l, v])] : l.filter(x => x !== v); return fbDirty(); }
+    if (t.closest("#fbForm")) { Object.assign(fb.funnel, readForm($("#fbForm"), "funnels"), { name: fb.funnel.name }); return fbDirty(); }
+    const n = fb.sel && fbNode(fb.sel);
+    if (!n) return;
+    if (t.matches("[data-fbch]")) {
+      n.channels = $$("[data-fbch]:checked", root).map(c => c.value);
+      const w = $(".fb-chwarn", root);
+      if (w) w.hidden = !(needsCh(n.source) && !n.channels.length);
+      if ($("#fbSupBox")) $("#fbSupBox").innerHTML = fbSupPicker(n); // les supports proposés suivent les canaux
+      fbDirty();
+      return fbDrawCanvas();
+    }
+    if (t.matches("[data-fbsup]")) {
+      n.supports = $$("[data-fbsup]:checked", root).map(c => c.value);
+      fbDirty();
+      return fbDrawCanvas();
+    }
+    if (t.id === "fbKAdd") {
+      if (t.value) { n.kpis.push({ k: t.value, t: 0 }); fbDirty(); fbDrawCanvas(); fbDrawInsp(); const s2 = $("#fbKAdd"); if (s2) s2.focus(); }
+      return;
+    }
+    if (t.dataset.fbp) {
+      n.parents = t.checked ? [...new Set([...n.parents, t.dataset.fbp])] : n.parents.filter(p => p !== t.dataset.fbp);
+      fbFixKinds(); fbDirty(); fbDrawCanvas(); return fbDrawInsp();
+    }
+    if (t.tagName === "SELECT" && t.dataset.fbf) {
+      n[t.dataset.fbf] = t.value;
+      if (t.dataset.fbf === "source" && !LEAD_SRC(t.value)) n.segment = "";
+      if (t.dataset.fbf === "source" && !n.kpis.length) n.kpis = kpiDefaults(t.value); // KPIs proposés d'office
+      fbDirty(); fbDrawCanvas(); fbDrawInsp();
+      if (t.dataset.fbf === "source" && needsCh(t.value) && !n.channels.length) { const d = $("#fbInsp .fb-ch details"); if (d) d.open = true; }
+      return;
     }
   });
-  form.addEventListener("submit", async e => {
-    e.preventDefault();
-    sync();
-    const data = readForm(form, "funnels");
-    if (!data.name.trim()) { $("#fErr").textContent = "Donnez un nom au funnel."; return; }
-    const noCh = stages.findIndex(s => needsCh(s.source) && !s.channels.length);
-    if (noCh >= 0) { $("#fErr").textContent = `Étape ${noCh + 1} : ses chiffres viennent de ses canaux, mais aucun canal n'est coché. Choisissez au moins un canal, ou changez la source des chiffres.`; $$(".stage-ch", form)[noCh].open = true; return; }
-    const ln = t => $$(`input[name="link_${t}"]:checked`, form).map(i => +i.value);
-    try {
-      const d = await api("funnel_save", {}, { id: f ? +f.id : 0, funnel: data, stages: stages.map(({ open, ...st }) => st), links: { campaigns: ln("campaigns"), pages: ln("pages"), emails: ln("emails") } });
-      closeModal();
-      toast(f ? "Funnel enregistré" : "Funnel créé");
-      if (!f) location.hash = "#funnels/stages/" + d.funnel.id;
-      afterMutation("funnels");
-    } catch (err) { $("#fErr").textContent = err.message; }
+  // Glisser le « + » d'une étape jusqu'à une autre : les deux étapes sont reliées.
+  root.addEventListener("pointerdown", e => {
+    const port = e.target.closest(".fn-port");
+    if (!port || e.button > 0 || !S.fb) return;
+    const fb = S.fb, fl = port.closest(".fl"), stage = $(".fl-stage", fl), svg = $(".fl-svg", fl), from = port.dataset.fa;
+    const z = fb.zoom || 1, p0 = [e.clientX, e.clientY];
+    const at = (cx, cy) => { const r = stage.getBoundingClientRect(); return [(cx - r.left) / z, (cy - r.top) / z]; };
+    const pr = port.getBoundingClientRect(), [sx, sy] = at(pr.left + pr.width / 2, pr.top + pr.height / 2);
+    let line = null, ok = null, over = null;
+    try { port.setPointerCapture(e.pointerId); } catch (err) {}
+    const move = ev => {
+      if (!line) {
+        if (Math.hypot(ev.clientX - p0[0], ev.clientY - p0[1]) < 7) return;
+        fbCloseMenu();
+        ok = fbLinkTargets(from);
+        fl.classList.add("linking");
+        $$(".fn", stage).forEach(x => { x.classList.toggle("target", ok.has(x.dataset.k)); x.classList.toggle("origin", x.dataset.k === from); });
+        line = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        line.setAttribute("class", "fl-e drag");
+        svg.append(line);
+      }
+      const [x, y] = at(ev.clientX, ev.clientY);
+      line.setAttribute("d", `M${sx},${sy} C${sx + 40},${sy} ${x - 40},${y} ${x},${y}`);
+      const hit = document.elementFromPoint(ev.clientX, ev.clientY);
+      const n = hit && hit.closest(".fn");
+      if (over && over !== n) over.classList.remove("over");
+      over = n && ok.has(n.dataset.k) ? n : null;
+      if (over) over.classList.add("over");
+    };
+    const up = ev => {
+      port.removeEventListener("pointermove", move);
+      port.removeEventListener("pointerup", up);
+      port.removeEventListener("pointercancel", up);
+      if (!line) return;
+      fb.dragEnd = Date.now();
+      const hit = ev.type === "pointerup" ? document.elementFromPoint(ev.clientX, ev.clientY) : null;
+      const n = hit && hit.closest(".fn");
+      if (n && n.dataset.k !== from) fbTryLink(from, n.dataset.k);
+      else fbDrawCanvas();
+    };
+    port.addEventListener("pointermove", move);
+    port.addEventListener("pointerup", up);
+    port.addEventListener("pointercancel", up);
   });
 }
+
+VIEWS["funnels/edit"] = { fn: async param => {
+  const p = param || "new";
+  if (!S.fb || S.fb.param !== p) {
+    S.fb = null;
+    if (p !== "new") {
+      const f = REF("funnels").find(x => String(x.id) === p);
+      if (!f) return empty("Ce funnel n'existe plus.", `<a class="btn" href="#funnels/list">Voir les funnels</a>`, { icon: ["alert-c", "pink"] });
+      S.fb = fbState(f);
+    }
+  }
+  return S.fb ? fbPage() : fbTemplatesPage();
+}, after: () => { if (S.fb) fbMount(); else fbTplMount(); } };
 
 /* ================================================================ actions globales */
 document.addEventListener("click", async e => {
@@ -2645,7 +3550,7 @@ document.addEventListener("click", async e => {
     try { preset = t.dataset.preset ? JSON.parse(t.dataset.preset) : {}; } catch (err) {}
     return openForm(ent, row, preset);
   }
-  if (t.dataset.funnelEdit !== undefined) return openFunnelEditor(+t.dataset.funnelEdit);
+  if (t.dataset.funnelEdit !== undefined) return openFunnelEditor(t.dataset.funnelEdit);
   if (t.dataset.del) {
     const [ent, id] = t.dataset.del.split(":");
     const what = { campaigns: ["Supprimer cette campagne ?", "Ses résultats saisis seront supprimés avec elle.", "Supprimer la campagne"], pages: ["Supprimer cette page ?", "Toutes ses statistiques saisies seront supprimées avec elle.", "Supprimer la page"], funnels: ["Supprimer ce funnel ?", "Ses étapes et ses chiffres saisis seront supprimés avec lui.", "Supprimer le funnel"], projects: ["Supprimer ce projet ?", "Son historique de financement sera supprimé avec lui.", "Supprimer le projet"] }[ent] || ["Supprimer cette ligne ?", "Elle disparaîtra aussi des rapports.", "Supprimer"];
@@ -2899,7 +3804,7 @@ async function autoSync() {
       S.cache.clear();
       const busy = !$("#modal").hidden || !$("#dlg").hidden || (document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName));
       toast(`Meta : ${num(t.added)} nouvelle(s) donnée(s) importée(s)` + (busy ? " — rechargez la page pour les voir" : ""));
-      if (!busy && !location.hash.startsWith("#connexions")) route();
+      if (!busy && !location.hash.startsWith("#connexions") && !location.hash.startsWith("#funnels/edit")) route();
     }
   } catch (err) {
     // Synchronisation déjà en cours (onglet ou tâche cron) ou réseau coupé : on réessaiera à la prochaine minute.

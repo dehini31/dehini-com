@@ -110,7 +110,19 @@ function mk_enums(): array
                 'email_clicks' => 'Clics (emails liés)', 'email_conversions' => 'Objectifs atteints (emails liés)',
                 'contacts' => 'Leads & contacts liés', 'contacts_qualified' => 'Leads qualifiés liés',
                 'contacts_converted' => 'Leads convertis liés',
+                'stage_conversations' => "Conversations Messenger / Instagram des canaux de l'étape",
+                'stage_conversations_hot' => "Conversations chaudes des canaux de l'étape",
+                'stage_prospects_messages' => "Prospects créés depuis les messages des canaux de l'étape",
+                'parents_sum' => 'Total des étapes précédentes (aiguillage)',
             ],
+            // Parcours à branches : nature d'une étape, et filtre des leads d'une branche.
+            'stage_kinds' => ['entry' => "Point d'entrée", 'step' => 'Étape', 'split' => 'Aiguillage', 'goal' => 'Objectif final'],
+            'stage_kpis' => array_map(fn ($x) => $x[0], MK_STAGE_KPIS),
+            'stage_kpi_group' => array_map(fn ($x) => $x[1], MK_STAGE_KPIS),
+            'stage_kpi_fmt' => array_map(fn ($x) => $x[2], MK_STAGE_KPIS),
+            'stage_kpi_groups' => MK_STAGE_KPI_GROUPS,
+            'stage_segments' => ['' => 'Tous les leads', 'investisseur' => 'Investisseurs', 'porteur' => 'Porteurs de projets',
+                'qualifie' => 'Qualifiés (et convertis)', 'non_qualifie' => 'Non qualifiés', 'converti' => 'Convertis'],
         ];
     }
     $out = $e;
@@ -373,7 +385,7 @@ function db(): PDO
 function mk_migrate(PDO $pdo): void
 {
     $pdo->exec('CREATE TABLE IF NOT EXISTS settings (k TEXT PRIMARY KEY, v TEXT NOT NULL)');
-    $hash = md5(json_encode(mk_schema()) . '|v4');
+    $hash = md5(json_encode(mk_schema()) . '|v7');
     $s = $pdo->prepare('SELECT v FROM settings WHERE k = ?');
     $s->execute(['schema_hash']);
     if ($s->fetchColumn() === $hash) return;
@@ -430,6 +442,29 @@ function mk_migrate(PDO $pdo): void
     // Canaux de communication de chaque étape de funnel (ajouté après coup aux bases existantes).
     $stageCols = array_column($pdo->query('PRAGMA table_info(funnel_stages)')->fetchAll(), 'name');
     if (!in_array('channels', $stageCols, true)) $pdo->exec("ALTER TABLE funnel_stages ADD COLUMN channels TEXT NOT NULL DEFAULT ''");
+    // Supports de communication et KPIs affichés de chaque étape ; un chiffre saisi peut être celui d'un KPI manuel.
+    if (!in_array('supports', $stageCols, true)) {
+        $pdo->exec("ALTER TABLE funnel_stages ADD COLUMN supports TEXT NOT NULL DEFAULT ''");
+        $pdo->exec("ALTER TABLE funnel_stages ADD COLUMN kpis TEXT NOT NULL DEFAULT ''");
+    }
+    if (!in_array('kpi', array_column($pdo->query('PRAGMA table_info(funnel_entries)')->fetchAll(), 'name'), true)) {
+        $pdo->exec("ALTER TABLE funnel_entries ADD COLUMN kpi TEXT NOT NULL DEFAULT ''");
+    }
+    // Parcours à branches : étapes précédentes (plusieurs = circuits qui se rejoignent), nature, libellé de branche, segment.
+    if (!in_array('parents', $stageCols, true)) {
+        $pdo->exec("ALTER TABLE funnel_stages ADD COLUMN parents TEXT NOT NULL DEFAULT ''");
+        $pdo->exec("ALTER TABLE funnel_stages ADD COLUMN kind TEXT NOT NULL DEFAULT 'step'");
+        $pdo->exec("ALTER TABLE funnel_stages ADD COLUMN branch TEXT NOT NULL DEFAULT ''");
+        $pdo->exec("ALTER TABLE funnel_stages ADD COLUMN segment TEXT NOT NULL DEFAULT ''");
+        // Les funnels d'avant étaient en ligne droite : chaque étape suit la précédente.
+        $prevBy = [];
+        foreach ($pdo->query('SELECT id, funnel_id FROM funnel_stages ORDER BY funnel_id, position, id')->fetchAll() as $r) {
+            $fid = (int) $r['funnel_id'];
+            if (isset($prevBy[$fid])) $pdo->prepare('UPDATE funnel_stages SET parents = ? WHERE id = ?')->execute([(string) $prevBy[$fid], (int) $r['id']]);
+            else $pdo->prepare("UPDATE funnel_stages SET kind = 'entry' WHERE id = ?")->execute([(int) $r['id']]);
+            $prevBy[$fid] = (int) $r['id'];
+        }
+    }
     // Les anciens « réseaux sociaux associés » au funnel (doublon des canaux d'étape) passent sur
     // sa première étape quand aucune étape n'a encore de canal, puis la colonne est vidée.
     $funnelCols = array_column($pdo->query('PRAGMA table_info(funnels)')->fetchAll(), 'name');
@@ -488,6 +523,46 @@ function mk_migrate(PDO $pdo): void
         at TEXT NOT NULL DEFAULT ''
     );
     CREATE INDEX IF NOT EXISTS conversation_messages_c ON conversation_messages(conv_id, at);
+    CREATE TABLE IF NOT EXISTS comments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ext_id TEXT NOT NULL UNIQUE,
+        platform TEXT NOT NULL DEFAULT '',
+        post_ext TEXT NOT NULL DEFAULT '',
+        post_id INTEGER,
+        post_link TEXT NOT NULL DEFAULT '',
+        post_text TEXT NOT NULL DEFAULT '',
+        parent_ext TEXT NOT NULL DEFAULT '',
+        who_id TEXT NOT NULL DEFAULT '',
+        who_name TEXT NOT NULL DEFAULT '',
+        who_username TEXT NOT NULL DEFAULT '',
+        from_me INTEGER NOT NULL DEFAULT 0,
+        text TEXT NOT NULL DEFAULT '',
+        at TEXT NOT NULL DEFAULT '',
+        date TEXT NOT NULL DEFAULT '',
+        link TEXT NOT NULL DEFAULT '',
+        likes INTEGER NOT NULL DEFAULT 0,
+        replies INTEGER NOT NULL DEFAULT 0,
+        page_replied INTEGER NOT NULL DEFAULT 0,
+        is_question INTEGER NOT NULL DEFAULT 0,
+        category TEXT NOT NULL DEFAULT '',
+        profile TEXT NOT NULL DEFAULT '',
+        phone TEXT NOT NULL DEFAULT '',
+        email TEXT NOT NULL DEFAULT '',
+        city TEXT NOT NULL DEFAULT '',
+        inquiry_id INTEGER,
+        contact_id INTEGER,
+        status TEXT NOT NULL DEFAULT 'a_traiter',
+        created INTEGER NOT NULL DEFAULT 0,
+        synced INTEGER NOT NULL DEFAULT 0
+    );
+    CREATE INDEX IF NOT EXISTS comments_d ON comments(date);
+    CREATE INDEX IF NOT EXISTS comments_p ON comments(post_ext);
+    CREATE INDEX IF NOT EXISTS comments_r ON comments(parent_ext);
+    CREATE TABLE IF NOT EXISTS meta_comment_seen (
+        post_ext TEXT PRIMARY KEY,
+        total INTEGER NOT NULL DEFAULT 0,
+        at INTEGER NOT NULL DEFAULT 0
+    );
     -- Données importées puis supprimées par l'équipe : à ne pas réimporter.
     CREATE TABLE IF NOT EXISTS ext_ignored (ext_id TEXT PRIMARY KEY, at INTEGER NOT NULL DEFAULT 0);
     -- Historique des synchronisations avec Meta.
@@ -775,7 +850,11 @@ function mk_delete(string $entity, int $id): void
         if ($entity === 'funnels') $pdo->prepare('DELETE FROM funnel_stages WHERE funnel_id = ?')->execute([$id]);
         if ($entity === 'projects') $pdo->prepare('DELETE FROM project_history WHERE project_id = ?')->execute([$id]);
         // Un prospect supprimé : sa conversation redevient « à traiter ».
-        if ($entity === 'contacts') $pdo->prepare("UPDATE conversations SET contact_id = NULL, status = 'a_traiter' WHERE contact_id = ?")->execute([$id]);
+        if ($entity === 'contacts') {
+            $pdo->prepare("UPDATE conversations SET contact_id = NULL, status = 'a_traiter' WHERE contact_id = ?")->execute([$id]);
+            $pdo->prepare("UPDATE comments SET contact_id = NULL, status = 'a_traiter' WHERE contact_id = ?")->execute([$id]);
+        }
+        if ($entity === 'inquiries') $pdo->prepare('UPDATE comments SET inquiry_id = NULL WHERE inquiry_id = ?')->execute([$id]);
         // Une donnée importée (Meta…) puis supprimée ne doit pas revenir à la synchronisation suivante.
         if (in_array($entity, MK_EXT_TABLES, true)) {
             $ext = (string) qv("SELECT ext_id FROM $entity WHERE id = ?", [$id]);
@@ -819,24 +898,34 @@ function mk_funnel_links(array $f): array
 }
 
 /**
- * Crée ou modifie un funnel avec ses étapes (nom, objectif, tags, canaux de communication,
- * source des chiffres) et ses associations. Une étape retirée perd ses chiffres saisis.
+ * Crée ou modifie un funnel et son parcours. Chaque étape arrive avec une clé (« key », provisoire
+ * pour une nouvelle étape) et la liste des clés des étapes qui y mènent (« parents ») : plusieurs
+ * points d'entrée, des aiguillages (plusieurs suites) et des circuits qui se rejoignent (plusieurs
+ * parents) sont possibles ; une boucle ne l'est pas. Une étape retirée perd ses chiffres saisis.
  */
 function mk_funnel_save(array $in): array
 {
     $pdo = db();
     $id = (int) ($in['id'] ?? 0);
-    $stages = is_array($in['stages'] ?? null) ? $in['stages'] : [];
-    if (!$stages) throw new MkInputError('Ajoutez au moins une étape au funnel.');
-    if (count($stages) > 20) throw new MkInputError('20 étapes au maximum.');
-    $sources = mk_enums()['stage_sources'];
-    $channels = mk_enums()['sources'];
+    $stages = is_array($in['stages'] ?? null) ? array_values($in['stages']) : [];
+    if (!$stages) throw new MkInputError('Ajoutez au moins une étape au parcours.');
+    if (count($stages) > 40) throw new MkInputError('40 étapes au maximum par funnel.');
+    $E = mk_enums();
+    $sources = $E['stage_sources'];
+    $channels = $E['sources'];
     $clean = [];
+    $keys = [];
     foreach ($stages as $i => $st) {
+        $key = (string) ($st['key'] ?? ((int) ($st['id'] ?? 0) > 0 ? 'id' . (int) $st['id'] : 'n' . $i));
+        if ($key === '' || isset($keys[$key])) $key = 'n' . $i . '_' . count($keys);
+        $keys[$key] = $i;
         $name = mk_str($st['name'] ?? '', 80);
         if ($name === '') throw new MkInputError('Étape ' . ($i + 1) . ' : donnez-lui un nom.');
         $src = (string) ($st['source'] ?? 'manual');
         if (!array_key_exists($src, $sources)) $src = 'manual';
+        $kind = array_key_exists((string) ($st['kind'] ?? ''), $E['stage_kinds']) ? (string) $st['kind'] : 'step';
+        $seg = (string) ($st['segment'] ?? '');
+        if (!array_key_exists($seg, $E['stage_segments'])) $seg = '';
         $tags = [];
         foreach (is_array($st['tags'] ?? null) ? $st['tags'] : explode(',', (string) ($st['tags'] ?? '')) as $t) {
             $t = mk_str(ltrim(trim((string) $t), '#'), 40);
@@ -851,25 +940,68 @@ function mk_funnel_save(array $in): array
             $c = (string) $c;
             if ($c !== '' && (isset($channels[$c]) || in_array($c, $had, true)) && !in_array($c, $chs, true)) $chs[] = $c;
         }
-        $clean[] = ['id' => (int) ($st['id'] ?? 0), 'name' => $name, 'target' => max(0, (int) ($st['target'] ?? 0)),
-            'tags' => implode(',', array_slice($tags, 0, 12)), 'source' => $src, 'channels' => implode(',', $chs)];
+        // Supports : ceux de la liste, plus ceux que l'étape avait déjà.
+        $hadSup = (int) ($st['id'] ?? 0) > 0 ? explode(',', (string) qv('SELECT supports FROM funnel_stages WHERE id = ?', [(int) $st['id']])) : [];
+        $sups = [];
+        foreach (is_array($st['supports'] ?? null) ? $st['supports'] : explode(',', (string) ($st['supports'] ?? '')) as $x) {
+            $x = (string) $x;
+            if ($x !== '' && (isset($E['supports'][$x]) || in_array($x, $hadSup, true)) && !in_array($x, $sups, true)) $sups[] = $x;
+        }
+        $clean[] = ['key' => $key, 'id' => (int) ($st['id'] ?? 0), 'name' => $name, 'target' => max(0, (int) ($st['target'] ?? 0)),
+            'supports' => implode(',', array_slice($sups, 0, 30)), 'kpis' => mk_stage_kpis_clean($st['kpis'] ?? []),
+            'tags' => implode(',', array_slice($tags, 0, 12)), 'source' => $src, 'channels' => implode(',', $chs),
+            'kind' => $kind, 'segment' => $seg, 'branch' => mk_str($st['branch'] ?? '', 40),
+            'parents' => array_values(array_unique(array_map('strval', is_array($st['parents'] ?? null) ? $st['parents'] : array_filter(explode(',', (string) ($st['parents'] ?? '')))))),
+        ];
     }
+    // Ancien format (liste sans « parents ») : les étapes se suivent en ligne droite.
+    if (!array_filter($stages, fn ($st) => is_array($st) && array_key_exists('parents', $st))) {
+        foreach ($clean as $i => $st) {
+            $clean[$i]['parents'] = $i ? [$clean[$i - 1]['key']] : [];
+            if (!$i && $st['kind'] === 'step') $clean[$i]['kind'] = 'entry';
+        }
+    }
+    // Les parents doivent exister ; le parcours ne doit pas boucler.
+    foreach ($clean as $i => $st) {
+        $clean[$i]['parents'] = array_values(array_filter($st['parents'], fn ($k) => isset($keys[$k]) && $k !== $st['key']));
+        // Une étape sans étape précédente est un point d'entrée ; une étape qui en a une n'en est plus un.
+        if (!$clean[$i]['parents']) $clean[$i]['kind'] = 'entry';
+        elseif ($clean[$i]['kind'] === 'entry') $clean[$i]['kind'] = 'step';
+    }
+    $state = [];
+    $visit = function (string $k) use (&$visit, &$state, $clean, $keys): void {
+        if (($state[$k] ?? 0) === 2) return;
+        if (($state[$k] ?? 0) === 1) throw new MkInputError("Le parcours tourne en rond : « {$clean[$keys[$k]]['name']} » mène à une étape qui la précède. Retirez une des flèches.");
+        $state[$k] = 1;
+        foreach ($clean[$keys[$k]]['parents'] as $pk) $visit($pk);
+        $state[$k] = 2;
+    };
+    foreach ($clean as $st) $visit($st['key']);
     $pdo->beginTransaction();
     try {
         $f = mk_save('funnels', $in['funnel'] ?? [], $id);
         $fid = (int) $f['id'];
         $keep = [];
+        $idOf = [];
         foreach ($clean as $pos => $st) {
             $sid = $st['id'];
+            $vals = [$pos, $st['name'], $st['target'], $st['tags'], $st['source'], $st['channels'], $st['kind'], $st['branch'], $st['segment'], $st['supports'], json_encode($st['kpis'], JSON_UNESCAPED_UNICODE)];
             if ($sid > 0 && qv('SELECT 1 FROM funnel_stages WHERE id = ? AND funnel_id = ?', [$sid, $fid])) {
-                $pdo->prepare('UPDATE funnel_stages SET position = ?, name = ?, target = ?, tags = ?, source = ?, channels = ? WHERE id = ?')
-                    ->execute([$pos, $st['name'], $st['target'], $st['tags'], $st['source'], $st['channels'], $sid]);
+                $pdo->prepare('UPDATE funnel_stages SET position = ?, name = ?, target = ?, tags = ?, source = ?, channels = ?, kind = ?, branch = ?, segment = ?, supports = ?, kpis = ? WHERE id = ?')
+                    ->execute([...$vals, $sid]);
+                // KPI manuel retiré : ses chiffres saisis partent avec lui.
+                $manual = array_values(array_filter(array_column($st['kpis'], 'k'), fn ($k) => strpos($k, 'm_') === 0));
+                $pdo->prepare("DELETE FROM funnel_entries WHERE stage_id = ? AND kpi != ''" . ($manual ? ' AND kpi NOT IN (' . mk_in($manual) . ')' : ''))->execute([$sid, ...$manual]);
             } else {
-                $pdo->prepare('INSERT INTO funnel_stages (funnel_id, position, name, target, tags, source, channels) VALUES (?, ?, ?, ?, ?, ?, ?)')
-                    ->execute([$fid, $pos, $st['name'], $st['target'], $st['tags'], $st['source'], $st['channels']]);
+                $pdo->prepare('INSERT INTO funnel_stages (position, name, target, tags, source, channels, kind, branch, segment, supports, kpis, funnel_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+                    ->execute([...$vals, $fid]);
                 $sid = (int) $pdo->lastInsertId();
             }
+            $idOf[$st['key']] = $sid;
             $keep[] = $sid;
+        }
+        foreach ($clean as $st) {
+            $pdo->prepare('UPDATE funnel_stages SET parents = ? WHERE id = ?')->execute([implode(',', array_map(fn ($k) => $idOf[$k], $st['parents'])), $idOf[$st['key']]]);
         }
         $gone = array_column(q('SELECT id FROM funnel_stages WHERE funnel_id = ? AND id NOT IN (' . mk_in($keep) . ')', [$fid, ...$keep]), 'id');
         foreach ($gone as $sid) {
@@ -903,22 +1035,114 @@ function mk_funnel_full(int $id): ?array
     return $f;
 }
 
+/**
+ * KPIs qu'une étape peut afficher : clé => [libellé, groupe, format]. Format : num (nombre), pct (taux,
+ * entre 0 et 1) ou money. Les KPIs « manuels » (clé m_…) sont créés par l'équipe et saisis à la main.
+ */
+const MK_STAGE_KPIS = [
+    'actions' => ['Actions publiées', 'diffusion', 'num'], 'reach' => ['Portée', 'diffusion', 'num'], 'impressions' => ['Impressions', 'diffusion', 'num'],
+    'engagement' => ['Engagement', 'diffusion', 'num'], 'engagement_rate' => ["Taux d'engagement", 'diffusion', 'pct'], 'clicks' => ['Clics', 'diffusion', 'num'],
+    'ctr' => ['Taux de clic', 'diffusion', 'pct'], 'conversions' => ['Conversions', 'diffusion', 'num'], 'post_leads' => ['Leads des actions', 'diffusion', 'num'],
+    'cost' => ['Coût des actions', 'diffusion', 'money'],
+    'followers' => ['Abonnés', 'comptes', 'num'], 'new_followers' => ['Nouveaux abonnés', 'comptes', 'num'], 'social_reach' => ['Portée des comptes', 'comptes', 'num'],
+    'social_engagement' => ['Engagement des comptes', 'comptes', 'num'],
+    'leads' => ['Leads', 'leads', 'num'], 'leads_qualified' => ['Leads qualifiés', 'leads', 'num'], 'leads_converted' => ['Leads convertis', 'leads', 'num'],
+    'qual_rate' => ['Taux de qualification', 'leads', 'pct'], 'conv_rate' => ['Taux de conversion des leads', 'leads', 'pct'], 'inquiries' => ['Questions reçues', 'leads', 'num'],
+    'conversations' => ['Conversations', 'messages', 'num'], 'conversations_hot' => ['Conversations chaudes', 'messages', 'num'],
+    'prospects_messages' => ['Prospects issus des messages', 'messages', 'num'], 'comments' => ['Commentaires', 'messages', 'num'],
+    'comments_questions' => ['Commentaires qui posent une question', 'messages', 'num'], 'reply_rate' => ['Taux de réponse aux commentaires', 'messages', 'pct'],
+    'ads_spend' => ['Dépense publicitaire', 'ads', 'money'], 'ads_impressions' => ['Impressions pub', 'ads', 'num'], 'ads_clicks' => ['Clics pub', 'ads', 'num'],
+    'ads_ctr' => ['Taux de clic pub (CTR)', 'ads', 'pct'], 'ads_leads' => ['Leads pub', 'ads', 'num'], 'ads_cpl' => ['Coût par lead', 'ads', 'money'],
+    'ads_conversions' => ['Conversions pub', 'ads', 'num'],
+    'page_visits' => ['Visites des pages', 'web', 'num'], 'page_registrations' => ['Inscriptions', 'web', 'num'], 'page_forms' => ['Formulaires envoyés', 'web', 'num'],
+    'page_conv_rate' => ["Taux d'inscription", 'web', 'pct'],
+    'email_sent' => ['Emails envoyés', 'email', 'num'], 'email_opens' => ['Ouvertures', 'email', 'num'], 'open_rate' => ["Taux d'ouverture", 'email', 'pct'],
+    'email_clicks' => ['Clics email', 'email', 'num'], 'click_rate' => ['Taux de clic email', 'email', 'pct'],
+];
+const MK_STAGE_KPI_GROUPS = [
+    'diffusion' => "Actions des canaux et supports de l'étape", 'comptes' => "Relevés des comptes (canaux de l'étape)",
+    'leads' => "Leads des canaux et supports de l'étape", 'messages' => 'Messages et commentaires (Messenger, Facebook, Instagram)',
+    'ads' => 'Campagnes associées au funnel', 'web' => 'Pages associées au funnel', 'email' => 'Emails associés au funnel',
+];
+
+/** KPIs d'une étape tels qu'enregistrés : [{k, t}] pour un KPI du catalogue, [{k: m_…, l, f, a, t}] pour un KPI manuel. */
+function mk_stage_kpis_clean($in): array
+{
+    if (is_string($in)) $in = json_decode($in, true);
+    $out = [];
+    $seen = [];
+    foreach (is_array($in) ? $in : [] as $x) {
+        if (!is_array($x)) continue;
+        $k = (string) ($x['k'] ?? '');
+        if ($k === '' || isset($seen[$k])) continue;
+        $t = max(0, round((float) ($x['t'] ?? 0), 2));
+        if (isset(MK_STAGE_KPIS[$k])) {
+            $out[] = ['k' => $k, 't' => $t];
+        } elseif (preg_match('/^m_[a-z0-9_]{1,40}$/', $k)) {
+            $l = mk_str($x['l'] ?? '', 60);
+            if ($l === '') throw new MkInputError('Donnez un nom à chaque KPI manuel.');
+            $out[] = ['k' => $k, 'l' => $l, 'f' => in_array($x['f'] ?? '', ['num', 'pctv', 'money'], true) ? $x['f'] : 'num',
+                'a' => ($x['a'] ?? '') === 'last' ? 'last' : 'sum', 't' => $t];
+        } else {
+            continue;
+        }
+        $seen[$k] = true;
+        if (count($out) >= 12) break;
+    }
+    return $out;
+}
+
+/**
+ * Requêtes communes d'une étape : ses canaux, ses supports (actions et leads de ces supports
+ * seulement) et le segment de leads de sa branche.
+ */
+function mk_stage_q(array $st, string $from, string $to): array
+{
+    $chs = array_values(array_filter(explode(',', (string) ($st['channels'] ?? ''))));
+    $sups = array_values(array_filter(explode(',', (string) ($st['supports'] ?? ''))));
+    $supIn = $sups ? ' IN (' . implode(',', array_map(fn ($x) => db()->quote($x), $sups)) . ')' : '';
+    $seg = (string) ($st['segment'] ?? '');
+    $segSql = ['investisseur' => " AND type = 'investisseur'", 'porteur' => " AND type = 'porteur'", 'qualifie' => " AND status IN ('qualifie','converti')",
+        'non_qualifie' => " AND status = 'non_qualifie'", 'converti' => " AND status = 'converti'"][$seg] ?? '';
+    $extraFor = function (string $table) use ($supIn, $segSql): string {
+        if ($table === 'posts') return $supIn ? " AND format$supIn" : '';
+        if ($table === 'contacts') return $segSql . ($supIn ? " AND support$supIn" : '');
+        if ($table === 'inquiries' && in_array($segSql, [" AND type = 'investisseur'", " AND type = 'porteur'"], true)) return $segSql;
+        return '';
+    };
+    $sum = function (string $table, string $col, string $key, array $ids, bool $float = false) use ($from, $to, $extraFor) {
+        if (!$ids) return 0;
+        $v = (float) qv("SELECT COALESCE(SUM($col), 0) FROM $table WHERE $key IN (" . mk_in($ids) . ') AND date BETWEEN ? AND ?' . $extraFor($table), [...$ids, $from, $to]);
+        return $float ? $v : (int) round($v);
+    };
+    $count = function (string $table, string $key, array $vals, string $extra = '') use ($from, $to, $extraFor): int {
+        if (!$vals) return 0;
+        return (int) qv("SELECT COUNT(*) FROM $table WHERE $key IN (" . mk_in($vals) . ") AND date BETWEEN ? AND ?$extra" . $extraFor($table), [...$vals, $from, $to]);
+    };
+    // Messagerie : canal Messenger ou Facebook → Messenger ; Instagram → Instagram Direct.
+    $plats = [];
+    if (array_intersect(['messenger', 'facebook'], $chs)) $plats[] = 'messenger';
+    if (in_array('instagram', $chs, true)) $plats[] = 'instagram';
+    $convs = function (string $extra) use ($plats, $from, $to): int {
+        if (!$plats) return 0;
+        return (int) qv('SELECT COUNT(*) FROM conversations WHERE platform IN (' . mk_in($plats) . ") AND first_date BETWEEN ? AND ?$extra", [...$plats, $from, $to]);
+    };
+    $cplats = array_values(array_intersect(['facebook', 'instagram'], $chs));
+    $cmts = function (string $extra) use ($cplats, $from, $to): int {
+        if (!$cplats) return 0;
+        return (int) qv('SELECT COUNT(*) FROM comments WHERE platform IN (' . mk_in($cplats) . ") AND date BETWEEN ? AND ?$extra", [...$cplats, $from, $to]);
+    };
+    return ['chs' => $chs, 'segSql' => $segSql, 'sum' => $sum, 'count' => $count, 'convs' => $convs, 'cmts' => $cmts];
+}
+
 /** Valeur d'une étape sur une période, selon sa source. */
 function mk_stage_value(array $st, array $f, array $links, string $from, string $to): int
 {
     $src = (string) $st['source'];
-    $sumIn = function (string $table, string $col, string $key, array $ids) use ($from, $to): int {
-        if (!$ids) return 0;
-        return (int) round((float) qv("SELECT COALESCE(SUM($col), 0) FROM $table WHERE $key IN (" . mk_in($ids) . ') AND date BETWEEN ? AND ?', [...$ids, $from, $to]));
-    };
-    $chs = array_values(array_filter(explode(',', (string) ($st['channels'] ?? ''))));
-    $countIn = function (string $table, string $key, array $vals, string $extra = '') use ($from, $to): int {
-        if (!$vals) return 0;
-        return (int) qv("SELECT COUNT(*) FROM $table WHERE $key IN (" . mk_in($vals) . ") AND date BETWEEN ? AND ?$extra", [...$vals, $from, $to]);
-    };
+    ['chs' => $chs, 'segSql' => $segSql, 'sum' => $sumIn, 'count' => $countIn, 'convs' => $convs] = mk_stage_q($st, $from, $to);
     switch ($src) {
         case 'manual':
-            return (int) qv('SELECT COALESCE(SUM(count), 0) FROM funnel_entries WHERE stage_id = ? AND date BETWEEN ? AND ?', [(int) $st['id'], $from, $to]);
+            return (int) round((float) qv("SELECT COALESCE(SUM(count), 0) FROM funnel_entries WHERE stage_id = ? AND kpi = '' AND date BETWEEN ? AND ?", [(int) $st['id'], $from, $to]));
         case 'stage_posts':           return $countIn('posts', 'platform', $chs);
         case 'stage_reach':           return $sumIn('posts', 'reach', 'platform', $chs);
         case 'stage_engagement':      return $sumIn('posts', 'engagement', 'platform', $chs);
@@ -927,6 +1151,9 @@ function mk_stage_value(array $st, array $f, array $links, string $from, string 
         case 'stage_leads':           return $countIn('contacts', 'source', $chs);
         case 'stage_leads_qualified': return $countIn('contacts', 'source', $chs, " AND status IN ('qualifie','converti')");
         case 'stage_inquiries':       return $countIn('inquiries', 'source', $chs);
+        case 'stage_conversations':      return $convs('');
+        case 'stage_conversations_hot':  return $convs(" AND heat = 'chaud'");
+        case 'stage_prospects_messages': return $convs(' AND contact_id IS NOT NULL');
         case 'ads_impressions': return $sumIn('ad_results', 'impressions', 'campaign_id', $links['campaigns']);
         case 'ads_clicks':      return $sumIn('ad_results', 'clicks', 'campaign_id', $links['campaigns']);
         case 'ads_leads':       return $sumIn('ad_results', 'leads', 'campaign_id', $links['campaigns']);
@@ -949,49 +1176,232 @@ function mk_stage_value(array $st, array $f, array $links, string $from, string 
             foreach (['campaigns' => 'campaign_id', 'pages' => 'page_id', 'emails' => 'email_id', 'channels' => 'source'] as $lk => $col) {
                 if ($links[$lk]) { $or[] = "$col IN (" . mk_in($links[$lk]) . ')'; array_push($p, ...$links[$lk]); }
             }
-            $status = $src === 'contacts_qualified' ? " AND status IN ('qualifie','converti')" : ($src === 'contacts_converted' ? " AND status = 'converti'" : '');
+            $status = ($src === 'contacts_qualified' ? " AND status IN ('qualifie','converti')" : ($src === 'contacts_converted' ? " AND status = 'converti'" : '')) . $segSql;
             return (int) qv('SELECT COUNT(*) FROM contacts WHERE (' . implode(' OR ', $or) . ") AND date BETWEEN ? AND ?$status", [...$p, $from, $to]);
     }
     return 0;
 }
 
+/** Valeur d'un KPI d'une étape sur une période (null : pas calculable, par exemple un taux sur zéro). */
+function mk_stage_kpi(array $kd, array $st, array $links, string $from, string $to): ?float
+{
+    $k = $kd['k'];
+    if (strpos($k, 'm_') === 0) {
+        if (($kd['a'] ?? 'sum') === 'last') {
+            $v = qv('SELECT count FROM funnel_entries WHERE stage_id = ? AND kpi = ? AND date BETWEEN ? AND ? ORDER BY date DESC, id DESC LIMIT 1', [(int) $st['id'], $k, $from, $to]);
+            return $v === false || $v === null ? null : (float) $v;
+        }
+        return (float) qv('SELECT COALESCE(SUM(count), 0) FROM funnel_entries WHERE stage_id = ? AND kpi = ? AND date BETWEEN ? AND ?', [(int) $st['id'], $k, $from, $to]);
+    }
+    ['chs' => $chs, 'sum' => $sum, 'count' => $count, 'convs' => $convs, 'cmts' => $cmts] = mk_stage_q($st, $from, $to);
+    $div = fn ($a, $b) => $b > 0 ? $a / $b : null;
+    $posts = fn (string $col) => $sum('posts', $col, 'platform', $chs);
+    $ads = fn (string $col, bool $fl = false) => $sum('ad_results', $col, 'campaign_id', $links['campaigns'], $fl);
+    $web = fn (string $col) => $sum('web_stats', $col, 'page_id', $links['pages']);
+    $mail = fn (string $col) => $sum('emails', $col, 'id', $links['emails']);
+    $leads = fn (string $extra = '') => $count('contacts', 'source', $chs, $extra);
+    switch ($k) {
+        case 'actions': return $count('posts', 'platform', $chs);
+        case 'reach': case 'impressions': case 'engagement': case 'clicks': case 'conversions': return $posts($k);
+        case 'post_leads': return $posts('leads');
+        case 'cost': return $sum('posts', 'cost', 'platform', $chs, true);
+        case 'engagement_rate': return $div($posts('engagement'), $posts('reach'));
+        case 'ctr': return $div($posts('clicks'), $posts('impressions'));
+        case 'followers':
+            // Dernier relevé de chaque compte sur la période, additionnés.
+            $last = [];
+            if ($chs) foreach (q('SELECT platform, followers FROM social_stats WHERE platform IN (' . mk_in($chs) . ') AND date BETWEEN ? AND ? ORDER BY date, id', [...$chs, $from, $to]) as $r) $last[$r['platform']] = (int) $r['followers'];
+            return $last ? (float) array_sum($last) : null;
+        case 'new_followers': return $sum('social_stats', 'new_followers', 'platform', $chs);
+        case 'social_reach': return $sum('social_stats', 'reach', 'platform', $chs);
+        case 'social_engagement': return $sum('social_stats', 'engagement', 'platform', $chs);
+        case 'leads': return $leads();
+        case 'leads_qualified': return $leads(" AND status IN ('qualifie','converti')");
+        case 'leads_converted': return $leads(" AND status = 'converti'");
+        case 'qual_rate': return $div($leads(" AND status IN ('qualifie','converti')"), $leads());
+        case 'conv_rate': return $div($leads(" AND status = 'converti'"), $leads());
+        case 'inquiries': return $count('inquiries', 'source', $chs);
+        case 'conversations': return $convs('');
+        case 'conversations_hot': return $convs(" AND heat = 'chaud'");
+        case 'prospects_messages': return $convs(' AND contact_id IS NOT NULL');
+        case 'comments': return $cmts(' AND from_me = 0');
+        case 'comments_questions': return $cmts(' AND from_me = 0 AND is_question = 1');
+        case 'reply_rate': return $div($cmts(" AND from_me = 0 AND parent_ext = '' AND page_replied = 1"), $cmts(" AND from_me = 0 AND parent_ext = ''"));
+        case 'ads_spend': return $ads('spend', true);
+        case 'ads_impressions': case 'ads_clicks': case 'ads_leads': case 'ads_conversions': return $ads(substr($k, 4));
+        case 'ads_ctr': return $div($ads('clicks'), $ads('impressions'));
+        case 'ads_cpl': return $div($ads('spend', true), $ads('leads'));
+        case 'page_visits': return $web('visits');
+        case 'page_registrations': return $web('reg_investors + reg_owners');
+        case 'page_forms': return $web('forms');
+        case 'page_conv_rate': return $div($web('reg_investors + reg_owners'), $web('visits'));
+        case 'email_sent': return $mail('sent');
+        case 'email_opens': return $mail('opens');
+        case 'email_clicks': return $mail('clicks');
+        case 'open_rate': return $div($mail('opens'), $mail('sent'));
+        case 'click_rate': return $div($mail('clicks'), $mail('sent'));
+    }
+    return null;
+}
+
+/** KPIs d'une étape avec leurs valeurs : [{key, label, fmt, value, target, target_pct, manual}]. */
+function mk_stage_kpi_values(array $st, array $links, string $from, string $to): array
+{
+    $out = [];
+    foreach (mk_stage_kpis_clean((string) ($st['kpis'] ?? '')) as $kd) {
+        $manual = strpos($kd['k'], 'm_') === 0;
+        $fmt = $manual ? $kd['f'] : MK_STAGE_KPIS[$kd['k']][2];
+        $v = mk_stage_kpi($kd, $st, $links, $from, $to);
+        $t = (float) $kd['t'];
+        // Objectif d'un taux : saisi en %, comparé à la valeur en %.
+        $cmp = $v === null ? null : ($fmt === 'pct' ? $v * 100 : $v);
+        $out[] = ['key' => $kd['k'], 'label' => $manual ? $kd['l'] : MK_STAGE_KPIS[$kd['k']][0], 'fmt' => $fmt, 'value' => $v,
+            'target' => $t > 0 ? $t : null, 'target_pct' => $t > 0 && $cmp !== null ? $cmp / $t : null, 'manual' => $manual, 'agg' => $manual ? $kd['a'] : ''];
+    }
+    return $out;
+}
+
+/** Chiffres saisis à la main pour une date (prospects d'une étape manuelle, ou valeur d'un KPI manuel). */
+function mk_funnel_entries_save(int $fid, string $date, array $values, string $notes = ''): int
+{
+    if (!mk_valid_date($date)) throw new MkInputError('Choisissez une date valide.');
+    $f = mk_funnel_full($fid);
+    if (!$f) throw new MkInputError('Funnel introuvable.');
+    $stages = [];
+    foreach ($f['stages'] as $st) $stages[(int) $st['id']] = $st;
+    $n = 0;
+    $pdo = db();
+    foreach ($values as $v) {
+        $sid = (int) ($v['stage_id'] ?? 0);
+        $kpi = (string) ($v['kpi'] ?? '');
+        $raw = trim(str_replace([' ', "\u{202F}", "\u{00A0}", ','], ['', '', '', '.'], (string) ($v['value'] ?? '')));
+        if ($raw === '' || !isset($stages[$sid])) continue;
+        if (!is_numeric($raw) || (float) $raw < 0) throw new MkInputError("« {$stages[$sid]['name']} » : saisissez un nombre positif.");
+        if ($kpi !== '' && !in_array($kpi, array_column(mk_stage_kpis_clean((string) $stages[$sid]['kpis']), 'k'), true)) continue;
+        $val = (float) $raw == (int) $raw ? (int) $raw : round((float) $raw, 2);
+        $ex = qv('SELECT id FROM funnel_entries WHERE stage_id = ? AND kpi = ? AND date = ?', [$sid, $kpi, $date]);
+        if ($ex) {
+            $pdo->prepare('UPDATE funnel_entries SET count = ?, notes = CASE WHEN ? != \'\' THEN ? ELSE notes END WHERE id = ?')->execute([$val, $notes, $notes, (int) $ex]);
+        } else {
+            $pdo->prepare('INSERT INTO funnel_entries (date, funnel_id, stage_id, count, notes, kpi) VALUES (?, ?, ?, ?, ?, ?)')->execute([$date, $fid, $sid, $val, $notes, $kpi]);
+        }
+        $n++;
+    }
+    if (!$n) throw new MkInputError('Saisissez au moins un chiffre.');
+    return $n;
+}
+
 /**
- * Chiffres d'un funnel sur une période : prospects par étape, taux de conversion depuis
- * l'étape précédente et depuis l'entrée, taux d'abandon, atteinte de l'objectif, et l'étape
- * où l'on perd le plus de prospects.
+ * Chiffres d'un funnel sur une période, sur un parcours à branches : prospects de chaque étape,
+ * conversion depuis la ou les étapes précédentes (part de chaque branche), depuis l'entrée,
+ * abandon, objectif ; étape où l'on perd le plus ; et chaque circuit complet (de l'entrée à une
+ * fin) avec sa conversion, pour voir quel circuit marche le mieux.
  */
 function mk_funnel_compute(array $f, string $from, string $to): array
 {
     $stages = $f['stages'] ?? mk_funnel_stages((int) $f['id']);
     $links = $f['links'] ?? mk_funnel_links($f);
+    $byId = [];
+    foreach ($stages as $st) $byId[(int) $st['id']] = $st;
+    $parentsOf = [];
+    foreach ($stages as $st) {
+        $parentsOf[(int) $st['id']] = array_values(array_filter(array_map('intval', explode(',', (string) ($st['parents'] ?? ''))), fn ($p) => isset($byId[$p]) && $p !== (int) $st['id']));
+    }
+    // Ordre de calcul : une étape après ses parents (le parcours ne boucle pas ; sécurité sinon).
+    $order = [];
+    $seen = [];
+    $walk = function (int $id, int $depth = 0) use (&$walk, &$order, &$seen, $parentsOf): void {
+        if (isset($seen[$id]) || $depth > 60) return;
+        foreach ($parentsOf[$id] as $p) $walk($p, $depth + 1);
+        $seen[$id] = true;
+        $order[] = $id;
+    };
+    foreach ($stages as $st) $walk((int) $st['id']);
+    $val = [];
+    $level = [];
+    foreach ($order as $id) {
+        $st = $byId[$id];
+        $ps = $parentsOf[$id];
+        $val[$id] = $st['source'] === 'parents_sum' ? array_sum(array_map(fn ($p) => $val[$p] ?? 0, $ps)) : mk_stage_value($st, $f, $links, $from, $to);
+        $level[$id] = $ps ? 1 + max(array_map(fn ($p) => $level[$p] ?? 0, $ps)) : 0;
+    }
+    // Entrées en amont de chaque étape (pour la conversion depuis l'entrée).
+    $rootsOf = [];
+    foreach ($order as $id) {
+        $r = [];
+        foreach ($parentsOf[$id] as $p) $r = array_merge($r, $rootsOf[$p]);
+        $rootsOf[$id] = $parentsOf[$id] ? array_values(array_unique($r)) : [$id];
+    }
+    $children = [];
+    foreach ($parentsOf as $id => $ps) foreach ($ps as $p) $children[$p][] = $id;
     $out = [];
-    $first = null;
-    $prev = null;
+    $idx = [];
     $worst = null;
-    foreach ($stages as $i => $st) {
-        $v = mk_stage_value($st, $f, $links, $from, $to);
-        if ($i === 0) $first = $v;
-        $convPrev = ($prev !== null && $prev > 0) ? $v / $prev : null;
+    foreach ($order as $id) {
+        $st = $byId[$id];
+        $ps = $parentsOf[$id];
+        $v = $val[$id];
+        $pv = $ps ? array_sum(array_map(fn ($p) => $val[$p], $ps)) : null;
+        $rv = array_sum(array_map(fn ($r) => $val[$r], $rootsOf[$id]));
+        $convPrev = $pv !== null && $pv > 0 ? $v / $pv : null;
         $row = [
-            'id' => (int) $st['id'], 'name' => $st['name'], 'tags' => array_values(array_filter(explode(',', (string) $st['tags']))),
-            'source' => $st['source'], 'target' => (int) $st['target'], 'value' => $v,
+            'id' => $id, 'name' => $st['name'], 'kind' => !$ps ? 'entry' : (in_array($st['kind'] ?? '', ['split', 'goal'], true) ? $st['kind'] : 'step'), 'branch' => (string) ($st['branch'] ?? ''),
+            'segment' => (string) ($st['segment'] ?? ''), 'parents' => $ps, 'children' => $children[$id] ?? [], 'level' => $level[$id],
+            'tags' => array_values(array_filter(explode(',', (string) $st['tags']))), 'source' => $st['source'], 'target' => (int) $st['target'], 'value' => $v,
             'channels' => array_values(array_filter(explode(',', (string) ($st['channels'] ?? '')))),
+            'supports' => array_values(array_filter(explode(',', (string) ($st['supports'] ?? '')))),
+            'kpis' => mk_stage_kpi_values($st, $links, $from, $to),
+            'parents_value' => $pv, 'from_name' => implode(' + ', array_map(fn ($p) => $byId[$p]['name'], $ps)),
             'conv_prev' => $convPrev,
-            'conv_start' => ($i > 0 && $first > 0) ? $v / $first : null,
+            'conv_start' => $ps && $rv > 0 ? $v / $rv : null,
             'drop' => $convPrev === null ? null : max(0.0, 1 - $convPrev),
-            'lost' => $prev === null ? null : max(0, $prev - $v),
+            'lost' => $pv === null ? null : max(0, $pv - $v),
             'target_pct' => (int) $st['target'] > 0 ? $v / (int) $st['target'] : null,
         ];
-        if ($row['drop'] !== null && ($worst === null || $row['drop'] > $out[$worst]['drop'])) $worst = $i;
+        $idx[$id] = count($out);
+        // Une branche d'aiguillage ne « perd » pas ce qui part dans les autres branches : seule
+        // une étape unique après ses parents compte pour la plus forte perte.
+        $siblings = $ps ? count(array_unique(array_merge(...array_map(fn ($p) => $children[$p] ?? [], $ps)))) : 0;
+        if ($row['drop'] !== null && $siblings <= 1 && ($worst === null || $row['drop'] > $out[$worst]['drop'])) $worst = count($out);
         $out[] = $row;
-        $prev = $v;
     }
-    $n = count($out);
+    // Circuits complets : de chaque entrée jusqu'à chaque fin (50 au plus).
+    $paths = [];
+    $leafs = array_filter($order, fn ($id) => empty($children[$id]));
+    $follow = function (int $id, array $path) use (&$follow, &$paths, $children): void {
+        if (count($paths) >= 50 || count($path) > 40) return;
+        $path[] = $id;
+        if (empty($children[$id])) { $paths[] = $path; return; }
+        foreach ($children[$id] as $c) $follow($c, $path);
+    };
+    foreach ($order as $id) if (!$parentsOf[$id]) $follow($id, []);
+    // Conversion d'un circuit : produit des conversions de chaque passage (une ligne droite donne
+    // exactement fin / début ; quand des circuits se rejoignent, c'est une estimation au prorata).
+    $convOf = [];
+    foreach ($out as $row) $convOf[$row['id']] = $row['conv_prev'];
+    $pathRows = [];
+    foreach ($paths as $pth) {
+        $a = $val[$pth[0]];
+        $conv = count($pth) > 1 && $a > 0 ? 1.0 : null;
+        foreach (array_slice($pth, 1) as $sid) {
+            if ($conv === null || $convOf[$sid] === null) { $conv = null; break; }
+            $conv *= $convOf[$sid];
+        }
+        $pathRows[] = ['ids' => $pth, 'names' => array_map(fn ($i) => $byId[$i]['name'], $pth), 'start' => $a, 'end' => $val[end($pth)],
+            'flow' => $conv === null ? null : (int) round($a * $conv), 'conv' => $conv];
+    }
+    $best = null;
+    foreach ($pathRows as $i => $pr) if ($pr['conv'] !== null && ($best === null || $pr['conv'] > $pathRows[$best]['conv'])) $best = $i;
+    $roots = array_filter($order, fn ($id) => !$parentsOf[$id]);
+    $ends = array_values(array_filter($order, fn ($id) => (string) ($byId[$id]['kind'] ?? '') === 'goal')) ?: array_values($leafs);
+    $rootSum = array_sum(array_map(fn ($id) => $val[$id], $roots));
+    $endSum = array_sum(array_map(fn ($id) => $val[$id], $ends));
     return [
         'id' => (int) $f['id'], 'name' => $f['name'], 'objective' => $f['objective'], 'status' => $f['status'],
         'from' => $from, 'to' => $to, 'stages' => $out,
-        'overall' => ($n > 1 && $first > 0) ? $out[$n - 1]['value'] / $first : null,
-        'worst' => $worst, // index de l'étape où la perte depuis l'étape précédente est la plus forte
+        'overall' => count($out) > 1 && $rootSum > 0 ? $endSum / $rootSum : null,
+        'worst' => $worst, // index (dans stages) de l'étape où la perte est la plus forte
+        'paths' => $pathRows, 'best_path' => $best, 'branched' => count($paths) > 1,
         'links' => [
             'campaigns' => count($links['campaigns']), 'pages' => count($links['pages']),
             'emails' => count($links['emails']), 'channels' => $links['channels'],
