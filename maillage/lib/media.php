@@ -17,15 +17,18 @@ function media_dir(int $cid): string
     return $d;
 }
 
-/** Traite une photo envoyée ; retourne son chemin sans suffixe. */
-function image_ingest(string $tmp, int $cid): string
+/**
+ * Ouvre une image envoyée (JPG, PNG ou WebP), orientation des photos de téléphone corrigée.
+ * Lève InvalidArgumentException (message affichable) si le fichier n'est pas une image acceptée.
+ */
+function image_open(string $tmp, int $minSide = 120)
 {
     if (!function_exists('imagecreatefromjpeg') || !function_exists('imagewebp')) throw new RuntimeException('Extension GD absente sur le serveur');
     $info = @getimagesize($tmp);
     $types = [IMAGETYPE_JPEG => 'jpeg', IMAGETYPE_PNG => 'png', IMAGETYPE_WEBP => 'webp'];
     if (!$info || !isset($types[$info[2]])) throw new InvalidArgumentException('Format non accepté : JPG, PNG ou WebP uniquement.');
     [$w, $h] = $info;
-    if ($w < 120 || $h < 120) throw new InvalidArgumentException('Image trop petite (120 px minimum).');
+    if ($w < $minSide || $h < $minSide) throw new InvalidArgumentException('Image trop petite (' . $minSide . ' px minimum).');
     if ($w * $h > 40000000) throw new InvalidArgumentException('Image trop grande (40 mégapixels maximum).');
     $fn = 'imagecreatefrom' . $types[$info[2]];
     @ini_set('memory_limit', '512M');
@@ -41,20 +44,38 @@ function image_ingest(string $tmp, int $cid): string
         }
     }
     if (!imageistruecolor($src)) imagepalettetotruecolor($src);
+    return $src;
+}
+
+/** Copie réduite d'une image (largeur maximale $tw), sur fond blanc (PNG détourés). */
+function image_fit($src, int $tw)
+{
     $w = imagesx($src);
     $h = imagesy($src);
-    $id = bin2hex(random_bytes(8));
-    $dir = media_dir($cid);
+    $nw = min($tw, $w);
+    $nh = max(1, (int) round($h * $nw / $w));
+    $dst = imagecreatetruecolor($nw, $nh);
+    imagefill($dst, 0, 0, imagecolorallocate($dst, 255, 255, 255));
+    imagecopyresampled($dst, $src, 0, 0, 0, 0, $nw, $nh, $w, $h);
+    return $dst;
+}
+
+/** Écrit une image en WebP dans les largeurs de MEDIA_WIDTHS : $dir/$id-480.webp, $dir/$id-1200.webp. */
+function image_write($src, string $dir, string $id): void
+{
     foreach (MEDIA_WIDTHS as $tw) {
-        $nw = min($tw, $w);
-        $nh = max(1, (int) round($h * $nw / $w));
-        $dst = imagecreatetruecolor($nw, $nh);
-        // Fond blanc sous les PNG transparents (photos de produit détourées).
-        imagefill($dst, 0, 0, imagecolorallocate($dst, 255, 255, 255));
-        imagecopyresampled($dst, $src, 0, 0, 0, 0, $nw, $nh, $w, $h);
+        $dst = image_fit($src, $tw);
         if (!imagewebp($dst, "$dir/$id-$tw.webp", 82)) throw new RuntimeException('Écriture de l\'image impossible');
         imagedestroy($dst);
     }
+}
+
+/** Traite une photo envoyée ; retourne son chemin sans suffixe. */
+function image_ingest(string $tmp, int $cid): string
+{
+    $src = image_open($tmp);
+    $id = bin2hex(random_bytes(8));
+    image_write($src, media_dir($cid), $id);
     imagedestroy($src);
     return 'media/c' . $cid . '/' . $id;
 }

@@ -15,7 +15,7 @@ declare(strict_types=1);
 function seed_maybe(): void
 {
     if (!MLG_SEED_DEMO) return;
-    if (meta_get('seeded') !== null) { seed_radar_maybe(); return; }
+    if (meta_get('seeded') !== null) { seed_radar_maybe(); seed_research_maybe(); return; }
     $lock = @fopen(dirname(MLG_DB_PATH) . '/seed.lock', 'c');
     if ($lock) flock($lock, LOCK_EX);
     try {
@@ -105,6 +105,58 @@ function seed_radar_demo(): void
     }
 }
 
+/** Une démonstration chargée avant la recherche par photo reçoit ses exemples de recherches actives (une seule fois). */
+function seed_research_maybe(): void
+{
+    if (meta_get('research_seeded') !== null) return;
+    $lock = @fopen(dirname(MLG_DB_PATH) . '/seed.lock', 'c');
+    if ($lock) flock($lock, LOCK_EX);
+    try {
+        if (meta_get('research_seeded') !== null) return;
+        meta_set('research_seeded', '1');
+        if (demo_exists()) seed_research_demo();
+    } catch (Throwable $e) {
+        tx_rollback();
+        error_log('maillage seed recherches: ' . $e->getMessage());
+    } finally {
+        if ($lock) { flock($lock, LOCK_UN); fclose($lock); }
+    }
+}
+
+/**
+ * Exemples de recherches actives dans la démonstration (marquées « demo », visibles des seuls
+ * comptes de démonstration) : des produits que le catalogue n'a pas, cherchés par des clients.
+ */
+function seed_research_demo(): void
+{
+    $pdo = db();
+    if ((int) $pdo->query('SELECT COUNT(*) FROM research WHERE demo = 1')->fetchColumn() > 0) return;
+    $now = time();
+    // [minutes écoulées, produit, rayon, marque, détails, client, wilaya, commune]
+    $list = [
+        [7, 'Chaussettes de running', 'mode', '', 'Chaussettes basses respirantes, taille 40-42.', 'Imène R.', '16', 'Alger Centre'],
+        [26, 'Tapis de yoga antidérapant', 'mode', '', 'Épaisseur 6 mm, couleur indifférente.', 'Walid S.', '31', 'Oran'],
+        [95, 'Cafetière à filtre', 'electro', 'Kivo', 'Capacité 10 à 12 tasses, avec verseuse en verre.', 'Meriem D.', '19', 'Setif'],
+        [240, 'Drap housse 160×200', 'maison', 'Dar Lina', 'En coton, couleur sable ou écru.', 'Rachid B.', '09', 'Blida'],
+    ];
+    foreach ($list as $i => [$ago, $name, $cat, $brand, $details, $client, $zone, $commune]) {
+        try {
+            $res = research_create(['name' => $name, 'category' => $cat, 'brand' => $brand, 'details' => $details, 'cname' => $client,
+                'phone' => '06' . sprintf('%08d', 60000000 + $i * 2345678), 'zone' => $zone, 'commune' => $commune, 'call_ok' => 1], '', false, true, $now - $ago * 60);
+            if ($i !== 2) continue;
+            // Une réponse d'exemple : un magasin de la démonstration, dans la wilaya du client, indique avoir le produit.
+            $st = $pdo->prepare("SELECT s.id, s.company_id FROM stores s JOIN companies c ON c.id = s.company_id WHERE c.demo = 1 AND s.wilaya = ? AND s.status = 'active' ORDER BY s.id LIMIT 1");
+            $st->execute([$zone]);
+            if ($s = $st->fetch()) {
+                $pdo->prepare("INSERT INTO research_replies (research_id, company_id, store_id, product_id, kind, price, message, created) VALUES (?, ?, ?, 0, 'have', 5900, ?, ?)")
+                    ->execute([$res['research']['id'], $s['company_id'], $s['id'], 'Disponible en magasin, modèle 12 tasses.', $now - 40 * 60]);
+            }
+        } catch (Throwable $e) {
+            tx_rollback();
+        }
+    }
+}
+
 function demo_exists(): bool
 {
     return (int) db()->query('SELECT COUNT(*) FROM companies WHERE demo = 1')->fetchColumn() > 0;
@@ -114,6 +166,8 @@ function demo_delete(): int
 {
     $ids = db()->query('SELECT id FROM companies WHERE demo = 1')->fetchAll(PDO::FETCH_COLUMN);
     foreach ($ids as $id) company_delete((int) $id);
+    db()->exec('DELETE FROM research_replies WHERE research_id IN (SELECT id FROM research WHERE demo = 1)');
+    db()->exec('DELETE FROM research WHERE demo = 1');
     return count($ids);
 }
 
@@ -456,6 +510,8 @@ function seed_demo(): void
     tx_commit();
     seed_radar_demo();
     meta_set('radar_seeded', '1');
+    seed_research_demo();
+    meta_set('research_seeded', '1');
     $pdo->exec('PRAGMA synchronous = NORMAL');
     mt_srand();
 }
