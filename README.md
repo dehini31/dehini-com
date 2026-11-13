@@ -1200,12 +1200,13 @@ demande de partenariat à accepter dans Réseau) ; sa fiche est créée tout de 
 **Recherche par photo** (`explorer/#/photo`, entrée « Photo » du menu) — le client prend une photo (appareil photo du
 téléphone, webcam sur ordinateur) ou choisit une image :
 
-1. **Identification.** Avec une clé de l'API Claude, l'image est décrite (rayon, nom, marque lisible, détails) ; c'est
-   une **proposition à vérifier**, affichée comme telle, que le client corrige. Sans clé, il décrit lui-même le produit.
+1. **Identification interne.** La photo est comparée à celles du catalogue, sur la plateforme (aucun service
+   extérieur, aucune clé, aucun coût). Si elle ressemble nettement à un produit, sa fiche est proposée (rayon, nom,
+   marque) ; sinon le rayon des produits ressemblants ; sinon le client décrit le produit. C'est toujours une
+   **proposition à vérifier**, affichée comme telle, que le client corrige.
 2. **Recherche** avec l'image *et* la description : mots du nom et des détails, et ressemblance de la photo avec
    celles du catalogue (signature visuelle calculée à l'enregistrement de chaque photo de produit).
-3. **Produit trouvé** seulement avec une preuve, affichée : photo identique à celle du catalogue, nom identique, ou
-   produit reconnu par l'IA en comparant la photo du client à celles des candidats (avec une mise en garde). La fiche
+3. **Produit trouvé** seulement avec une preuve, affichée : photo identique à celle du catalogue, ou nom (et marque) identiques. La fiche
    montre alors les points de vente qui l'ont en stock (du plus proche au plus loin), la marque, et les boutons
    fiche produit / points de vente proches / marque / produits similaires.
 4. Sinon, les **produits les plus proches**, clairement présentés comme similaires ; et un message clair s'il n'y a rien.
@@ -1216,10 +1217,11 @@ téléphone, webcam sur ordinateur) ou choisit une image :
    montré qu'aux comptes qui ont répondu, s'il l'a accepté. Une recherche se clôt seule après 14 jours.
 
 L'image n'est conservée que si une recherche active est lancée (`media/r/`, supprimée un mois après la clôture).
-**Clé d'IA** : `admin.html` → Réglages → « Recherche par photo » (clé `sk-ant-…`, bouton « Tester la clé », plafond
-d'appels par jour, 500 par défaut), ou `MLG_AI_KEY` dans `maillage/config.php`. Modèle : `MLG_AI_MODEL`
-(`claude-opus-5-5` par défaut). L'appel est un simple HTTPS vers l'API Messages (pas de dépendance à installer),
-avec sortie JSON structurée ; si l'IA échoue, refuse ou dépasse le plafond, la recherche continue sans elle.
+**La plateforme apprend** : quand un client clôt sa recherche « J'ai trouvé » et qu'un point de vente y avait
+répondu avec une fiche du catalogue, la photo du client est rattachée à ce produit (30 au plus par produit). Les
+photos suivantes du même produit le font proposer — comme proposition ou produit similaire, jamais comme preuve.
+Limite à connaître : la comparaison porte sur les formes et les couleurs de l'image ; elle reconnaît une photo du
+catalogue ou une photo déjà apprise, pas un objet photographié sous un angle tout à fait nouveau.
 
 **Français / arabe** — toutes les pages (landings, plateforme publique, page de vente, espace, administration) sont
 bilingues : un bouton FR/AR (en haut de chaque page) bascule la langue, mémorisée par appareil (`localStorage`),
@@ -1246,7 +1248,7 @@ en français faute du code de wilaya transmis à ces endroits précis.
 - `maillage/api.php` — l'API (la liste des actions est en tête du fichier).
 - `maillage/lib/` — `core.php` (configuration, base, emails), `auth.php` (comptes, sessions), `catalog.php`
   (côté public, recherche, suivi des recherches), `orders.php`, `radar.php` (commandes sans point de vente choisi),
-  `visual.php` (recherche par photo : signatures, appel à l'IA), `research.php` (recherches actives),
+  `visual.php` (recherche par photo : signatures, identification, apprentissage), `research.php` (recherches actives),
   `dash.php` (espace entreprise et point de vente), `analytics.php`, `media.php` (photos), `seed.php`
   (démonstration), `data/zones.json` (wilayas et coordonnées de leur chef-lieu), `data/communes.json` (communes).
 - La base se met à jour toute seule (version 2 : commune, radar, accès des points de vente, pages de vente) au
@@ -1315,8 +1317,7 @@ Faux hébergement neuf, puis parcours complet dans Chromium (Playwright) : inscr
 landing, produit avec photo, point de vente placé sur la carte, stock, validation par le propriétaire, recherche et
 réservation côté client sur mobile, traitement de la commande, annulation par le client, distributeur et
 partenariat, analyses, radar (page de vente, commune obligatoire, niveaux commune → wilaya → partout, prise,
-remise, livraison), recherche par photo (IA remplacée par `tests/maillage/mock-ai.php`, qui refuse une requête mal
-formée) et recherche active, accès privé d'un point de vente, inscription depuis la landing des points de vente, mot de passe
+remise, livraison), recherche par photo (identification interne, apprentissage) et recherche active, accès privé d'un point de vente, inscription depuis la landing des points de vente, mot de passe
 oublié, démonstration en lecture seule, cloisonnement entre entreprises,
 fichiers internes interdits, politique de sécurité (CSP), absence d'erreur JavaScript et de défilement horizontal.
 Voir `tests/maillage/README.md`.

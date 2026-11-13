@@ -10,14 +10,14 @@
  *          GET  product {slug} | availability {product,size,color,lat,lng,zone,log} | track {token | ref,phone} | communes {zone}
  *          GET  research_get {token | ref,phone}
  *          POST order {…} | order_radar {…} | order_cancel {token} | event {kind,id} | log_map {brand,zone,lat,lng,results}
- *          POST visual_identify (multipart : file, lang) | visual_search (multipart : file + description) — recherche par photo
+ *          POST visual_identify (multipart : file) | visual_search (multipart : file + description) — recherche par photo
  *          POST research_create (multipart : file + description + coordonnées) | research_close {token | ref,phone, found}
  * Comptes  GET  me    POST signup (marque, distributeur ou point de vente) | login | logout | forgot | reset | demo_login
  * Espace   GET  overview | brands | dash_products | dash_product {id} | dash_stores | stock {store} | orders | order_get {id} | network | analytics {days} | radar
  *          POST brand_save | brand_delete | product_save | product_delete | upload (multipart) | store_save | store_delete | stock_save
  *          POST order_status | radar_claim | radar_release | research_reply | research_dismiss
  *          POST partner_request | partner_respond | partner_remove | company_save | account_save | password
- * Admin    GET  adm_overview    POST adm_company | adm_open | adm_demo | adm_settings | adm_ai_test   (session de /admin)
+ * Admin    GET  adm_overview    POST adm_company | adm_open | adm_demo | adm_settings   (session de /admin)
  *
  * Un compte limité à un point de vente (users.store_id) n'accède qu'à son magasin : vue d'ensemble,
  * commandes, stock, fiche, radar et son propre compte ; tout le reste exige le compte de l'entreprise.
@@ -58,7 +58,7 @@ if ($isPost && ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') !== 'maillage') fail('R
 
 const POST_ONLY = ['order', 'order_radar', 'order_cancel', 'event', 'log_map', 'signup', 'login', 'logout', 'forgot', 'reset', 'demo_login',
     'brand_save', 'brand_delete', 'product_save', 'product_delete', 'upload', 'store_save', 'store_delete', 'stock_save', 'order_status',
-    'radar_claim', 'radar_release', 'visual_identify', 'visual_search', 'research_create', 'research_close', 'research_reply', 'research_dismiss', 'adm_ai_test',
+    'radar_claim', 'radar_release', 'visual_identify', 'visual_search', 'research_create', 'research_close', 'research_reply', 'research_dismiss',
     'partner_request', 'partner_respond', 'partner_remove', 'company_save', 'account_save', 'password',
     'adm_company', 'adm_open', 'adm_demo', 'adm_settings'];
 if (in_array($action, POST_ONLY, true) && !$isPost) fail('Méthode non autorisée.', 405, 'method');
@@ -108,7 +108,6 @@ try {
                     'center' => MLG_MAP_CENTER, 'zoom' => (int) MLG_MAP_ZOOM, 'reservation_hours' => (int) MLG_RESERVATION_HOURS,
                     'cover_km' => (float) MLG_COVER_KM, 'tz' => MLG_TIMEZONE, 'demo' => demo_exists(),
                     'radar_step_min' => intdiv(radar_step(), 60),
-                    'visual_ai' => ai_enabled(),
                 ],
                 'zones' => array_values(zones()),
                 'categories' => $cats,
@@ -226,11 +225,11 @@ try {
 
         /* ------------------------------------------------- recherche par photo */
 
-        // 1. L'image est décrite par l'IA (si elle est configurée) : une proposition, à vérifier par le client.
+        // 1. La photo est comparée à celles du catalogue : une proposition de description, à vérifier par le client.
         case 'visual_identify': {
             rate('visual', 40, 3600);
             $im = visitor_image();
-            $res = visual_identify($im, ($b['lang'] ?? '') === 'ar' ? 'ar' : 'fr');
+            $res = visual_identify($im);
             imagedestroy($im);
             ok($res);
         }
@@ -263,7 +262,7 @@ try {
             $path = research_image($im);
             imagedestroy($im);
             try {
-                $res = research_create($b, $path, !empty($b['ai']));
+                $res = research_create($b, $path, !empty($b['auto']));
             } catch (Throwable $e) {
                 research_image_delete($path);
                 throw $e;
@@ -693,10 +692,6 @@ try {
                     'searches7' => $one("SELECT COUNT(*) FROM searches WHERE created >= $week"),
                     'research' => $one("SELECT COUNT(*) FROM research WHERE demo = 0 AND status = 'open'"),
                 ],
-                'ai' => [
-                    'enabled' => ai_enabled(), 'source' => MLG_AI_KEY !== '' ? 'config' : (setting('ai_key') !== '' ? 'admin' : ''),
-                    'hint' => ai_enabled() ? '…' . substr(ai_key(), -4) : '', 'model' => (string) MLG_AI_MODEL, 'today' => ai_calls_today(), 'cap' => ai_daily_cap(),
-                ],
                 'settings' => ['moderation' => moderation_on(), 'notify_email' => setting('notify_email'), 'radar_step_min' => intdiv(radar_step(), 60)],
                 'demo' => demo_exists(),
                 'mail' => MLG_SMTP_HOST !== '',
@@ -756,25 +751,7 @@ try {
             setting_set('moderation', !empty($b['moderation']) ? '1' : '0');
             setting_set('notify_email', $email);
             if (isset($b['radar_step_min']) && is_numeric($b['radar_step_min'])) setting_set('radar_step_min', (string) max(0, min(1440, (int) $b['radar_step_min'])));
-            // Clé de l'API d'IA : jamais renvoyée au navigateur ; vide = inchangée, « ai_key_clear » la retire.
-            $key = is_string($b['ai_key'] ?? null) ? trim($b['ai_key']) : '';
-            if ($key !== '') {
-                if (strlen($key) < 20 || strlen($key) > 300 || preg_match('/\s/', $key)) fail('Cette clé d\'API ne semble pas valide.');
-                setting_set('ai_key', $key);
-            } elseif (!empty($b['ai_key_clear'])) {
-                setting_set('ai_key', '');
-            }
-            if (isset($b['ai_daily_cap']) && is_numeric($b['ai_daily_cap'])) setting_set('ai_daily_cap', (string) max(0, min(100000, (int) $b['ai_daily_cap'])));
             ok();
-        }
-
-        // Vérifie que la clé d'IA répond (un appel minuscule, sans image).
-        case 'adm_ai_test': {
-            require_admin();
-            if (!ai_enabled()) fail('Aucune clé d\'API n\'est enregistrée.');
-            $res = ai_json([['type' => 'text', 'text' => 'Reply with ok set to true.']], ['type' => 'object', 'additionalProperties' => false, 'required' => ['ok'], 'properties' => ['ok' => ['type' => 'boolean']]], 30);
-            if ($res === null) fail('L\'API d\'IA n\'a pas répondu correctement : vérifiez la clé et le crédit du compte.');
-            ok(['model' => (string) MLG_AI_MODEL]);
         }
     }
 } catch (InvalidArgumentException $e) {

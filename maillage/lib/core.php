@@ -29,10 +29,6 @@ $defaults = [
     'MLG_RESEARCH_DAYS'     => 14,          // durée d'une recherche active avant sa clôture automatique
     // Recherche par photo : identification du produit par l'API Claude. Sans clé (ici ou dans
     // l'administration), la recherche reste possible : description saisie + ressemblance des photos.
-    'MLG_AI_KEY'            => '',
-    'MLG_AI_MODEL'          => 'claude-opus-5-5',
-    'MLG_AI_URL'            => 'https://api.anthropic.com/v1/messages',
-    'MLG_AI_DAILY_CAP'      => 500,         // nombre maximal d'appels à l'IA par jour (protège la facture)
     'MLG_TILES_URL'         => 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
     'MLG_TILES_ATTR'        => '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>',
     'MLG_MAP_CENTER'        => [34.6, 3.2], // vue de départ de la carte
@@ -402,7 +398,7 @@ function migrate(PDO $pdo): void
             created INTEGER NOT NULL
         );
         CREATE INDEX IF NOT EXISTS image_sigs_p ON image_sigs(product_id);
-        -- ai = 1 : description proposée par l'IA (non vérifiée) ; demo = 1 : exemple de la démonstration.
+        -- auto = 1 : description proposée par la plateforme (non vérifiée) ; demo = 1 : exemple de la démonstration.
         CREATE TABLE IF NOT EXISTS research (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             ref TEXT NOT NULL UNIQUE,
@@ -412,7 +408,7 @@ function migrate(PDO $pdo): void
             brand TEXT NOT NULL DEFAULT '',
             details TEXT NOT NULL DEFAULT '',
             image TEXT NOT NULL DEFAULT '',
-            ai INTEGER NOT NULL DEFAULT 0,
+            auto INTEGER NOT NULL DEFAULT 0,
             cname TEXT NOT NULL,
             cphone TEXT NOT NULL,
             cemail TEXT NOT NULL DEFAULT '',

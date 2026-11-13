@@ -4,9 +4,10 @@
  *                           produits similaires, ou recherche active (Radar)
  *   #/recherche/<jeton>     suivi d'une recherche active et réponses des points de vente
  *
- * Rien de ce que propose l'IA n'est présenté comme vérifié : la description est une proposition
- * que le client corrige, et un produit n'est annoncé « trouvé » qu'avec la raison affichée
- * (photo identique, nom identique, reconnaissance par l'IA). Le reste est « similaire ».
+ * Tout se fait dans la plateforme : la photo est comparée à celles du catalogue. La description
+ * proposée n'est jamais présentée comme vérifiée (le client la corrige), et un produit n'est
+ * annoncé « trouvé » qu'avec la raison affichée (photo identique, nom identique). Le reste est
+ * « similaire ».
  */
 (function () {
   'use strict';
@@ -16,7 +17,7 @@
   const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
   const EMPTY = () => ({ category: '', name: '', brand: '', details: '', terms: [], confidence: '' });
   // L'image choisie et l'avancement vivent le temps de la visite (une photo ne se garde pas d'une visite à l'autre).
-  const V = { blob: null, url: '', info: EMPTY(), proposed: null, ai: false, reason: '', product: true, res: null, phase: 'start', editing: true };
+  const V = { blob: null, url: '', info: EMPTY(), auto: false, res: null, phase: 'start', editing: true };
 
   const placeText = (o) => ML.placeLabel(o);
   const myResearches = () => ML.ls.get('researches', []);
@@ -85,7 +86,7 @@
   /* ------------------------------------------------------------------ étapes */
   function reset() {
     if (V.url) URL.revokeObjectURL(V.url);
-    Object.assign(V, { blob: null, url: '', info: EMPTY(), proposed: null, ai: false, reason: '', product: true, res: null, phase: 'start', editing: true });
+    Object.assign(V, { blob: null, url: '', info: EMPTY(), auto: false, res: null, phase: 'start', editing: true });
   }
 
   async function take(file) {
@@ -103,15 +104,14 @@
     paint();
     const fd = new FormData();
     fd.append('file', blob, 'photo.jpg');
-    fd.append('lang', ML.lang);
     try {
       const r = await X.api('visual_identify', { body: fd });
-      Object.assign(V, { ai: r.ai, reason: r.reason, product: r.product, info: r.info, proposed: r.ai && r.product ? Object.assign({}, r.info) : null });
+      Object.assign(V, { auto: r.auto, info: r.info });
     } catch (e) {
       if (e instanceof X.Stale) return;
       // Image refusée par le serveur (format, taille) : retour au choix de l'image, avec le motif.
       if (e.status === 400) { reset(); paint(); const box = $('[data-vs-error]'); if (box) { box.textContent = e.message; box.hidden = false; } return; }
-      Object.assign(V, { ai: false, reason: e.status === 429 ? 'rate' : 'error', product: true, info: EMPTY() });
+      Object.assign(V, { auto: false, info: EMPTY() });
     }
     V.phase = 'edit';
     V.editing = true;
@@ -122,9 +122,7 @@
     const f = $('[data-form="vs-info"]');
     if (f) {
       const d = ML.formData(f);
-      const same = V.proposed && ML.norm(d.name) === ML.norm(V.proposed.name);
-      // Les mots-clés de l'IA ne valent que pour le produit qu'elle a proposé : un nom corrigé les annule.
-      V.info = { category: d.category, name: d.name.trim(), brand: d.brand.trim(), details: d.details.trim(), terms: same ? V.proposed.terms : [], confidence: V.info.confidence };
+      V.info = { category: d.category, name: d.name.trim(), brand: d.brand.trim(), details: d.details.trim(), terms: [], confidence: V.info.confidence };
     }
     V.phase = 'searching';
     V.editing = false;
@@ -132,7 +130,6 @@
     const fd = new FormData();
     fd.append('file', V.blob, 'photo.jpg');
     ['category', 'name', 'brand', 'details'].forEach((k) => fd.append(k, V.info[k] || ''));
-    fd.append('terms', JSON.stringify(V.info.terms || []));
     if (ML.loc) { fd.append('lat', ML.loc.lat); fd.append('lng', ML.loc.lng); fd.append('zone', ML.loc.zone || ''); }
     try {
       V.res = await X.api('visual_search', { body: fd });
@@ -167,25 +164,23 @@
       </div>
       <ol class="vs-how">
         <li><b>1</b><span><strong>${ML.t('Votre photo')}</strong>${ML.t('Le produit bien visible, de préférence seul et bien éclairé.')}</span></li>
-        <li><b>2</b><span><strong>${ML.t('La description')}</strong>${ML.boot.config.visual_ai ? ML.t('Rayon, nom et détails sont proposés automatiquement : vous les corrigez si besoin.') : ML.t('Vous indiquez le rayon, le nom et les détails du produit.')}</span></li>
+        <li><b>2</b><span><strong>${ML.t('La description')}</strong>${ML.t('Si votre photo ressemble à un produit du catalogue, la plateforme propose sa description ; sinon vous l\'indiquez.')}</span></li>
         <li><b>3</b><span><strong>${ML.t('Le résultat')}</strong>${ML.t('Le produit et ses points de vente, des produits similaires, ou une recherche active dans le réseau.')}</span></li>
       </ol>
       ${myResearches().length ? html`<p class="vs-mine"><a class="btn btn-soft" href="#/suivi">${icon('target')}${ML.t('Suivre mes recherches actives')}</a></p>` : ''}
-      <p class="vs-privacy muted">${icon('lock', 'ico-sm')}<span>${ML.t('Votre image sert à cette recherche et n\'est pas conservée, sauf si vous lancez une recherche active.')}${ML.boot.config.visual_ai ? ' ' + ML.t('Elle est analysée par un service d\'intelligence artificielle.') : ''}</span></p>
+      <p class="vs-privacy muted">${icon('lock', 'ico-sm')}<span>${ML.t('Votre image sert à cette recherche et n\'est pas conservée, sauf si vous lancez une recherche active.')}${' ' + ML.t('Elle est comparée au catalogue sur la plateforme, sans service extérieur.')}</span></p>
     </div>`;
 
   /** Bandeau au-dessus de la description : d'où elle vient et ce qu'elle vaut. */
   function infoNotice() {
-    if (V.ai && !V.product) return html`<p class="notice is-warn">${icon('triangle-alert')}<span><b>${ML.t('Nous n\'avons pas reconnu de produit sur cette image.')}</b> ${ML.t('Décrivez-le ci-dessous, ou essayez une autre photo.')}</span></p>`;
-    if (V.ai && V.info.confidence === 'low') return html`<p class="notice is-warn">${icon('triangle-alert')}<span><b>${ML.t('Identification incertaine.')}</b> ${ML.t('La description ci-dessous est une proposition automatique : corrigez-la avant de chercher.')}</span></p>`;
-    if (V.ai) return html`<p class="notice">${icon('sparkles')}<span><b>${ML.t('Description proposée automatiquement, à vérifier.')}</b> ${ML.t('Corrigez ce qui ne correspond pas : la recherche utilise votre photo et ces informations.')}</span></p>`;
-    if (V.reason === 'off') return html`<p class="notice">${icon('pencil')}<span>${ML.t('Décrivez le produit : la recherche utilise votre description et la ressemblance de votre photo avec celles du catalogue.')}</span></p>`;
-    return html`<p class="notice is-warn">${icon('triangle-alert')}<span><b>${ML.t('L\'identification automatique est indisponible pour le moment.')}</b> ${ML.t('Décrivez le produit pour lancer la recherche.')}</span></p>`;
+    if (V.auto && V.info.confidence === 'low') return html`<p class="notice">${icon('scan-search')}<span><b>${ML.t('Rayon proposé d\'après des produits ressemblants du catalogue.')}</b> ${ML.t('Vérifiez-le, puis indiquez le nom et les détails du produit.')}</span></p>`;
+    if (V.auto) return html`<p class="notice">${icon('scan-search')}<span><b>${ML.t('Description proposée d\'après une photo ressemblante du catalogue, à vérifier.')}</b> ${ML.t('Corrigez ce qui ne correspond pas : la recherche utilise votre photo et ces informations.')}</span></p>`;
+    return html`<p class="notice">${icon('pencil')}<span>${ML.t('Décrivez le produit : la recherche utilise votre description et la ressemblance de votre photo avec celles du catalogue.')}</span></p>`;
   }
 
   const infoForm = () => html`
     <form class="stack" data-form="vs-info" novalidate>
-      <div class="row between row-wrap"><h2 class="card-title">${ML.t('Informations du produit')}</h2>${V.ai && V.product ? html`<span class="badge badge-info">${icon('sparkles')}${ML.t('Proposition de l\'IA')}</span>` : ''}</div>
+      <div class="row between row-wrap"><h2 class="card-title">${ML.t('Informations du produit')}</h2>${V.auto ? html`<span class="badge badge-info">${icon('scan-search')}${ML.t('Proposition du catalogue')}</span>` : ''}</div>
       ${infoNotice()}
       <div class="form-grid cols-2">
         <div class="field"><label for="v-cat">${ML.t('Rayon')}</label><select class="select" id="v-cat" name="category"><option value="">${ML.t('Je ne sais pas')}</option>${ML.boot.categories.map((c) => html`<option value="${c.key}" ${V.info.category === c.key ? ML.raw('selected') : ''}>${c.label}</option>`)}</select></div>
@@ -213,7 +208,6 @@
   const EVIDENCE = () => ({
     photo: ML.t('Photo identique à celle du catalogue'),
     name: ML.t('Nom identique à celui du catalogue'),
-    ai: ML.t('Reconnu en comparant votre photo au catalogue'),
   });
   const WHY = () => ({ photo: ML.t('Photo ressemblante'), name: ML.t('Nom proche'), brand: ML.t('Même marque'), category: ML.t('Même rayon') });
 
@@ -239,7 +233,6 @@
           <span class="badge badge-good vs-badge">${icon('circle-check')}${ML.t('Produit trouvé')}</span>
           ${evidence.map((e) => html`<span class="badge badge-line">${ev[e] || e}</span>`)}
         </div>
-        ${evidence.includes('ai') && !evidence.includes('photo') && !evidence.includes('name') ? html`<p class="vs-caution">${icon('triangle-alert', 'ico-sm')}${ML.t('Reconnaissance automatique : vérifiez la référence sur la fiche avant de commander.')}</p>` : ''}
         <div class="vs-exact-body">
           ${ML.visual(p, { cls: 'vs-pv' })}
           <div class="vs-exact-info">
@@ -270,11 +263,11 @@
   function similarHtml(list, hasExact) {
     const why = WHY();
     // Une seule raison par carte, la plus parlante : photo, puis nom, marque, rayon.
-    const tag = (p) => (p.possible ? ML.t('Correspondance possible') : why[['photo', 'name', 'brand', 'category'].find((w) => (p.why || []).includes(w))] || '');
+    const tag = (p) => (why[['photo', 'name', 'brand', 'category'].find((w) => (p.why || []).includes(w))] || '');
     return html`
       <section class="vs-similar" data-similar>
         <div class="section-head"><div><h2>${hasExact ? ML.t('Produits similaires') : ML.t('Produits les plus proches')}</h2><p class="muted">${hasExact ? ML.t('D\'autres produits du même genre sur la plateforme.') : ML.t('Ce ne sont pas forcément le produit de votre photo : comparez avant de commander.')}</p></div></div>
-        <div class="pgrid">${list.map((p) => html`<div class="vs-sim ${p.possible ? 'is-possible' : ''}">${X.productCard(p)}${tag(p) ? html`<span class="vs-tag">${tag(p)}</span>` : ''}</div>`)}</div>
+        <div class="pgrid">${list.map((p) => html`<div class="vs-sim">${X.productCard(p)}${tag(p) ? html`<span class="vs-tag">${tag(p)}</span>` : ''}</div>`)}</div>
       </section>`;
   }
 
@@ -316,7 +309,7 @@
           </aside>
           <div class="vs-main">
             <section class="card card-pad" data-info>${V.phase === 'analyzing'
-              ? html`<div class="vs-wait"><div class="spinner"></div><p>${ML.boot.config.visual_ai ? ML.t('Analyse de l\'image…') : ML.t('Préparation de l\'image…')}</p></div>`
+              ? html`<div class="vs-wait"><div class="spinner"></div><p>${ML.t('Comparaison avec le catalogue…')}</p></div>`
               : V.editing ? infoForm() : infoSummary()}</section>
             <div data-results>${resultsHtml()}</div>
           </div>
@@ -403,7 +396,7 @@
       const fd = new FormData();
       fd.append('file', V.blob, 'photo.jpg');
       Object.entries({ name, category: V.info.category, brand: V.info.brand, details: V.info.details, cname: d.cname, phone: d.phone, email: d.email, zone: d.zone, commune: d.commune,
-        call_ok: d.call_ok ? '1' : '', ai: V.ai && V.product ? '1' : '', website: d.website }).forEach(([k, v]) => fd.append(k, v || ''));
+        call_ok: d.call_ok ? '1' : '', auto: V.auto ? '1' : '', website: d.website }).forEach(([k, v]) => fd.append(k, v || ''));
       try {
         const res = await X.api('research_create', { body: fd });
         ML.ls.set('me', Object.assign({}, ML.ls.get('me', {}), { name: d.cname, phone: d.phone, email: d.email, zone: d.zone, commune: d.commune }));

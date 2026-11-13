@@ -47,7 +47,7 @@ function research_image_delete(string $path): void
  * Lance une recherche. $b : name, category, brand, details, cname, phone, email, zone, commune,
  * call_ok. Retourne ['research' => ligne, 'token' => jeton de suivi].
  */
-function research_create(array $b, string $image, bool $ai, bool $demo = false, ?int $at = null): array
+function research_create(array $b, string $image, bool $auto, bool $demo = false, ?int $at = null): array
 {
     $pdo = db();
     $now = $at ?? time();
@@ -64,9 +64,9 @@ function research_create(array $b, string $image, bool $ai, bool $demo = false, 
     if ($zone === '' || $commune === '') throw new InvalidArgumentException('Choisissez votre wilaya puis votre commune.');
     $token = token(20);
     $ref = research_ref();
-    $pdo->prepare('INSERT INTO research (ref, thash, name, category, brand, details, image, ai, cname, cphone, cemail, call_ok, wilaya, commune, status, demo, created, updated, expires)
+    $pdo->prepare('INSERT INTO research (ref, thash, name, category, brand, details, image, auto, cname, cphone, cemail, call_ok, wilaya, commune, status, demo, created, updated, expires)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')->execute([
-        $ref, hash('sha256', $token), $info['name'], $info['category'] !== '' ? $info['category'] : 'autre', $info['brand'], $info['details'], $image, $ai ? 1 : 0,
+        $ref, hash('sha256', $token), $info['name'], $info['category'] !== '' ? $info['category'] : 'autre', $info['brand'], $info['details'], $image, $auto ? 1 : 0,
         $cname, $phone, $email, !empty($b['call_ok']) ? 1 : 0, $zone, $commune, 'open', $demo ? 1 : 0, $now, $now, $now + (int) MLG_RESEARCH_DAYS * 86400,
     ]);
     $s = $pdo->prepare('SELECT * FROM research WHERE id = ?');
@@ -160,7 +160,7 @@ function research_nearby(int $cid, string $kind, int $storeId = 0, int $onlyId =
         if (!$stores && !$asBrand && !$have) continue;
         $v = [
             'id' => (int) $r['id'], 'ref' => (string) $r['ref'], 'created' => (int) $r['created'], 'name' => (string) $r['name'], 'category' => (string) $r['category'],
-            'brand' => (string) $r['brand'], 'details' => (string) $r['details'], 'image' => (string) $r['image'], 'ai' => (bool) $r['ai'],
+            'brand' => (string) $r['brand'], 'details' => (string) $r['details'], 'image' => (string) $r['image'], 'auto' => (bool) $r['auto'],
             'wilaya' => (string) $r['wilaya'], 'zone' => zone_name((string) $r['wilaya']), 'commune' => (string) $r['commune'],
             'commune_ar' => commune_ar((string) $r['wilaya'], (string) $r['commune']),
             'rank' => $stores ? $stores[0]['rank'] : 3, 'stores' => $stores, 'replies' => $total[(int) $r['id']] ?? 0, 'replied' => null, 'contact' => null,
@@ -273,7 +273,7 @@ function research_view(array $r): array
     return [
         'id' => (int) $r['id'], 'ref' => (string) $r['ref'], 'status' => (string) $r['status'], 'created' => (int) $r['created'], 'updated' => (int) $r['updated'], 'expires' => (int) $r['expires'],
         'name' => (string) $r['name'], 'category' => (string) $r['category'], 'brand' => (string) $r['brand'], 'details' => (string) $r['details'], 'image' => (string) $r['image'],
-        'ai' => (bool) $r['ai'], 'wilaya' => (string) $r['wilaya'], 'zone' => zone_name((string) $r['wilaya']), 'commune' => (string) $r['commune'],
+        'auto' => (bool) $r['auto'], 'wilaya' => (string) $r['wilaya'], 'zone' => zone_name((string) $r['wilaya']), 'commune' => (string) $r['commune'],
         'commune_ar' => commune_ar((string) $r['wilaya'], (string) $r['commune']),
         'reach' => ['level' => $state['level'], 'stores' => $state['reached'], 'next_at' => $state['next_at']],
         'replies' => $replies,
@@ -304,6 +304,15 @@ function research_close(array $r, string $status): array
     db()->prepare('UPDATE research SET status = ?, updated = ? WHERE id = ? AND status = ?')->execute([$status, time(), $r['id'], 'open']);
     $r['status'] = $status;
     $r['updated'] = time();
+    // Trouvée, et les réponses désignent une seule fiche du catalogue : la photo du client est rattachée à ce produit.
+    if ($status === 'found' && $r['image'] !== '') {
+        $s = db()->prepare("SELECT DISTINCT product_id FROM research_replies WHERE research_id = ? AND kind = 'have' AND product_id > 0");
+        $s->execute([$r['id']]);
+        $pids = $s->fetchAll(PDO::FETCH_COLUMN);
+        if (count($pids) === 1) {
+            try { vis_learn((int) $pids[0], (string) $r['image']); } catch (Throwable $e) { error_log('maillage signatures: ' . $e->getMessage()); }
+        }
+    }
     return $r;
 }
 

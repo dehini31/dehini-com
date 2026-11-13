@@ -373,6 +373,3 @@ a.notice { color: #0b3c8c; }
 .rcard.rs.is-replied { background: var(--paper); }
 .rs-zoom { width: 100%; max-height: 72vh; object-fit: contain; border-radius: 12px; background: var(--paper-2); }
 .rs-thumb { width: 56px; height: 56px; border-radius: 10px; object-fit: cover; flex: none; }
-.ai-state { display: flex; gap: 8px; align-items: center; font-size: 14px; font-weight: 600; }
-.ai-state.is-on { color: var(--good); }
-.ai-state.is-off { color: var(--ink-2); }
