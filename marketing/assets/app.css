@@ -776,6 +776,15 @@ button.fl-el:hover{border-color:var(--primary);color:var(--primary-ink)}
 .cfg-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 /* messages Messenger / Instagram */
 .inbox{display:grid;grid-template-columns:minmax(0,1fr)}
+.live-pill{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:800;color:var(--good-ink);background:var(--good-bg);border-radius:999px;padding:4px 11px}
+.live-pill i{width:8px;height:8px;border-radius:50%;background:var(--good);box-shadow:0 0 0 0 color-mix(in srgb,var(--good) 60%,transparent);animation:livePulse 1.8s ease-out infinite}
+.live-pill.off{color:var(--muted);background:var(--surface-2)}
+.live-pill.off i{background:var(--faint);animation:none}
+@keyframes livePulse{70%{box-shadow:0 0 0 7px transparent}100%{box-shadow:0 0 0 0 transparent}}
+@media (prefers-reduced-motion:reduce){.live-pill i{animation:none}}
+.banner.good{background:var(--good-bg);color:var(--good-ink)}
+.mhelp{margin-top:12px;border-top:1px solid var(--line-2);padding-top:10px}
+.mhelp summary{cursor:pointer;font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px;color:var(--ink-2)}
 .more-row{display:flex;justify-content:center;margin:14px 0 4px;text-align:center}
 .spin.dark{border-color:var(--line);border-top-color:var(--primary)}
 .cm-text{color:var(--ink);font-size:14px;line-height:1.5;white-space:pre-line;overflow-wrap:anywhere}

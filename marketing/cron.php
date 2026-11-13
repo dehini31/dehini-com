@@ -40,19 +40,39 @@ function say(string $s): void
     echo '[' . date('Y-m-d H:i:s') . '] ' . $s . "\n";
 }
 
-$opts = getopt('', ['dry-run', 'date:', 'force:', 'test:', 'no-meta', 'meta-only']);
+$opts = getopt('', ['dry-run', 'date:', 'force:', 'test:', 'no-meta', 'meta-only', 'live']);
 $dry = isset($opts['dry-run']);
 $today = isset($opts['date']) && mk_valid_date((string) $opts['date']) ? (string) $opts['date'] : mk_today();
 $force = (array) ($opts['force'] ?? []);
 $S = mk_settings();
 
+// --live : vérification rapide des nouveaux messages et commentaires (tâche toutes les 5 minutes), rien d'autre.
+if (isset($opts['live'])) {
+    if (!mk_meta_connected()) exit(0);
+    try {
+        $m = mk_meta_sync(['only' => ['messages', 'comments'], 'light' => true]);
+        say('Meta (rapide) : ' . $m['totals']['added'] . ' nouveauté(s), ' . $m['totals']['updated'] . ' mise(s) à jour.');
+    } catch (Throwable $e) {
+        say('Meta (rapide) : ' . $e->getMessage());
+    }
+    exit(0);
+}
+
 // Synchronisation Meta (Facebook, Instagram, Meta Ads, leads) avant les rapports.
 if (!isset($opts['no-meta']) && !$dry && mk_meta_connected()) {
     try {
-        $m = mk_meta_sync();
-        foreach ($m['steps'] as $st) {
-            $n = array_map(fn ($c) => "{$c['label']} +{$c['added']} / ~{$c['updated']}", $st['counts']);
-            say(($st['status'] === 'error' ? '✗' : ($st['status'] === 'skip' ? '·' : '✓')) . " Meta · {$st['label']} : " . ($n ? implode(', ', $n) : '') . ($st['message'] !== '' ? ' — ' . $st['message'] : ''));
+        // Par lots : ce qui n'a pas pu être fait dans un lot (gros historique) est repris aussitôt.
+        $opt = [];
+        $clean = true;
+        for ($lot = 1; $lot <= 6; $lot++) {
+            $m = mk_meta_sync($opt);
+            $clean = $clean && $m['ok'];
+            foreach ($m['steps'] as $st) {
+                $n = array_map(fn ($c) => "{$c['label']} +{$c['added']} / ~{$c['updated']}", $st['counts']);
+                say(($st['status'] === 'error' ? '✗' : ($st['status'] === 'skip' ? '·' : '✓')) . " Meta · {$st['label']} : " . ($n ? implode(', ', $n) : '') . ($st['message'] !== '' ? ' — ' . $st['message'] : ''));
+            }
+            if (empty($m['more'])) break;
+            $opt = ['only' => $m['pending'], 'resume' => true, 'clean' => $clean];
         }
     } catch (Throwable $e) {
         say('✗ Meta : ' . $e->getMessage());
