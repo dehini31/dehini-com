@@ -379,7 +379,7 @@
       const group = (title, body) => html`<div class="facet"><h3>${title}</h3>${body}</div>`;
       return html`
         <div class="facets-head"><b>${ML.t('Filtres')}</b><button class="btn btn-ghost btn-icon btn-sm" type="button" data-act="facets-close" aria-label="${ML.t('Fermer les filtres')}">${icon('x')}</button></div>
-        ${group(ML.t('Rayon'), html`<div class="facet-list">${facets.categories.map((c) => html`<button class="facet-opt ${Q.cat === c.key ? 'is-on' : ''}" type="button" data-act="facet" data-k="cat" data-v="${c.key}"><span>${c.label}</span><small>${c.n}</small></button>`)}</div>`)}
+        ${group(ML.t('Rayon'), html`<div class="facet-list">${facets.categories.map((c) => html`<button class="facet-opt ${Q.cat === c.key ? 'is-on' : ''}" type="button" data-act="facet" data-k="cat" data-v="${c.key}"><span>${ML.cats[c.key] || c.label}</span><small>${c.n}</small></button>`)}</div>`)}
         ${facets.brands.length > 1 || Q.marque ? group(ML.t('Marque'), html`<div class="facet-list">${facets.brands.map((b) => html`<button class="facet-opt ${Q.marque === String(b.id) ? 'is-on' : ''}" type="button" data-act="facet" data-k="marque" data-v="${b.id}"><span>${b.name}</span><small>${b.n}</small></button>`)}</div>`) : ''}
         ${facets.sizes.length ? group(ML.t('Taille'), html`<div class="chips wrap">${facets.sizes.map((s) => html`<button class="chip ${ML.norm(Q.taille) === ML.norm(s.label) ? 'is-on' : ''}" type="button" data-act="facet" data-k="taille" data-v="${s.label}">${s.label}</button>`)}</div>`) : ''}
         ${facets.colors.length ? group(ML.t('Couleur'), html`<div class="chips wrap">${facets.colors.map((c) => html`<button class="chip ${ML.norm(Q.couleur) === ML.norm(c.label) ? 'is-on' : ''}" type="button" data-act="facet" data-k="couleur" data-v="${c.label}"><i class="swatch" style="--c:${color(c.hex)}"></i>${c.label}</button>`)}</div>`) : ''}
@@ -486,7 +486,11 @@
             <p class="p-price" data-price></p>
             ${colors.length ? html`<div class="opt"><span class="label">${ML.t('Couleur')} <b data-color-name></b></span><div class="opt-row" data-colors></div></div>` : ''}
             ${sizes.length ? html`<div class="opt"><span class="label">${ML.t('Taille')}</span><div class="opt-row" data-sizes></div></div>` : ''}
-            <a class="btn btn-primary btn-lg p-cta" href="#ou">${icon('map-pin')}${ML.t('Voir où le trouver')}</a>
+            <div class="p-ctas">
+              <button class="btn btn-primary btn-lg" type="button" data-act="cod">${icon('truck')}${ML.t('Commander · livraison à domicile')}</button>
+              <a class="btn btn-line btn-lg" href="#ou">${icon('map-pin')}${ML.t('Voir où le trouver')}</a>
+            </div>
+            <p class="p-cod-note">${icon('shield-check', 'ico-sm')}${ML.t('Paiement à la livraison · le point de vente le plus proche de chez vous vous livre')}</p>
             ${p.about ? html`<p class="p-about">${p.about}</p>` : ''}
             ${p.specs.length ? html`<dl class="specs">${p.specs.map((s) => html`<div><dt>${s.k}</dt><dd>${s.v}</dd></div>`)}</dl>` : ''}
           </div>
@@ -585,6 +589,7 @@
       const st = found.find((x) => x.id === +el.dataset.store);
       if (st) orderSheet(p, st, el.dataset.kind, () => loadAvail());
     };
+    ML.actions.cod = () => codSheet(p, sel);
     const onLoc = () => { paintLoc(); loadAvail(); };
     document.addEventListener('mlg:loc', onLoc);
 
@@ -605,7 +610,6 @@
     if (st.delivery) modes.push(['delivery', ML.t('Commander · livraison'), ML.t('Paiement à la livraison'), 'truck']);
     let mode = kind === 'reservation' && st.reserve ? 'reservation' : (st.pickup ? 'pickup' : (st.delivery ? 'delivery' : modes[0][0]));
     const vlabel = (v) => [v.size, v.color].filter(Boolean).join(' · ') || ML.t('Modèle unique');
-    const zones = ML.boot.zones.slice().sort((a, b) => ML.zoneName(a).localeCompare(ML.zoneName(b), ML.lang === 'ar' ? 'ar' : 'fr'));
 
     const m = ML.modal({
       title: ML.t('Votre demande'),
@@ -638,9 +642,7 @@
             <div class="field span-2"><label for="o-email">${ML.t('Email')} <span class="dim">(${ML.t('facultatif, pour recevoir le suivi')})</span></label><input class="input" id="o-email" name="email" type="email" autocomplete="email" value="${me.email || ''}"></div>
           </div>
           <div class="form-grid cols-2" data-delivery hidden>
-            <div class="field span-2"><label for="o-address">${ML.t('Adresse de livraison')}</label><input class="input" id="o-address" name="address" autocomplete="street-address"></div>
-            <div class="field"><label for="o-city">${ML.t('Ville')}</label><input class="input" id="o-city" name="city" autocomplete="address-level2"></div>
-            <div class="field"><label for="o-zone">${ML.t('Wilaya')}</label><select class="select" id="o-zone" name="zone"><option value="">${ML.t('Choisir…')}</option>${zones.map((z) => html`<option value="${z.code}" ${ML.loc && ML.loc.zone === z.code ? ML.raw('selected') : ''}>${ML.zoneName(z)}</option>`)}</select></div>
+            ${ML.placeFields({ prefix: 'o', zone: me.zone || (ML.loc && ML.loc.zone) || '', addressLabel: ML.t('Adresse de livraison'), addressValue: me.address || '' })}
           </div>
           <div class="field"><label for="o-note">${ML.t('Message au point de vente')} <span class="dim">(${ML.t('facultatif')})</span></label><textarea class="textarea" id="o-note" name="note" rows="2" maxlength="400"></textarea></div>
           <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
@@ -665,18 +667,21 @@
     };
     form.addEventListener('click', (e) => { const b = e.target.closest('[data-step]'); if (b) { qty += +b.dataset.step; paint(); } });
     form.addEventListener('change', (e) => { if (e.target.name === 'mode') mode = e.target.value; paint(); });
+    ML.bindPlace(form, me.commune || '');
     paint();
 
     ML.forms.order = async (f) => {
       const d = ML.formData(f);
+      if (mode === 'delivery' && (!d.zone || !d.commune)) { ML.fail({ message: ML.t('Choisissez la wilaya puis la commune de livraison.') }, f); return; }
       const btn = $('[data-submit]', f);
       ML.busy(btn, true);
       try {
         const res = await api('order', { body: {
           store_id: st.id, kind: mode === 'reservation' ? 'reservation' : 'order', mode: mode === 'delivery' ? 'delivery' : 'pickup',
-          items: [{ variant_id: +d.variant, qty }], name: d.name, phone: d.phone, email: d.email, address: d.address, city: d.city, zone: d.zone, note: d.note, website: d.website,
+          items: [{ variant_id: +d.variant, qty }], name: d.name, phone: d.phone, email: d.email, address: d.address, commune: d.commune, zone: d.zone, note: d.note, website: d.website,
         } });
-        ML.ls.set('me', { name: d.name, phone: d.phone, email: d.email });
+        const keep = mode === 'delivery' ? { zone: d.zone, commune: d.commune, address: d.address } : {};
+        ML.ls.set('me', Object.assign({}, ML.ls.get('me', {}), { name: d.name, phone: d.phone, email: d.email }, keep));
         const mine = ML.ls.get('orders', []);
         mine.unshift({ ref: res.ref, token: res.token, name: p.name, at: Math.round(Date.now() / 1000) });
         ML.ls.set('orders', mine.slice(0, 20));
@@ -700,6 +705,22 @@
       }
       ML.busy(btn, false);
     };
+  }
+
+  /* ================================== COMMANDE LIVRÉE SANS CHOISIR DE MAGASIN */
+  function codSheet(p, sel) {
+    const m = ML.modal({
+      title: ML.t('Commander · livraison à domicile'),
+      body: html`
+        <div class="order-sum">${ML.visual(p, { cls: 'pv-xs' })}<div class="grow"><b>${p.name}</b><br><span class="muted">${p.brand.name}</span></div></div>
+        <div style="margin-top:16px">${ML.codForm(p, { size: sel.size, color: sel.color, email: true })}</div>`,
+    });
+    ML.codBind($('form', m.el), p, {
+      onDone: (res) => {
+        $('.modal-head h2', m.el).textContent = ML.t('Commande enregistrée');
+        $('.modal-body', m.el).innerHTML = ML.codDone(res, '#/suivi/');
+      },
+    });
   }
 
   /* ================================================================ MARQUES */
@@ -758,13 +779,19 @@
   }
 
   /* ================================================================== SUIVI */
+  /** Adresse de livraison : adresse (facultative), commune, wilaya. */
+  const deliveryText = (d) => ML.joinList([d.address, ML.communeLabel(d.commune || d.city, d.commune_ar), d.wilaya && ML.zones[d.wilaya] ? ML.zoneName(ML.zones[d.wilaya]) : d.zone]);
+
   function steps(o) {
     const list = o.mode === 'delivery'
       ? [['pending', ML.t('Demande reçue')], ['confirmed', ML.t('Confirmée')], ['shipped', ML.t('En livraison')], ['done', ML.t('Livrée')]]
       : [['pending', ML.t('Demande reçue')], ['confirmed', ML.t('Confirmée')], ['ready', o.kind === 'reservation' ? ML.t('Mise de côté') : ML.t('Prête au retrait')], ['done', ML.t('Retirée')]];
+    if (o.radar) list.splice(1, 0, ['store', ML.t('Point de vente trouvé')]);
     const at = {};
-    o.events.forEach((e) => { at[e.status] = e.created; });
-    const idx = list.findIndex(([k]) => k === o.status);
+    o.events.forEach((e) => { if (!at[e.status] || e.status !== 'pending') at[e.status] = e.created; });
+    if (o.radar && !o.waiting) at.store = at.confirmed;
+    // Une commande radar sans point de vente reste à la première étape ; prise en charge, elle passe l'étape « trouvé ».
+    const idx = o.waiting ? 0 : list.findIndex(([k]) => k === o.status);
     return html`<ol class="steps">${list.map(([k, label], i) => html`<li class="${o.status !== 'cancelled' && i <= idx ? 'is-done' : ''} ${i === idx ? 'is-now' : ''}"><i>${o.status !== 'cancelled' && i <= idx ? icon('check', 'ico-sm') : ''}</i><div><b>${label}</b>${at[k] ? html`<small>${fmt.time(at[k])}</small>` : ''}</div></li>`)}</ol>`;
   }
 
@@ -798,6 +825,7 @@
           </div>
           ${o.status === 'cancelled' ? html`<div class="notice is-bad">${icon('circle-x')}<div><b>${ML.t('Cette')} ${what} ${ML.t('est annulée.')}</b>${(o.events[o.events.length - 1] || {}).note ? html`<br>${o.events[o.events.length - 1].note}` : ''}</div></div>` : ''}
           ${o.kind === 'reservation' && o.expires && ['pending', 'confirmed', 'ready'].includes(o.status) ? html`<div class="notice">${icon('clock')}<div>${ML.t('Article mis de côté jusqu\'au')} <b>${fmt.time(o.expires)}</b>.</div></div>` : ''}
+          ${o.waiting ? html`<div class="notice is-radar">${icon('target')}<div><b>${ML.t('Nous cherchons le point de vente le plus proche de chez vous.')}</b><br>${ML.t("Votre commande est proposée aux points de vente de votre commune, puis de votre wilaya, qui ont l'article en stock. Le premier qui la prend vous appelle.")}</div></div>` : ''}
           <div class="track-grid">
             <div class="card card-pad">
               <h2 class="card-title">${ML.t('Avancement')}</h2>
@@ -812,8 +840,12 @@
               ${o.store ? html`<div class="card card-pad">
                 <h2 class="card-title">${o.mode === 'delivery' ? ML.t('Expédiée par') : ML.t('À retirer chez')}</h2>
                 <p style="margin-top:6px"><b>${o.store.name}</b><br><span class="muted">${o.store.address}</span></p>
-                ${o.delivery ? html`<p class="muted" style="margin-top:8px">${icon('truck', 'ico-sm')} ${ML.t('Livraison')} : ${o.delivery.address}, ${o.delivery.city}</p>` : ''}
+                ${o.delivery ? html`<p class="muted" style="margin-top:8px">${icon('truck', 'ico-sm')} ${ML.t('Livraison')} : ${deliveryText(o.delivery)}</p>` : ''}
                 <div class="row row-wrap" style="margin-top:12px">${contactButtons(Object.assign({ id: o.store.id }, o.store), true)}</div>
+              </div>` : o.delivery ? html`<div class="card card-pad">
+                <h2 class="card-title">${ML.t('Livraison')}</h2>
+                <p style="margin-top:6px">${deliveryText(o.delivery)}</p>
+                <p class="muted" style="margin-top:6px">${ML.t('Paiement à la réception.')}</p>
               </div>` : ''}
             </div>
           </div>

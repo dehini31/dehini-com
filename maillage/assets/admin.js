@@ -7,7 +7,7 @@
   const { html, icon, fmt, api } = ML;
   const $ = (s, r) => (r || document).querySelector(s);
   const app = () => $('#app');
-  const KINDS = () => ({ brand: ML.t('Marque'), distributor: ML.t('Distributeur') });
+  const KINDS = () => ({ brand: ML.t('Marque'), distributor: ML.t('Distributeur'), pos: ML.t('Point de vente') });
   const SIZES = () => ({ 1: ML.t('1 point de vente'), '2-5': ML.t('2 à 5'), '6-20': ML.t('6 à 20'), '21+': ML.t('Plus de 20') });
   const STATUS = () => ({ pending: [ML.t('En attente'), 'badge-warn'], active: [ML.t('En ligne'), 'badge-good'], suspended: [ML.t('Suspendue'), 'badge-bad'] });
 
@@ -65,6 +65,7 @@
           <h2 class="card-title">${ML.t('Réglages')}</h2>
           <label class="switch"><input type="checkbox" name="moderation" ${d.settings.moderation ? ML.raw('checked') : ''}><i></i><span>${ML.t('Valider chaque inscription avant sa mise en ligne')}<br><small class="muted">${ML.t('Désactivé : une entreprise inscrite est publiée tout de suite.')}</small></span></label>
           <div class="field"><label for="a-mail">${ML.t('Email prévenu à chaque inscription')}</label><input class="input" id="a-mail" name="notify_email" type="email" placeholder="vous@exemple.com" value="${d.settings.notify_email}"><span class="hint muted">${d.mail ? ML.t('Envoyé par le compte email du site.') : ML.t("Aucun compte SMTP n'est configuré : l'envoi passe par la fonction mail() du serveur (voir README).")}</span></div>
+          <div class="field"><label for="a-radar">${ML.t('Radar : minutes avant d\'élargir une commande')}</label><input class="input" id="a-radar" name="radar_step_min" type="number" min="0" max="1440" inputmode="numeric" value="${d.settings.radar_step_min}"><span class="hint muted">${ML.t("Une commande sans point de vente choisi est d'abord proposée aux points de vente de la commune du client, puis de sa wilaya, puis à tous. 0 : à tous tout de suite.")}</span></div>
           <p class="form-error" data-error hidden></p>
           <div><button class="btn btn-primary" type="submit">${ML.t('Enregistrer')}</button></div>
         </form>

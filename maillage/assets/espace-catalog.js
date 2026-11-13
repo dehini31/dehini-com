@@ -141,6 +141,13 @@
             <div data-variants></div>
           </section>
           <section class="card card-pad stack">
+            <div><h2 class="card-title">${ML.t('Page de vente')}</h2><p class="card-sub">${ML.t("Une page à partager dans vos publicités : le client commande et paie à la livraison ; la commande part au point de vente le plus proche de chez lui qui a l'article (radar).")}</p></div>
+            ${isNew ? html`<p class="muted">${ML.t("L'adresse de la page est créée à l'enregistrement du produit.")}</p>` : html`<div class="share-row"><input class="input input-sm" readonly value="${new URL('../offre/?p=' + p.slug, location.href).href}" aria-label="${ML.t('Adresse de la page de vente')}" data-share><button class="btn btn-line btn-sm" type="button" data-act="copy-share">${ML.t('Copier')}</button><a class="btn btn-soft btn-sm" href="../offre/?p=${p.slug}" target="_blank" rel="noopener">${ML.t('Ouvrir')}</a></div>`}
+            <div class="field"><label for="p-headline">${ML.t('Accroche')} <span class="dim">(${ML.t('facultative, sinon le nom du produit')})</span></label><input class="input" id="p-headline" name="headline" maxlength="120" value="${(p.landing || {}).headline || ''}"></div>
+            <div class="field"><label for="p-points">${ML.t('Points forts')} <span class="dim">(${ML.t('un par ligne, 6 au plus')})</span></label><textarea class="textarea" id="p-points" name="points" rows="4" maxlength="900">${((p.landing || {}).points || []).join('\n')}</textarea></div>
+            <div class="field"><label for="p-pitch">${ML.t('Argumentaire')} <span class="dim">(${ML.t('facultatif, sinon la description')})</span></label><textarea class="textarea" id="p-pitch" name="pitch" maxlength="1200">${(p.landing || {}).pitch || ''}</textarea></div>
+          </section>
+          <section class="card card-pad stack">
             <div><h2 class="card-title">${ML.t('Caractéristiques')}</h2><p class="card-sub">${ML.t('Matière, dimensions, puissance, garantie… Elles servent aussi à la recherche.')}</p></div>
             <div data-specs></div>
             <div><button class="btn btn-line btn-sm" type="button" data-act="spec-add">${icon('plus', 'ico-sm')}${ML.t('Ajouter une caractéristique')}</button></div>
@@ -225,6 +232,7 @@
       ML.busy(btn, true);
       const res = await E.send('product_save', {
         id: p.id, name: d.name, brand_id: +d.brand_id, category: d.category, price: d.price, status: d.status, about: d.about,
+        landing: { headline: d.headline, pitch: d.pitch, points: d.points.split('\n').map((x) => x.trim()).filter(Boolean) },
         images: st.images, specs: st.specs.filter((s) => s.k && s.v),
         variants: single() ? [{ id: st.variants[0].id || 0 }] : st.variants.map((v) => ({ id: v.id || 0, size: v.size, color: v.color, hex: v.color ? (v.hex || paletteHex(v.color)) : '', sku: v.sku, price: v.price })),
       }, f);
@@ -232,6 +240,10 @@
       if (!res) return;
       ML.toast(ML.t('Produit enregistré.'), 'good');
       if (isNew) ML.go('/catalogue/produit/' + res.product.id); else E.reload();
+    };
+    ML.actions['copy-share'] = async () => {
+      const inp = $('[data-share]');
+      try { await navigator.clipboard.writeText(inp.value); ML.toast(ML.t('Adresse copiée.'), 'good'); } catch (e) { inp.select(); }
     };
     ML.actions['p-del'] = async () => {
       if (!await ML.confirm(ML.t('Supprimer «') + ' ' + p.name + ML.t('» ? Il disparaît du catalogue et de tous les magasins.'), { ok: ML.t('Supprimer'), danger: true })) return;
@@ -242,6 +254,7 @@
 
   /* ====================================================== POINTS DE VENTE */
   E.views['points-de-vente'] = async (r) => {
+    if (E.isStore()) return storeEditor(String(E.me.user.store_id));
     if (r.parts[1]) return storeEditor(r.parts[1]);
     E.loading();
     const stores = (await api('dash_stores')).stores;
@@ -252,8 +265,8 @@
           <ul class="card slist">${stores.map((s) => html`
             <li>
               <span class="type-pin" style="--c:${ML.TYPE_COLORS[s.type]}">${icon('map-pin', 'ico-sm')}</span>
-              <span class="grow"><b>${s.name}</b><small class="muted">${TYPES()[s.type]} · ${s.city}${ML.storeZone(s) && ML.storeZone(s) !== s.city ? ', ' + ML.storeZone(s) : ''}</small>
-                <span class="slist-tags">${s.status === 'closed' ? html`<span class="badge badge-warn">${ML.t('Masqué')}</span>` : ''}${s.refs ? html`<span class="badge ${s.instock < s.refs * 0.6 ? 'badge-warn' : 'badge-good'}">${s.instock}/${s.refs} ${ML.t('en stock')}</span>` : html`<span class="badge">${ML.t('Stock à renseigner')}</span>`}${s.open_orders ? html`<span class="badge badge-brand">${fmt.plural(s.open_orders, 'commande')} ${ML.t('en cours')}</span>` : ''}</span></span>
+              <span class="grow"><b>${s.name}</b><small class="muted">${TYPES()[s.type]} · ${ML.communeLabel(s.commune || s.city, s.commune_ar)}${ML.storeZone(s) ? ', ' + ML.storeZone(s) : ''}</small>
+                <span class="slist-tags">${s.status === 'closed' ? html`<span class="badge badge-warn">${ML.t('Masqué')}</span>` : ''}${s.status === 'unlocated' ? html`<span class="badge badge-warn">${icon('map-pin')}${ML.t('Position à confirmer')}</span>` : ''}${s.login_email ? html`<span class="badge badge-line" title="${s.login_email}">${icon('lock')}${ML.t('Accès point de vente')}</span>` : ''}${s.refs ? html`<span class="badge ${s.instock < s.refs * 0.6 ? 'badge-warn' : 'badge-good'}">${s.instock}/${s.refs} ${ML.t('en stock')}</span>` : html`<span class="badge">${ML.t('Stock à renseigner')}</span>`}${s.open_orders ? html`<span class="badge badge-brand">${fmt.plural(s.open_orders, 'commande')} ${ML.t('en cours')}</span>` : ''}</span></span>
               <span class="slist-actions"><a class="btn btn-line btn-sm" href="#/disponibilite?pdv=${s.id}">${icon('boxes', 'ico-sm')}${ML.t('Stock')}</a><a class="btn btn-ghost btn-icon btn-sm" href="#/points-de-vente/${s.id}" aria-label="${ML.t('Modifier')} ${s.name}">${icon('pencil', 'ico-sm')}</a></span>
             </li>`)}</ul>
           <div class="card split-map"><div id="map"></div></div>
@@ -271,17 +284,20 @@
   async function storeEditor(idOrNew) {
     E.loading();
     const isNew = idOrNew === 'nouveau';
+    const own = E.isStore(); // compte du point de vente lui-même : pas d'accès à gérer, pas de suppression
     const all = isNew ? [] : (await api('dash_stores')).stores;
-    const s = isNew ? { id: 0, name: '', type: E.isBrand() ? 'magasin' : 'distributeur', address: '', city: '', wilaya: '', lat: null, lng: null, phone: '', email: '', hours: { open: '09:00', close: '19:00', days: [0, 1, 2, 3, 4, 6] }, pickup: true, delivery: false, reserve: true, status: 'active' }
+    const s = isNew ? { id: 0, name: '', type: E.isBrand() ? 'magasin' : 'distributeur', address: '', city: '', commune: '', wilaya: '', lat: null, lng: null, phone: '', email: '', hours: { open: '09:00', close: '19:00', days: [0, 1, 2, 3, 4, 6] }, pickup: true, delivery: false, reserve: true, status: 'active', login_email: '' }
       : all.find((x) => String(x.id) === String(idOrNew));
     if (!s) { view().innerHTML = html`<div class="empty">${icon('store')}<h3>${ML.t('Point de vente introuvable')}</h3><a class="btn btn-dark" href="#/points-de-vente">${ML.t('Revenir à la liste')}</a></div>`; return; }
-    const zones = ML.boot.zones.slice().sort((a, b) => ML.zoneName(a).localeCompare(ML.zoneName(b), ML.lang === 'ar' ? 'ar' : 'fr'));
-    const pos = { lat: s.lat, lng: s.lng };
+    // Un point de vente inscrit sans épingle est rangé au chef-lieu de sa wilaya : l'épingle est à placer.
+    const unlocated = s.status === 'unlocated';
+    const pos = { lat: unlocated ? null : s.lat, lng: unlocated ? null : s.lng };
     const days = new Set(s.hours.days);
     const ORDER = [6, 0, 1, 2, 3, 4, 5]; // la semaine commence le samedi
     view().innerHTML = html`
-      <a class="back" href="#/points-de-vente">${icon('arrow-left')}${ML.t('Points de vente')}</a>
-      ${E.head(isNew ? ML.t('Nouveau point de vente') : s.name)}
+      ${own ? '' : html`<a class="back" href="#/points-de-vente">${icon('arrow-left')}${ML.t('Points de vente')}</a>`}
+      ${E.head(isNew ? ML.t('Nouveau point de vente') : s.name, own ? ML.t('La fiche de votre point de vente sur la carte publique.') : '')}
+      ${unlocated ? html`<p class="notice">${icon('map-pin')}<span><b>${ML.t('Placez votre point de vente sur la carte.')}</b> ${ML.t("Cliquez sur la carte à l'emplacement exact, puis enregistrez : il apparaîtra sur la carte publique.")}</span></p>` : ''}
       <form class="editor" data-form="store" novalidate>
         <div class="editor-main stack">
           <section class="card card-pad stack">
@@ -296,9 +312,8 @@
           <section class="card card-pad stack">
             <div><h2 class="card-title">${ML.t('Adresse et position')}</h2><p class="card-sub">${ML.t('Cliquez sur la carte ou déplacez l\'épingle pour placer le point de vente.')}</p></div>
             <div class="form-grid cols-2">
-              <div class="field span-2"><label for="s-address">${ML.t('Adresse')}</label><input class="input" id="s-address" name="address" maxlength="200" value="${s.address}"></div>
-              <div class="field"><label for="s-city">${ML.t('Ville')}</label><input class="input" id="s-city" name="city" required maxlength="80" value="${s.city}"></div>
-              <div class="field"><label for="s-zone">${ML.t('Wilaya')}</label><select class="select" id="s-zone" name="wilaya" data-change="szone"><option value="">${ML.t('Choisir…')}</option>${zones.map((z) => html`<option value="${z.code}" ${s.wilaya === z.code ? ML.raw('selected') : ''}>${ML.zoneName(z)}</option>`)}</select></div>
+              ${ML.placeFields({ prefix: 's', zoneField: 'wilaya', zone: s.wilaya, required: true, address: false })}
+              <div class="field span-2"><label for="s-address">${ML.t('Adresse')}</label><input class="input" id="s-address" name="address" maxlength="200" placeholder="${ML.t('Rue, numéro, repère…')}" value="${s.address}"></div>
             </div>
             <div class="row row-wrap"><button class="btn btn-line btn-sm" type="button" data-act="s-find">${icon('search', 'ico-sm')}${ML.t('Trouver l\'adresse sur la carte')}</button><button class="btn btn-line btn-sm" type="button" data-act="s-here">${icon('locate-fixed', 'ico-sm')}${ML.t('Je suis sur place')}</button><span class="muted" data-pos></span></div>
             <div class="pick-map"><div id="map"></div></div>
@@ -318,16 +333,24 @@
             <hr class="sep">
             <label class="switch"><input type="checkbox" name="visible" ${s.status !== 'closed' ? ML.raw('checked') : ''}><i></i>${ML.t('Visible sur la carte publique')}</label>
           </section>
+          ${own ? '' : html`<section class="card card-pad stack">
+            <div><h2 class="card-title">${ML.t('Accès du point de vente')}</h2><p class="card-sub">${ML.t("Le point de vente se connecte à son espace privé avec cet email et ce mot de passe : il n'y voit que ses commandes, son stock, sa fiche et le radar.")}</p></div>
+            ${s.login_email ? html`<p class="access-on">${icon('lock', 'ico-sm')}${ML.t('Accès actif')}</p>` : ''}
+            <div class="field"><label for="s-login">${ML.t('Email de connexion')}</label><input class="input" id="s-login" name="login_email" type="email" autocomplete="off" ${isNew ? ML.raw('required') : ''} value="${s.login_email || ''}"></div>
+            <div class="field"><label for="s-pass">${s.login_email ? ML.t('Nouveau mot de passe') : ML.t('Mot de passe')}</label><input class="input" id="s-pass" name="login_password" type="password" autocomplete="new-password" minlength="8" placeholder="${s.login_email ? ML.t('Laisser vide pour ne pas le changer') : ML.t('8 caractères au minimum')}"></div>
+            <p class="hint muted">${ML.t('Adresse de connexion :')} <b dir="ltr">${location.origin + location.pathname}</b></p>
+          </section>`}
           <section class="card card-pad stack">
             <p class="form-error" data-error hidden></p>
             <button class="btn btn-primary btn-lg btn-block" type="submit">${icon('check')}${ML.t('Enregistrer')}</button>
-            ${isNew ? '' : html`<a class="btn btn-line btn-block" href="#/disponibilite?pdv=${s.id}">${icon('boxes')}${ML.t('Gérer la disponibilité')}</a><button class="btn btn-danger btn-block" type="button" data-act="s-del">${ML.t('Supprimer')}</button>`}
+            ${isNew ? '' : html`<a class="btn btn-line btn-block" href="#/disponibilite?pdv=${s.id}">${icon('boxes')}${ML.t('Gérer la disponibilité')}</a>${own ? '' : html`<button class="btn btn-danger btn-block" type="button" data-act="s-del">${ML.t('Supprimer')}</button>`}`}
           </section>
         </aside>
       </form>`;
 
     const start = pos.lat != null ? [pos.lat, pos.lng] : null;
-    const map = ML.makeMap($('#map'), start ? { center: start, zoom: 15 } : {});
+    const z0 = ML.zones[s.wilaya];
+    const map = ML.makeMap($('#map'), start ? { center: start, zoom: 15 } : unlocated && z0 ? { center: [z0.lat, z0.lng], zoom: 12 } : {});
     let marker = null;
     const place = (lat, lng, fly) => {
       pos.lat = lat; pos.lng = lng;
@@ -343,7 +366,9 @@
     E.cleanup = () => map.remove();
     setTimeout(() => map.invalidateSize(), 60);
 
-    ML.changes.szone = (el) => { const z = ML.zones[el.value]; if (z && pos.lat == null) map.setView([z.lat, z.lng], 12); };
+    const form = $('form.editor');
+    ML.bindPlace(form, s.commune || s.city);
+    $('[data-place-zone]', form).addEventListener('change', (e) => { const z = ML.zones[e.target.value]; if (z && pos.lat == null) map.setView([z.lat, z.lng], 12); });
     ML.actions['s-day'] = (el) => { const d = +el.dataset.d; if (days.has(d)) days.delete(d); else days.add(d); el.classList.toggle('is-on', days.has(d)); el.setAttribute('aria-pressed', days.has(d)); };
     ML.actions['s-here'] = (el) => {
       if (!navigator.geolocation) { ML.toast(ML.t("La géolocalisation n'est pas disponible."), 'bad'); return; }
@@ -354,7 +379,7 @@
     ML.actions['s-find'] = async (el) => {
       const f = el.closest('form');
       const zone = ML.zones[f.wilaya.value];
-      const q = [f.address.value, f.city.value, zone ? ML.zoneName(zone) : ''].filter(Boolean).join(', ');
+      const q = [f.address.value, f.commune.value, zone ? zone.name : ''].filter(Boolean).join(', ');
       if (q.length < 3) { ML.toast(ML.t("Saisissez d'abord l'adresse ou la ville."), 'bad'); return; }
       ML.busy(el, true);
       try {
@@ -372,15 +397,17 @@
       const d = ML.formData(f);
       const btn = $('button[type=submit]', f);
       ML.busy(btn, true);
-      const res = await E.send('store_save', {
-        id: s.id, name: d.name, type: d.type, phone: d.phone, email: d.email, address: d.address, city: d.city, wilaya: d.wilaya,
+      const body = {
+        id: s.id, name: d.name, type: d.type, phone: d.phone, email: d.email, address: d.address, commune: d.commune, city: d.commune, wilaya: d.wilaya,
         lat: pos.lat, lng: pos.lng, hours: { open: d.open, close: d.close, days: Array.from(days) },
         pickup: d.pickup, delivery: d.delivery, reserve: d.reserve, status: d.visible ? 'active' : 'closed',
-      }, f);
+      };
+      if (!own) { body.login_email = d.login_email; body.login_password = d.login_password; }
+      const res = await E.send('store_save', body, f);
       ML.busy(btn, false);
       if (!res) return;
       ML.toast(ML.t('Point de vente enregistré.'), 'good');
-      ML.go('/points-de-vente');
+      if (own) { E.me.store = Object.assign({}, E.me.store, { name: res.store.name, status: res.store.status }); E.reload(); } else ML.go('/points-de-vente');
     };
     ML.actions['s-del'] = async () => {
       if (!await ML.confirm(ML.t('Supprimer «') + ' ' + s.name + ML.t('» ? Il disparaît de la carte.'), { ok: ML.t('Supprimer'), danger: true })) return;

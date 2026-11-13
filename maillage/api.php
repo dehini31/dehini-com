@@ -332,9 +332,14 @@ try {
 
         case 'demo_login': {
             rate('demo', 30, 3600);
-            $kind = ($b['kind'] ?? '') === 'distributor' ? 'distributor' : 'brand';
-            $s = $pdo->prepare("SELECT u.* FROM users u JOIN companies c ON c.id = u.company_id WHERE c.demo = 1 AND c.kind = ? AND c.status = 'active' ORDER BY c.id LIMIT 1");
-            $s->execute([$kind]);
+            $kind = in_array($b['kind'] ?? '', ['distributor', 'store'], true) ? (string) $b['kind'] : 'brand';
+            if ($kind === 'store') {
+                // Espace privé d'un point de vente de la démonstration.
+                $s = $pdo->query("SELECT u.* FROM users u JOIN companies c ON c.id = u.company_id WHERE c.demo = 1 AND u.store_id > 0 AND c.status = 'active' ORDER BY u.id LIMIT 1");
+            } else {
+                $s = $pdo->prepare("SELECT u.* FROM users u JOIN companies c ON c.id = u.company_id WHERE c.demo = 1 AND c.kind = ? AND u.store_id = 0 AND c.status = 'active' ORDER BY c.id, u.id LIMIT 1");
+                $s->execute([$kind]);
+            }
             $u = $s->fetch();
             if (!$u) fail('La démonstration n\'est pas disponible pour le moment.', 404, 'notfound');
             ok(me_view($u, start_session((int) $u['id'], true)) + ['readonly' => true]);

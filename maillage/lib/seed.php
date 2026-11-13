@@ -65,6 +65,12 @@ function seed_radar_demo(): void
         JOIN stores s ON s.id = k.store_id JOIN companies c ON c.id = s.company_id JOIN companies pc ON pc.id = p.company_id
         WHERE k.qty >= 3 AND c.demo = 1 AND pc.demo = 1 AND s.status = 'active' AND s.commune <> '' ORDER BY p.id, v.id, s.id")->fetchAll();
     if (!$rows) return;
+    // Un point de vente de la démonstration a son propre accès : on peut voir l'espace privé d'un magasin.
+    $first = $pdo->query("SELECT s.id, s.company_id, s.name, s.phone FROM stores s JOIN companies c ON c.id = s.company_id WHERE c.demo = 1 AND c.kind = 'brand' AND s.status = 'active' ORDER BY s.id LIMIT 1")->fetch();
+    if ($first && !$pdo->query("SELECT COUNT(*) FROM users WHERE store_id = " . (int) $first['id'])->fetchColumn()) {
+        $pdo->prepare("INSERT OR IGNORE INTO users (company_id, store_id, email, name, phone, pass, created) VALUES (?, ?, 'magasin@demo.maillage', ?, ?, '', ?)")
+            ->execute([$first['company_id'], $first['id'], $first['name'], (string) $first['phone'], $now]);
+    }
     $withStore = [];
     foreach ($pdo->query("SELECT DISTINCT s.wilaya FROM stores s JOIN companies c ON c.id = s.company_id WHERE c.demo = 1") as $r) $withStore[(string) $r['wilaya']] = true;
     $far = '';

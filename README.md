@@ -1072,14 +1072,16 @@ rien n'est envoyé deux fois ; si l'envoi a échoué pour tous les destinataires
 
 ## Maillage (`/maillage/`)
 
-Plateforme qui réunit, pour des marques et leurs distributeurs, la découverte des produits, leur disponibilité
-près de chez soi, la commande et l'analyse de la demande. Trois parties, une seule base :
+Plateforme qui réunit, pour des marques, leurs distributeurs et les points de vente, la découverte des produits,
+leur disponibilité près de chez soi, la commande et l'analyse de la demande. Une seule base :
 
 | Adresse | Pour qui | Ce qu'on y fait |
 |---|---|---|
 | `https://dehini.com/maillage/` | entreprises | **Landing page d'inscription** : présentation, carte en direct, formulaire (marque ou distributeur), démonstration |
+| `https://dehini.com/maillage/point-de-vente/` | magasins | **Landing page des points de vente** : le radar expliqué, inscription d'un point de vente (wilaya, commune, marques choisies), espace d'un magasin en démonstration |
+| `https://dehini.com/maillage/offre/?p=<produit>` | clients | **Page de vente d'un produit** (à partager dans les publicités) : photos, accroche, points forts, commande livrée payée à la réception |
 | `https://dehini.com/maillage/explorer/` | clients | **Plateforme publique** : carte des points de vente, marques, catalogue, « où le trouver », commande ou réservation, suivi |
-| `https://dehini.com/maillage/espace/` | entreprises | **Espace entreprise** : points de vente, catalogue, stock par magasin, commandes, réseau, analyses |
+| `https://dehini.com/maillage/espace/` | entreprises, magasins | **Espace entreprise** : points de vente, catalogue, stock par magasin, commandes, radar, réseau, analyses — et **espace privé de chaque point de vente** (même adresse, avec ses propres identifiants) |
 | `https://dehini.com/maillage/admin.html` | toi | **Administration** : inscriptions à valider, entreprises, réglages, démonstration (même mot de passe que `/admin`) |
 
 Les six fonctions :
@@ -1109,7 +1111,33 @@ Les six fonctions :
    disponibilité), et **expansion** : les wilayas où l'on cherche les produits sans point de vente à moins de
    30 km, classées par nombre de recherches.
 
-**Français / arabe** — les quatre pages (landing, plateforme publique, espace entreprise, administration) sont
+**Livraison : wilaya → commune → adresse facultative.** Toute commande livrée demande la wilaya puis la commune
+(liste officielle des 1 541 communes, en français et en arabe, `lib/data/communes.json`) ; l'adresse précise est
+facultative (le point de vente la demande au téléphone).
+
+**Le radar.** La fiche produit (« Commander · livraison à domicile ») et la page de vente d'un produit prennent une
+commande **sans choisir de point de vente**, payée à la livraison. Elle est proposée aux points de vente qui ont
+l'article en stock, du plus proche du client au plus loin : **ceux de sa commune**, puis, si personne ne l'a prise,
+**ceux de sa wilaya**, puis **tous** (un niveau de plus toutes les 30 minutes ; réglable dans `admin.html`, 0 = tous
+tout de suite). Rien n'est calculé par une tâche planifiée : le niveau se déduit de l'heure de la commande. Les
+points de vente concernés la voient dans **Radar** (et par email, avec une pastille dans le menu) ; **le premier
+qui la prend la traite** : son stock baisse à ce moment-là, il voit alors les coordonnées du client et la commande
+suit le parcours habituel (expédiée → livrée). S'il ne peut pas la servir, il la **remet sur le radar** (stock
+rétabli). La marque suit dans **Radar → Commandes reçues par vos pages** toutes les commandes de ses pages, y
+compris celles prises par les magasins de ses distributeurs (en lecture seule pour elle) ; une commande que
+personne ne peut servir (aucun stock) lui reste, elle peut la traiter ou l'annuler.
+
+**Pages de vente.** Dans la fiche d'un produit (Catalogue → un produit → Page de vente) : accroche, points forts,
+argumentaire et l'adresse de la page à partager (`offre/?p=…`).
+
+**Points de vente.** Chaque point de vente peut avoir son **accès privé** : la marque ou le distributeur saisit un
+email et un mot de passe dans sa fiche (obligatoires à la création). Le magasin se connecte sur `espace/` et ne voit
+que sa vue d'ensemble, le radar, ses commandes, son stock, sa fiche et son compte (le catalogue, le réseau, les
+analyses et les autres magasins lui sont fermés, côté serveur). Un **point de vente indépendant** s'inscrit depuis
+`point-de-vente/` : il choisit sa wilaya, sa commune et les marques qu'il veut vendre (chaque marque reçoit une
+demande de partenariat à accepter dans Réseau) ; sa fiche est créée tout de suite, à placer sur la carte.
+
+**Français / arabe** — toutes les pages (landings, plateforme publique, page de vente, espace, administration) sont
 bilingues : un bouton FR/AR (en haut de chaque page) bascule la langue, mémorisée par appareil (`localStorage`),
 avec mise en page RTL (sens de lecture, icônes directionnelles, carte, tableaux) et police Readex Pro (déjà
 utilisée pour l'arabe sur le Défi Impact, pour rester cohérent visuellement). Le dictionnaire de traduction
@@ -1121,7 +1149,10 @@ en français faute du code de wilaya transmis à ces endroits précis.
 
 ### Organisation
 
-- `maillage/index.html` + `assets/landing.{css,js}` — la landing.
+- `maillage/index.html` + `assets/landing.{css,js}`, `assets/terms.js` — la landing.
+- `maillage/point-de-vente/` + `assets/pos.{css,js}` — la landing des points de vente.
+- `maillage/offre/` + `assets/offre.{css,js}` — la page de vente d'un produit ; `assets/cod.js` — le formulaire de
+  commande livrée (radar), partagé avec la fiche produit.
 - `maillage/explorer/` + `assets/explorer.{css,js}` — la plateforme publique.
 - `maillage/espace/` + `assets/espace*.{css,js}`, `assets/charts.js` — l'espace entreprise et ses graphiques.
 - `maillage/admin.html` + `assets/admin.js` — l'administration.
@@ -1129,8 +1160,11 @@ en français faute du code de wilaya transmis à ces endroits précis.
   carte, formats, icônes Lucide utilisées).
 - `maillage/api.php` — l'API (la liste des actions est en tête du fichier).
 - `maillage/lib/` — `core.php` (configuration, base, emails), `auth.php` (comptes, sessions), `catalog.php`
-  (côté public, recherche, suivi des recherches), `orders.php`, `dash.php` (espace entreprise), `analytics.php`,
-  `media.php` (photos), `seed.php` (démonstration), `data/zones.json` (wilayas et coordonnées de leur chef-lieu).
+  (côté public, recherche, suivi des recherches), `orders.php`, `radar.php` (commandes sans point de vente choisi),
+  `dash.php` (espace entreprise et point de vente), `analytics.php`, `media.php` (photos), `seed.php`
+  (démonstration), `data/zones.json` (wilayas et coordonnées de leur chef-lieu), `data/communes.json` (communes).
+- La base se met à jour toute seule (version 2 : commune, radar, accès des points de vente, pages de vente) au
+  premier passage après la mise à jour du code ; rien n'est perdu.
 - `maillage/vendor/` — Leaflet 1.9.4 et Leaflet.markercluster 1.5.3, embarqués (pas de CDN).
 - La base est créée toute seule au premier passage dans `~/maillage-data/maillage.sqlite` (hors `public_html`).
   Les photos des produits vont dans `maillage/media/` (ré-encodées en WebP, ignorées par Git).
@@ -1144,7 +1178,9 @@ Tâches Cron → modifier la commande, voir « 4. Mise à jour automatique du co
 À la première visite, un **réseau de démonstration** est chargé : trois marques fictives (Vélora, Dar Lina, Kivo),
 deux distributeurs, 22 points de vente, 30 produits et deux mois de recherches et de commandes. Tout est marqué
 « Démo ». Il sert à montrer la plateforme avant l'arrivée des premières entreprises, et il alimente le bouton
-« Voir le tableau de bord en démonstration » de la landing (session en **lecture seule**).
+« Voir le tableau de bord en démonstration » de la landing (session en **lecture seule**). Elle comprend des
+commandes radar (libres et prises) et l'espace privé d'un magasin (« Voir l'espace d'un magasin » sur
+`point-de-vente/`).
 Pour le retirer : `https://dehini.com/maillage/admin.html` → « Supprimer la démonstration » (on peut la recharger
 au même endroit). Pour ne jamais la charger : `define('MLG_SEED_DEMO', false);` dans `maillage/config.php` avant la
 première visite.
@@ -1192,7 +1228,9 @@ tests/maillage/run.sh /tmp/mlg-test
 Faux hébergement neuf, puis parcours complet dans Chromium (Playwright) : inscription d'une marque depuis la
 landing, produit avec photo, point de vente placé sur la carte, stock, validation par le propriétaire, recherche et
 réservation côté client sur mobile, traitement de la commande, annulation par le client, distributeur et
-partenariat, analyses, mot de passe oublié, démonstration en lecture seule, cloisonnement entre entreprises,
+partenariat, analyses, radar (page de vente, commune obligatoire, niveaux commune → wilaya → partout, prise,
+remise, livraison), accès privé d'un point de vente, inscription depuis la landing des points de vente, mot de passe
+oublié, démonstration en lecture seule, cloisonnement entre entreprises,
 fichiers internes interdits, politique de sécurité (CSP), absence d'erreur JavaScript et de défilement horizontal.
 Voir `tests/maillage/README.md`.
 
@@ -1201,7 +1239,9 @@ Voir `tests/maillage/README.md`.
 - Pas de paiement en ligne, ni de frais de livraison calculés : le point de vente s'arrange avec le client.
 - Une commande porte sur un produit (une déclinaison, une quantité) dans un point de vente ; il n'y a pas de panier
   multi-produits.
-- Un seul compte par entreprise (pas encore d'équipe avec plusieurs utilisateurs).
+- Un seul compte par entreprise (pas encore d'équipe avec plusieurs utilisateurs), plus un accès par point de vente.
+- Le radar propose une commande aux magasins par commune puis par wilaya (pas de calcul de distance routière) ; la
+  commande porte sur un seul article.
 - Les conditions d'utilisation affichées à l'inscription sont un texte de départ, à relire et adapter.
 
 ## Référencement (SEO)

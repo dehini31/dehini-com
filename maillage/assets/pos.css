@@ -1,0 +1,60 @@
+/* Maillage — landing page des points de vente (point-de-vente/). S'appuie sur landing.css. */
+
+.pos-hero { background-image: radial-gradient(55% 55% at 88% 6%, rgba(14, 147, 132, .42), transparent 62%), radial-gradient(50% 50% at 0% 100%, rgba(255, 90, 43, .22), transparent 70%); }
+.pos-hero .pill span { background: #19c2ad; box-shadow: 0 0 0 4px rgba(25, 194, 173, .25); }
+.pos-hero h1 em { color: #5ee0cf; }
+.pos-hero h1 em::after { background: #19c2ad; }
+.pos-free { display: flex; align-items: center; gap: 8px; margin-top: 20px; font-size: 14.5px; font-weight: 600; color: rgba(255, 255, 255, .78); }
+.pos-free .ico { width: 17px; height: 17px; color: #5ee0cf; flex: none; }
+
+/* Illustration du radar : cercles, balayage, points de vente, carte « commande à proximité ». */
+.pos-art { position: relative; aspect-ratio: 1; max-width: 460px; width: 100%; margin: 0 auto; }
+.radar-rings { position: absolute; inset: 6%; border-radius: 50%; background: radial-gradient(circle, rgba(25, 194, 173, .16), rgba(12, 26, 43, .2) 70%); border: 1px solid rgba(94, 224, 207, .35); overflow: hidden; }
+.radar-rings > i { position: absolute; border-radius: 50%; border: 1px dashed rgba(94, 224, 207, .38); }
+.radar-rings > i:nth-child(1) { inset: 34%; }
+.radar-rings > i:nth-child(2) { inset: 19%; }
+.radar-rings > i:nth-child(3) { inset: 5%; }
+.sweep { position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(from 0deg, rgba(94, 224, 207, .45), rgba(94, 224, 207, 0) 70deg, transparent 360deg); animation: sweep 5s linear infinite; }
+@keyframes sweep { to { transform: rotate(360deg); } }
+.rp { position: absolute; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: #19c2ad; border: 2.5px solid #fff; box-shadow: 0 0 0 6px rgba(25, 194, 173, .22); }
+.rp-me { left: 50%; top: 50%; width: 20px; height: 20px; margin: -10px 0 0 -10px; background: var(--brand); box-shadow: 0 0 0 8px rgba(255, 90, 43, .25); }
+.rp-1 { left: 61%; top: 40%; }
+.rp-2 { left: 30%; top: 66%; background: #2a78d6; box-shadow: 0 0 0 6px rgba(42, 120, 214, .22); }
+.rp-3 { left: 78%; top: 82%; background: #98a2b3; box-shadow: none; }
+.pos-card { left: -1%; bottom: 3%; display: grid; gap: 6px; min-width: 230px; }
+.pos-card small { display: flex; align-items: center; gap: 6px; color: #0e9384; font-weight: 700; }
+.pos-card small .ico { width: 15px; height: 15px; }
+.pos-card b { font-size: 16px; }
+.pos-tags { display: flex; gap: 8px; align-items: center; font-size: 12.5px; color: var(--ink-2); }
+.pos-tags em { font-style: normal; font-weight: 700; color: var(--good); background: var(--good-soft); padding: 2px 8px; border-radius: 99px; }
+.pos-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 2px; }
+.pos-row strong { font-size: 15px; }
+.pos-row .art-btn { background: #0e9384; margin: 0; }
+
+/* Les trois cercles du radar */
+.pos-levels { display: grid; gap: 14px; }
+@media (min-width: 860px) { .pos-levels { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.pos-levels li { padding: 24px 22px; border-radius: var(--radius-lg); background: var(--paper-2); position: relative; overflow: hidden; }
+.pos-levels .lv { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; background: #e3f7f3; color: #0b7a6e; font-family: var(--display); font-weight: 700; font-size: 18px; margin-bottom: 14px; box-shadow: 0 0 0 6px rgba(14, 147, 132, .1); }
+.pos-levels li:nth-child(2) .lv { box-shadow: 0 0 0 6px rgba(14, 147, 132, .1), 0 0 0 12px rgba(14, 147, 132, .06); }
+.pos-levels li:nth-child(3) .lv { box-shadow: 0 0 0 6px rgba(14, 147, 132, .1), 0 0 0 12px rgba(14, 147, 132, .06), 0 0 0 18px rgba(14, 147, 132, .04); }
+.pos-levels h3 { font-size: 20px; margin-bottom: 6px; }
+.pos-levels p { color: var(--ink-2); font-size: 15px; }
+.pos-note { display: flex; align-items: center; gap: 10px; margin-top: 18px; font-weight: 600; font-size: 16px; }
+.pos-note .ico { color: var(--good); flex: none; }
+
+/* Choix des marques dans le formulaire */
+.pos-brands { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+.pos-brand { position: relative; cursor: pointer; }
+.pos-brand input { position: absolute; opacity: 0; }
+.pos-brand span { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 0 10px; padding: 10px 12px; border-radius: 12px; border: 1.5px solid var(--line-2); background: var(--surface); transition: border-color .15s, background .15s; }
+.pos-brand .mono { grid-row: span 2; }
+.pos-brand b { font-size: 14.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pos-brand small { font-size: 12.5px; color: var(--ink-2); }
+.pos-brand input:checked + span { border-color: #0e9384; background: #ecfdf8; box-shadow: inset 0 0 0 1px #0e9384; }
+.pos-brand input:focus-visible + span { outline: 2.5px solid var(--brand); outline-offset: 2px; }
+[data-place].form-grid { gap: inherit; }
+
+[dir="rtl"] .pos-card { left: auto; right: -1%; }
+/* Libellés longs (arabe compris) : les boutons passent à la ligne plutôt que d'élargir la page. */
+.pos .hero-cta .btn, .pos .signup-copy .btn, .pos .signup-form .btn { white-space: normal; text-align: center; max-width: 100%; }

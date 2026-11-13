@@ -21,6 +21,12 @@ tests/maillage/run.sh /tmp/mlg-test
 - distributeur : inscription, partenariat demandé puis accepté, catalogue de la marque référencé dans son magasin ;
 - cloisonnement : un compte ne modifie ni ne lit ce qui appartient à une autre entreprise ;
 - analyses de la marque (commandes, chiffre d'affaires hors annulation, recherches, réseau) ;
+- radar : page de vente d'un produit (mobile), wilaya et commune obligatoires, adresse facultative ; commande
+  proposée d'abord au magasin le plus proche (même wilaya), pas encore au distributeur d'une autre wilaya, puis à
+  tous quand le délai est à 0 ; email au point de vente ; coordonnées du client cachées avant la prise en charge ;
+- espace privé d'un point de vente (accès créé dans sa fiche) : menu limité, catalogue, réseau et analyses refusés,
+  prise de la commande radar (stock baissé), seconde prise refusée, remise sur le radar (stock rétabli), livraison ;
+- landing des points de vente : inscription avec commune et choix d'une marque (demande de partenariat envoyée) ;
 - mot de passe oublié (lien reçu par email, anciennes sessions fermées), espace ouvert depuis l'administration,
   suppression de la démonstration ;
 - démonstration en lecture seule ; fichiers internes interdits ; écritures refusées sans en-tête ni jeton ;

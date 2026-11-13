@@ -100,6 +100,8 @@
 [dir="rtl"] .facts li span, [dir="rtl"] .stock-name span, [dir="rtl"] .av-opts,
 [dir="rtl"] .pcard h3, [dir="rtl"] .p-info h1, [dir="rtl"] .brand-hero h1, [dir="rtl"] .p-about,
 [dir="rtl"] .brand-about, [dir="rtl"] .card-sub, [dir="rtl"] .prow small, [dir="rtl"] .lines li span,
-[dir="rtl"] .tbl td b, [dir="rtl"] .tbl td small {
+[dir="rtl"] .tbl td b, [dir="rtl"] .tbl td small,
+[dir="rtl"] .of-info h1, [dir="rtl"] .of-name, [dir="rtl"] .of-points li span, [dir="rtl"] .of-pitch p, [dir="rtl"] .of-bar small,
+[dir="rtl"] .rcard-item b, [dir="rtl"] .rcard-item small, [dir="rtl"] .orow .grow b, [dir="rtl"] .pos-brand b {
   unicode-bidi: plaintext;
 }

@@ -11,6 +11,7 @@
 
   const BASE = new URL('..', document.currentScript.src).href; // …/maillage/
   const ML = window.ML = { base: BASE, csrf: '', boot: null, actions: {}, changes: {}, inputs: {}, forms: {} };
+  ML.t = (s) => s; // remplacé par i18n.js (traduction arabe)
 
   /* ------------------------------------------------------------ gabarits */
   const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
@@ -57,9 +58,10 @@
       res = await fetch(url, init);
       data = await res.json();
     } catch (e) {
-      throw new ApiError('network', 'Connexion impossible. Vérifiez votre réseau et réessayez.');
+      throw new ApiError('network', ML.t('Connexion impossible. Vérifiez votre réseau et réessayez.'));
     }
-    if (!res.ok || data.error) throw new ApiError(data.error || 'server', data.message || 'Une erreur est survenue.', res.status);
+    // Les messages du serveur sont en français : traduits s'ils sont dans le dictionnaire (i18n.js).
+    if (!res.ok || data.error) throw new ApiError(data.error || 'server', ML.t(data.message || 'Une erreur est survenue.'), res.status);
     return data;
   };
   /** Données de départ (réglages, zones, rayons, marques) — chargées une fois par page. */
@@ -69,7 +71,7 @@
       ML.zones = {};
       ML.boot.zones.forEach((z) => { ML.zones[z.code] = z; });
       ML.cats = {};
-      ML.boot.categories.forEach((c) => { ML.cats[c.key] = c.label; });
+      ML.boot.categories.forEach((c) => { c.label = ML.t(c.label); ML.cats[c.key] = c.label; });
     }
     return ML.boot;
   };
@@ -178,32 +180,32 @@
   /** Paramètres de position à joindre aux recherches. */
   ML.locParams = () => (ML.loc ? { lat: ML.loc.precise ? ML.loc.lat : '', lng: ML.loc.precise ? ML.loc.lng : '', zone: ML.loc.zone || '' } : {});
   ML.locate = () => new Promise((resolve, reject) => {
-    if (!navigator.geolocation) { reject(new Error('La géolocalisation n\'est pas disponible sur cet appareil.')); return; }
+    if (!navigator.geolocation) { reject(new Error(ML.t('La géolocalisation n\'est pas disponible sur cet appareil.'))); return; }
     navigator.geolocation.getCurrentPosition((pos) => {
       const pt = { lat: pos.coords.latitude, lng: pos.coords.longitude };
       const z = ML.nearestZone(pt);
       const loc = { lat: pt.lat, lng: pt.lng, label: ML.t('Ma position'), zone: z ? z.code : '', precise: true };
       ML.setLoc(loc);
       resolve(loc);
-    }, (err) => reject(new Error(err.code === 1 ? 'Position refusée. Choisissez plutôt votre ville.' : 'Position introuvable. Choisissez plutôt votre ville.')), { enableHighAccuracy: false, timeout: 9000, maximumAge: 300000 });
+    }, (err) => reject(new Error(ML.t(err.code === 1 ? 'Position refusée. Choisissez plutôt votre ville.' : 'Position introuvable. Choisissez plutôt votre ville.'))), { enableHighAccuracy: false, timeout: 9000, maximumAge: 300000 });
   });
   /** Fenêtre « Où êtes-vous ? » : ma position ou une ville de la liste. */
   ML.pickLocation = () => new Promise((resolve) => {
-    const zones = ML.boot.zones.slice().sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+    const zones = ML.boot.zones.slice().sort((a, b) => ML.zoneName(a).localeCompare(ML.zoneName(b), ML.lang === 'ar' ? 'ar' : 'fr'));
     const list = (q) => {
       const n = ML.norm(q);
-      const found = zones.filter((z) => !n || ML.norm(z.name).includes(n) || z.code === n);
-      return found.length ? html`${found.map((z) => html`<button class="loc-item" type="button" data-zone="${z.code}">${icon('map-pin')}<span>${z.name}</span><small class="dim">${z.code}</small></button>`)}` : html`<p class="muted" style="padding:14px 4px">Aucune ville ne correspond.</p>`;
+      const found = zones.filter((z) => !n || ML.norm(z.name).includes(n) || ML.norm(z.ar || '').includes(n) || z.code === n);
+      return found.length ? html`${found.map((z) => html`<button class="loc-item" type="button" data-zone="${z.code}">${icon('map-pin')}<span>${ML.zoneName(z)}</span><small class="dim">${z.code}</small></button>`)}` : html`<p class="muted" style="padding:14px 4px">${ML.t('Aucune ville ne correspond.')}</p>`;
     };
     const m = ML.modal({
-      title: 'Où êtes-vous ?',
+      title: ML.t('Où êtes-vous ?'),
       body: html`
-        <p class="muted" style="margin-bottom:14px">Pour classer les points de vente du plus proche au plus loin.</p>
-        <button class="btn btn-dark btn-block" type="button" data-geo>${icon('locate-fixed')} Utiliser ma position</button>
+        <p class="muted" style="margin-bottom:14px">${ML.t('Pour classer les points de vente du plus proche au plus loin.')}</p>
+        <button class="btn btn-dark btn-block" type="button" data-geo>${icon('locate-fixed')} ${ML.t('Utiliser ma position')}</button>
         <p class="form-error" data-err hidden style="margin-top:10px"></p>
-        <div class="input-icon" style="margin:16px 0 8px">${icon('search')}<input class="input" type="search" placeholder="Chercher une ville…" autocomplete="off" data-q></div>
+        <div class="input-icon" style="margin:16px 0 8px">${icon('search')}<input class="input" type="search" placeholder="${ML.t('Chercher une ville…')}" autocomplete="off" data-q></div>
         <div class="loc-list" data-list>${list('')}</div>
-        ${ML.loc ? html`<button class="btn btn-ghost btn-block" type="button" data-clear style="margin-top:8px">Ne plus utiliser ma position</button>` : ''}`,
+        ${ML.loc ? html`<button class="btn btn-ghost btn-block" type="button" data-clear style="margin-top:8px">${ML.t('Ne plus utiliser ma position')}</button>` : ''}`,
       onClose: () => resolve(ML.loc),
     });
     const el = m.el;
@@ -212,7 +214,7 @@
       const z = e.target.closest('[data-zone]');
       if (z) {
         const zone = ML.zones[z.dataset.zone];
-        ML.setLoc({ lat: zone.lat, lng: zone.lng, label: zone.name, zone: zone.code, precise: false });
+        ML.setLoc({ lat: zone.lat, lng: zone.lng, label: ML.zoneName(zone), zone: zone.code, precise: false });
         m.close();
       } else if (e.target.closest('[data-geo]')) {
         const b = e.target.closest('[data-geo]');
@@ -229,13 +231,64 @@
     });
   });
 
+  /* ------------------------------------------------------- wilaya, commune */
+  const communeCache = {};
+  /** Communes d'une wilaya : [[nom, nom arabe], …] (chargées une fois par wilaya). */
+  ML.communes = (zone) => {
+    if (!zone) return Promise.resolve([]);
+    if (!communeCache[zone]) communeCache[zone] = ML.api('communes', { params: { zone } }).then((r) => r.communes).catch((e) => { delete communeCache[zone]; throw e; });
+    return communeCache[zone];
+  };
+  /** Liste « commune, wilaya » avec la virgule de la langue affichée. */
+  ML.joinList = (arr) => arr.filter(Boolean).join(ML.lang === 'ar' ? '، ' : ', ');
+  /** Nom d'une commune dans la langue affichée (le serveur envoie le nom et, à côté, sa version arabe). */
+  ML.communeLabel = (fr, ar) => (ML.lang === 'ar' && ar ? ar : (fr || ''));
+  /**
+   * Champs wilaya → commune → adresse. o : zone, commune, address, prefix (id des champs),
+   * zoneField (nom du champ wilaya, « zone » par défaut), address (false : sans adresse),
+   * addressLabel, required (wilaya et commune obligatoires).
+   */
+  ML.placeFields = (o) => {
+    o = o || {};
+    const id = o.prefix || 'pl';
+    const zones = (ML.boot ? ML.boot.zones : []).slice().sort((a, b) => ML.zoneName(a).localeCompare(ML.zoneName(b), ML.lang === 'ar' ? 'ar' : 'fr'));
+    return html`
+      <div class="field"><label for="${id}-zone">${ML.t('Wilaya')}</label><select class="select" id="${id}-zone" name="${o.zoneField || 'zone'}" data-place-zone ${o.required ? raw('required') : ''}><option value="">${ML.t('Choisir…')}</option>${zones.map((z) => html`<option value="${z.code}" ${o.zone === z.code ? raw('selected') : ''}>${z.code} · ${ML.zoneName(z)}</option>`)}</select></div>
+      <div class="field"><label for="${id}-commune">${ML.t('Commune')}</label><select class="select" id="${id}-commune" name="commune" data-place-commune ${o.required ? raw('required') : ''} disabled><option value="">${ML.t("Choisissez d'abord la wilaya")}</option></select></div>
+      ${o.address === false ? '' : html`<div class="field span-2"><label for="${id}-address">${o.addressLabel || ML.t('Adresse')} <span class="dim">(${ML.t('facultative')})</span></label><input class="input" id="${id}-address" name="address" maxlength="200" autocomplete="street-address" placeholder="${ML.t('Quartier, rue, repère…')}" value="${o.addressValue || ''}"></div>`}`;
+  };
+  /** Remplit la liste des communes quand la wilaya change ; $keep : commune à présélectionner. */
+  ML.bindPlace = (root, keep) => {
+    const zs = root.querySelector('[data-place-zone]');
+    const cs = root.querySelector('[data-place-commune]');
+    if (!zs || !cs) return Promise.resolve();
+    const fill = async (want) => {
+      const z = zs.value;
+      cs.disabled = true;
+      cs.innerHTML = html`<option value="">${z ? ML.t('Chargement…') : ML.t("Choisissez d'abord la wilaya")}</option>`.toString();
+      if (!z) return;
+      try {
+        const list = (await ML.communes(z)).slice();
+        if (zs.value !== z) return;
+        if (ML.lang === 'ar') list.sort((a, b) => (a[1] || a[0]).localeCompare(b[1] || b[0], 'ar'));
+        cs.innerHTML = html`<option value="">${ML.t('Choisir la commune…')}</option>${list.map(([fr, ar]) => html`<option value="${fr}" ${want && ML.norm(want) === ML.norm(fr) ? raw('selected') : ''}>${ML.communeLabel(fr, ar)}</option>`)}`.toString();
+        cs.disabled = false;
+        cs.dispatchEvent(new Event('mlg:communes'));
+      } catch (e) {
+        cs.innerHTML = html`<option value="">${ML.t('Liste indisponible : réessayez.')}</option>`.toString();
+      }
+    };
+    zs.addEventListener('change', () => fill(''));
+    return fill(keep || '');
+  };
+
   /* ---------------------------------------------------- fenêtres, messages */
   ML.modal = (o) => {
     const wrap = document.createElement('div');
     wrap.className = 'modal-wrap';
     wrap.innerHTML = html`
       <div class="modal ${o.wide ? 'modal-wide' : ''}" role="dialog" aria-modal="true" aria-label="${o.title || ''}">
-        <div class="modal-head"><h2>${o.title || ''}</h2><button class="btn btn-ghost btn-icon btn-sm" type="button" data-close aria-label="Fermer">${icon('x')}</button></div>
+        <div class="modal-head"><h2>${o.title || ''}</h2><button class="btn btn-ghost btn-icon btn-sm" type="button" data-close aria-label="${ML.t('Fermer')}">${icon('x')}</button></div>
         <div class="modal-body">${o.body || ''}</div>
         ${o.foot ? html`<div class="modal-foot">${o.foot}</div>` : ''}
       </div>`;
@@ -286,7 +339,7 @@
   /** Affiche l'erreur d'un appel à l'API (dans la zone d'erreur d'un formulaire, sinon en message). */
   ML.fail = (err, form) => {
     const box = form && form.querySelector('[data-error]');
-    const msg = (err && err.message) || 'Une erreur est survenue.';
+    const msg = (err && err.message) || ML.t('Une erreur est survenue.');
     if (box) { box.textContent = msg; box.hidden = false; box.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } else ML.toast(msg, 'bad');
   };
   ML.busy = (btn, on) => { if (btn) { btn.classList.toggle('is-busy', on); btn.disabled = !!on; } };

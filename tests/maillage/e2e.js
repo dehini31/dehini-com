@@ -3,7 +3,9 @@
  *   inscription d'une marque depuis la landing → produit, point de vente, stock → validation par
  *   le propriétaire → recherche et réservation côté client (mobile) → traitement de la commande →
  *   annulation par le client → distributeur et partenariat → analyses → démonstration en lecture
- *   seule → cloisonnement entre entreprises, contenu saisi non exécuté, fichiers internes interdits.
+ *   seule → radar (commande sans point de vente, niveaux commune / wilaya / partout, prise et
+ *   remise par le point de vente) → accès privé d'un point de vente → inscription d'un point de
+ *   vente indépendant → cloisonnement entre entreprises, contenu saisi non exécuté, fichiers internes interdits.
  *   node tests/maillage/e2e.js <adresse> <dossier>
  */
 const { chromium, devices } = require('playwright');
@@ -97,14 +99,18 @@ const mails = () => (fs.existsSync(path.join(DIR, 'mail.jsonl')) ? fs.readFileSy
   await bp.goto(B + 'espace/#/points-de-vente/nouveau');
   await bp.fill('#s-name', 'Atelier Test Alger');
   await bp.fill('#s-address', '12 rue des Essais');
-  await bp.fill('#s-city', 'Alger');
   await bp.selectOption('#s-zone', '16');
-  await bp.click('.editor button[type=submit]');
-  await bp.waitForSelector('.editor [data-error]:not([hidden])');
-  ok(/Placez le point de vente/.test(await bp.locator('.editor [data-error]').innerText()), 'position sur la carte obligatoire');
+  await bp.waitForFunction(() => !document.querySelector('#s-commune').disabled);
+  const storeErr = async (re) => { await bp.click('.editor button[type=submit]'); await bp.waitForFunction((src) => new RegExp(src).test(document.querySelector('.editor [data-error]').textContent), re.source); return true; };
+  ok(await storeErr(/Placez le point de vente/), 'position sur la carte obligatoire');
   await bp.waitForSelector('#map.leaflet-container');
   await bp.click('#map', { position: { x: 220, y: 160 } });
   ok(/Position/.test(await bp.locator('[data-pos]').innerText()), 'épingle placée d\'un clic sur la carte');
+  ok(await storeErr(/commune/), 'commune du point de vente obligatoire');
+  await bp.selectOption('#s-commune', 'Alger Centre');
+  ok(await storeErr(/email de connexion/), 'accès du point de vente (email et mot de passe) demandé à la création');
+  await bp.fill('#s-login', 'alger@atelier-test.example');
+  await bp.fill('#s-pass', 'magasin-solide');
   await bp.click('label.switch:has(input[name=delivery])');
   await bp.click('.editor button[type=submit]');
   await bp.waitForURL(/#\/points-de-vente$/);
@@ -253,7 +259,7 @@ const mails = () => (fs.existsSync(path.join(DIR, 'mail.jsonl')) ? fs.readFileSy
   await op.waitForSelector('button[data-do="activate"]');
   await op.click('button[data-do="activate"]');
   await op.waitForFunction(() => !document.querySelector('button[data-do="activate"]'));
-  const dstore = await call(dp, 'store_save', { name: 'Relais Essai Oran', type: 'distributeur', city: 'Oran', wilaya: '31', lat: 35.699, lng: -0.636, address: 'Centre', hours: { open: '00:00', close: '23:59', days: [0, 1, 2, 3, 4, 5, 6] }, pickup: true, reserve: true });
+  const dstore = await call(dp, 'store_save', { name: 'Relais Essai Oran', type: 'distributeur', commune: 'Oran', wilaya: '31', lat: 35.699, lng: -0.636, address: 'Centre', hours: { open: '00:00', close: '23:59', days: [0, 1, 2, 3, 4, 5, 6] }, pickup: true, reserve: true, login_email: 'oran@relais-essai.example', login_password: 'magasin-oran-1' });
   ok(dstore.store && dstore.store.id > 0, 'point de vente du distributeur créé');
   let dstock = await call(dp, 'stock', undefined, { store: dstore.store.id });
   ok(dstock.products.length === 0, 'sans partenariat : aucun produit de la marque à référencer');
@@ -293,6 +299,142 @@ const mails = () => (fs.existsSync(path.join(DIR, 'mail.jsonl')) ? fs.readFileSy
   await bp.screenshot({ path: path.join(SHOTS, '08-analyses.png'), fullPage: true });
   await noOverflow(bp, 'analyses (ordinateur)');
 
+
+  /* ------------------------------------------------------------------- radar */
+  step('Radar : commande sans point de vente, proposée au plus proche');
+  const communes = await call(cp, 'communes', undefined, { zone: '16' });
+  ok(communes.communes && communes.communes.some((c) => c[0] === 'Bab Ezzouar' && /[؀-ۿ]/.test(c[1])), 'communes de la wilaya (noms français et arabes)');
+  const slug = (await call(cp, 'products', undefined, { q: 'horizon' })).items[0].slug;
+  await cp.goto(B + 'explorer/#/produit/' + slug);
+  await cp.waitForSelector('[data-act="cod"]');
+  ok(true, 'fiche produit : commande livrée sans choisir de magasin proposée');
+  const offer = await cp.context().newPage();
+  watch(offer, 'page de vente');
+  await offer.goto(B + 'offre/?p=' + slug, { waitUntil: 'load' });
+  await offer.waitForSelector('.cod-form');
+  await noOverflow(offer, 'page de vente (mobile)');
+  await offer.click('[data-act="of-size"][data-v="41"]');
+  await offer.click('[data-act="of-color"][data-v="Bleu"]');
+  ok(/41 · Bleu/.test(await offer.locator('#c-variant option:checked').innerText()), 'la déclinaison choisie dans la page passe dans le formulaire');
+  await offer.fill('#c-name', 'Samir Radar');
+  await offer.fill('#c-phone', '0662 33 44 55');
+  await offer.click('.cod-form [data-submit]');
+  ok(/wilaya puis la commune/.test(await offer.locator('.cod-form [data-error]').innerText()), 'wilaya et commune de livraison obligatoires');
+  await offer.selectOption('#c-zone', '16');
+  await offer.waitForFunction(() => !document.querySelector('#c-commune').disabled);
+  await offer.selectOption('#c-commune', 'Bab Ezzouar');
+  await offer.click('.cod-form [data-submit]');
+  await offer.waitForSelector('.order-done');
+  const rref = (await offer.locator('.done-ref b').innerText()).trim();
+  ok(/^ML-/.test(rref), 'commande radar enregistrée sans adresse (facultative) : ' + rref);
+  await offer.screenshot({ path: path.join(SHOTS, '10-page-de-vente.png') });
+  await offer.click('.order-done a.btn-primary');
+  await offer.waitForSelector('.notice.is-radar');
+  ok(true, 'suivi : le client voit que l\'on cherche le point de vente le plus proche');
+  const rtoken = offer.url().split('/suivi/')[1];
+
+  let br = await call(bp, 'radar');
+  const near = br.nearby.find((o) => o.ref === rref);
+  ok(near && near.rank === 2 && near.level === 2, 'proposée d\'abord au magasin de la marque (même wilaya, pas de magasin dans la commune)', near);
+  ok(near && near.stores.length === 1 && near.stores[0].id === storeId, 'avec le magasin qui a l\'article en stock');
+  ok(br.received.some((o) => o.ref === rref && o.waiting), 'la marque la voit parmi les commandes reçues par ses pages');
+  let dr = await call(dp, 'radar');
+  ok(!dr.nearby.some((o) => o.ref === rref), 'pas encore proposée au distributeur d\'une autre wilaya');
+  ok(mails().some((m) => m.to === 'alger@atelier-test.example' && m.subject.includes(rref)), 'email « commande à proximité » au point de vente');
+  ok(br.nearby.every((o) => o.phone === undefined && o.name === undefined), 'coordonnées du client cachées avant la prise en charge');
+
+  await op.reload({ waitUntil: 'load' });
+  await op.waitForSelector('#a-radar');
+  await op.fill('#a-radar', '0');
+  await op.click('[data-form="settings"] button[type=submit]');
+  await op.waitForSelector('.toast');
+  dr = await call(dp, 'radar');
+  ok(dr.nearby.some((o) => o.ref === rref && o.rank === 3), 'délai à 0 : proposée à tous les points de vente qui ont l\'article');
+  await op.fill('#a-radar', '30');
+  await op.click('[data-form="settings"] button[type=submit]');
+
+  step('Point de vente : espace privé, prise de la commande radar');
+  const storeCtx = await browser.newContext({ ...devices['iPhone 13'] });
+  const sp = await storeCtx.newPage();
+  watch(sp, 'point de vente');
+  await sp.goto(B + 'espace/', { waitUntil: 'load' });
+  await sp.fill('#l-email', 'alger@atelier-test.example');
+  await sp.fill('#l-pass', 'magasin-solide');
+  await sp.click('[data-form="login"] button[type=submit]');
+  await sp.waitForSelector('.side-nav');
+  ok(await sp.locator('.side-nav a').count() === 6, 'menu limité au point de vente (6 entrées)');
+  ok(/Atelier Test Alger/.test(await sp.locator('.side-co').innerText()), 'espace au nom du point de vente');
+  ok((await call(sp, 'dash_products')).status === 403, 'catalogue réservé au compte de l\'entreprise');
+  ok((await call(sp, 'network')).status === 403, 'réseau réservé au compte de l\'entreprise');
+  ok((await call(sp, 'analytics', undefined, { days: 30 })).status === 403, 'analyses réservées au compte de l\'entreprise');
+  const spStores = await call(sp, 'dash_stores');
+  ok(spStores.stores.length === 1 && spStores.stores[0].id === storeId && spStores.stores[0].login_email === undefined, 'il ne voit que sa fiche (sans les identifiants)');
+  const before41 = (await call(bp, 'stock', undefined, { store: storeId })).products[0].variants.find((v) => v.size === '41' && v.color === 'Bleu').qty;
+  await sp.goto(B + 'espace/#/radar');
+  await sp.waitForSelector('.rcard');
+  await noOverflow(sp, 'radar (mobile)');
+  await sp.screenshot({ path: path.join(SHOTS, '11-radar-magasin.png'), fullPage: true });
+  await sp.click('.rcard [data-act="claim"]');
+  await sp.waitForSelector('.odetail');
+  ok(/Samir Radar/.test(await sp.locator('.odetail').innerText()) && /Bab Ezzouar/.test(await sp.locator('.odetail').innerText()), 'prise en charge : coordonnées et commune du client affichées');
+  const after41 = (await call(bp, 'stock', undefined, { store: storeId })).products[0].variants.find((v) => v.size === '41' && v.color === 'Bleu').qty;
+  ok(after41 === before41 - 1, 'le stock du magasin baisse à la prise en charge', [before41, after41]);
+  let tr = await call(cp, 'track', undefined, { token: rtoken });
+  ok(tr.order.status === 'confirmed' && tr.order.store && tr.order.store.name === 'Atelier Test Alger', 'le client voit le point de vente qui a pris sa commande');
+  dr = await call(dp, 'radar');
+  ok(!dr.nearby.some((o) => o.ref === rref), 'une commande prise disparaît du radar des autres');
+  const twice = await call(dp, 'radar_claim', { id: tr.order.id, store_id: dstore.store.id });
+  ok(twice.error && /vient d'être prise/.test(twice.message), 'un second point de vente ne peut plus la prendre');
+
+  await sp.click('.modal [data-release]');
+  await sp.locator('.modal-wrap').last().locator('[data-yes]').click();
+  await sp.waitForSelector('.rcard');
+  tr = await call(cp, 'track', undefined, { token: rtoken });
+  ok(tr.order.waiting && tr.order.status === 'pending', 'remise sur le radar : la commande attend de nouveau un point de vente');
+  ok((await call(bp, 'stock', undefined, { store: storeId })).products[0].variants.find((v) => v.size === '41' && v.color === 'Bleu').qty === before41, 'remise sur le radar : stock rétabli');
+  await sp.click('.rcard [data-act="claim"]');
+  await sp.waitForSelector('.modal-foot [data-next="shipped"]');
+  await sp.click('.modal-foot [data-next="shipped"]');
+  await sp.waitForSelector('.modal-foot [data-next="done"]');
+  await sp.click('.modal-foot [data-next="done"]');
+  await sp.waitForFunction(() => !document.querySelector('.modal-foot [data-next]'));
+  tr = await call(cp, 'track', undefined, { token: rtoken });
+  ok(tr.order.status === 'done', 'commande radar livrée par le point de vente');
+  br = await call(bp, 'radar');
+  ok(br.received.some((o) => o.ref === rref && o.store && o.store.own && o.status === 'done'), 'la marque suit la commande jusqu\'à la livraison');
+  const otherOrder = (await call(dp, 'orders', undefined, { status: 'all' })).orders;
+  ok(!otherOrder.length || (await call(sp, 'order_get', undefined, { id: otherOrder[0].id })).status === 404, 'un point de vente ne voit pas les commandes des autres');
+
+  /* ------------------------------------------- point de vente indépendant */
+  step('Point de vente indépendant : landing dédiée et choix des marques');
+  const posCtx = await browser.newContext({ ...devices['iPhone 13'] });
+  const pp = await posCtx.newPage();
+  watch(pp, 'landing points de vente');
+  await pp.goto(B + 'point-de-vente/', { waitUntil: 'load' });
+  await pp.waitForSelector('.pos-brand');
+  await noOverflow(pp, 'landing des points de vente (mobile)');
+  ok(await pp.locator('.pos-brand').count() === 1 && /<b>/.test(await pp.locator('.pos-brand b').innerText()), 'seules les vraies marques sont proposées, nom affiché comme du texte');
+  await pp.fill('#s-company', 'Boutique Essai');
+  await pp.fill('#s-name', 'Lamia Boutique');
+  await pp.fill('#s-phone', '0770 44 55 66');
+  await pp.fill('#s-email', 'lamia@boutique-essai.example');
+  await pp.selectOption('#pv-zone', '16');
+  await pp.waitForFunction(() => !document.querySelector('#pv-commune').disabled);
+  await pp.selectOption('#pv-commune', 'Bab Ezzouar');
+  await pp.click('.pos-brand');
+  await pp.fill('#s-pass', 'boutique-solide');
+  await pp.check('[data-form="pos"] input[name=accept]');
+  await pp.screenshot({ path: path.join(SHOTS, '12-inscription-point-de-vente.png'), fullPage: true });
+  await pp.click('[data-form="pos"] button[type=submit]');
+  await pp.waitForURL(/\/espace\//);
+  await pp.waitForSelector('.onboard');
+  const pme = await call(pp, 'me');
+  ok(pme.company.kind === 'pos' && pme.company.status === 'pending', 'point de vente inscrit, en attente de validation');
+  const pst = (await call(pp, 'dash_stores')).stores;
+  ok(pst.length === 1 && pst[0].status === 'unlocated' && pst[0].commune === 'Bab Ezzouar', 'sa fiche est créée dans sa commune, position à confirmer');
+  const bnet = await call(bp, 'network');
+  ok(bnet.partners.some((x) => x.status === 'pending' && !x.mine && x.company.name === 'Boutique Essai'), 'la marque choisie reçoit sa demande de partenariat');
+
   /* ------------------------------------------------------------ démonstration */
   step('Démonstration en lecture seule');
   const demoCtx = await browser.newContext({ ...devices['iPhone 13'] });
@@ -306,7 +448,7 @@ const mails = () => (fs.existsSync(path.join(DIR, 'mail.jsonl')) ? fs.readFileSy
   await mp.screenshot({ path: path.join(SHOTS, '09-demo-mobile.png') });
   const ro = await call(mp, 'stock_save', { store_id: 1, items: [] });
   ok(ro.error === 'demo' && ro.status === 403, 'aucune écriture possible en démonstration');
-  for (const r of ['commandes', 'catalogue', 'points-de-vente', 'disponibilite', 'reseau', 'analyses', 'analyses?t=demande', 'analyses?t=performance', 'parametres']) {
+  for (const r of ['commandes', 'radar', 'catalogue', 'points-de-vente', 'disponibilite', 'reseau', 'analyses', 'analyses?t=demande', 'analyses?t=performance', 'parametres']) {
     await mp.goto(B + 'espace/#/' + r);
     await mp.waitForTimeout(700);
     await noOverflow(mp, r + ' (mobile)');

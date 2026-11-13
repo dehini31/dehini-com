@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<script src="../assets/lang-boot.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Maillage pour les points de vente — Recevez les commandes des clients de votre commune</title>
+<meta name="description" content="Magasins, boutiques et revendeurs : choisissez les marques que vous vendez, indiquez votre stock, et recevez les commandes des clients proches de chez vous. Paiement à la livraison.">
+<meta name="theme-color" content="#0c1a2b">
+<link rel="canonical" href="https://dehini.com/maillage/point-de-vente/">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:title" content="Maillage pour les points de vente">
+<meta property="og:description" content="Recevez les commandes des clients de votre commune pour les marques que vous vendez.">
+<meta property="og:url" content="https://dehini.com/maillage/point-de-vente/">
+<meta name="twitter:card" content="summary">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=DM+Sans:opsz,wght@9..40,400..700&family=Readex+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/base.css">
+<link rel="stylesheet" href="../assets/landing.css">
+<link rel="stylesheet" href="../assets/pos.css">
+<link rel="stylesheet" href="../assets/rtl.css">
+</head>
+<body class="lp pos">
+
+<header class="nav" id="nav">
+  <a class="logo on-dark" href="../" aria-label="Maillage, accueil"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#ff5a2b"/><path d="M9 21 16 9.5 23 21" stroke="#fff" stroke-width="2.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 21h14" stroke="#fff" stroke-width="2.3" stroke-linecap="round" opacity=".5"/><circle cx="16" cy="9.5" r="3" fill="#fff"/><circle cx="9" cy="21" r="3" fill="#fff"/><circle cx="23" cy="21" r="3" fill="#fff"/></svg>Maillage</a>
+  <nav class="nav-links" id="nav-links" aria-label="Navigation principale">
+    <a href="#radar">Le radar</a>
+    <a href="#avantages">Avantages</a>
+    <a href="#etapes">Comment ça marche</a>
+    <a href="#questions">Questions</a>
+    <a href="../">Marques et distributeurs</a>
+    <a class="nav-login" href="../espace/">Connexion</a>
+  </nav>
+  <span id="lang-slot"></span>
+  <a class="btn btn-glass btn-sm nav-login-d" href="../espace/">Connexion</a>
+  <a class="btn btn-primary btn-sm nav-cta" href="#inscription">Inscrire mon magasin</a>
+  <button class="nav-burger" type="button" data-act="nav" aria-label="Menu" aria-controls="nav-links" aria-expanded="false"><i data-ico="menu"></i></button>
+</header>
+
+<main>
+<section class="hero pos-hero">
+  <div class="hero-in">
+    <div class="hero-copy">
+      <p class="pill"><span></span>Magasins · boutiques · revendeurs</p>
+      <h1>Recevez les commandes des clients <em>de votre commune</em>.</h1>
+      <p class="hero-sub">Choisissez les marques que vous vendez et indiquez votre stock. Quand un client proche de chez vous commande l'un de leurs produits, la commande arrive dans votre radar : vous la prenez, vous livrez, vous encaissez à la livraison.</p>
+      <div class="hero-cta">
+        <a class="btn btn-primary btn-lg" href="#inscription">Inscrire mon point de vente<i data-ico="arrow-right"></i></a>
+        <button class="btn btn-glass btn-lg" type="button" data-act="demo-store"><i data-ico="play"></i>Voir l'espace d'un magasin</button>
+      </div>
+      <p class="pos-free"><i data-ico="shield-check"></i>Inscription gratuite · espace privé avec email et mot de passe</p>
+    </div>
+
+    <div class="pos-art" aria-hidden="true">
+      <div class="radar-rings"><i></i><i></i><i></i><span class="sweep"></span>
+        <b class="rp rp-me"></b><b class="rp rp-1"></b><b class="rp rp-2"></b><b class="rp rp-3"></b>
+      </div>
+      <div class="art-card pos-card">
+        <small><i data-ico="target"></i>Commande à proximité</small>
+        <b>Aéro 2 · taille 42</b>
+        <span class="pos-tags"><em>Votre commune</em><span>Bab Ezzouar</span></span>
+        <span class="pos-row"><strong>12 900 DA</strong><span class="art-btn">Prendre la commande</span></span>
+      </div>
+    </div>
+  </div>
+  <div class="hero-stats" id="stats" hidden>
+    <div><b data-stat="brands">0</b><span>marques référencées</span></div>
+    <div><b data-stat="products">0</b><span>produits au catalogue</span></div>
+    <div><b data-stat="stores">0</b><span>points de vente sur la carte</span></div>
+    <div><b data-stat="zones">0</b><span>wilayas couvertes</span></div>
+  </div>
+</section>
+
+<section class="sec" id="radar">
+  <div class="sec-head reveal">
+    <p class="eyebrow">Le radar</p>
+    <h2>La commande va au plus proche.</h2>
+    <p>Le client commande sur la page du produit, sans choisir de magasin. La commande est proposée aux points de vente qui ont l'article, en s'élargissant peu à peu.</p>
+  </div>
+  <ol class="pos-levels">
+    <li class="reveal"><span class="lv">1</span><h3>Sa commune</h3><p>Les points de vente de la commune du client la voient en premier.</p></li>
+    <li class="reveal"><span class="lv">2</span><h3>Sa wilaya</h3><p>Si personne ne la prend, elle s'ouvre à toute la wilaya.</p></li>
+    <li class="reveal"><span class="lv">3</span><h3>Tout le réseau</h3><p>Puis à tous les points de vente qui ont l'article en stock.</p></li>
+  </ol>
+  <p class="pos-note reveal"><i data-ico="check"></i>Le premier qui la prend la traite. Les coordonnées du client s'affichent à ce moment-là.</p>
+</section>
+
+<section class="sec sec-steps" id="avantages">
+  <div class="sec-head reveal">
+    <p class="eyebrow">Avantages</p>
+    <h2>Plus de clients, sans changer vos habitudes.</h2>
+  </div>
+  <div class="who">
+    <article class="who-card reveal">
+      <div class="who-ic"><i data-ico="target"></i></div>
+      <h3>Des commandes près de chez vous</h3>
+      <ul>
+        <li><i data-ico="check"></i>Les marques font la publicité de leurs produits</li>
+        <li><i data-ico="check"></i>Vous recevez les commandes de votre zone</li>
+        <li><i data-ico="check"></i>Par email et dans votre espace</li>
+      </ul>
+    </article>
+    <article class="who-card reveal">
+      <div class="who-ic is-slate"><i data-ico="lock"></i></div>
+      <h3>Votre espace privé</h3>
+      <ul>
+        <li><i data-ico="check"></i>Connexion avec votre email et votre mot de passe</li>
+        <li><i data-ico="check"></i>Commandes, stock et radar au même endroit</li>
+        <li><i data-ico="check"></i>Depuis un téléphone, en quelques secondes</li>
+      </ul>
+    </article>
+    <article class="who-card reveal">
+      <div class="who-ic is-teal"><i data-ico="map-pin"></i></div>
+      <h3>Visible sur la carte</h3>
+      <ul>
+        <li><i data-ico="check"></i>Vos horaires, votre téléphone et l'itinéraire</li>
+        <li><i data-ico="check"></i>Les clients voient ce que vous avez en stock</li>
+        <li><i data-ico="check"></i>Retrait, réservation ou livraison : vous choisissez</li>
+      </ul>
+    </article>
+  </div>
+</section>
+
+<section class="sec" id="etapes">
+  <div class="sec-head reveal">
+    <p class="eyebrow">Comment ça marche</p>
+    <h2>Prêt en quatre étapes.</h2>
+  </div>
+  <ol class="steps4">
+    <li class="reveal"><span>1</span><h3>Inscrivez votre point de vente</h3><p>Nom, wilaya, commune, téléphone : deux minutes.</p></li>
+    <li class="reveal"><span>2</span><h3>Choisissez vos marques</h3><p>Chaque marque valide votre demande ; son catalogue arrive dans votre espace.</p></li>
+    <li class="reveal"><span>3</span><h3>Indiquez votre stock</h3><p>Ce que vous avez, taille par taille, couleur par couleur.</p></li>
+    <li class="reveal"><span>4</span><h3>Prenez les commandes</h3><p>Vous livrez et encaissez à la réception.</p></li>
+  </ol>
+</section>
+
+<section class="signup" id="inscription">
+  <div class="signup-in">
+    <div class="signup-copy reveal">
+      <p class="eyebrow">Inscription</p>
+      <h2>Inscrivez votre point de vente.</h2>
+      <p>Votre espace est créé tout de suite. Votre magasin apparaît sur la carte publique dès que votre inscription est validée.</p>
+      <ul class="signup-list">
+        <li><i data-ico="target"></i><span><b>Le radar</b>les commandes des clients proches de chez vous</span></li>
+        <li><i data-ico="boxes"></i><span><b>Votre stock</b>mis à jour depuis votre téléphone</span></li>
+        <li><i data-ico="handshake"></i><span><b>Vos marques</b>celles que vous choisissez de vendre</span></li>
+        <li><i data-ico="lock"></i><span><b>Votre espace privé</b>avec votre email et votre mot de passe</span></li>
+      </ul>
+      <button class="btn btn-glass" type="button" data-act="demo-store"><i data-ico="play"></i>Voir l'espace d'un magasin</button>
+    </div>
+
+    <form class="signup-form reveal" data-form="pos" novalidate>
+      <div class="form-grid cols-2">
+        <div class="field span-2"><label for="s-company">Nom du point de vente</label><input class="input" id="s-company" name="company" autocomplete="organization" required maxlength="80" placeholder="Ex. Boutique El Amel"></div>
+        <div class="field"><label for="s-name">Votre nom</label><input class="input" id="s-name" name="name" autocomplete="name" required maxlength="80"></div>
+        <div class="field"><label for="s-phone">Téléphone</label><input class="input" id="s-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="05 00 00 00 00"></div>
+        <div class="field span-2"><label for="s-email">Email (pour vous connecter)</label><input class="input" id="s-email" name="email" type="email" autocomplete="email" required></div>
+        <div data-place class="form-grid cols-2 span-2"></div>
+        <div class="field span-2"><span class="label">Les marques que vous voulez vendre</span><div class="pos-brands" data-brands><p class="hint">Chargement…</p></div></div>
+        <div class="field span-2"><label for="s-pass">Mot de passe</label><input class="input" id="s-pass" name="password" type="password" autocomplete="new-password" required minlength="8"><span class="hint">8 caractères au minimum.</span></div>
+      </div>
+      <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <label class="check"><input type="checkbox" name="accept" required><span>J'accepte les <button class="link" type="button" data-act="terms">conditions d'utilisation</button> de la plateforme.</span></label>
+      <p class="form-error" data-error hidden></p>
+      <button class="btn btn-primary btn-lg btn-block" type="submit">Créer mon espace point de vente<i data-ico="arrow-right"></i></button>
+      <p class="signup-foot">Déjà inscrit ? <a class="link" href="../espace/">Se connecter</a></p>
+    </form>
+  </div>
+</section>
+
+<section class="sec sec-faq" id="questions">
+  <div class="sec-head reveal">
+    <p class="eyebrow">Questions fréquentes</p>
+    <h2>Avant de vous inscrire.</h2>
+  </div>
+  <div class="faq reveal">
+    <details><summary>Comment les commandes arrivent-elles ?</summary><p>Un client commande sur la page d'un produit sans choisir de magasin. La commande est proposée d'abord aux points de vente de sa commune qui ont l'article, puis à ceux de sa wilaya, puis à tous. Vous la voyez dans votre espace et par email ; le premier qui la prend la traite.</p></details>
+    <details><summary>Comment suis-je payé ?</summary><p>Le client paie à la livraison (ou au retrait), directement à votre point de vente. Il n'y a pas de paiement en ligne.</p></details>
+    <details><summary>Puis-je choisir les marques que je vends ?</summary><p>Oui, à l'inscription puis à tout moment depuis votre espace (Réseau). Chaque marque valide votre demande ; son catalogue apparaît alors dans votre stock.</p></details>
+    <details><summary>Et si je ne peux pas servir une commande que j'ai prise ?</summary><p>Vous la remettez sur le radar : le stock est rétabli et la commande part vers un autre point de vente proche du client.</p></details>
+    <details><summary>Une marque peut-elle créer l'accès de son magasin ?</summary><p>Oui. Une marque ou un distributeur qui a plusieurs magasins crée l'accès de chacun (email et mot de passe) dans la fiche du point de vente ; chaque magasin a alors son propre espace privé.</p></details>
+  </div>
+</section>
+</main>
+
+<footer class="foot">
+  <div class="foot-in">
+    <div>
+      <a class="logo on-dark" href="../"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#ff5a2b"/><path d="M9 21 16 9.5 23 21" stroke="#fff" stroke-width="2.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 21h14" stroke="#fff" stroke-width="2.3" stroke-linecap="round" opacity=".5"/><circle cx="16" cy="9.5" r="3" fill="#fff"/><circle cx="9" cy="21" r="3" fill="#fff"/><circle cx="23" cy="21" r="3" fill="#fff"/></svg>Maillage</a>
+      <p>Le réseau de vos points de vente, connecté et mesurable.</p>
+    </div>
+    <nav aria-label="Liens">
+      <a href="../explorer/">Carte des points de vente</a>
+      <a href="../explorer/#/produits">Produits</a>
+      <a href="../explorer/#/marques">Marques</a>
+    </nav>
+    <nav aria-label="Entreprises">
+      <a href="../">Marques et distributeurs</a>
+      <a href="../espace/">Connexion</a>
+      <button type="button" data-act="terms">Conditions d'utilisation</button>
+    </nav>
+  </div>
+  <p class="foot-legal">Un projet <a href="https://dehini.com/">dehini.com</a> · Fond de carte © les contributeurs d'OpenStreetMap</p>
+</footer>
+
+<script src="../assets/icons.js" defer></script>
+<script src="../assets/core.js" defer></script>
+<script src="../assets/i18n.js" defer></script>
+<script src="../assets/terms.js" defer></script>
+<script src="../assets/pos.js" defer></script>
+</body>
+</html>

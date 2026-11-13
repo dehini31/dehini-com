@@ -25,17 +25,28 @@
     if (my !== E.seq) throw new Stale();
     return res;
   };
-  const KINDS = () => ({ brand: ML.t('Entreprise / marque'), distributor: ML.t('Distributeur') });
-  const NAV = () => [
+  const KINDS = () => ({ brand: ML.t('Entreprise / marque'), distributor: ML.t('Distributeur'), pos: ML.t('Point de vente') });
+  /** Compte limité à un point de vente (créé par l'entreprise dans la fiche du magasin). */
+  const isStore = E.isStore = () => !!(E.me && E.me.user.store_id);
+  const STORE_NAV = () => [
+    ['', 'layout-dashboard', ML.t('Vue d\'ensemble')],
+    ['radar', 'target', ML.t('Radar')],
+    ['commandes', 'receipt-text', ML.t('Commandes')],
+    ['disponibilite', 'boxes', ML.t('Disponibilité')],
+    ['points-de-vente', 'store', ML.t('Mon point de vente')],
+    ['parametres', 'settings', ML.t('Mon compte')],
+  ];
+  const NAV = () => (isStore() ? STORE_NAV() : [
     ['', 'layout-dashboard', ML.t('Vue d\'ensemble')],
     ['commandes', 'receipt-text', ML.t('Commandes')],
+    ['radar', 'target', ML.t('Radar')],
     ['catalogue', 'package', ML.t('Catalogue')],
     ['points-de-vente', 'store', ML.t('Points de vente')],
     ['disponibilite', 'boxes', ML.t('Disponibilité')],
     ['reseau', 'waypoints', ML.t('Réseau')],
     ['analyses', 'chart-column', ML.t('Analyses')],
     ['parametres', 'settings', ML.t('Paramètres')],
-  ];
+  ]);
   const view = E.view = () => $('#view');
   E.loading = () => { view().innerHTML = '<div class="loading"><div class="spinner"></div></div>'; };
   E.head = (title, sub, actions) => html`<div class="vhead"><div><h1>${title}</h1>${sub ? html`<p class="muted">${sub}</p>` : ''}</div>${actions ? html`<div class="vhead-actions">${actions}</div>` : ''}</div>`;
@@ -136,8 +147,9 @@
       <div class="app">
         <aside class="side" aria-label="Menu">
           <div class="side-top"><a href="#/">${ML.logo('on-dark')}</a>${ML.langToggle('on-dark')}<button class="btn btn-glass btn-icon btn-sm side-close" type="button" data-act="menu" aria-label="Fermer le menu">${icon('x')}</button></div>
-          <a class="side-co" href="#/parametres">${ML.mono(c.name, '#ff5a2b', c.logo)}<span class="grow"><b class="truncate" data-co-name>${c.name}</b><small>${KINDS()[c.kind] || ''}</small></span></a>
-          <nav class="side-nav">${NAV().map(([path, ic, label]) => html`<a href="#/${path}" data-nav="${path}">${icon(ic)}<span>${label}</span>${path === 'commandes' ? html`<em data-todo hidden></em>` : ''}</a>`)}</nav>
+          ${isStore() ? html`<a class="side-co" href="#/points-de-vente">${ML.mono(E.me.store ? E.me.store.name : c.name, '#0e9384')}<span class="grow"><b class="truncate">${E.me.store ? E.me.store.name : ''}</b><small class="truncate">${ML.t('Point de vente')} · ${c.name}</small></span></a>`
+            : html`<a class="side-co" href="#/parametres">${ML.mono(c.name, '#ff5a2b', c.logo)}<span class="grow"><b class="truncate" data-co-name>${c.name}</b><small>${KINDS()[c.kind] || ''}</small></span></a>`}
+          <nav class="side-nav">${NAV().map(([path, ic, label]) => html`<a href="#/${path}" data-nav="${path}">${icon(ic)}<span>${label}</span>${path === 'commandes' ? html`<em data-todo hidden></em>` : path === 'radar' ? html`<em class="is-radar" data-radar hidden></em>` : ''}</a>`)}</nav>
           <div class="side-foot">
             <a href="../explorer/" target="_blank" rel="noopener">${icon('external-link')}<span>${ML.t('Voir la plateforme')}</span></a>
             <button type="button" data-act="logout">${icon('log-out')}<span>${E.me.readonly ? ML.t('Quitter la démonstration') : ML.t('Se déconnecter')}</span></button>
@@ -151,8 +163,8 @@
         <nav class="mtab" aria-label="Navigation">
           <a href="#/" data-nav="">${icon('layout-dashboard')}<span>${ML.t('Accueil')}</span></a>
           <a href="#/commandes" data-nav="commandes">${icon('receipt-text')}<span>${ML.t('Commandes')}</span><em data-todo hidden></em></a>
+          <a href="#/radar" data-nav="radar">${icon('target')}<span>${ML.t('Radar')}</span><em class="is-radar" data-radar hidden></em></a>
           <a href="#/disponibilite" data-nav="disponibilite">${icon('boxes')}<span>${ML.t('Stock')}</span></a>
-          <a href="#/analyses" data-nav="analyses">${icon('chart-column')}<span>${ML.t('Analyses')}</span></a>
           <button type="button" data-act="menu">${icon('menu')}<span>${ML.t('Menu')}</span></button>
         </nav>
         <div class="side-veil" data-act="menu"></div>
@@ -161,6 +173,7 @@
   ML.actions.menu = () => document.body.classList.toggle('side-open');
   ML.actions.logout = async () => { try { await api('logout', { body: {} }); } catch (e) { /* session déjà close */ } location.href = E.me.readonly ? '../' : './'; };
   E.todo = (n) => $$('[data-todo]').forEach((el) => { el.hidden = !n; el.textContent = n > 99 ? '99+' : n; });
+  E.radarBadge = (n) => $$('[data-radar]').forEach((el) => { el.hidden = !n; el.textContent = n > 99 ? '99+' : n; });
 
   async function route() {
     const r = ML.route();
@@ -171,7 +184,8 @@
     if (E.cleanup) { try { E.cleanup(); } catch (e) { /* vue déjà retirée */ } E.cleanup = null; }
     $$('[data-nav]').forEach((a) => a.classList.toggle('is-on', a.dataset.nav === name));
     window.scrollTo(0, 0);
-    const v = E.views[name] || E.views[''];
+    const allowed = !isStore() || STORE_NAV().some(([p]) => p === name);
+    const v = (allowed && E.views[name]) || E.views[''];
     try {
       await v(r);
     } catch (e) {
@@ -193,15 +207,53 @@
   const ACT_ICONS = { order: 'shopping-bag', status: 'refresh-cw', stock: 'boxes', store: 'store', product: 'package', brand: 'tag', partner: 'handshake' };
   E.activityList = (list) => (list.length ? html`<ul class="feed">${list.map((a) => html`<li><span class="feed-ic">${icon(ACT_ICONS[a.kind] || 'circle')}</span><span class="grow">${a.detail}${a.own ? '' : html`<small class="muted"> · ${a.company}</small>`}</span><small class="dim nowrap">${fmt.ago(a.created)}</small></li>`)}</ul>` : html`<p class="muted">${ML.t("L'activité de votre réseau apparaîtra ici.")}</p>`);
 
-  E.views[''] = async () => {
+  const radarBanner = (n) => (n ? html`<a class="radar-banner" href="#/radar">${icon('target')}<span><b>${fmt.plural(n, 'commande à proximité', 'commandes à proximité')}</b><small>${ML.t('Des clients près de vos points de vente attendent : le premier point de vente qui prend la commande la traite.')}</small></span>${icon('chevron-right', 'ico-sm')}</a>` : '');
+
+  /** Vue d'ensemble d'un compte limité à un point de vente. */
+  async function storeHome() {
     E.loading();
     const d = await api('overview');
     const t = d.tiles;
     E.todo(t.to_process);
+    E.radarBadge(t.radar);
+    const s = d.store || {};
+    const tile = (label, value, sub, href, extra) => html`<a class="tile ${extra || ''}" href="${href}"><span class="tile-label">${label}</span><b class="tile-value">${value}</b>${sub ? html`<span class="tile-sub">${sub}</span>` : ''}</a>`;
+    view().innerHTML = html`
+      ${E.head(s.name || ML.t('Mon point de vente'), ML.joinList([ML.communeLabel(s.commune, s.commune_ar), ML.storeZone(s)]),
+        html`<a class="btn btn-line" href="#/disponibilite">${icon('boxes')}${ML.t('Mettre à jour le stock')}</a><a class="btn btn-primary" href="#/commandes">${icon('receipt-text')}${ML.t('Commandes')}${t.to_process ? ' · ' + t.to_process : ''}</a>`)}
+      ${s.status === 'unlocated' ? html`<a class="notice" href="#/points-de-vente">${icon('map-pin')}<span><b>${ML.t('Placez votre point de vente sur la carte.')}</b> ${ML.t('Il apparaîtra sur la carte publique, avec vos horaires et votre téléphone.')}</span></a>` : ''}
+      ${radarBanner(t.radar)}
+      <div class="tiles is-6">
+        ${tile(ML.t('Commandes à traiter'), fmt.num(t.to_process), t.in_progress ? fmt.plural(t.in_progress, 'en cours', 'en cours') : ML.t('Rien en attente'), '#/commandes', t.to_process ? 'is-hot' : '')}
+        ${tile(ML.t('Radar'), fmt.num(t.radar), ML.t('Commandes à proximité'), '#/radar', t.radar ? 'is-hot' : '')}
+        ${tile(ML.t('Commandes · 30 jours'), fmt.num(t.orders30), fmt.compact(t.revenue30) + ' ' + ML.boot.config.currency, '#/commandes?s=all')}
+        ${tile(ML.t('Références en stock'), fmt.num(t.instock) + ' / ' + fmt.num(t.refs), t.low_stock ? fmt.plural(t.low_stock, 'référence', 'références') + ' ' + ML.t('à réapprovisionner') : ML.t('Stock à jour'), '#/disponibilite')}
+      </div>
+      <div class="cols">
+        <section class="card card-pad">
+          <div class="card-head"><h2 class="card-title">${ML.t('Dernières commandes')}</h2><a class="link" href="#/commandes?s=all">${ML.t('Tout voir')}</a></div>
+          ${d.recent.length ? html`<ul class="olist">${d.recent.map(orderRow)}</ul>` : html`<div class="empty">${icon('receipt-text')}<h3>${ML.t('Pas encore de commande')}</h3><p>${ML.t('Les commandes de vos clients et celles que vous prenez sur le radar apparaissent ici.')}</p></div>`}
+        </section>
+        ${d.low.length ? html`<section class="card card-pad">
+          <div class="card-head"><h2 class="card-title">${ML.t('Stock à surveiller')}</h2><a class="link" href="#/disponibilite">${ML.t('Mettre à jour')}</a></div>
+          <ul class="lowlist">${d.low.slice(0, 6).map((l) => html`<li><span class="grow"><b>${l.product}</b>${l.option ? html` <span class="muted">· ${l.option}</span>` : ''}</span><span class="badge ${l.qty === 0 ? 'badge-bad' : 'badge-warn'}">${l.qty === 0 ? ML.t('Rupture') : ML.t('Reste') + ' ' + l.qty}</span></li>`)}</ul>
+        </section>` : ''}
+      </div>`;
+  }
+
+  E.views[''] = async () => {
+    if (isStore()) return storeHome();
+    E.loading();
+    const d = await api('overview');
+    const t = d.tiles;
+    E.todo(t.to_process);
+    E.radarBadge(t.radar);
     const brand = isBrand();
+    const pos = E.me.company.kind === 'pos';
     const steps = brand
       ? [['brand', ML.t('Créer votre marque'), ML.t('Nom, couleur et présentation.'), '#/catalogue?t=marques'], ['product', ML.t('Ajouter un produit'), ML.t('Photos, prix, tailles et couleurs.'), '#/catalogue/produit/nouveau'], ['store', ML.t('Ajouter un point de vente'), ML.t('Adresse, horaires et position sur la carte.'), '#/points-de-vente/nouveau'], ['stock', ML.t('Indiquer la disponibilité'), ML.t('Ce qui est en stock, magasin par magasin.'), '#/disponibilite']]
-      : [['store', ML.t('Ajouter un point de vente'), ML.t('Adresse, horaires et position sur la carte.'), '#/points-de-vente/nouveau'], ['partner', ML.t('Rejoindre le réseau d\'une marque'), ML.t('Demandez à distribuer son catalogue.'), '#/reseau'], ['stock', ML.t('Indiquer la disponibilité'), ML.t('Ce qui est en stock, magasin par magasin.'), '#/disponibilite']];
+      : pos ? [['located', ML.t('Placer votre point de vente sur la carte'), ML.t('Pour apparaître sur la carte publique.'), '#/points-de-vente'], ['partner', ML.t('Travailler avec des marques'), ML.t('Demandez à référencer leur catalogue.'), '#/reseau'], ['stock', ML.t('Indiquer la disponibilité'), ML.t('Ce que vous avez en stock : le radar vous propose les commandes proches.'), '#/disponibilite']]
+        : [['store', ML.t('Ajouter un point de vente'), ML.t('Adresse, horaires et position sur la carte.'), '#/points-de-vente/nouveau'], ['partner', ML.t('Rejoindre le réseau d\'une marque'), ML.t('Demandez à distribuer son catalogue.'), '#/reseau'], ['stock', ML.t('Indiquer la disponibilité'), ML.t('Ce qui est en stock, magasin par magasin.'), '#/disponibilite']];
     const done = steps.filter(([k]) => d.steps[k]).length;
     const next = steps.find(([k]) => !d.steps[k]);
     const tile = (label, value, sub, href, extra) => html`<a class="tile ${extra || ''}" href="${href}"><span class="tile-label">${label}</span><b class="tile-value">${value}</b>${sub ? html`<span class="tile-sub">${sub}</span>` : ''}</a>`;
@@ -216,6 +268,7 @@
           </div>
           <ol class="onboard-steps">${steps.map(([k, title, sub, href], i) => html`<li class="${d.steps[k] ? 'is-done' : ''} ${next && next[0] === k ? 'is-next' : ''}"><a href="${href}"><i>${d.steps[k] ? icon('check', 'ico-sm') : i + 1}</i><span><b>${title}</b><small>${sub}</small></span>${icon('chevron-right', 'ico-sm')}</a></li>`)}</ol>
         </section>` : ''}
+      ${radarBanner(t.radar)}
       <div class="tiles is-6">
         ${tile(ML.t('Commandes à traiter'), fmt.num(t.to_process), t.in_progress ? fmt.plural(t.in_progress, 'en cours', 'en cours') : ML.t('Rien en attente'), '#/commandes', t.to_process ? 'is-hot' : '')}
         <a class="tile" href="#/analyses"><span class="tile-label">${ML.t('Commandes · 30 jours')}</span><b class="tile-value">${fmt.num(t.orders30)}</b><span class="tile-sub">${ML.charts.spark(d.trend.orders, ML.charts.C.orders)}<span class="sr">${ML.t('Évolution sur 14 jours')}</span></span></a>
@@ -263,18 +316,18 @@
       const d = await api('orders', { params: { status: F.status, store: F.store, q: F.q } });
       const c = d.counts;
       const n = { open: c.pending + c.confirmed + c.ready + c.shipped, all: Object.values(c).reduce((a, b) => a + b, 0) };
-      E.todo(c.pending);
+      E.todo(d.todo);
       $('[data-tabs]').innerHTML = html`${O_TABS().map(([k, label]) => html`<button class="chip ${F.status === k ? 'is-on' : ''}" type="button" data-act="otab" data-k="${k}">${label}<small>${fmt.num(n[k] != null ? n[k] : c[k])}</small></button>`)}`;
       $('[data-list]').innerHTML = d.orders.length ? html`
         <div class="tbl-wrap card"><table class="tbl tbl-orders">
           <thead><tr><th>${ML.t('Commande')}</th><th>${ML.t('Client')}</th><th>${ML.t('Article')}</th><th>${ML.t('Point de vente')}</th><th class="r">${ML.t('Total')}</th><th>${ML.t('Statut')}</th></tr></thead>
           <tbody>${d.orders.map((o) => html`<tr class="is-link" data-act="order-open" data-id="${o.id}" tabindex="0">
-            <td data-l="${ML.t('Commande')}"><b>${o.ref}</b><small class="muted">${icon(o.kind === 'reservation' ? 'bookmark-check' : o.mode === 'delivery' ? 'truck' : 'shopping-bag', 'ico-sm')}${ML.kindLabel(o)} · ${fmt.ago(o.created)}</small></td>
-            <td data-l="${ML.t('Client')}">${o.name}<small class="muted">${o.phone}</small></td>
-            <td data-l="${ML.t('Article')}">${o.first}${o.units > 1 ? html` <span class="muted">× ${o.units}</span>` : ''}</td>
-            <td data-l="${ML.t('Point de vente')}">${o.store}</td>
-            <td data-l="${ML.t('Total')}" class="r num"><b>${fmt.price(o.total)}</b></td>
-            <td data-l="${ML.t('Statut')}">${ML.statusBadge(o)}</td>
+            <td data-c="ref"><b>${o.ref}</b><small class="muted">${icon(o.radar ? 'target' : o.kind === 'reservation' ? 'bookmark-check' : o.mode === 'delivery' ? 'truck' : 'shopping-bag', 'ico-sm')}${o.radar ? ML.t('Radar') : ML.kindLabel(o)} · ${fmt.ago(o.created)}</small></td>
+            <td data-c="client">${o.name}<small class="muted">${o.phone}</small></td>
+            <td data-c="article">${o.first}${o.units > 1 ? html` <span class="muted">× ${o.units}</span>` : ''}</td>
+            <td data-c="store">${o.waiting ? html`<span class="muted">${ML.t('Sur le radar')}</span>` : o.store}</td>
+            <td data-c="total" class="r num"><b>${fmt.price(o.total)}</b></td>
+            <td data-c="status">${o.waiting ? html`<span class="badge badge-brand">${icon('target')}${ML.t('Sur le radar')}</span>` : ML.statusBadge(o)}</td>
           </tr>`)}</tbody></table></div>`
         : html`<div class="card"><div class="empty">${icon('receipt-text')}<h3>${F.q ? ML.t('Aucune commande ne correspond') : F.status === 'open' ? ML.t('Aucune commande en cours') : ML.t('Aucune commande ici')}</h3><p>${F.status === 'open' && !F.q ? ML.t("Tout est traité. Les nouvelles commandes arrivent ici dès qu'un client valide sa demande.") : ML.t("Changez de filtre pour en voir d'autres.")}</p></div></div>`;
     };
@@ -293,19 +346,33 @@
     try { o = (await api('order_get', { params: { id } })).order; } catch (e) { if (!(e instanceof Stale)) ML.fail(e); return; }
     const body = (ord) => html`
       <div class="odetail">
-        <div class="row row-wrap between">${ML.statusBadge(ord)}<span class="muted">${ML.kindLabel(ord)} · ${fmt.time(ord.created)}</span></div>
+        <div class="row row-wrap between"><span class="row">${ord.waiting ? html`<span class="badge badge-brand">${icon('target')}${ML.t('Sur le radar')}</span>` : ML.statusBadge(ord)}${ord.radar ? html`<span class="badge badge-line">${icon('target')}${ML.t('Commande radar')}</span>` : ''}</span><span class="muted">${ML.kindLabel(ord)} · ${fmt.time(ord.created)}</span></div>
+        ${ord.waiting ? html`<p class="notice is-radar">${icon('target')}<span>${ML.t("Aucun point de vente ne l'a encore prise : elle est proposée à ceux qui ont l'article, du plus proche du client au plus loin. Vous pouvez l'annuler si vous ne pouvez pas la servir.")}</span></p>` : ''}
+        ${ord.foreign && ord.store ? html`<p class="notice">${icon('store')}<span>${ML.t('Prise en charge par')} <b>${ord.store.name}</b>. ${ML.t('Ce point de vente la traite et vous suivez son avancement ici.')}</span></p>` : ''}
         ${ord.kind === 'reservation' && ord.expires && ord.next.length ? html`<p class="notice">${icon('clock')}<span>${ML.t("Article à garder de côté jusqu'au")} <b>${fmt.time(ord.expires)}</b>. ${ML.t('Passé ce délai, la réservation est annulée et le stock libéré.')}</span></p>` : ''}
         <ul class="lines">${ord.items.map((i) => html`<li><span>${i.qty} × <b>${i.name}</b>${[i.size, i.color].filter(Boolean).length ? html`<small class="muted"> · ${[i.size, i.color].filter(Boolean).join(' · ')}</small>` : ''}<small class="muted"> · ${i.brand}</small></span><b>${fmt.price(i.price * i.qty)}</b></li>`)}<li class="total"><span>${ML.t('Total à encaisser')} ${ord.mode === 'delivery' ? ML.t('à la livraison') : ML.t('en magasin')}</span><b>${fmt.price(ord.total)}</b></li></ul>
         <div class="ogrid">
           <div><span class="label">${ML.t('Client')}</span><p><b>${ord.name}</b><br><a class="link" href="tel:${ord.phone}">${ord.phone}</a>${ord.email ? html`<br><a class="link" href="mailto:${ord.email}">${ord.email}</a>` : ''}</p></div>
-          <div><span class="label">${ord.mode === 'delivery' ? ML.t('Livraison') : ML.t('Retrait')}</span><p>${ord.delivery ? html`${ord.delivery.address}<br>${ord.delivery.city}${ord.delivery.zone ? ' · ' + ord.delivery.zone : ''}` : html`${ord.store ? ord.store.name : ''}<br><span class="muted">${ord.store ? ord.store.city : ''}</span>`}</p></div>
+          <div><span class="label">${ord.mode === 'delivery' ? ML.t('Livraison') : ML.t('Retrait')}</span><p>${ord.delivery ? html`${ord.delivery.address ? html`${ord.delivery.address}<br>` : ''}<b>${ML.communeLabel(ord.delivery.commune || ord.delivery.city, ord.delivery.commune_ar)}</b>${ord.delivery.wilaya && ML.zones[ord.delivery.wilaya] ? ' · ' + ML.zoneName(ML.zones[ord.delivery.wilaya]) : ord.delivery.zone ? ' · ' + ord.delivery.zone : ''}${ord.delivery.address ? '' : html`<br><small class="muted">${ML.t('Adresse à préciser au téléphone')}</small>`}` : html`${ord.store ? ord.store.name : ''}<br><span class="muted">${ord.store ? ord.store.city : ''}</span>`}</p></div>
         </div>
         ${ord.note ? html`<div><span class="label">${ML.t('Message du client')}</span><p class="onote">${ord.note}</p></div>` : ''}
         <div><span class="label">${ML.t('Historique')}</span><ul class="ohist">${ord.events.map((e) => html`<li><i></i><span><b>${ML.statusLabel({ status: e.status, mode: ord.mode })}</b>${e.note ? html` — ${e.note}` : ''}<small class="muted">${fmt.time(e.created)} · ${e.actor === 'client' ? ML.t('client') : e.actor === 'system' ? ML.t('automatique') : ML.t('point de vente')}</small></span></li>`)}</ul></div>
       </div>`;
-    const foot = (ord) => (ord.next.length ? html`${ord.next.filter((s) => s === 'cancelled').map(() => html`<button class="btn btn-danger" type="button" data-next="cancelled">${ML.t('Annuler la')} ${ord.kind === 'reservation' ? ML.t('réservation') : ML.t('commande')}</button>`)}${ord.next.filter((s) => s !== 'cancelled').map((s) => html`<button class="btn btn-primary" type="button" data-next="${s}">${icon('check')}${NEXT_LABEL(ord, s)}</button>`)}` : html`<button class="btn btn-line" type="button" data-close>${ML.t('Fermer')}</button>`);
+    const foot = (ord) => (ord.next.length ? html`${ord.can_release ? html`<button class="btn btn-line" type="button" data-release>${icon('target')}${ML.t('Remettre sur le radar')}</button>` : ''}${ord.next.filter((s) => s === 'cancelled').map(() => html`<button class="btn btn-danger" type="button" data-next="cancelled">${ML.t('Annuler la')} ${ord.kind === 'reservation' ? ML.t('réservation') : ML.t('commande')}</button>`)}${ord.next.filter((s) => s !== 'cancelled').map((s) => html`<button class="btn btn-primary" type="button" data-next="${s}">${icon('check')}${NEXT_LABEL(ord, s)}</button>`)}` : html`<button class="btn btn-line" type="button" data-close>${ML.t('Fermer')}</button>`);
     const m = ML.modal({ title: (o.kind === 'reservation' ? ML.t('Réservation') : ML.t('Commande')) + ' ' + o.ref, body: body(o), foot: foot(o), wide: true });
     m.el.addEventListener('click', async (e) => {
+      const rel = e.target.closest('[data-release]');
+      if (rel) {
+        if (!await ML.confirm(ML.t('Remettre cette commande sur le radar ? Le stock est rétabli et la commande est proposée aux autres points de vente proches du client.'), { ok: ML.t('Remettre sur le radar') })) return;
+        ML.busy(rel, true);
+        const ok = await E.send('radar_release', { id: o.id });
+        ML.busy(rel, false);
+        if (!ok) return;
+        m.close();
+        ML.toast(ML.t('Commande remise sur le radar.'), 'good');
+        if (E.afterOrder) E.afterOrder(); else E.reload();
+        return;
+      }
       const b = e.target.closest('[data-next]');
       if (!b) return;
       const status = b.dataset.next;
@@ -327,6 +394,7 @@
     });
   }
   ML.actions['order-open'] = (el) => openOrder(+el.dataset.id);
+  E.openOrder = openOrder;
   const askReason = () => new Promise((resolve) => {
     let answer = null;
     const m = ML.modal({
@@ -379,6 +447,88 @@
     };
   };
 
+  /* ================================================================ RADAR */
+  const RANKS = () => ({ 1: ML.t('Votre commune'), 2: ML.t('Votre wilaya'), 3: ML.t('Plus loin') });
+  const placeOf = (o) => ML.joinList([ML.communeLabel(o.commune, o.commune_ar), o.wilaya && ML.zones[o.wilaya] ? ML.zoneName(ML.zones[o.wilaya]) : o.zone]);
+  const itemOf = (i) => html`<b>${i.qty > 1 ? i.qty + ' × ' : ''}${i.name}</b><small class="muted">${[i.size, i.color].filter(Boolean).join(' · ')}${i.brand ? ' · ' + i.brand : ''}</small>`;
+
+  E.views.radar = async () => {
+    E.loading();
+    const load = async () => {
+      const d = await api('radar');
+      E.radarBadge(d.nearby.length);
+      const step = d.step_min;
+      const company = !isStore();
+      const levels = html`
+        <ol class="radar-levels">
+          <li><i>1</i><span><b>${ML.t('Sa commune')}</b><small>${ML.t('tout de suite')}</small></span></li>
+          <li><i>2</i><span><b>${ML.t('Sa wilaya')}</b><small>${step ? ML.t('après') + ' ' + step + ' ' + ML.t('min') : ML.t('tout de suite')}</small></span></li>
+          <li><i>3</i><span><b>${ML.t('Tous les points de vente')}</b><small>${step ? ML.t('après') + ' ' + 2 * step + ' ' + ML.t('min') : ML.t('tout de suite')}</small></span></li>
+        </ol>`;
+      const card = (o) => html`
+        <li class="rcard rank-${o.rank}">
+          <div class="rcard-top">
+            ${ML.visual({ name: o.item.name, category: o.item.category, image: o.item.image }, { cls: 'pv-row' })}
+            <span class="grow rcard-item">${itemOf(o.item)}</span>
+            <b class="num rcard-total">${fmt.price(o.total)}</b>
+          </div>
+          <div class="rcard-meta">
+            <span class="badge ${o.rank === 1 ? 'badge-good' : o.rank === 2 ? 'badge-info' : ''}">${icon('map-pin')}${RANKS()[o.rank]}</span>
+            <span class="rcard-place">${icon('truck', 'ico-sm')}${placeOf(o)}</span>
+            <small class="dim">${o.ref} · ${fmt.ago(o.created)}</small>
+          </div>
+          <div class="rcard-act">
+            ${o.stores.length > 1 ? html`<select class="select input-sm" data-claim-store="${o.id}" aria-label="${ML.t('Point de vente qui prend la commande')}">${o.stores.map((st) => html`<option value="${st.id}">${st.name} · ${RANKS()[st.rank]} · ${ML.t('stock')} ${st.qty}</option>`)}</select>`
+              : html`<span class="muted rcard-store">${icon('store', 'ico-sm')}${o.stores[0].name} · ${ML.t('stock')} ${o.stores[0].qty}</span>`}
+            <button class="btn btn-primary" type="button" data-act="claim" data-id="${o.id}" data-store="${o.stores[0].id}">${icon('check')}${ML.t('Prendre la commande')}</button>
+          </div>
+        </li>`;
+      const recv = (o) => {
+        let state;
+        if (o.waiting) {
+          state = o.level ? html`<span class="badge badge-brand">${icon('target')}${ML.t('Sur le radar')} · ${o.level === 1 ? ML.t('sa commune') : o.level === 2 ? ML.t('sa wilaya') : ML.t('partout')}</span>`
+            : html`<span class="badge badge-warn">${icon('triangle-alert')}${ML.t('Aucun point de vente n\'a l\'article')}</span>`;
+        } else if (o.store) {
+          state = html`${ML.statusBadge(o)}<small class="muted">${o.store.own ? '' : ML.t('par') + ' '}${o.store.name}${o.store.own ? '' : ' (' + o.store.company + ')'}</small>`;
+        } else state = ML.statusBadge(o);
+        return html`<li><button class="orow" type="button" data-act="order-open" data-id="${o.id}">
+          <span class="orow-ic">${icon(o.waiting ? 'target' : 'truck')}</span>
+          <span class="grow">${itemOf(o.item)}<small class="muted">${o.ref} · ${o.name} · ${placeOf(o)}</small></span>
+          <span class="orow-end">${state}<small class="dim">${fmt.ago(o.created)}</small></span>
+        </button></li>`;
+      };
+      const waiting = d.received.filter((o) => o.waiting);
+      view().innerHTML = html`
+        ${E.head(ML.t('Radar'), ML.t('Les commandes passées sans choisir de point de vente (fiche produit, page de vente) sont proposées aux points de vente qui ont l\'article, du plus proche du client au plus loin. Le premier qui la prend la traite.'))}
+        <section class="card card-pad radar-how">${levels}</section>
+        <section class="card card-pad">
+          <div class="card-head"><div><h2 class="card-title">${ML.t('À proximité')}</h2><p class="card-sub">${company ? ML.t("Commandes que vos points de vente peuvent prendre (l'article est en stock).") : ML.t("Commandes que votre point de vente peut prendre (l'article est en stock).")}</p></div><button class="btn btn-ghost btn-sm" type="button" data-act="radar-refresh">${icon('refresh-cw', 'ico-sm')}${ML.t('Actualiser')}</button></div>
+          ${d.nearby.length ? html`<ul class="rlist">${d.nearby.map(card)}</ul>` : html`<div class="empty">${icon('target')}<h3>${ML.t('Aucune commande à proximité pour le moment')}</h3><p>${ML.t("Gardez votre stock à jour : dès qu'un client proche commande un article que vous avez, la commande apparaît ici (et par email).")}</p><a class="btn btn-line btn-sm" href="#/disponibilite">${ML.t('Mettre à jour le stock')}</a></div>`}
+        </section>
+        ${company && (d.received.length || isBrand()) ? html`<section class="card card-pad">
+          <div class="card-head"><div><h2 class="card-title">${ML.t('Commandes reçues par vos pages')}</h2><p class="card-sub">${waiting.length ? fmt.plural(waiting.length, 'commande', 'commandes') + ' ' + ML.t('encore sur le radar') + ' · ' : ''}${ML.t('Fiches produit et pages de vente de vos produits.')}</p></div><a class="link" href="#/catalogue">${ML.t('Pages de vente')}</a></div>
+          ${d.received.length ? html`<ul class="olist olist-radar">${d.received.map(recv)}</ul>` : html`<p class="muted">${ML.t('Partagez la page de vente de vos produits (Catalogue → un produit → Page de vente) : les commandes reçues apparaissent ici.')}</p>`}
+        </section>` : ''}`;
+    };
+    ML.actions['radar-refresh'] = () => load().catch(() => {});
+    ML.actions.claim = async (el) => {
+      const sel = $(`[data-claim-store="${el.dataset.id}"]`);
+      const storeId = sel ? +sel.value : +el.dataset.store;
+      ML.busy(el, true);
+      const res = await E.send('radar_claim', { id: +el.dataset.id, store_id: storeId });
+      ML.busy(el, false);
+      if (!res) { load().catch(() => {}); return; }
+      ML.toast(ML.t('Commande prise : appelez le client pour confirmer la livraison.'), 'good');
+      await load();
+      openOrder(res.order.id);
+    };
+    // Les commandes arrivent pendant qu'on regarde : la liste se met à jour toute seule.
+    const timer = setInterval(() => { if (!document.hidden && !document.querySelector('.modal-wrap')) load().catch(() => {}); }, 30000);
+    E.afterOrder = () => load().catch(() => {});
+    E.cleanup = () => { clearInterval(timer); E.afterOrder = null; };
+    await load();
+  };
+
   /* =========================================================== PARAMÈTRES */
   E.upload = async (file) => {
     const fd = new FormData();
@@ -387,6 +537,7 @@
     return res ? res.path : null;
   };
   E.views.parametres = async () => {
+    if (isStore()) return accountView();
     const c = E.me.company;
     const u = E.me.user;
     const zones = ML.boot.zones.slice().sort((a, b) => ML.zoneName(a).localeCompare(ML.zoneName(b), ML.lang === 'ar' ? 'ar' : 'fr'));
@@ -410,23 +561,7 @@
           <p class="form-error" data-error hidden></p>
           <div><button class="btn btn-primary" type="submit">${ML.t('Enregistrer')}</button></div>
         </form>
-        <div class="stack">
-          <form class="card card-pad stack" data-form="account">
-            <h2 class="card-title">${ML.t('Votre compte')}</h2>
-            <div class="field"><label for="a-name">${ML.t('Nom')}</label><input class="input" id="a-name" name="name" required value="${u.name}"></div>
-            <div class="field"><label for="a-email">${ML.t('Email de connexion')}</label><input class="input" id="a-email" name="email" type="email" required value="${u.email}"></div>
-            <div class="field"><label for="a-phone">${ML.t('Téléphone')}</label><input class="input" id="a-phone" name="phone" type="tel" value="${u.phone}"></div>
-            <p class="form-error" data-error hidden></p>
-            <div><button class="btn btn-line" type="submit">${ML.t('Enregistrer')}</button></div>
-          </form>
-          <form class="card card-pad stack" data-form="password">
-            <h2 class="card-title">${ML.t('Mot de passe')}</h2>
-            <div class="field"><label for="p-cur">${ML.t('Mot de passe actuel')}</label><input class="input" id="p-cur" name="current" type="password" autocomplete="current-password"></div>
-            <div class="field"><label for="p-new">${ML.t('Nouveau mot de passe')}</label><input class="input" id="p-new" name="password" type="password" autocomplete="new-password" minlength="8" required><span class="hint">${ML.t('8 caractères au minimum.')}</span></div>
-            <p class="form-error" data-error hidden></p>
-            <div><button class="btn btn-line" type="submit">${ML.t('Changer le mot de passe')}</button></div>
-          </form>
-        </div>
+        <div class="stack">${accountForms(u)}</div>
       </div>`;
     ML.changes['co-logo'] = async (el) => {
       if (!el.files[0]) return;
@@ -438,9 +573,34 @@
       const res = await E.send('company_save', Object.assign(ML.formData(f), { logo }), f);
       if (res) { E.me.company = res.company; $$('[data-co-name]').forEach((n) => { n.textContent = res.company.name; }); ML.toast(ML.t('Entreprise enregistrée.'), 'good'); }
     };
-    ML.forms.account = async (f) => { const res = await E.send('account_save', ML.formData(f), f); if (res) { E.me.user = res.user; ML.toast(ML.t('Compte enregistré.'), 'good'); } };
-    ML.forms.password = async (f) => { if (await E.send('password', ML.formData(f), f)) { f.reset(); ML.toast(ML.t('Mot de passe changé.'), 'good'); } };
+    bindAccount();
   };
+  const accountForms = (u) => html`
+    <form class="card card-pad stack" data-form="account">
+      <h2 class="card-title">${ML.t('Votre compte')}</h2>
+      <div class="field"><label for="a-name">${ML.t('Nom')}</label><input class="input" id="a-name" name="name" required value="${u.name}"></div>
+      <div class="field"><label for="a-email">${ML.t('Email de connexion')}</label><input class="input" id="a-email" name="email" type="email" required value="${u.email}"></div>
+      <div class="field"><label for="a-phone">${ML.t('Téléphone')}</label><input class="input" id="a-phone" name="phone" type="tel" value="${u.phone}"></div>
+      <p class="form-error" data-error hidden></p>
+      <div><button class="btn btn-line" type="submit">${ML.t('Enregistrer')}</button></div>
+    </form>
+    <form class="card card-pad stack" data-form="password">
+      <h2 class="card-title">${ML.t('Mot de passe')}</h2>
+      <div class="field"><label for="p-cur">${ML.t('Mot de passe actuel')}</label><input class="input" id="p-cur" name="current" type="password" autocomplete="current-password"></div>
+      <div class="field"><label for="p-new">${ML.t('Nouveau mot de passe')}</label><input class="input" id="p-new" name="password" type="password" autocomplete="new-password" minlength="8" required><span class="hint">${ML.t('8 caractères au minimum.')}</span></div>
+      <p class="form-error" data-error hidden></p>
+      <div><button class="btn btn-line" type="submit">${ML.t('Changer le mot de passe')}</button></div>
+    </form>`;
+  function bindAccount() {
+    ML.forms.account = async (f) => { const res = await E.send('account_save', ML.formData(f), f); if (res) { E.me.user = Object.assign({}, E.me.user, res.user); ML.toast(ML.t('Compte enregistré.'), 'good'); } };
+    ML.forms.password = async (f) => { if (await E.send('password', ML.formData(f), f)) { f.reset(); ML.toast(ML.t('Mot de passe changé.'), 'good'); } };
+  }
+  function accountView() {
+    view().innerHTML = html`
+      ${E.head(ML.t('Mon compte'), ML.t("Vos identifiants de connexion. Les informations de l'entreprise sont gérées par") + ' ' + E.me.company.name + '.')}
+      <div class="cols">${accountForms(E.me.user)}</div>`;
+    bindAccount();
+  }
 
   /* ------------------------------------------------------------ démarrage */
   (async function init() {

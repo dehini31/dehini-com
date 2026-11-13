@@ -126,9 +126,9 @@ a.tile:hover { border-color: var(--line-2); box-shadow: var(--shadow-1); }
   .tbl-orders thead { display: none; }
   .tbl-orders tr { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; padding: 14px; border-bottom: 1px solid var(--line); }
   .tbl-orders td { padding: 0; border: 0; }
-  .tbl-orders td[data-l="Article"], .tbl-orders td[data-l="Point de vente"] { grid-column: 1 / -1; font-size: 14px; color: var(--ink-2); }
-  .tbl-orders td[data-l="Statut"] { grid-row: 1; grid-column: 2; justify-self: end; }
-  .tbl-orders td[data-l="Total"] { grid-row: 2; grid-column: 2; }
+  .tbl-orders td[data-c="article"], .tbl-orders td[data-c="store"] { grid-column: 1 / -1; font-size: 14px; color: var(--ink-2); }
+  .tbl-orders td[data-c="status"] { grid-row: 1; grid-column: 2; justify-self: end; }
+  .tbl-orders td[data-c="total"] { grid-row: 2; grid-column: 2; }
 }
 
 /* --------------------------------------------------------- vue d'ensemble */
@@ -315,3 +315,48 @@ body.adm #view { max-width: 1280px; padding-top: 26px; }
 .adm-actions { gap: 6px; flex-wrap: nowrap; }
 .adm .switch { align-items: flex-start; }
 .adm .switch small { font-size: 13px; }
+
+/* ----------------------------------------------------------------- radar */
+.side-nav em.is-radar, .mtab em.is-radar { background: #0e9384; }
+.radar-banner { display: flex; align-items: center; gap: 14px; padding: 14px 16px; margin-bottom: 16px; border-radius: var(--radius); background: linear-gradient(120deg, #ecfdf8, #fff); border: 1.5px solid #9fe0d0; color: #075e54; }
+.radar-banner > .ico:first-child { width: 26px; height: 26px; flex: none; color: #0e9384; }
+.radar-banner span { flex: 1; display: grid; gap: 2px; }
+.radar-banner b { font-size: 16px; }
+.radar-banner small { font-size: 13.5px; color: #276b62; }
+.radar-banner:hover { border-color: #0e9384; }
+a.notice { color: #0b3c8c; }
+.radar-how { margin-bottom: 16px; padding-top: 14px; padding-bottom: 14px; }
+.radar-levels { display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 720px) { .radar-levels { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.radar-levels li { display: flex; align-items: center; gap: 10px; }
+.radar-levels i { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-weight: 700; font-size: 13.5px; background: #ecfdf8; color: #0e9384; border: 1.5px solid #9fe0d0; flex: none; }
+.radar-levels span { display: grid; }
+.radar-levels b { font-size: 14.5px; }
+.radar-levels small { font-size: 12.5px; color: var(--ink-2); }
+.rlist { display: grid; gap: 10px; }
+.rcard { border: 1px solid var(--line); border-radius: 14px; padding: 12px; display: grid; gap: 10px; background: var(--surface); }
+.rcard.rank-1 { border-color: #9fe0d0; box-shadow: inset 3px 0 0 #0e9384; }
+.rcard-top { display: flex; align-items: center; gap: 12px; }
+.rcard-item { display: grid; min-width: 0; }
+.rcard-item b { font-size: 15.5px; }
+.rcard-item small, .orow .grow small { display: block; }
+.rcard-total { font-size: 17px; white-space: nowrap; }
+.rcard-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; font-size: 14px; }
+.rcard-place { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
+.rcard-act { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.rcard-act .select { width: auto; max-width: 100%; flex: 1 1 200px; }
+.rcard-store { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
+@media (max-width: 520px) { .rcard-act .btn { width: 100%; } }
+[dir="rtl"] .rcard.rank-1 { box-shadow: inset -3px 0 0 #0e9384; }
+
+/* ------------------------------------------- page de vente, accès du point de vente */
+.share-row { display: flex; gap: 8px; align-items: center; }
+.share-row .input { flex: 1; min-width: 0; font-size: 13.5px; color: var(--ink-2); }
+.access-on { display: flex; gap: 8px; align-items: center; font-size: 14px; font-weight: 600; color: var(--good); }
+/* Commandes reçues : sur téléphone, l'état passe sous l'article plutôt que d'élargir la ligne. */
+.olist .orow-end small { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 560px) {
+  .olist-radar .orow { flex-wrap: wrap; }
+  .olist-radar .orow-end { flex: 1 1 100%; justify-items: start; padding-inline-start: 50px; }
+}
+.rcard-act .select { min-width: 0; }

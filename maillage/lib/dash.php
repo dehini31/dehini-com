@@ -738,6 +738,7 @@ function dash_overview(int $cid, string $kind): array
         'store' => (int) $one("SELECT COUNT(*) FROM stores WHERE company_id = ? AND status <> 'archived'", [$cid]) > 0,
         'stock' => (int) $one('SELECT COUNT(*) FROM stock k JOIN stores s ON s.id = k.store_id WHERE s.company_id = ?', [$cid]) > 0,
         'partner' => count(partner_cids($cid, $kind)) > 0,
+        'located' => (int) $one("SELECT COUNT(*) FROM stores WHERE company_id = ? AND status = 'unlocated'", [$cid]) === 0,
     ];
     $rev = (float) $one("SELECT COALESCE(SUM(i.price * i.qty), 0) FROM order_items i JOIN orders o ON o.id = i.order_id
         WHERE o.created >= ? AND o.status <> 'cancelled' AND (o.seller_cid = ? OR i.product_cid = ?)", [$since, $cid, $cid]);

@@ -14,6 +14,9 @@ body.nav-open .nav-links { transform: none; opacity: 1; pointer-events: auto; }
 .nav-links a { padding: 13px 10px; border-radius: 10px; color: rgba(255, 255, 255, .86); font-weight: 600; font-size: 16.5px; }
 .nav-links a:hover { background: rgba(255, 255, 255, .08); color: #fff; }
 .nav-login-d { display: none; }
+.who-more { display: inline-block; margin-top: 12px; font-size: 14.5px; }
+/* Petit téléphone : le bouton d'inscription reste dans la page (juste en dessous), le menu reste visible. */
+@media (max-width: 419.98px) { .nav .nav-cta { display: none; } }
 .nav-burger { width: 42px; height: 42px; display: grid; place-items: center; color: #fff; border-radius: 10px; }
 .nav-burger .ico { width: 22px; height: 22px; }
 @media (min-width: 1000px) {
