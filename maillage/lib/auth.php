@@ -138,6 +138,19 @@ function require_user(): array
     return $u;
 }
 
+/** Compte de l'entreprise obligatoire : un compte limité à un point de vente est refusé. */
+function require_company(): array
+{
+    $u = require_user();
+    if ((int) ($u['store_id'] ?? 0)) fail('Cette action est réservée au compte de l\'entreprise.', 403, 'forbidden');
+    return $u;
+}
+/** Point de vente auquel le compte est limité (0 = compte de l'entreprise, tous ses points de vente). */
+function user_store(array $u): int
+{
+    return (int) ($u['store_id'] ?? 0);
+}
+
 /** Propriétaire du site : la session de /admin (même mot de passe), comme les autres projets. */
 function require_admin(): void
 {
@@ -161,10 +174,22 @@ function company_row(int $id): ?array
 function me_view(array $u, string $csrf): array
 {
     $c = company_row((int) $u['company_id']) ?? [];
+    $sid = (int) ($u['store_id'] ?? 0);
+    $store = null;
+    if ($sid) {
+        $s = db()->prepare('SELECT id, name, status, city, commune, wilaya FROM stores WHERE id = ?');
+        $s->execute([$sid]);
+        if ($st = $s->fetch()) {
+            $store = ['id' => (int) $st['id'], 'name' => (string) $st['name'], 'status' => (string) $st['status'], 'city' => (string) $st['city'],
+                'commune' => (string) $st['commune'], 'wilaya' => (string) $st['wilaya']];
+        }
+    }
     return [
         'user' => [
             'id' => (int) $u['id'], 'name' => (string) $u['name'], 'email' => (string) $u['email'], 'phone' => (string) $u['phone'],
+            'store_id' => $sid,
         ],
+        'store' => $store,
         'company' => company_view($c),
         'csrf' => $csrf,
         'readonly' => (bool) ($u['s_ro'] ?? 0),

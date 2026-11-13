@@ -23,7 +23,7 @@ function analytics(int $cid, string $kind, int $days): array
     for ($i = 0; $i < $days; $i++) $dayKeys[] = date('Y-m-d', $from + $i * 86400);
     $zero = array_fill_keys($dayKeys, 0);
 
-    $scope = array_merge([$cid], $kind === 'distributor' ? partner_cids($cid, $kind) : []);
+    $scope = array_merge([$cid], $kind !== 'brand' ? partner_cids($cid, $kind) : []);
     $scopeIn = implode(',', $scope);
 
     /* --- points de vente du réseau ------------------------------------------- */

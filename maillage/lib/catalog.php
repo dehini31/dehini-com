@@ -34,6 +34,7 @@ function store_view(array $s, array $brandIds = []): array
     return [
         'id' => (int) $s['id'], 'name' => (string) $s['name'], 'type' => (string) $s['type'],
         'address' => (string) $s['address'], 'city' => (string) $s['city'], 'wilaya' => (string) $s['wilaya'],
+        'commune' => (string) ($s['commune'] ?? ''), 'commune_ar' => commune_ar((string) $s['wilaya'], (string) ($s['commune'] ?? '')),
         'zone' => zone_name((string) $s['wilaya']),
         'lat' => (float) $s['lat'], 'lng' => (float) $s['lng'], 'phone' => (string) $s['phone'], 'email' => (string) $s['email'],
         'hours' => hours_clean(jdec($s['hours'])),
@@ -323,6 +324,7 @@ function public_product(string $slug): ?array
     $card['variants'] = array_map(function ($v) use ($p) { return variant_view($v, (float) $p['price']); }, $vs);
     $card['brand']['logo'] = (string) $p['b_logo'];
     $card['company'] = ['id' => (int) $p['company_id'], 'name' => (string) $p['c_name']];
+    $card['landing'] = landing_clean(jdec($p['landing'] ?? '{}'));
     return $card;
 }
 

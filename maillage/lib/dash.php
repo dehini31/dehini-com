@@ -114,12 +114,25 @@ function dash_products(int $cid): array
     return $out;
 }
 
+/** Textes de la page de vente d'un produit : accroche, argumentaire, points forts. */
+function landing_clean($l): array
+{
+    $l = is_array($l) ? $l : [];
+    $points = [];
+    foreach ((array) ($l['points'] ?? []) as $pt) {
+        $pt = line_clean($pt, 140);
+        if ($pt !== '') $points[] = $pt;
+    }
+    return ['headline' => line_clean($l['headline'] ?? '', 120), 'pitch' => str_clean($l['pitch'] ?? '', 1200), 'points' => array_slice($points, 0, 6)];
+}
+
 function dash_product(int $cid, int $id): ?array
 {
     $p = own_row('products', $cid, $id);
     if (!$p) return null;
     $vs = variants_of([$id])[$id] ?? [];
     return [
+        'landing' => landing_clean(jdec($p['landing'] ?? '{}')),
         'id' => $id, 'brand_id' => (int) $p['brand_id'], 'name' => (string) $p['name'], 'slug' => (string) $p['slug'],
         'category' => (string) $p['category'], 'about' => (string) $p['about'], 'price' => (float) $p['price'],
         'images' => array_values(array_filter(jdec($p['images']), 'is_string')), 'specs' => array_values(array_filter(jdec($p['specs']), 'is_array')),
@@ -168,6 +181,7 @@ function product_save(int $cid, array $b): array
         if ($k !== '' && $v !== '') $specs[] = ['k' => $k, 'v' => $v];
     }
     $specs = array_slice($specs, 0, 20);
+    $landing = json_encode(landing_clean($b['landing'] ?? ($old ? jdec($old['landing'] ?? '{}') : [])), JSON_UNESCAPED_UNICODE);
 
     $variants = [];
     $seen = [];
@@ -195,11 +209,11 @@ function product_save(int $cid, array $b): array
     tx_begin();
     try {
         if ($id) {
-            $pdo->prepare('UPDATE products SET brand_id = ?, name = ?, category = ?, about = ?, price = ?, images = ?, specs = ?, status = ?, updated = ? WHERE id = ?')
-                ->execute([$brand['id'], $name, $cat, str_clean($b['about'] ?? '', 3000), $price, json_encode($images), json_encode($specs, JSON_UNESCAPED_UNICODE), $status, $now, $id]);
+            $pdo->prepare('UPDATE products SET brand_id = ?, name = ?, category = ?, about = ?, price = ?, images = ?, specs = ?, status = ?, landing = ?, updated = ? WHERE id = ?')
+                ->execute([$brand['id'], $name, $cat, str_clean($b['about'] ?? '', 3000), $price, json_encode($images), json_encode($specs, JSON_UNESCAPED_UNICODE), $status, $landing, $now, $id]);
         } else {
-            $pdo->prepare('INSERT INTO products (company_id, brand_id, name, slug, category, about, price, images, specs, status, created, updated) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-                ->execute([$cid, $brand['id'], $name, unique_slug('products', $name), $cat, str_clean($b['about'] ?? '', 3000), $price, json_encode($images), json_encode($specs, JSON_UNESCAPED_UNICODE), $status, $now, $now]);
+            $pdo->prepare('INSERT INTO products (company_id, brand_id, name, slug, category, about, price, images, specs, status, landing, created, updated) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+                ->execute([$cid, $brand['id'], $name, unique_slug('products', $name), $cat, str_clean($b['about'] ?? '', 3000), $price, json_encode($images), json_encode($specs, JSON_UNESCAPED_UNICODE), $status, $landing, $now, $now]);
             $id = (int) $pdo->lastInsertId();
         }
         $existing = [];
@@ -245,11 +259,14 @@ function product_delete(int $cid, int $id): void
 
 /* ---------------------------------------------------------- points de vente */
 
-function dash_stores(int $cid): array
+/** Points de vente de l'entreprise ($only : un seul, pour un compte limité à ce point de vente). */
+function dash_stores(int $cid, int $only = 0): array
 {
     $pdo = db();
-    $s = $pdo->prepare("SELECT s.*, c.name AS c_name, c.kind AS c_kind, c.demo AS c_demo FROM stores s JOIN companies c ON c.id = s.company_id
-        WHERE s.company_id = ? AND s.status <> 'archived' ORDER BY s.name COLLATE NOCASE");
+    $s = $pdo->prepare("SELECT s.*, c.name AS c_name, c.kind AS c_kind, c.demo AS c_demo,
+            (SELECT u.email FROM users u WHERE u.store_id = s.id ORDER BY u.id LIMIT 1) AS login_email
+        FROM stores s JOIN companies c ON c.id = s.company_id
+        WHERE s.company_id = ? AND s.status <> 'archived'" . ($only ? ' AND s.id = ' . $only : '') . ' ORDER BY s.name COLLATE NOCASE');
     $s->execute([$cid]);
     $refs = [];
     $q = $pdo->prepare('SELECT k.store_id AS sid, COUNT(*) AS refs, SUM(CASE WHEN k.qty > 0 THEN 1 ELSE 0 END) AS instock
@@ -267,15 +284,28 @@ function dash_stores(int $cid): array
         $v['refs'] = (int) ($refs[(int) $st['id']]['refs'] ?? 0);
         $v['instock'] = (int) ($refs[(int) $st['id']]['instock'] ?? 0);
         $v['open_orders'] = $open[(int) $st['id']] ?? 0;
+        // L'adresse de connexion du point de vente n'est montrée qu'au compte de l'entreprise.
+        if (!$only) $v['login_email'] = (string) ($st['login_email'] ?? '');
         $out[] = $v;
     }
     return $out;
 }
 
-function store_save(int $cid, array $b): array
+/**
+ * Enregistre un point de vente. $o :
+ *   strict     saisie depuis l'espace : la commune est exigée, et un accès (email + mot de passe)
+ *              à la création ;
+ *   only       compte limité à ce point de vente : il ne modifie que le sien, sans toucher à l'accès ;
+ *   unlocated  position à confirmer (inscription d'un point de vente sans épingle) : il reçoit
+ *              les commandes radar mais n'est pas encore sur la carte publique.
+ */
+function store_save(int $cid, array $b, array $o = []): array
 {
     $pdo = db();
+    $strict = !empty($o['strict']);
+    $only = (int) ($o['only'] ?? 0);
     $id = (int) ($b['id'] ?? 0);
+    if ($only && $id !== $only) bad('Point de vente introuvable.');
     if ($id && !own_row('stores', $cid, $id)) bad('Point de vente introuvable.');
     $name = line_clean($b['name'] ?? '', 80);
     if (mb_strlen($name) < 2) bad('Donnez un nom au point de vente.');
@@ -285,30 +315,83 @@ function store_save(int $cid, array $b): array
     $zone = zone_code($b['wilaya'] ?? '');
     if ($zone === '') $zone = zone_nearest($lat, $lng);
     $city = line_clean($b['city'] ?? '', 80);
+    $commune = commune_clean($zone, $b['commune'] ?? '');
+    if ($commune === '' && !$strict) $commune = commune_guess($zone, $city);
+    if ($commune === '' && $strict) bad('Choisissez la commune du point de vente.');
+    if ($city === '') $city = $commune;
     if ($city === '') bad('Indiquez la ville.');
     $email = strtolower(line_clean($b['email'] ?? '', 190));
     if ($email !== '' && !valid_email($email)) bad('Adresse email invalide.');
+
+    // Accès du point de vente : un compte limité à ce magasin (son espace privé).
+    $login = $only ? '' : strtolower(line_clean($b['login_email'] ?? '', 190));
+    $pass = !$only && is_string($b['login_password'] ?? null) ? (string) $b['login_password'] : '';
+    $account = null;
+    if ($id) {
+        $q = $pdo->prepare('SELECT * FROM users WHERE store_id = ? ORDER BY id LIMIT 1');
+        $q->execute([$id]);
+        $account = $q->fetch() ?: null;
+    }
+    if (!$only) {
+        if (!$id && $strict && $login === '') bad('Indiquez l\'email de connexion du point de vente.');
+        if ($login !== '' && !valid_email($login)) bad('L\'email de connexion du point de vente est invalide.');
+        if ($login !== '') {
+            $q = $pdo->prepare('SELECT 1 FROM users WHERE email = ? AND id <> ?');
+            $q->execute([$login, $account ? (int) $account['id'] : 0]);
+            if ($q->fetchColumn()) bad('Cet email de connexion est déjà utilisé par un autre compte.');
+        }
+        if ($login !== '' && !$account && $pass === '') bad('Choisissez le mot de passe du point de vente.');
+        if ($pass !== '' && (strlen($pass) < 8 || strlen($pass) > 200)) bad('Le mot de passe du point de vente doit contenir au moins 8 caractères.');
+        if ($pass !== '' && $login === '' && !$account) bad('Indiquez l\'email de connexion du point de vente.');
+    }
+
     $pickup = !empty($b['pickup']) ? 1 : 0;
     $delivery = !empty($b['delivery']) ? 1 : 0;
     $reserve = !empty($b['reserve']) ? 1 : 0;
+    $status = !empty($o['unlocated']) ? 'unlocated' : (($b['status'] ?? '') === 'closed' ? 'closed' : 'active');
+    $phone = phone_clean($b['phone'] ?? '');
     $fields = [
-        $name, isset(MLG_STORE_TYPES[$b['type'] ?? '']) ? (string) $b['type'] : 'magasin', line_clean($b['address'] ?? '', 200), $city, $zone,
-        round($lat, 6), round($lng, 6), phone_clean($b['phone'] ?? ''), $email, json_encode(hours_clean($b['hours'] ?? [])),
-        $pickup, $delivery, $reserve, ($b['status'] ?? '') === 'closed' ? 'closed' : 'active',
+        $name, isset(MLG_STORE_TYPES[$b['type'] ?? '']) ? (string) $b['type'] : 'magasin', line_clean($b['address'] ?? '', 200), $city, $commune, $zone,
+        round($lat, 6), round($lng, 6), $phone, $email, json_encode(hours_clean($b['hours'] ?? [])),
+        $pickup, $delivery, $reserve, $status,
     ];
-    if ($id) {
-        $pdo->prepare('UPDATE stores SET name = ?, type = ?, address = ?, city = ?, wilaya = ?, lat = ?, lng = ?, phone = ?, email = ?, hours = ?, pickup = ?, delivery = ?, reserve = ?, status = ? WHERE id = ?')
-            ->execute(array_merge($fields, [$id]));
-    } else {
-        $n = $pdo->prepare("SELECT COUNT(*) FROM stores WHERE company_id = ? AND status <> 'archived'");
-        $n->execute([$cid]);
-        if ((int) $n->fetchColumn() >= MAX_STORES) bad('Nombre maximal de points de vente atteint.');
-        $pdo->prepare('INSERT INTO stores (name, type, address, city, wilaya, lat, lng, phone, email, hours, pickup, delivery, reserve, status, company_id, created) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-            ->execute(array_merge($fields, [$cid, time()]));
-        $id = (int) $pdo->lastInsertId();
-        log_activity($cid, 'store', 'Point de vente ajouté : ' . $name . ' · ' . $city, $id);
+    $now = time();
+    $created = false;
+    tx_begin();
+    try {
+        if ($id) {
+            $pdo->prepare('UPDATE stores SET name = ?, type = ?, address = ?, city = ?, commune = ?, wilaya = ?, lat = ?, lng = ?, phone = ?, email = ?, hours = ?, pickup = ?, delivery = ?, reserve = ?, status = ? WHERE id = ?')
+                ->execute(array_merge($fields, [$id]));
+        } else {
+            $n = $pdo->prepare("SELECT COUNT(*) FROM stores WHERE company_id = ? AND status <> 'archived'");
+            $n->execute([$cid]);
+            if ((int) $n->fetchColumn() >= MAX_STORES) bad('Nombre maximal de points de vente atteint.');
+            $pdo->prepare('INSERT INTO stores (name, type, address, city, commune, wilaya, lat, lng, phone, email, hours, pickup, delivery, reserve, status, company_id, created) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+                ->execute(array_merge($fields, [$cid, $now]));
+            $id = (int) $pdo->lastInsertId();
+            $created = true;
+        }
+        if ($account) {
+            if ($login !== '' && $login !== $account['email']) $pdo->prepare('UPDATE users SET email = ? WHERE id = ?')->execute([$login, $account['id']]);
+            if ($pass !== '') {
+                $pdo->prepare('UPDATE users SET pass = ?, rhash = NULL, rexp = 0 WHERE id = ?')->execute([password_hash($pass, PASSWORD_DEFAULT), $account['id']]);
+                $pdo->prepare('DELETE FROM sessions WHERE uid = ?')->execute([$account['id']]); // l'ancien mot de passe ne sert plus nulle part
+            }
+        } elseif ($login !== '') {
+            $pdo->prepare('INSERT INTO users (company_id, store_id, email, name, phone, pass, created) VALUES (?, ?, ?, ?, ?, ?, ?)')
+                ->execute([$cid, $id, $login, $name, $phone, password_hash($pass, PASSWORD_DEFAULT), $now]);
+        }
+        tx_commit();
+    } catch (InvalidArgumentException $e) {
+        tx_rollback();
+        throw $e;
+    } catch (Throwable $e) {
+        tx_rollback();
+        if (strpos($e->getMessage(), 'users.email') !== false) bad('Cet email de connexion est déjà utilisé par un autre compte.');
+        throw $e;
     }
-    foreach (dash_stores($cid) as $v) {
+    if ($created) log_activity($cid, 'store', 'Point de vente ajouté : ' . $name . ' · ' . $city, $id);
+    foreach (dash_stores($cid, $only) as $v) {
         if ($v['id'] === $id) return $v;
     }
     return [];
@@ -325,6 +408,7 @@ function store_delete(int $cid, int $id): void
     if ((int) $n->fetchColumn() > 0) bad('Ce point de vente a des commandes en cours. Terminez-les ou annulez-les d\'abord.');
     $n = $pdo->prepare('SELECT COUNT(*) FROM orders WHERE store_id = ?');
     $n->execute([$id]);
+    $pdo->prepare('DELETE FROM users WHERE store_id = ?')->execute([$id]); // son accès disparaît avec lui (sessions comprises)
     if ((int) $n->fetchColumn() > 0) {
         $pdo->prepare("UPDATE stores SET status = 'archived' WHERE id = ?")->execute([$id]);
         $pdo->prepare('DELETE FROM stock WHERE store_id = ?')->execute([$id]);
@@ -349,7 +433,7 @@ function partner_cids(int $cid, string $kind): array
 /** Entreprises dont ce compte peut référencer les produits : la sienne + les marques qu'il distribue. */
 function stockable_cids(int $cid, string $kind): array
 {
-    return array_merge([$cid], $kind === 'distributor' ? partner_cids($cid, $kind) : []);
+    return array_merge([$cid], $kind !== 'brand' ? partner_cids($cid, $kind) : []);
 }
 
 /** Points de vente du réseau : les siens + (pour une marque) ceux des distributeurs qui référencent ses produits. */
@@ -405,8 +489,8 @@ function network_get(int $cid, string $kind): array
     $demo = (int) (company_row($cid)['demo'] ?? 0);
     $q = $pdo->prepare("SELECT c.*, (SELECT COUNT(*) FROM stores s WHERE s.company_id = c.id AND s.status = 'active') AS n_stores,
             (SELECT COUNT(*) FROM products p WHERE p.company_id = c.id AND p.status = 'active') AS n_products
-        FROM companies c WHERE c.kind = ? AND c.status = 'active' AND c.id <> ? AND c.demo = ? ORDER BY c.name COLLATE NOCASE LIMIT 300");
-    $q->execute([$kind === 'brand' ? 'distributor' : 'brand', $cid, $demo]);
+        FROM companies c WHERE " . ($kind === 'brand' ? "c.kind <> 'brand'" : "c.kind = 'brand'") . " AND c.status = 'active' AND c.id <> ? AND c.demo = ? ORDER BY c.name COLLATE NOCASE LIMIT 300");
+    $q->execute([$cid, $demo]);
     foreach ($q as $c) {
         if (isset($linked[(int) $c['id']])) continue;
         $dir[] = ['id' => (int) $c['id'], 'name' => (string) $c['name'], 'kind' => (string) $c['kind'], 'city' => (string) $c['city'],
@@ -435,13 +519,15 @@ function activity_feed(int $cid, int $limit): array
     return $out;
 }
 
-function partner_request(int $cid, string $kind, int $otherId): void
+/** $atSignup : demande posée à l'inscription d'un point de vente, avant la validation de son espace. */
+function partner_request(int $cid, string $kind, int $otherId, bool $atSignup = false): void
 {
     $pdo = db();
     $o = company_row($otherId);
     $me = company_row($cid);
-    if (!$o || $o['status'] !== 'active' || $o['kind'] === $kind || $otherId === $cid || (int) $o['demo'] !== (int) $me['demo']) bad('Entreprise introuvable.');
-    if ($me['status'] !== 'active') bad('Votre espace doit d\'abord être validé pour proposer un partenariat.');
+    // Un partenariat lie toujours une marque et un revendeur (distributeur ou point de vente).
+    if (!$o || $o['status'] !== 'active' || (($o['kind'] === 'brand') === ($kind === 'brand')) || $otherId === $cid || (int) $o['demo'] !== (int) $me['demo']) bad('Entreprise introuvable.');
+    if ($me['status'] !== 'active' && !$atSignup) bad('Votre espace doit d\'abord être validé pour proposer un partenariat.');
     $brand = $kind === 'brand' ? $cid : $otherId;
     $dist = $kind === 'brand' ? $otherId : $cid;
     $s = $pdo->prepare('SELECT * FROM partnerships WHERE brand_cid = ? AND dist_cid = ?');
@@ -571,14 +657,22 @@ function stock_save(int $cid, string $kind, int $storeId, array $items): int
 
 /* ---------------------------------------------------------------- commandes */
 
+/**
+ * Commandes de l'entreprise : celles que ses points de vente traitent, et celles reçues par ses
+ * pages (radar) même quand un point de vente partenaire les a prises. $f['only'] : un seul point
+ * de vente (compte limité).
+ */
 function dash_orders(int $cid, array $f): array
 {
-    $where = 'o.seller_cid = ?';
-    $args = [$cid];
+    $only = (int) ($f['only'] ?? 0);
+    $base = $only ? 'o.seller_cid = ? AND o.store_id = ?' : '(o.seller_cid = ? OR o.brand_cid = ?)';
+    $baseArgs = $only ? [$cid, $only] : [$cid, $cid];
+    $where = $base;
+    $args = $baseArgs;
     $status = (string) ($f['status'] ?? 'open');
     if ($status === 'open') $where .= " AND o.status IN ('pending','confirmed','ready','shipped')";
     elseif (isset(ORDER_STATUSES[$status])) { $where .= ' AND o.status = ?'; $args[] = $status; }
-    if ((int) ($f['store'] ?? 0)) { $where .= ' AND o.store_id = ?'; $args[] = (int) $f['store']; }
+    if (!$only && (int) ($f['store'] ?? 0)) { $where .= ' AND o.store_id = ?'; $args[] = (int) $f['store']; }
     $q = line_clean($f['q'] ?? '', 60);
     if ($q !== '') {
         $where .= " AND (o.ref LIKE ? ESCAPE '\\' OR o.cname LIKE ? ESCAPE '\\' OR o.cphone LIKE ? ESCAPE '\\')";
@@ -597,20 +691,33 @@ function dash_orders(int $cid, array $f): array
             'id' => (int) $o['id'], 'ref' => (string) $o['ref'], 'kind' => (string) $o['kind'], 'mode' => (string) $o['mode'], 'status' => (string) $o['status'],
             'total' => (float) $o['total'], 'created' => (int) $o['created'], 'expires' => (int) $o['expires'], 'name' => (string) $o['cname'], 'phone' => (string) $o['cphone'],
             'store' => (string) ($o['s_name'] ?? ''), 'city' => (string) ($o['s_city'] ?? ''), 'items' => (int) $o['n_items'], 'units' => (int) $o['n_units'], 'first' => (string) $o['first_item'],
+            'radar' => (bool) $o['radar'], 'waiting' => (int) $o['radar'] && !(int) $o['store_id'] && $o['status'] === 'pending',
+            'foreign' => (int) $o['seller_cid'] !== $cid,
         ];
     }
-    $c = db()->prepare("SELECT status, COUNT(*) AS n FROM orders WHERE seller_cid = ? GROUP BY status");
-    $c->execute([$cid]);
+    $c = db()->prepare("SELECT o.status, COUNT(*) AS n FROM orders o WHERE $base GROUP BY o.status");
+    $c->execute($baseArgs);
     $counts = array_fill_keys(array_keys(ORDER_STATUSES), 0);
     foreach ($c as $r) $counts[$r['status']] = (int) $r['n'];
-    return ['orders' => $out, 'counts' => $counts];
+    return ['orders' => $out, 'counts' => $counts, 'todo' => orders_todo($cid, $only)];
 }
 
-function own_order(int $cid, int $id): ?array
+/** Commandes qui attendent une action du point de vente (les commandes radar encore libres n'en font pas partie). */
+function orders_todo(int $cid, int $only = 0): int
 {
-    $s = db()->prepare('SELECT * FROM orders WHERE id = ? AND seller_cid = ?');
-    $s->execute([$id, $cid]);
-    return $s->fetch() ?: null;
+    $s = db()->prepare("SELECT COUNT(*) FROM orders WHERE seller_cid = ? AND status = 'pending' AND NOT (radar = 1 AND store_id = 0)" . ($only ? ' AND store_id = ' . $only : ''));
+    $s->execute([$cid]);
+    return (int) $s->fetchColumn();
+}
+
+/** Commande visible par ce compte : vendue par l'entreprise, ou reçue par ses pages (radar). */
+function own_order(int $cid, int $id, int $only = 0): ?array
+{
+    $s = db()->prepare('SELECT * FROM orders WHERE id = ? AND (seller_cid = ? OR brand_cid = ?)');
+    $s->execute([$id, $cid, $cid]);
+    $o = $s->fetch() ?: null;
+    if ($o && $only && ((int) $o['store_id'] !== $only || (int) $o['seller_cid'] !== $cid)) return null;
+    return $o;
 }
 
 /* ----------------------------------------------------------- vue d'ensemble */
@@ -636,7 +743,7 @@ function dash_overview(int $cid, string $kind): array
         WHERE o.created >= ? AND o.status <> 'cancelled' AND (o.seller_cid = ? OR i.product_cid = ?)", [$since, $cid, $cid]);
     $orders30 = (int) $one("SELECT COUNT(DISTINCT o.id) FROM orders o JOIN order_items i ON i.order_id = o.id
         WHERE o.created >= ? AND (o.seller_cid = ? OR i.product_cid = ?)", [$since, $cid, $cid]);
-    $scope = implode(',', array_merge([$cid], $kind === 'distributor' ? partner_cids($cid, $kind) : []));
+    $scope = implode(',', array_merge([$cid], $kind !== 'brand' ? partner_cids($cid, $kind) : []));
     $searches30 = (int) $one("SELECT COUNT(*) FROM searches s WHERE s.created >= ? AND EXISTS (SELECT 1 FROM search_hits h WHERE h.search_id = s.id AND h.company_id IN ($scope))", [$since]);
 
     // Commandes par jour sur 14 jours (courbe de la vue d'ensemble).
@@ -662,7 +769,8 @@ function dash_overview(int $cid, string $kind): array
     $recent = dash_orders($cid, ['status' => 'all']);
     return [
         'tiles' => [
-            'to_process' => (int) $one("SELECT COUNT(*) FROM orders WHERE seller_cid = ? AND status = 'pending'", [$cid]),
+            'to_process' => orders_todo($cid),
+            'radar' => radar_count($cid),
             'in_progress' => (int) $one("SELECT COUNT(*) FROM orders WHERE seller_cid = ? AND status IN ('confirmed','ready','shipped')", [$cid]),
             'orders30' => $orders30, 'revenue30' => $rev, 'searches30' => $searches30,
             'stores' => $own, 'network_stores' => count(network_stores($cid, $kind)),
@@ -674,6 +782,39 @@ function dash_overview(int $cid, string $kind): array
         'low' => $low,
         'recent' => array_slice($recent['orders'], 0, 6),
         'activity' => activity_feed($cid, 10),
+    ];
+}
+
+/** Vue d'ensemble d'un compte limité à un point de vente. */
+function store_overview(int $cid, int $sid): array
+{
+    $pdo = db();
+    $one = function (string $sql, array $args) use ($pdo) {
+        $s = $pdo->prepare($sql);
+        $s->execute($args);
+        return $s->fetchColumn();
+    };
+    $since = strtotime('today') - 29 * 86400;
+    $low = [];
+    $s = $pdo->prepare("SELECT k.qty, p.name AS p_name, v.size, v.color FROM stock k JOIN variants v ON v.id = k.variant_id JOIN products p ON p.id = v.product_id
+        WHERE k.store_id = ? AND k.qty <= 2 ORDER BY k.qty, k.updated DESC LIMIT 8");
+    $s->execute([$sid]);
+    foreach ($s as $r) $low[] = ['store' => '', 'store_id' => $sid, 'product' => (string) $r['p_name'], 'option' => trim($r['size'] . ' ' . $r['color']), 'qty' => (int) $r['qty']];
+    $stores = dash_stores($cid, $sid);
+    return [
+        'store' => $stores[0] ?? null,
+        'tiles' => [
+            'to_process' => orders_todo($cid, $sid),
+            'in_progress' => (int) $one("SELECT COUNT(*) FROM orders WHERE seller_cid = ? AND store_id = ? AND status IN ('confirmed','ready','shipped')", [$cid, $sid]),
+            'radar' => radar_count($cid, $sid),
+            'orders30' => (int) $one('SELECT COUNT(*) FROM orders WHERE seller_cid = ? AND store_id = ? AND created >= ?', [$cid, $sid, $since]),
+            'revenue30' => (float) $one("SELECT COALESCE(SUM(total), 0) FROM orders WHERE seller_cid = ? AND store_id = ? AND created >= ? AND status <> 'cancelled'", [$cid, $sid, $since]),
+            'refs' => (int) $one('SELECT COUNT(*) FROM stock WHERE store_id = ?', [$sid]),
+            'instock' => (int) $one('SELECT COUNT(*) FROM stock WHERE store_id = ? AND qty > 0', [$sid]),
+            'low_stock' => (int) $one('SELECT COUNT(*) FROM stock WHERE store_id = ? AND qty <= 2', [$sid]),
+        ],
+        'low' => $low,
+        'recent' => array_slice(dash_orders($cid, ['status' => 'all', 'only' => $sid])['orders'], 0, 6),
     ];
 }
 
@@ -709,6 +850,7 @@ function company_delete(int $cid): void
         $pdo->prepare('DELETE FROM order_events WHERE order_id IN (SELECT id FROM orders WHERE seller_cid = ?)')->execute([$cid]);
         $pdo->prepare('DELETE FROM order_items WHERE order_id IN (SELECT id FROM orders WHERE seller_cid = ?)')->execute([$cid]);
         $pdo->prepare('DELETE FROM orders WHERE seller_cid = ?')->execute([$cid]);
+        $pdo->prepare('UPDATE orders SET brand_cid = 0 WHERE brand_cid = ?')->execute([$cid]); // commandes radar prises par un autre vendeur : il les garde
         $pdo->prepare('DELETE FROM search_hits WHERE company_id = ?')->execute([$cid]);
         $pdo->prepare('DELETE FROM activity WHERE company_id = ? OR about_cid = ?')->execute([$cid, $cid]);
         $pdo->prepare('DELETE FROM companies WHERE id = ?')->execute([$cid]); // cascade : comptes, marques, produits, magasins, stock, partenariats

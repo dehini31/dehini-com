@@ -25,6 +25,7 @@ $defaults = [
     'MLG_SEED_DEMO'         => true,        // charge le réseau de démonstration à la première visite
     'MLG_RESERVATION_HOURS' => 48,          // durée pendant laquelle un article réservé est mis de côté
     'MLG_COVER_KM'          => 30,          // au-delà, une zone est considérée comme non couverte
+    'MLG_RADAR_STEP_MIN'    => 30,          // radar : minutes avant d'élargir une commande (commune → wilaya → partout)
     'MLG_TILES_URL'         => 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
     'MLG_TILES_ATTR'        => '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>',
     'MLG_MAP_CENTER'        => [34.6, 3.2], // vue de départ de la carte
@@ -58,7 +59,7 @@ const MLG_CATEGORIES = [
     'autre'       => 'Autre',
 ];
 const MLG_STORE_TYPES = ['magasin' => 'Magasin', 'succursale' => 'Succursale', 'distributeur' => 'Distributeur'];
-const MLG_KINDS = ['brand' => 'Entreprise / marque', 'distributor' => 'Distributeur'];
+const MLG_KINDS = ['brand' => 'Entreprise / marque', 'distributor' => 'Distributeur', 'pos' => 'Point de vente'];
 
 /** URL publique du dossier /maillage/ (avec la barre finale). */
 function site_url(): string
@@ -116,7 +117,7 @@ function tx_rollback(): void
 /** Schéma compatible avec les vieilles versions de SQLite des hébergeurs mutualisés. */
 function migrate(PDO $pdo): void
 {
-    if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= 1) return;
+    if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= 2) return;
     // Deux premières visites simultanées : la seconde attend la fin de la création, puis ne fait rien.
     $pdo->exec('BEGIN IMMEDIATE');
     try {
@@ -351,6 +352,37 @@ function migrate(PDO $pdo): void
         PRAGMA user_version = 1;
         SQL);
         }
+        if ($v < 2) {
+            // Communes (livraison, radar), commandes radar, comptes de point de vente, page de vente d'un produit.
+            $has = function (string $table, string $col) use ($pdo): bool {
+                foreach ($pdo->query("PRAGMA table_info($table)") as $c) {
+                    if ($c['name'] === $col) return true;
+                }
+                return false;
+            };
+            $add = [
+                ['stores', 'commune', "TEXT NOT NULL DEFAULT ''"],
+                ['orders', 'commune', "TEXT NOT NULL DEFAULT ''"],
+                ['orders', 'radar', 'INTEGER NOT NULL DEFAULT 0'],      // 1 = reçue sans point de vente, proposée aux plus proches
+                ['orders', 'brand_cid', 'INTEGER NOT NULL DEFAULT 0'],  // entreprise dont la page a reçu la commande radar
+                ['orders', 'claimed', 'INTEGER NOT NULL DEFAULT 0'],    // date de prise en charge par un point de vente
+                ['users', 'store_id', 'INTEGER NOT NULL DEFAULT 0'],    // > 0 : compte limité à ce point de vente
+                ['products', 'landing', "TEXT NOT NULL DEFAULT '{}'"],  // textes de la page de vente
+            ];
+            foreach ($add as [$table, $col, $def]) {
+                if (!$has($table, $col)) $pdo->exec("ALTER TABLE $table ADD COLUMN $col $def");
+            }
+            $pdo->exec('CREATE INDEX IF NOT EXISTS orders_radar ON orders(radar, status)');
+            $pdo->exec('CREATE INDEX IF NOT EXISTS orders_b ON orders(brand_cid, created)');
+            $pdo->exec('CREATE INDEX IF NOT EXISTS users_s ON users(store_id)');
+            // Les points de vente déjà enregistrés reçoivent leur commune quand la ville en porte le nom.
+            $up = $pdo->prepare('UPDATE stores SET commune = ? WHERE id = ?');
+            foreach ($pdo->query("SELECT id, city, wilaya FROM stores WHERE commune = ''")->fetchAll() as $st) {
+                $c = commune_guess((string) $st['wilaya'], (string) $st['city']);
+                if ($c !== '') $up->execute([$c, $st['id']]);
+            }
+            $pdo->exec('PRAGMA user_version = 2');
+        }
         $pdo->exec('COMMIT');
     } catch (Throwable $e) {
         try { $pdo->exec('ROLLBACK'); } catch (Throwable $e2) { /* rien à annuler */ }
@@ -498,6 +530,49 @@ function zone_code($code): string
 {
     $code = is_string($code) || is_int($code) ? (string) $code : '';
     return isset(zones()[$code]) ? $code : '';
+}
+/** Communes de chaque wilaya : [code => [[nom, nom arabe], …]]. */
+function communes(): array
+{
+    static $c = null;
+    if ($c === null) $c = json_decode((string) file_get_contents(__DIR__ . '/data/communes.json'), true) ?: [];
+    return $c;
+}
+/** Clé de comparaison d'un nom de commune (sans accents, tirets ni espaces). */
+function commune_key(string $s): string
+{
+    return preg_replace('/[^a-z0-9]+/', '', norm($s)) ?? '';
+}
+/** Nom officiel d'une commune de la wilaya (saisi en français ou en arabe), ou '' si elle n'en fait pas partie. */
+function commune_clean(string $zone, $name): string
+{
+    $name = is_string($name) ? trim($name) : '';
+    if ($name === '' || !isset(communes()[$zone])) return '';
+    $k = commune_key($name);
+    foreach (communes()[$zone] as $c) {
+        if (($k !== '' && commune_key($c[0]) === $k) || $c[1] === $name) return (string) $c[0];
+    }
+    return '';
+}
+/** Commune correspondant à une ville saisie librement (« Alger » → « Alger Centre »), ou ''. */
+function commune_guess(string $zone, string $city): string
+{
+    $exact = commune_clean($zone, $city);
+    if ($exact !== '') return $exact;
+    $k = commune_key($city);
+    if ($k === '') return '';
+    $hits = [];
+    foreach (communes()[$zone] ?? [] as $c) {
+        if (strpos(commune_key($c[0]), $k) === 0) $hits[] = (string) $c[0];
+    }
+    return count($hits) === 1 ? $hits[0] : '';
+}
+function commune_ar(string $zone, string $name): string
+{
+    foreach (communes()[$zone] ?? [] as $c) {
+        if ($c[0] === $name) return (string) $c[1];
+    }
+    return '';
 }
 function coord($v, float $max): ?float
 {
