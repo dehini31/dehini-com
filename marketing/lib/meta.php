@@ -808,12 +808,21 @@ function mk_meta_objective(string $text): string
  * Meta consolide ses chiffres) ou, la première fois, sur les $backfill derniers jours.
  * $opt : days (forcer le nombre de jours), only (liste d'étapes).
  */
+/** Synchronisation en cours en mode « tout l'historique » (messages et commentaires). */
+function mk_meta_full(?bool $set = null): bool
+{
+    static $full = false;
+    if ($set !== null) $full = $set;
+    return $full;
+}
+
 function mk_meta_sync(array $opt = []): array
 {
     if (!mk_meta_connected()) throw new MkInputError("Connectez d'abord votre compte Meta (Connexions).");
     $lock = @fopen(dirname(MK_DB_PATH) . '/meta-sync.lock', 'c');
     if ($lock && !flock($lock, LOCK_EX | LOCK_NB)) throw new MkInputError('Une synchronisation est déjà en cours : patientez une minute.');
-    @set_time_limit(600);
+    @set_time_limit(!empty($opt['full']) ? 1800 : 600);
+    mk_meta_full(!empty($opt['full']));
     mk_meta_ig_refresh();
     $st = mk_meta_state(true);
     $to = mk_today();
@@ -827,11 +836,12 @@ function mk_meta_sync(array $opt = []): array
         'ig_stats' => ['Relevés du compte Instagram', 'mk_meta_sync_ig_stats', $st['ig_id'] !== ''],
         'fb_posts' => ['Publications Facebook', 'mk_meta_sync_fb_posts', $st['page_id'] !== ''],
         'ig_posts' => ['Publications Instagram', 'mk_meta_sync_ig_posts', $st['ig_id'] !== ''],
+        'comments' => ['Commentaires Facebook et Instagram', 'mk_meta_sync_comments', $st['page_id'] !== '' || $st['ig_id'] !== ''],
         'ads' => ['Campagnes Meta Ads', 'mk_meta_sync_ads', (bool) $st['ad_accounts']],
         'leads' => ['Leads des formulaires', 'mk_meta_sync_leads', $st['page_id'] !== ''],
         'messages' => ['Messages Messenger et Instagram', 'mk_meta_sync_messages', $st['page_id'] !== '' && $st['page_token'] !== '' && $st['messages']],
     ];
-    $out = ['at' => time(), 'from' => $from, 'to' => $to, 'steps' => [], 'ok' => true, 'totals' => ['added' => 0, 'updated' => 0]];
+    $out = ['at' => time(), 'from' => $from, 'to' => $to, 'steps' => [], 'ok' => true, 'full' => mk_meta_full(), 'totals' => ['added' => 0, 'updated' => 0]];
     foreach ($steps as $key => [$label, $fn, $on]) {
         if ($only && !in_array($key, $only, true)) continue;
         $res = ['key' => $key, 'label' => $label, 'status' => 'skip', 'counts' => [], 'message' => ''];
@@ -869,6 +879,7 @@ function mk_meta_sync(array $opt = []): array
         ->execute([$out['at'], $from, $to, $out['ok'] ? 1 : 0, $out['totals']['added'], $out['totals']['updated'], json_encode($out, JSON_UNESCAPED_UNICODE)]);
     db()->exec('DELETE FROM meta_sync_log WHERE id NOT IN (SELECT id FROM meta_sync_log ORDER BY id DESC LIMIT 60)');
     if ($lock) { flock($lock, LOCK_UN); fclose($lock); }
+    mk_meta_full(false);
     return $out;
 }
 
@@ -1071,7 +1082,6 @@ function mk_meta_sync_fb_posts(string $from, string $to): array
         'since' => strtotime($since . ' 00:00:00'), 'until' => strtotime($to . ' 23:59:59'),
     ], $tok, 500);
     $c = mk_meta_counter('publications');
-    $q = mk_meta_counter('questions');
     $use = [];
     foreach ($posts as $p) {
         $text = (string) ($p['message'] ?? $p['story'] ?? '');
@@ -1092,14 +1102,8 @@ function mk_meta_sync_fb_posts(string $from, string $to): array
             $c['errors']++;
             $c['note'] = $e->getMessage();
         }
-        if ($st['questions'] && (int) ($p['comments']['summary']['total_count'] ?? 0) > 0 && $date >= $from) {
-            foreach (mk_graph_all($p['id'] . '/comments', ['fields' => 'id,message,created_time,permalink_url,from{id,name}', 'filter' => 'toplevel'], $tok, 200) as $cm) {
-                if ((string) ($cm['from']['id'] ?? '') === $pid) continue; // réponse de la Page elle-même
-                mk_meta_question($q, 'facebook', (string) $cm['id'], (string) ($cm['message'] ?? ''), (string) ($cm['created_time'] ?? ''), (string) ($cm['from']['name'] ?? ''), '', (string) ($cm['permalink_url'] ?? $link));
-            }
-        }
     }
-    return $st['questions'] ? [$c, $q] : [$c];
+    return [$c];
 }
 
 function mk_meta_sync_ig_posts(string $from, string $to): array
@@ -1120,7 +1124,6 @@ function mk_meta_sync_ig_posts(string $from, string $to): array
         if ($e->metaCode() === 190) throw $e;
     }
     $c = mk_meta_counter('publications');
-    $q = mk_meta_counter('questions');
     $useFeed = [];
     $useStory = [];
     foreach ($media as $m) {
@@ -1144,14 +1147,8 @@ function mk_meta_sync_ig_posts(string $from, string $to): array
             $c['errors']++;
             $c['note'] = $e->getMessage();
         }
-        if ($st['questions'] && (int) ($m['comments_count'] ?? 0) > 0 && $date >= $from) {
-            foreach (mk_graph_all($m['id'] . '/comments', ['fields' => 'id,text,timestamp,username'], $tok, 200, $gb) as $cm) {
-                if (strcasecmp((string) ($cm['username'] ?? ''), $st['ig_username']) === 0) continue;
-                mk_meta_question($q, 'instagram', (string) $cm['id'], (string) ($cm['text'] ?? ''), (string) ($cm['timestamp'] ?? ''), '', (string) ($cm['username'] ?? ''), (string) ($m['permalink'] ?? ''));
-            }
-        }
     }
-    return $st['questions'] ? [$c, $q] : [$c];
+    return [$c];
 }
 
 /** Un commentaire qui pose une question devient une question à traiter (sujet et profil devinés). */
@@ -1255,20 +1252,211 @@ function mk_conv_analyze(int $id): void
     ]);
 }
 
+/* ------------------------------------------------------------ commentaires */
+
+/**
+ * Tous les commentaires (et leurs réponses) des publications Facebook et Instagram. Une publication
+ * n'est relue que si son nombre de commentaires a changé depuis la dernière fois : les nouveaux
+ * commentaires des anciennes publications (3 derniers mois, 2 ans en mode « tout l'historique »)
+ * arrivent donc aussi. Un commentaire qui pose une question devient une question à traiter.
+ */
+function mk_meta_sync_comments(string $from, string $to): array
+{
+    $st = mk_meta_state();
+    $full = mk_meta_full();
+    $since = mk_add_days($to, $full ? -730 : -89);
+    $c = mk_meta_counter('commentaires');
+    $q = mk_meta_counter('questions');
+    $notes = [];
+    $done = 0;
+    $tried = 0;
+    if ($st['page_id'] !== '' && $st['page_token'] !== '' && mk_meta_has_channel('facebook')) {
+        $tried++;
+        try { mk_meta_comments_fb($since, $full, $c, $q); $done++; }
+        catch (MkMetaError $e) {
+            if ($e->metaCode() === 190) throw $e;
+            $notes[] = 'Commentaires Facebook inaccessibles (« ' . rtrim($e->getMessage(), '.') . ' »).';
+        }
+    }
+    if ($st['ig_id'] !== '' && mk_meta_has_channel('instagram')) {
+        $tried++;
+        try { mk_meta_comments_ig($since, $full, $c, $q); $done++; }
+        catch (MkMetaError $e) {
+            if ($e->metaCode() === 190) throw $e;
+            $notes[] = 'Commentaires Instagram inaccessibles (« ' . rtrim($e->getMessage(), '.') . ' »).';
+        }
+    }
+    if ($tried && !$done) throw new MkInputError(implode(' ', $notes));
+    $c['note'] = implode(' ', $notes);
+    return $st['questions'] ? [$c, $q] : [$c];
+}
+
+/** Faut-il relire les commentaires de cette publication ? (nouveau total, ou import incomplet en mode « tout »). */
+function mk_meta_comments_changed(string $postExt, int $total, bool $full): bool
+{
+    if ($total <= 0) return false;
+    $seen = qv('SELECT total FROM meta_comment_seen WHERE post_ext = ?', [$postExt]);
+    if ($seen === false || $seen === null || (int) $seen !== $total) return true;
+    return $full && (int) qv('SELECT COUNT(*) FROM comments WHERE post_ext = ?', [$postExt]) < $total;
+}
+function mk_meta_comments_seen(string $postExt, int $total): void
+{
+    db()->prepare('INSERT OR REPLACE INTO meta_comment_seen (post_ext, total, at) VALUES (?, ?, ?)')->execute([$postExt, $total, time()]);
+    // Réponses : nombre par commentaire, et « la Page a répondu ».
+    db()->prepare("UPDATE comments SET replies = (SELECT COUNT(*) FROM comments r WHERE r.parent_ext = comments.ext_id),
+        page_replied = (SELECT COUNT(*) FROM comments r WHERE r.parent_ext = comments.ext_id AND r.from_me = 1) > 0
+        WHERE post_ext = ? AND parent_ext = ''")->execute([$postExt]);
+}
+
+function mk_meta_comments_fb(string $since, bool $full, array &$c, array &$q): void
+{
+    $st = mk_meta_state();
+    $tok = mk_unseal($st['page_token']);
+    $pid = $st['page_id'];
+    $posts = mk_graph_all("$pid/published_posts", [
+        'fields' => 'id,message,story,created_time,permalink_url,comments.filter(stream).limit(0).summary(total_count)',
+        'since' => strtotime($since . ' 00:00:00'),
+    ], $tok, $full ? 3000 : 600);
+    foreach ($posts as $p) {
+        $total = (int) ($p['comments']['summary']['total_count'] ?? 0);
+        $post = ['ext' => 'meta:fbpost:' . $p['id'], 'link' => (string) ($p['permalink_url'] ?? ''), 'text' => (string) ($p['message'] ?? $p['story'] ?? '')];
+        if (!mk_meta_comments_changed($post['ext'], $total, $full)) continue;
+        $list = mk_graph_all($p['id'] . '/comments', ['fields' => 'id,message,created_time,permalink_url,from{id,name},parent{id},like_count', 'filter' => 'stream', 'order' => 'chronological'], $tok, 5000);
+        foreach ($list as $cm) {
+            mk_meta_count($c, mk_meta_store_comment('facebook', $post, [
+                'id' => (string) $cm['id'], 'parent' => (string) ($cm['parent']['id'] ?? ''), 'who_id' => (string) ($cm['from']['id'] ?? ''),
+                'name' => (string) ($cm['from']['name'] ?? ''), 'username' => '', 'text' => (string) ($cm['message'] ?? ''), 'at' => (string) ($cm['created_time'] ?? ''),
+                'link' => (string) ($cm['permalink_url'] ?? ''), 'likes' => (int) ($cm['like_count'] ?? 0), 'mine' => (string) ($cm['from']['id'] ?? '') === $pid,
+            ], $q));
+        }
+        mk_meta_comments_seen($post['ext'], $total);
+    }
+}
+
+function mk_meta_comments_ig(string $since, bool $full, array &$c, array &$q): void
+{
+    $st = mk_meta_state();
+    [$tok, $gb, $node] = mk_meta_ig_ctx();
+    $media = mk_graph_all("$node/media", ['fields' => 'id,caption,timestamp,permalink,comments_count,media_product_type', 'since' => strtotime($since . ' 00:00:00')], $tok, $full ? 3000 : 600, $gb);
+    $mine = fn (string $u) => $u !== '' && strcasecmp($u, (string) $st['ig_username']) === 0;
+    foreach ($media as $m) {
+        if (mk_meta_date((string) ($m['timestamp'] ?? '')) < $since || strtoupper((string) ($m['media_product_type'] ?? '')) === 'AD') continue;
+        $total = (int) ($m['comments_count'] ?? 0);
+        $post = ['ext' => 'meta:igmedia:' . $m['id'], 'link' => (string) ($m['permalink'] ?? ''), 'text' => (string) ($m['caption'] ?? '')];
+        if (!mk_meta_comments_changed($post['ext'], $total, $full)) continue;
+        $f = 'id,text,timestamp,username,like_count';
+        foreach (mk_graph_all($m['id'] . '/comments', ['fields' => "$f,replies.limit(100){" . $f . '}'], $tok, 5000, $gb) as $cm) {
+            $one = fn (array $x, string $parent) => [
+                'id' => (string) $x['id'], 'parent' => $parent, 'who_id' => '', 'name' => '', 'username' => (string) ($x['username'] ?? ''),
+                'text' => (string) ($x['text'] ?? ''), 'at' => (string) ($x['timestamp'] ?? ''), 'link' => '', 'likes' => (int) ($x['like_count'] ?? 0),
+                'mine' => $mine((string) ($x['username'] ?? '')),
+            ];
+            mk_meta_count($c, mk_meta_store_comment('instagram', $post, $one($cm, ''), $q));
+            foreach (($cm['replies']['data'] ?? []) as $r) mk_meta_count($c, mk_meta_store_comment('instagram', $post, $one($r, (string) $cm['id']), $q));
+        }
+        mk_meta_comments_seen($post['ext'], $total);
+    }
+}
+
+/** Enregistre un commentaire (ou une réponse) et l'analyse. Renvoie added / updated / same / ignored. */
+function mk_meta_store_comment(string $platform, array $post, array $cm, array &$q): string
+{
+    $ext = 'meta:comment:' . $cm['id'];
+    if (qv('SELECT 1 FROM ext_ignored WHERE ext_id = ?', [$ext])) return 'ignored';
+    $text = mk_str($cm['text'], 4000);
+    $at = mk_meta_local($cm['at']);
+    $link = preg_match('~^https?://~', $cm['link']) ? mb_substr($cm['link'], 0, 500) : '';
+    $postLink = preg_match('~^https?://~', $post['link']) ? mb_substr($post['link'], 0, 500) : '';
+    $postId = qv('SELECT id FROM posts WHERE ext_id = ?', [$post['ext']]);
+    $isQ = !$cm['mine'] && mk_is_question($text);
+    $an = $cm['mine'] ? ['', '', '', '', ''] : [mk_classify($text, mk_meta_rules()['question']) ?: 'autre', mk_classify_profile($text), mk_extract_phone($text), mk_extract_email($text), mk_extract_city($text)];
+    $now = time();
+    $row = q1('SELECT id, text, likes, who_name FROM comments WHERE ext_id = ?', [$ext]);
+    $parent = $cm['parent'] !== '' ? 'meta:comment:' . $cm['parent'] : '';
+    if ($row) {
+        db()->prepare("UPDATE comments SET text = ?, likes = ?, who_name = CASE WHEN ? != '' THEN ? ELSE who_name END, who_username = CASE WHEN ? != '' THEN ? ELSE who_username END,
+            post_id = ?, post_link = ?, post_text = ?, link = CASE WHEN ? != '' THEN ? ELSE link END, is_question = ?, category = ?, profile = ?, phone = ?, email = ?, city = ?, synced = ? WHERE id = ?")
+            ->execute([$text, $cm['likes'], $cm['name'], $cm['name'], $cm['username'], $cm['username'], $postId ?: null, $postLink, mb_substr($post['text'], 0, 300), $link, $link,
+                $isQ ? 1 : 0, ...$an, $now, (int) $row['id']]);
+        $res = $row['text'] === $text && (int) $row['likes'] === $cm['likes'] && ($cm['name'] === '' || $cm['name'] === $row['who_name']) ? 'same' : 'updated';
+    } else {
+        db()->prepare('INSERT INTO comments (ext_id, platform, post_ext, post_id, post_link, post_text, parent_ext, who_id, who_name, who_username, from_me, text, at, date, link, likes,
+            is_question, category, profile, phone, email, city, status, created, synced) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+            ->execute([$ext, $platform, $post['ext'], $postId ?: null, $postLink, mb_substr($post['text'], 0, 300), $parent, $cm['who_id'], $cm['name'], $cm['username'], $cm['mine'] ? 1 : 0,
+                $text, $at, substr($at, 0, 10), $link, $cm['likes'], $isQ ? 1 : 0, ...$an, $cm['mine'] ? 'traite' : 'a_traiter', $now, $now]);
+        $res = 'added';
+    }
+    if ($isQ && mk_meta_state()['questions']) {
+        mk_meta_question($q, $platform, (string) $cm['id'], $text, $cm['at'], $cm['name'], $cm['username'], $link ?: $postLink);
+        $inq = qv('SELECT id FROM inquiries WHERE ext_id = ?', ['meta:cmt:' . $cm['id']]);
+        if ($inq) db()->prepare('UPDATE comments SET inquiry_id = ? WHERE ext_id = ?')->execute([(int) $inq, $ext]);
+    }
+    return $res;
+}
+
+/** Nom affichable de l'auteur d'un commentaire. */
+function mk_comment_name(array $c): string
+{
+    if ((int) $c['from_me']) return 'Vous (la Page)';
+    if ((string) $c['who_name'] !== '') return (string) $c['who_name'];
+    if ((string) $c['who_username'] !== '') return '@' . $c['who_username'];
+    return $c['platform'] === 'instagram' ? 'Compte Instagram' : 'Nom masqué par Meta';
+}
+
+/**
+ * Lead : nouveau, ou relié à un lead existant (même téléphone, à défaut même email).
+ * Renvoie ['contact' => ligne, 'linked' => bool].
+ */
+function mk_prospect_save(array $data): array
+{
+    $match = null;
+    $digits = substr((string) preg_replace('/\D/', '', (string) ($data['phone'] ?? '')), -9);
+    if (strlen($digits) === 9) {
+        foreach (q("SELECT id, phone FROM contacts WHERE phone != '' ORDER BY id DESC LIMIT 3000") as $r) {
+            if (substr((string) preg_replace('/\D/', '', (string) $r['phone']), -9) === $digits) { $match = $r; break; }
+        }
+    }
+    if (!$match && (string) ($data['email'] ?? '') !== '') $match = q1('SELECT id FROM contacts WHERE lower(email) = lower(?)', [$data['email']]);
+    if ($match) return ['contact' => q1('SELECT * FROM contacts WHERE id = ?', [(int) $match['id']]), 'linked' => true];
+    return ['contact' => mk_save('contacts', $data), 'linked' => false];
+}
+
+/** Crée le prospect de l'auteur d'un commentaire (ou le relie à un lead existant). */
+function mk_comment_prospect(int $id, array $in): array
+{
+    $c = q1('SELECT * FROM comments WHERE id = ?', [$id]);
+    if (!$c) throw new MkInputError('Commentaire introuvable (supprimé entre-temps ?).');
+    if ($c['contact_id'] && q1('SELECT id FROM contacts WHERE id = ?', [(int) $c['contact_id']])) throw new MkInputError('Ce commentaire a déjà son prospect.');
+    $plat = $c['platform'] === 'instagram' ? 'instagram' : 'facebook';
+    $source = mk_meta_has_channel($plat) ? $plat : (mk_channels()[0]['key'] ?? '');
+    $data = [
+        'date' => (string) ($c['date'] ?: mk_today()),
+        'name' => mk_str($in['name'] ?? mk_comment_name($c), 200),
+        'phone' => mk_str($in['phone'] ?? $c['phone'], 60), 'email' => mk_str($in['email'] ?? $c['email'], 190), 'city' => mk_str($in['city'] ?? $c['city'], 80),
+        'type' => (string) ($in['type'] ?? ($c['profile'] ?: mk_meta_state()['default_profile'])),
+        'source' => (string) ($in['source'] ?? $source), 'status' => 'nouveau', 'assigned_to' => (string) ($in['assigned_to'] ?? ''),
+        'notes' => trim(mk_str($in['notes'] ?? '', 1000) . "\n\nCommentaire " . ($plat === 'instagram' ? 'Instagram' : 'Facebook') . ' : ' . ($c['link'] ?: $c['post_link']) . "\n« " . mb_substr((string) $c['text'], 0, 600) . ' »'),
+    ];
+    $r = mk_prospect_save($data);
+    db()->prepare("UPDATE comments SET contact_id = ?, status = 'traite' WHERE id = ?")->execute([(int) $r['contact']['id'], $id]);
+    return $r;
+}
+
 /** Messages Messenger (Page) et Instagram (compte relié à la Page) depuis la Page Facebook. */
 function mk_meta_sync_messages(string $from, string $to): array
 {
     $st = mk_meta_state();
     $tok = mk_unseal($st['page_token']);
     $out = [];
-    $since = strtotime(mk_add_days($from, -1) . ' 00:00:00');
+    $full = mk_meta_full();
+    $since = $full ? 0 : strtotime(mk_add_days($from, -1) . ' 00:00:00');
     foreach (['messenger' => 'facebook', 'instagram' => 'instagram'] as $platform => $channel) {
         if ($platform === 'instagram' && $st['ig_id'] === '') continue;
         $c = mk_meta_counter($platform === 'messenger' ? 'conversations Messenger' : 'conversations Instagram');
         $c['messages'] = 0;
         $params = ['platform' => $platform, 'fields' => 'id,updated_time,link,participants,messages.limit(25){id,message,from,created_time}', 'limit' => 50];
         try {
-            for ($page = 0; $page < 20; $page++) {
+            for ($page = 0; $page < ($full ? 400 : 40); $page++) {
                 $d = mk_graph($st['page_id'] . '/conversations', $params, $tok);
                 $stop = false;
                 foreach (($d['data'] ?? []) as $cv) {
@@ -1331,24 +1519,40 @@ function mk_meta_store_conversation(array $cv, string $platform, string $channel
         $id = (int) db()->lastInsertId();
         $res = 'added';
     }
-    $new = 0;
-    foreach ($msgs as $m) {
-        $text = trim((string) ($m['message'] ?? ''));
-        if ($text === '') $text = '[pièce jointe]';
-        $fromId = (string) ($m['from']['id'] ?? '');
-        $fromMe = in_array($fromId, $own, true) ? 1 : 0;
-        $s = db()->prepare('INSERT OR IGNORE INTO conversation_messages (conv_id, ext_id, from_me, text, at) VALUES (?, ?, ?, ?, ?)');
-        $s->execute([$id, 'meta:msg:' . ($m['id'] ?? md5($text . ($m['created_time'] ?? ''))), $fromMe, mb_substr($text, 0, 4000), mk_meta_local((string) ($m['created_time'] ?? ''))]);
-        $new += $s->rowCount();
-        if (!$fromMe && $whoName === '' && !empty($m['from']['name'])) {
-            db()->prepare("UPDATE conversations SET who_name = ? WHERE id = ? AND who_name = ''")->execute([(string) $m['from']['name'], $id]);
+    $store = function (array $list) use ($id, $own, $whoName, $whoUser): int {
+        $n = 0;
+        foreach ($list as $m) {
+            $text = trim((string) ($m['message'] ?? ''));
+            if ($text === '') $text = '[pièce jointe]';
+            $fromId = (string) ($m['from']['id'] ?? '');
+            $fromMe = in_array($fromId, $own, true) ? 1 : 0;
+            $s = db()->prepare('INSERT OR IGNORE INTO conversation_messages (conv_id, ext_id, from_me, text, at) VALUES (?, ?, ?, ?, ?)');
+            $s->execute([$id, 'meta:msg:' . ($m['id'] ?? md5($text . ($m['created_time'] ?? ''))), $fromMe, mb_substr($text, 0, 4000), mk_meta_local((string) ($m['created_time'] ?? ''))]);
+            $n += $s->rowCount();
+            if (!$fromMe && $whoName === '' && !empty($m['from']['name'])) {
+                db()->prepare("UPDATE conversations SET who_name = ? WHERE id = ? AND who_name = ''")->execute([(string) $m['from']['name'], $id]);
+            }
+            if (!$fromMe && $whoUser === '' && !empty($m['from']['username'])) {
+                db()->prepare("UPDATE conversations SET who_username = ? WHERE id = ? AND who_username = ''")->execute([(string) $m['from']['username'], $id]);
+            }
         }
-        if (!$fromMe && $whoUser === '' && !empty($m['from']['username'])) {
-            db()->prepare("UPDATE conversations SET who_username = ? WHERE id = ? AND who_username = ''")->execute([(string) $m['from']['username'], $id]);
-        }
+        return $n;
+    };
+    $n = $store($msgs);
+    $new = $n;
+    // Conversation plus longue que ce que Meta renvoie d'un coup : on lit les messages plus anciens,
+    // jusqu'à retrouver ceux déjà importés (ou jusqu'au tout premier en mode « tout l'historique »).
+    $paging = $cv['messages']['paging'] ?? [];
+    $full = mk_meta_full();
+    for ($p = 0; $msgs && $p < ($full ? 200 : 40) && !empty($paging['next']) && !empty($paging['cursors']['after']) && ($full || $n >= count($msgs)); $p++) {
+        $d = mk_graph((string) $cv['id'] . '/messages', ['fields' => 'id,message,from,created_time', 'limit' => 100, 'after' => $paging['cursors']['after']], $tok);
+        $msgs = $d['data'] ?? [];
+        $n = $store($msgs);
+        $new += $n;
+        $paging = $d['paging'] ?? [];
     }
     $msgCount += $new;
-    db()->prepare('UPDATE conversations SET first_date = (SELECT substr(MIN(at), 1, 10) FROM conversation_messages WHERE conv_id = ?), message_count = (SELECT COUNT(*) FROM conversation_messages WHERE conv_id = ?) WHERE id = ?')->execute([$id, $id, $id]);
+    db()->prepare('UPDATE conversations SET first_date = COALESCE((SELECT substr(MIN(at), 1, 10) FROM conversation_messages WHERE conv_id = ?), first_date), message_count = (SELECT COUNT(*) FROM conversation_messages WHERE conv_id = ?) WHERE id = ?')->execute([$id, $id, $id]);
     mk_conv_analyze($id);
     return $res === 'updated' && !$new ? 'same' : $res;
 }
@@ -1392,21 +1596,7 @@ function mk_conv_prospect(int $id, array $in): array
         'notes' => trim(mk_str($in['notes'] ?? '', 1000) . "\n\nConversation " . ($c['platform'] === 'instagram' ? 'Instagram' : 'Messenger') . ' : ' . $c['link'] . "\n" . $excerpt),
     ];
     // Même personne déjà enregistrée (même téléphone ou même email) : on relie au lieu de dupliquer.
-    $match = null;
-    $digits = substr((string) preg_replace('/\D/', '', $data['phone']), -9);
-    if (strlen($digits) === 9) {
-        foreach (q("SELECT id, phone FROM contacts WHERE phone != '' ORDER BY id DESC LIMIT 3000") as $r) {
-            if (substr((string) preg_replace('/\D/', '', (string) $r['phone']), -9) === $digits) { $match = $r; break; }
-        }
-    }
-    if (!$match && $data['email'] !== '') $match = q1('SELECT id FROM contacts WHERE lower(email) = lower(?)', [$data['email']]);
-    if ($match) {
-        $contact = q1('SELECT * FROM contacts WHERE id = ?', [(int) $match['id']]);
-        $linked = true;
-    } else {
-        $contact = mk_save('contacts', $data);
-        $linked = false;
-    }
+    ['contact' => $contact, 'linked' => $linked] = mk_prospect_save($data);
     db()->prepare("UPDATE conversations SET contact_id = ?, status = 'prospect' WHERE id = ?")->execute([(int) $contact['id'], $id]);
     return ['contact' => $contact, 'linked' => $linked];
 }
