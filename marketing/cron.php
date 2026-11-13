@@ -49,10 +49,18 @@ $S = mk_settings();
 // Synchronisation Meta (Facebook, Instagram, Meta Ads, leads) avant les rapports.
 if (!isset($opts['no-meta']) && !$dry && mk_meta_connected()) {
     try {
-        $m = mk_meta_sync();
-        foreach ($m['steps'] as $st) {
-            $n = array_map(fn ($c) => "{$c['label']} +{$c['added']} / ~{$c['updated']}", $st['counts']);
-            say(($st['status'] === 'error' ? '✗' : ($st['status'] === 'skip' ? '·' : '✓')) . " Meta · {$st['label']} : " . ($n ? implode(', ', $n) : '') . ($st['message'] !== '' ? ' — ' . $st['message'] : ''));
+        // Par lots : ce qui n'a pas pu être fait dans un lot (gros historique) est repris aussitôt.
+        $opt = [];
+        $clean = true;
+        for ($lot = 1; $lot <= 6; $lot++) {
+            $m = mk_meta_sync($opt);
+            $clean = $clean && $m['ok'];
+            foreach ($m['steps'] as $st) {
+                $n = array_map(fn ($c) => "{$c['label']} +{$c['added']} / ~{$c['updated']}", $st['counts']);
+                say(($st['status'] === 'error' ? '✗' : ($st['status'] === 'skip' ? '·' : '✓')) . " Meta · {$st['label']} : " . ($n ? implode(', ', $n) : '') . ($st['message'] !== '' ? ' — ' . $st['message'] : ''));
+            }
+            if (empty($m['more'])) break;
+            $opt = ['only' => $m['pending'], 'resume' => true, 'clean' => $clean];
         }
     } catch (Throwable $e) {
         say('✗ Meta : ' . $e->getMessage());

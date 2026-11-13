@@ -103,7 +103,7 @@ function mk_meta_state(bool $reload = false): array
         'app_id' => '', 'app_secret' => '', 'config_id' => '', 'user_token' => '', 'token_kind' => '', 'user_id' => '', 'user_name' => '',
         'token_expires' => 0, 'connected_at' => 0, 'page_id' => '', 'page_name' => '', 'page_token' => '', 'ig_id' => '',
         'ig_username' => '', 'ad_accounts' => [], 'fx' => 1.0, 'backfill' => 30, 'questions' => true, 'messages' => true, 'auto_sync' => 60,
-        'default_profile' => 'investisseur', 'rules' => [], 'last_sync' => 0, 'last_until' => '', 'last_result' => null,
+        'default_profile' => 'investisseur', 'rules' => [], 'last_sync' => 0, 'last_until' => '', 'last_result' => null, 'full_cursor' => [],
         'metrics' => [], 'oauth_error' => '', 'token_invalid' => false,
         // Instagram : « page » (compte relié à la Page Facebook) ou « instagram » (Se connecter avec Instagram).
         'ig_via' => '', 'ig_app_id' => '', 'ig_app_secret' => '', 'ig_token' => '', 'ig_token_expires' => 0, 'ig_connected_at' => 0, 'ig_oauth_error' => '',
@@ -237,7 +237,7 @@ function mk_meta_public(): array
         'fx' => (float) $st['fx'], 'backfill' => (int) $st['backfill'], 'questions' => (bool) $st['questions'], 'messages' => (bool) $st['messages'], 'auto_sync' => (int) $st['auto_sync'],
         'default_profile' => $st['default_profile'],
         'rules' => mk_meta_rules(), 'rules_default' => mk_meta_default_rules(),
-        'last_sync' => (int) $st['last_sync'], 'last_result' => $st['last_result'], 'oauth_error' => (string) $st['oauth_error'], 'token_invalid' => (bool) $st['token_invalid'],
+        'last_sync' => (int) $st['last_sync'], 'last_result' => $st['last_result'], 'running' => mk_meta_running(), 'oauth_error' => (string) $st['oauth_error'], 'token_invalid' => (bool) $st['token_invalid'],
         'currency' => mk_settings()['currency'],
     ];
 }
@@ -816,12 +816,48 @@ function mk_meta_full(?bool $set = null): bool
     return $full;
 }
 
+/**
+ * Temps de travail d'une synchronisation : un lot court (~40 s) depuis le navigateur, que les hébergeurs
+ * ne coupent pas ; la tâche cron (ligne de commande) a 25 minutes. Ce qui reste est fait au lot suivant.
+ */
+function mk_meta_clock(bool $reset = false): float
+{
+    static $t0 = null;
+    if ($reset || $t0 === null) $t0 = microtime(true);
+    return $t0;
+}
+function mk_meta_time_left(): float
+{
+    $budget = defined('MK_META_SYNC_BUDGET') ? (float) MK_META_SYNC_BUDGET : (PHP_SAPI === 'cli' ? 1500.0 : 40.0);
+    $max = (int) ini_get('max_execution_time');
+    if ($max > 0) $budget = min($budget, $max - 8);
+    return $budget - (microtime(true) - mk_meta_clock());
+}
+/** Une étape s'est arrêtée faute de temps : elle reprendra au lot suivant. */
+function mk_meta_more(?bool $set = null): bool
+{
+    static $more = false;
+    if ($set !== null) $more = $set;
+    return $more;
+}
+/** Une synchronisation tourne-t-elle en ce moment (navigateur, autre onglet ou tâche cron) ? */
+function mk_meta_running(): bool
+{
+    $f = dirname(MK_DB_PATH) . '/meta-sync.lock';
+    if (!is_file($f) || !($h = @fopen($f, 'c'))) return false;
+    $busy = !flock($h, LOCK_EX | LOCK_NB);
+    if (!$busy) flock($h, LOCK_UN);
+    fclose($h);
+    return $busy;
+}
+
 function mk_meta_sync(array $opt = []): array
 {
     if (!mk_meta_connected()) throw new MkInputError("Connectez d'abord votre compte Meta (Connexions).");
     $lock = @fopen(dirname(MK_DB_PATH) . '/meta-sync.lock', 'c');
     if ($lock && !flock($lock, LOCK_EX | LOCK_NB)) throw new MkInputError('Une synchronisation est déjà en cours : patientez une minute.');
-    @set_time_limit(!empty($opt['full']) ? 1800 : 600);
+    mk_meta_clock(true);
+    @set_time_limit(PHP_SAPI === 'cli' ? 1800 : 120);
     mk_meta_full(!empty($opt['full']));
     mk_meta_ig_refresh();
     $st = mk_meta_state(true);
@@ -836,15 +872,23 @@ function mk_meta_sync(array $opt = []): array
         'ig_stats' => ['Relevés du compte Instagram', 'mk_meta_sync_ig_stats', $st['ig_id'] !== ''],
         'fb_posts' => ['Publications Facebook', 'mk_meta_sync_fb_posts', $st['page_id'] !== ''],
         'ig_posts' => ['Publications Instagram', 'mk_meta_sync_ig_posts', $st['ig_id'] !== ''],
-        'comments' => ['Commentaires Facebook et Instagram', 'mk_meta_sync_comments', $st['page_id'] !== '' || $st['ig_id'] !== ''],
         'ads' => ['Campagnes Meta Ads', 'mk_meta_sync_ads', (bool) $st['ad_accounts']],
         'leads' => ['Leads des formulaires', 'mk_meta_sync_leads', $st['page_id'] !== ''],
         'messages' => ['Messages Messenger et Instagram', 'mk_meta_sync_messages', $st['page_id'] !== '' && $st['page_token'] !== '' && $st['messages']],
+        'comments' => ['Commentaires Facebook et Instagram', 'mk_meta_sync_comments', $st['page_id'] !== '' || $st['ig_id'] !== ''],
     ];
-    $out = ['at' => time(), 'from' => $from, 'to' => $to, 'steps' => [], 'ok' => true, 'full' => mk_meta_full(), 'totals' => ['added' => 0, 'updated' => 0]];
+    $out = ['at' => time(), 'from' => $from, 'to' => $to, 'steps' => [], 'ok' => true, 'full' => mk_meta_full(), 'totals' => ['added' => 0, 'updated' => 0], 'pending' => []];
     foreach ($steps as $key => [$label, $fn, $on]) {
         if ($only && !in_array($key, $only, true)) continue;
         $res = ['key' => $key, 'label' => $label, 'status' => 'skip', 'counts' => [], 'message' => ''];
+        mk_meta_more(false);
+        if ($on && mk_meta_time_left() < 8) {
+            // Plus le temps dans ce lot : l'étape passe au lot suivant.
+            $res['message'] = 'À suivre : cette étape passe au lot suivant.';
+            $out['pending'][] = $key;
+            $out['steps'][] = $res;
+            continue;
+        }
         if (!$on) {
             $res['message'] = $key === 'messages' && !$st['messages'] ? 'Import des messages désactivé (Connexions › étape 3).' : ($key === 'ads' ? 'Aucun compte publicitaire choisi.' : ($key === 'ig_stats' || $key === 'ig_posts' ? "Aucun compte Instagram professionnel n'est relié à la Page." : 'Aucune Page Facebook choisie : choisissez-la à l\'étape 3 « Page, Instagram et comptes publicitaires », puis « Enregistrer ces choix ».'));
         } else {
@@ -853,6 +897,10 @@ function mk_meta_sync(array $opt = []): array
                 $res['status'] = 'ok';
                 foreach ($res['counts'] as $c) { $out['totals']['added'] += (int) ($c['added'] ?? 0); $out['totals']['updated'] += (int) ($c['updated'] ?? 0); }
                 $notes = array_filter(array_map(fn ($c) => $c['note'] ?? '', $res['counts']));
+                if (mk_meta_more()) {
+                    $out['pending'][] = $key;
+                    $notes[] = 'À suivre : la suite est importée au lot suivant.';
+                }
                 $res['message'] = implode(' ', $notes);
             } catch (MkMetaError $e) {
                 $res['status'] = 'error';
@@ -872,8 +920,11 @@ function mk_meta_sync(array $opt = []): array
         }
         $out['steps'][] = $res;
     }
+    $out['more'] = (bool) $out['pending'];
+    $out['seconds'] = (int) round(microtime(true) - mk_meta_clock());
     $patch = ['last_sync' => $out['at'], 'last_result' => $out, 'token_invalid' => !empty($out['token_invalid'])];
-    if ($out['ok'] && !$only) $patch['last_until'] = $to;
+    // La fenêtre de dates n'avance qu'une fois tout importé sans erreur (sur un ou plusieurs lots).
+    if ($out['ok'] && !$out['more'] && !mk_meta_full() && (!$only || (!empty($opt['resume']) && !empty($opt['clean'])))) $patch['last_until'] = $to;
     mk_meta_put($patch);
     db()->prepare('INSERT INTO meta_sync_log (at, date_from, date_to, ok, added, updated, result) VALUES (?, ?, ?, ?, ?, ?, ?)')
         ->execute([$out['at'], $from, $to, $out['ok'] ? 1 : 0, $out['totals']['added'], $out['totals']['updated'], json_encode($out, JSON_UNESCAPED_UNICODE)]);
@@ -1084,6 +1135,7 @@ function mk_meta_sync_fb_posts(string $from, string $to): array
     $c = mk_meta_counter('publications');
     $use = [];
     foreach ($posts as $p) {
+        if (mk_meta_time_left() < 6) { mk_meta_more(true); break; }
         $text = (string) ($p['message'] ?? $p['story'] ?? '');
         $type = (string) ($p['attachments']['data'][0]['media_type'] ?? $p['attachments']['data'][0]['type'] ?? '');
         $status = (string) ($p['status_type'] ?? '');
@@ -1127,6 +1179,7 @@ function mk_meta_sync_ig_posts(string $from, string $to): array
     $useFeed = [];
     $useStory = [];
     foreach ($media as $m) {
+        if (mk_meta_time_left() < 6) { mk_meta_more(true); break; }
         $mpt = strtoupper((string) ($m['media_product_type'] ?? 'FEED'));
         if ($mpt === 'AD') continue; // publicité : comptée dans Ads Manager
         $mt = strtoupper((string) ($m['media_type'] ?? 'IMAGE'));
@@ -1278,7 +1331,7 @@ function mk_meta_sync_comments(string $from, string $to): array
             $notes[] = 'Commentaires Facebook inaccessibles (« ' . rtrim($e->getMessage(), '.') . ' »).';
         }
     }
-    if ($st['ig_id'] !== '' && mk_meta_has_channel('instagram')) {
+    if ($st['ig_id'] !== '' && mk_meta_has_channel('instagram') && !mk_meta_more()) {
         $tried++;
         try { mk_meta_comments_ig($since, $full, $c, $q); $done++; }
         catch (MkMetaError $e) {
@@ -1318,6 +1371,7 @@ function mk_meta_comments_fb(string $since, bool $full, array &$c, array &$q): v
         'since' => strtotime($since . ' 00:00:00'),
     ], $tok, $full ? 3000 : 600);
     foreach ($posts as $p) {
+        if (mk_meta_time_left() < 6) { mk_meta_more(true); return; }
         $total = (int) ($p['comments']['summary']['total_count'] ?? 0);
         $post = ['ext' => 'meta:fbpost:' . $p['id'], 'link' => (string) ($p['permalink_url'] ?? ''), 'text' => (string) ($p['message'] ?? $p['story'] ?? '')];
         if (!mk_meta_comments_changed($post['ext'], $total, $full)) continue;
@@ -1340,6 +1394,7 @@ function mk_meta_comments_ig(string $since, bool $full, array &$c, array &$q): v
     $media = mk_graph_all("$node/media", ['fields' => 'id,caption,timestamp,permalink,comments_count,media_product_type', 'since' => strtotime($since . ' 00:00:00')], $tok, $full ? 3000 : 600, $gb);
     $mine = fn (string $u) => $u !== '' && strcasecmp($u, (string) $st['ig_username']) === 0;
     foreach ($media as $m) {
+        if (mk_meta_time_left() < 6) { mk_meta_more(true); return; }
         if (mk_meta_date((string) ($m['timestamp'] ?? '')) < $since || strtoupper((string) ($m['media_product_type'] ?? '')) === 'AD') continue;
         $total = (int) ($m['comments_count'] ?? 0);
         $post = ['ext' => 'meta:igmedia:' . $m['id'], 'link' => (string) ($m['permalink'] ?? ''), 'text' => (string) ($m['caption'] ?? '')];
@@ -1454,18 +1509,29 @@ function mk_meta_sync_messages(string $from, string $to): array
         if ($platform === 'instagram' && $st['ig_id'] === '') continue;
         $c = mk_meta_counter($platform === 'messenger' ? 'conversations Messenger' : 'conversations Instagram');
         $c['messages'] = 0;
-        $params = ['platform' => $platform, 'fields' => 'id,updated_time,link,participants,messages.limit(25){id,message,from,created_time}', 'limit' => 50];
+        if (mk_meta_more()) { $out[] = $c; continue; } // plus le temps : Instagram au lot suivant
+        $params = ['platform' => $platform, 'fields' => 'id,updated_time,link,participants,message_count,messages.limit(25){id,message,from,created_time}', 'limit' => 25];
+        // « Tout l'historique » sur plusieurs lots : on reprend la liste là où le lot précédent s'est arrêté.
+        $cursor = $full ? (string) (mk_meta_state()['full_cursor'][$platform] ?? '') : '';
+        if ($cursor !== '') $params['after'] = $cursor;
         try {
             for ($page = 0; $page < ($full ? 400 : 40); $page++) {
                 $d = mk_graph($st['page_id'] . '/conversations', $params, $tok);
                 $stop = false;
                 foreach (($d['data'] ?? []) as $cv) {
                     if (strtotime((string) ($cv['updated_time'] ?? 'now')) < $since) { $stop = true; break; }
+                    if (mk_meta_time_left() < 6) { mk_meta_more(true); break 2; }
                     mk_meta_count($c, mk_meta_store_conversation($cv, $platform, $channel, $tok, $c['messages']));
                 }
                 $after = $d['paging']['cursors']['after'] ?? null;
                 if ($stop || !$after || empty($d['paging']['next'])) break;
                 $params['after'] = $after;
+            }
+            if ($full) {
+                // Lot interrompu : on reprendra à la page en cours (ses conversations déjà lues passent vite).
+                $fc = (array) (mk_meta_state()['full_cursor'] ?? []);
+                if (mk_meta_more()) $fc[$platform] = (string) ($params['after'] ?? ''); else unset($fc[$platform]);
+                mk_meta_put(['full_cursor' => $fc]);
             }
         } catch (MkMetaError $e) {
             if ($e->metaCode() === 190) throw $e;
@@ -1544,7 +1610,10 @@ function mk_meta_store_conversation(array $cv, string $platform, string $channel
     // jusqu'à retrouver ceux déjà importés (ou jusqu'au tout premier en mode « tout l'historique »).
     $paging = $cv['messages']['paging'] ?? [];
     $full = mk_meta_full();
-    for ($p = 0; $msgs && $p < ($full ? 200 : 40) && !empty($paging['next']) && !empty($paging['cursors']['after']) && ($full || $n >= count($msgs)); $p++) {
+    // Tout l'historique : on lit les pages tant qu'il manque des messages (Meta donne leur nombre).
+    $total = isset($cv['message_count']) ? (int) $cv['message_count'] : null;
+    $missing = fn () => $total === null || (int) qv('SELECT COUNT(*) FROM conversation_messages WHERE conv_id = ?', [$id]) < $total;
+    for ($p = 0; $msgs && $p < ($full ? 200 : 40) && !empty($paging['next']) && !empty($paging['cursors']['after']) && ($full ? $missing() : $n >= count($msgs)) && mk_meta_time_left() > 4; $p++) {
         $d = mk_graph((string) $cv['id'] . '/messages', ['fields' => 'id,message,from,created_time', 'limit' => 100, 'after' => $paging['cursors']['after']], $tok);
         $msgs = $d['data'] ?? [];
         $n = $store($msgs);

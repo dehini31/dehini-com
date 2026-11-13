@@ -128,8 +128,10 @@ try {
                 ],
                 'attention' => mk_backlog(false),
                 'meta' => mk_meta_public(),
-                'messages_waiting' => (int) qv("SELECT COUNT(*) FROM conversations WHERE last_from_me = 0 AND status = 'a_traiter' AND contact_id IS NULL"),
+                'messages_waiting' => (int) qv("SELECT COUNT(*) FROM conversations WHERE last_from_me = 0 AND status NOT IN ('ignore', 'traite')"),
+                'messages_replied' => (int) qv("SELECT COUNT(*) FROM conversations WHERE last_from_me = 1 AND status != 'ignore'"),
                 'comments_waiting' => (int) qv("SELECT COUNT(*) FROM comments WHERE parent_ext = '' AND from_me = 0 AND page_replied = 0 AND status = 'a_traiter' AND contact_id IS NULL"),
+                'comments_replied' => (int) qv("SELECT COUNT(*) FROM comments WHERE parent_ext = '' AND from_me = 0 AND page_replied = 1"),
                 'mail' => ['smtp' => MK_SMTP_HOST !== '', 'from' => mk_mail_from()],
                 'url' => mk_site_url(),
             ]);
@@ -461,7 +463,7 @@ try {
             if (!$isPost) fail('Méthode invalide.', 405);
             ignore_user_abort(true);
             $only = array_values(array_intersect((array) ($b['only'] ?? []), ['fb_stats', 'ig_stats', 'fb_posts', 'ig_posts', 'comments', 'ads', 'leads', 'messages']));
-            $res = mk_meta_sync(['days' => (int) ($b['days'] ?? 0), 'only' => $only, 'full' => !empty($b['full'])]);
+            $res = mk_meta_sync(['days' => (int) ($b['days'] ?? 0), 'only' => $only, 'full' => !empty($b['full']), 'resume' => !empty($b['resume']), 'clean' => !empty($b['clean'])]);
             ok(['result' => $res, 'meta' => mk_meta_public()]);
             break;
         }
@@ -486,7 +488,9 @@ try {
             $count = fn (callable $f) => count(array_filter($rows, $f));
             $by = function (string $k) use ($rows) { $o = []; foreach ($rows as $r) { $v = (string) $r[$k] ?: 'autre'; $o[$v] = ($o[$v] ?? 0) + 1; } arsort($o); return $o; };
             ok(['rows' => $rows, 'stats' => [
-                'total' => count($rows), 'waiting' => $count(fn ($r) => !(int) $r['last_from_me'] && $r['status'] !== 'ignore'),
+                'total' => count(array_filter($rows, fn ($r) => $r['status'] !== 'ignore')),
+                'waiting' => $count(fn ($r) => !(int) $r['last_from_me'] && !in_array($r['status'], ['ignore', 'traite'], true)),
+                'replied' => $count(fn ($r) => (int) $r['last_from_me'] && $r['status'] !== 'ignore'),
                 'prospects' => $count(fn ($r) => (int) $r['contact_id'] > 0), 'hot' => $count(fn ($r) => $r['heat'] === 'chaud'),
                 'with_contact' => $count(fn ($r) => $r['phone'] !== '' || $r['email'] !== ''), 'reply_median' => $med,
                 'by_category' => $by('category'), 'by_platform' => $by('platform'), 'by_heat' => $by('heat'), 'by_profile' => $by('profile'),
