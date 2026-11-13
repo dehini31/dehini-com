@@ -966,6 +966,27 @@ zéro), puis on dessine le parcours sur un canevas :
   `Échap` annule ;
 - tant que le parcours n'est pas enregistré, une barre le rappelle et quitter la page demande confirmation.
 
+**Ce qu'affiche la case de chaque étape.** Dans ses réglages, chaque étape choisit :
+
+- ses **canaux de communication** et ses **supports** (Reel, carrousel, newsletter… : ceux des canaux cochés d'abord,
+  les autres sur demande) ; les actions et les leads comptés pour l'étape se limitent à ces supports ;
+- ses **KPIs affichés dans la case** (12 au plus, dans l'ordre choisi, chacun avec un objectif facultatif) :
+  - **KPIs calculés** (une quarantaine) : actions publiées, portée, impressions, engagement, taux d'engagement, clics,
+    taux de clic, conversions, coût des actions (canaux et supports de l'étape) ; abonnés, nouveaux abonnés, portée et
+    engagement des comptes ; leads, leads qualifiés, convertis, taux de qualification et de conversion, questions ;
+    conversations, conversations chaudes, prospects issus des messages, commentaires, taux de réponse aux
+    commentaires ; dépense, impressions, clics, CTR, leads, coût par lead et conversions des campagnes associées ;
+    visites, inscriptions, formulaires et taux d'inscription des pages associées ; envois, ouvertures, taux
+    d'ouverture, clics et taux de clic des emails associés. Une nouvelle étape reçoit d'office les KPIs qui vont avec
+    sa source de chiffres ;
+  - **KPIs manuels** : on leur donne un nom (« Rendez-vous pris », « Appels passés »…), un type (nombre, pourcentage,
+    montant) et un calcul sur la période (total, ou dernière valeur saisie).
+
+Dans le suivi, chaque case montre ses KPIs avec leur valeur sur la période (coche verte quand l'objectif est atteint),
+le détail par étape les reprend tous, et **« Saisir des chiffres »** ouvre une fenêtre avec une date et un champ par
+chiffre manuel (prospects des étapes en saisie manuelle et KPIs manuels), groupés par étape ; une date déjà saisie
+s'affiche pour être corrigée. Retirer un KPI manuel supprime ses chiffres saisis.
+
 Sur téléphone, le parcours se lit de haut en bas et les réglages s'affichent sous le canevas. Les funnels existants
 (en ligne droite) sont repris tels quels à la mise à jour : chaque étape suit la précédente, et on peut ensuite leur
 ajouter des branches. Les rapports (écran et email) indiquent pour chaque étape d'où elle vient et signalent le
@@ -1034,10 +1055,12 @@ Ce que la synchronisation remplit (bouton « Synchroniser maintenant », et chaq
 | Publications, Reels, carrousels, stories | Communication › Actions (portée, vues, engagement, clics, lien) | support (Post, Carrousel, Reel, Story, Live), cible et objectif d'après le texte |
 | Campagnes Meta Ads | Ads Manager › Campagnes (nom, statut, dates, budget converti) et Résultats jour par jour (dépense, impressions, clics, leads, conversions) | objectif Meta → objectif du tableau de bord, cible d'après le nom |
 | Formulaires Lead Ads | Leads & Contacts (nom, téléphone, email, ville, réponses dans les notes, campagne et funnel) | profil investisseur / porteur, canal Meta Ads (ou Facebook / Instagram si organique), support Formulaire |
+| Tous les commentaires Facebook et Instagram, avec leurs réponses | Leads & Contacts › Commentaires | sujet, profil, question posée, téléphone / email / wilaya laissés, « la Page a répondu » |
 | Commentaires qui posent une question (français, arabe, darija) | Leads & Contacts › Questions | sujet (investissement, projet, plateforme, partenariat, réclamation) et profil |
 
 **Messages Messenger et Instagram** (Leads & Contacts › **Messages**). Les conversations de la Page (Messenger) et du
-compte Instagram relié sont importées à chaque synchronisation (25 derniers messages par conversation) et analysées :
+compte Instagram relié sont importées à chaque synchronisation, **avec tous leurs messages** (une longue conversation
+est lue page par page jusqu'aux messages déjà importés), et analysées :
 sujet (investissement, projet, plateforme…), profil (investisseur / porteur), question posée, intention forte (« je
 veux investir », « rappelez-moi », numéro laissé…), **téléphone** (format algérien, chiffres arabes compris),
 **email** et **wilaya** trouvés dans les messages, temps de première réponse, et une **chaleur** (Chaud / Tiède /
@@ -1048,6 +1071,21 @@ lien et derniers messages dans les notes) ; une personne déjà enregistrée (m�
 lieu d'être recréée. Le tableau de bord ne fait que lire : on répond depuis Meta Business Suite (bouton « Répondre »).
 Autorisations à ajouter à la configuration Facebook Login for Business : `pages_messaging`, `pages_manage_metadata`,
 `instagram_manage_messages`, puis « Reconnecter ». L'accueil affiche les messages sans réponse.
+
+**Commentaires Facebook et Instagram** (Leads & Contacts › **Commentaires**). Tous les commentaires des publications,
+avec leurs réponses (celles de la Page sont marquées « Vous (la Page) »), et pas seulement ceux qui posent une
+question. À chaque synchronisation, les publications des 3 derniers mois dont le nombre de commentaires a changé sont
+relues : les nouveaux commentaires des anciennes publications arrivent aussi. Indicateurs (commentaires, sans réponse
+de la Page, répondus, questions, coordonnées laissées, prospects créés), sujets, réseaux, profils ; filtres (sans
+réponse, questions, avec coordonnées, Facebook, Instagram, prospects, traités, ignorés) ; recherche ; pour chaque
+commentaire : « Créer le prospect » (formulaire prérempli), « Répondre » (ouvre le commentaire chez Meta), « Traité »,
+« Ignorer ». L'accueil affiche les commentaires sans réponse.
+
+**Tout afficher, tout importer.** Messages et Commentaires ont un choix « *période* / **Tout l'historique** » (toutes
+les conversations ou tous les commentaires importés, quelle que soit la date) et un bouton « Afficher plus » (100 par
+100). Le bouton **« Importer tout l'historique »** (dans Messages, Commentaires et Connexions › Synchronisation) relit
+chez Meta toutes les conversations avec tous leurs messages, et tous les commentaires des publications des 2 dernières
+années ; cela peut prendre plusieurs minutes, et s'il s'arrête avant la fin il suffit de le relancer.
 
 **Noms des commentateurs.** Meta ne donne le nom de l'auteur d'un commentaire Facebook qu'aux apps qui ont
 `pages_read_user_content` et sont « en ligne » (mode Live) ; sinon la question s'affiche « Nom masqué par Meta » avec

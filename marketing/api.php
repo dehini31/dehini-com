@@ -129,6 +129,7 @@ try {
                 'attention' => mk_backlog(false),
                 'meta' => mk_meta_public(),
                 'messages_waiting' => (int) qv("SELECT COUNT(*) FROM conversations WHERE last_from_me = 0 AND status = 'a_traiter' AND contact_id IS NULL"),
+                'comments_waiting' => (int) qv("SELECT COUNT(*) FROM comments WHERE parent_ext = '' AND from_me = 0 AND page_replied = 0 AND status = 'a_traiter' AND contact_id IS NULL"),
                 'mail' => ['smtp' => MK_SMTP_HOST !== '', 'from' => mk_mail_from()],
                 'url' => mk_site_url(),
             ]);
@@ -309,6 +310,13 @@ try {
             break;
         }
 
+        case 'funnel_entries_save': {
+            if (!$isPost) fail('Méthode invalide.', 405);
+            $n = mk_funnel_entries_save((int) ($b['funnel_id'] ?? 0), (string) ($b['date'] ?? ''), is_array($b['values'] ?? null) ? $b['values'] : [], mk_str($b['notes'] ?? '', 200));
+            ok(['saved' => $n]);
+            break;
+        }
+
         case 'funnel': {
             $f = mk_funnel_full((int) ($_GET['id'] ?? 0));
             if (!$f) fail('Funnel introuvable.', 404);
@@ -452,7 +460,8 @@ try {
         case 'meta_sync': {
             if (!$isPost) fail('Méthode invalide.', 405);
             ignore_user_abort(true);
-            $res = mk_meta_sync(['days' => (int) ($b['days'] ?? 0)]);
+            $only = array_values(array_intersect((array) ($b['only'] ?? []), ['fb_stats', 'ig_stats', 'fb_posts', 'ig_posts', 'comments', 'ads', 'leads', 'messages']));
+            $res = mk_meta_sync(['days' => (int) ($b['days'] ?? 0), 'only' => $only, 'full' => !empty($b['full'])]);
             ok(['result' => $res, 'meta' => mk_meta_public()]);
             break;
         }
@@ -467,7 +476,9 @@ try {
         case 'conversations': {
             $from = date_param('from', mk_add_days(mk_today(), -29));
             $to = date_param('to', mk_today());
-            $rows = q('SELECT * FROM conversations WHERE last_date BETWEEN ? AND ? ORDER BY updated DESC LIMIT 1000', [$from, $to]);
+            // « Tout l'historique » : toutes les conversations importées, sans limite de période.
+            $rows = !empty($_GET['all']) ? q('SELECT * FROM conversations ORDER BY updated DESC LIMIT 20000')
+                : q('SELECT * FROM conversations WHERE last_date BETWEEN ? AND ? ORDER BY updated DESC LIMIT 20000', [$from, $to]);
             $replies = array_values(array_filter(array_map(fn ($r) => $r['reply_minutes'], $rows), fn ($v) => $v !== null));
             sort($replies);
             $med = $replies ? $replies[intdiv(count($replies), 2)] : null;
@@ -480,6 +491,45 @@ try {
                 'with_contact' => $count(fn ($r) => $r['phone'] !== '' || $r['email'] !== ''), 'reply_median' => $med,
                 'by_category' => $by('category'), 'by_platform' => $by('platform'), 'by_heat' => $by('heat'), 'by_profile' => $by('profile'),
             ], 'meta' => ['messages' => mk_meta_state()['messages'], 'connected' => mk_meta_fb_connected()]]);
+            break;
+        }
+
+        case 'comments': {
+            $from = date_param('from', mk_add_days(mk_today(), -29));
+            $to = date_param('to', mk_today());
+            $all = !empty($_GET['all']);
+            $sel = 'SELECT c.*, p.topic AS post_topic FROM comments c LEFT JOIN posts p ON p.id = c.post_id';
+            $top = $all ? q("$sel WHERE c.parent_ext = '' ORDER BY c.at DESC LIMIT 20000") : q("$sel WHERE c.parent_ext = '' AND c.date BETWEEN ? AND ? ORDER BY c.at DESC LIMIT 20000", [$from, $to]);
+            $exts = array_column($top, 'ext_id');
+            $replies = [];
+            foreach (array_chunk($exts, 400) as $part) foreach (q("$sel WHERE c.parent_ext IN (" . mk_in($part) . ') ORDER BY c.at', $part) as $r) $replies[] = $r;
+            foreach ($top as $i => $r) $top[$i]['name'] = mk_comment_name($r);
+            foreach ($replies as $i => $r) $replies[$i]['name'] = mk_comment_name($r);
+            $them = array_values(array_filter($top, fn ($r) => !(int) $r['from_me']));
+            $count = fn (callable $f) => count(array_filter($them, $f));
+            $by = function (string $k) use ($them) { $o = []; foreach ($them as $r) { $v = (string) $r[$k] ?: 'autre'; $o[$v] = ($o[$v] ?? 0) + 1; } arsort($o); return $o; };
+            $st = mk_meta_state();
+            ok(['rows' => $top, 'replies' => $replies, 'stats' => [
+                'total' => count($them), 'questions' => $count(fn ($r) => (int) $r['is_question']),
+                'waiting' => $count(fn ($r) => !(int) $r['page_replied'] && $r['status'] === 'a_traiter'), 'replied' => $count(fn ($r) => (int) $r['page_replied']),
+                'prospects' => $count(fn ($r) => (int) $r['contact_id'] > 0), 'with_contact' => $count(fn ($r) => $r['phone'] !== '' || $r['email'] !== ''),
+                'by_platform' => $by('platform'), 'by_category' => $by('category'), 'by_profile' => $by('profile'),
+            ], 'meta' => ['connected' => mk_meta_connected(), 'questions' => (bool) $st['questions']]]);
+            break;
+        }
+
+        case 'comment_status': {
+            if (!$isPost) fail('Méthode invalide.', 405);
+            $cs = (string) ($b['status'] ?? '');
+            if (!in_array($cs, ['a_traiter', 'traite', 'ignore'], true)) fail('Statut inconnu.');
+            db()->prepare('UPDATE comments SET status = ? WHERE id = ?')->execute([$cs, (int) ($b['id'] ?? 0)]);
+            ok();
+            break;
+        }
+
+        case 'comment_prospect': {
+            if (!$isPost) fail('Méthode invalide.', 405);
+            ok(mk_comment_prospect((int) ($b['id'] ?? 0), is_array($b['contact'] ?? null) ? $b['contact'] : []));
             break;
         }
 
