@@ -1570,9 +1570,14 @@ function mk_meta_webhook_setup(): array
     $app = $appId . '|' . $secret;
     $try("Réception des messages et commentaires Facebook par l'app", fn () => mk_graph_post("$appId/subscriptions", ['object' => 'page', 'callback_url' => $url, 'verify_token' => $verify, 'fields' => ['messages', 'message_echoes', 'feed'], 'include_values' => 'true'], $app));
     if ($st['ig_id'] !== '') {
-        // Instagram relié par « Se connecter avec Instagram » : abonnement fait avec l'app Instagram.
-        $igApp = $st['ig_via'] === 'instagram' && $st['ig_app_id'] !== '' && $st['ig_app_secret'] !== '' ? [$st['ig_app_id'], mk_unseal($st['ig_app_secret'])] : [$appId, $secret];
-        $try("Réception des messages et commentaires Instagram par l'app", fn () => mk_graph_post($igApp[0] . '/subscriptions', ['object' => 'instagram', 'callback_url' => $url, 'verify_token' => $verify, 'fields' => ['comments', 'messages'], 'include_values' => 'true'], $igApp[0] . '|' . $igApp[1]));
+        // Toujours avec l'app Meta principale : l'« ID de l'app Instagram » (Se connecter avec Instagram) n'est pas
+        // une app que l'API Graph sait valider (« Error validating application »).
+        $try("Réception des messages et commentaires Instagram par l'app", fn () => mk_graph_post("$appId/subscriptions", ['object' => 'instagram', 'callback_url' => $url, 'verify_token' => $verify, 'fields' => ['comments', 'messages'], 'include_values' => 'true'], $app));
+        $last = count($steps) - 1;
+        if (!$steps[$last]['ok']) {
+            $steps[$last]['message'] .= " — Réglez-le à la main dans l'app Meta : Instagram › Configuration de l'API (avec la connexion Instagram) › « Configurer les webhooks », "
+                . "ou produit Webhooks › objet « Instagram » : URL de rappel et jeton de vérification ci-dessous, puis abonnez-vous à comments et messages.";
+        }
     }
     if ($st['page_id'] !== '' && $st['page_token'] !== '') {
         $try('Abonnement de la Page « ' . $st['page_name'] . ' »', fn () => mk_graph_post($st['page_id'] . '/subscribed_apps', ['subscribed_fields' => ['messages', 'message_echoes', 'feed']], mk_unseal($st['page_token'])));
