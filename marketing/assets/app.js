@@ -1245,6 +1245,7 @@ const histToggle = () => {
   const all = histAll();
   return `<div class="seg" role="group" aria-label="Période affichée"><button type="button" data-hist="range" aria-selected="${!all}">${ic("calendar", "sm")} ${esc(rangeLabel())}</button><button type="button" data-hist="all" aria-selected="${all}">${ic("archive", "sm")} Tout l'historique</button></div>`;
 };
+const LIVE_PILL = `<span class="live-pill" id="liveDot" title="Les nouveaux messages et commentaires s'affichent tout seuls"><i></i>En direct</span>`;
 const fullBtn = what => `<button type="button" class="btn" data-fullsync="${what}">${ic("download", "sm")} Importer tout l'historique</button>`;
 const MORE = 100;
 const moreBtn = (shown, total) => total > shown
@@ -1291,7 +1292,7 @@ VIEWS["leads/messages"] = { range: true, fn: async param => {
   S.convs = d.rows;
   const st = d.stats, f = CONV_FILTERS.some(x => x[0] === param) ? param : "all";
   if (!d.meta.connected) return empty("Les messages arrivent de Meta. Connectez votre Page Facebook (et son compte Instagram) dans Connexions : les conversations Messenger et Instagram s'afficheront ici, analysées.", `<a class="btn pri" href="#connexions/meta">${ic("link", "sm")} Relier Facebook et Instagram</a>`, { icon: ["message", "teal"] });
-  const bar = `<div class="toolbar">${histToggle()}<span class="grow"></span>${fullBtn("messages")}</div>`;
+  const bar = `<div class="toolbar">${histToggle()}${LIVE_PILL}<span class="grow"></span>${fullBtn("messages")}</div>`;
   if (!d.rows.length) return bar + `${!d.meta.messages ? `<div class="banner warn">${ic("alert", "sm")}<span>L'import des messages est désactivé : activez-le dans <a href="#connexions/meta">Connexions</a> › étape 3.</span></div>` : ""}`
     + empty(all ? "Aucune conversation importée. Lancez « Importer tout l'historique » : il faut les autorisations pages_messaging et instagram_manage_messages dans votre configuration Facebook Login for Business." : "Aucune conversation sur la période. Choisissez « Tout l'historique » pour voir toutes les conversations importées, ou lancez une synchronisation dans Connexions.", `<a class="btn pri" href="#connexions/meta">${ic("trend", "sm")} Synchroniser</a>`, { icon: ["message", "teal"] });
   const t = (l, v, sub, m, cls = "") => `<div class="kpi ${cls}">${tile(m[0], m[1])}<small>${esc(l)}</small><b>${v}</b><span class="d">${sub}</span></div>`;
@@ -1411,7 +1412,7 @@ VIEWS["leads/comments"] = { range: true, fn: async param => {
   S.cmts = d;
   const f = CMT_FILTERS.some(x => x[0] === param) ? param : "all";
   if (!d.meta.connected) return empty("Les commentaires arrivent de Meta. Connectez votre Page Facebook et son compte Instagram dans Connexions : tous les commentaires de vos publications s'afficheront ici, avec leurs réponses.", `<a class="btn pri" href="#connexions/meta">${ic("link", "sm")} Relier Facebook et Instagram</a>`, { icon: ["message", "violet"] });
-  const bar = `<div class="toolbar">${histToggle()}<span class="grow"></span>${fullBtn("comments")}</div>`;
+  const bar = `<div class="toolbar">${histToggle()}${LIVE_PILL}<span class="grow"></span>${fullBtn("comments")}</div>`;
   if (!d.rows.length) return bar + empty(all ? "Aucun commentaire importé pour l'instant. Lancez « Importer tout l'historique » : tous les commentaires des publications des 2 dernières années seront récupérés, avec leurs réponses." : "Aucun commentaire sur la période. Choisissez « Tout l'historique » pour voir tous les commentaires importés, ou lancez une synchronisation dans Connexions.", "", { icon: ["message", "violet"] });
   const st = d.stats;
   const t = (l, v, sub, m, cls = "") => `<div class="kpi ${cls}">${tile(m[0], m[1])}<small>${esc(l)}</small><b>${v}</b><span class="d">${sub}</span></div>`;
@@ -1811,6 +1812,25 @@ function metaResult(res) {
   }).join("")}</ul>`;
 }
 
+/** Carte « Temps réel » : Meta envoie chaque nouveau message et commentaire au tableau de bord (webhooks). */
+function liveCard(m) {
+  const w = m.webhook || {};
+  const recent = w.last_event && Date.now() / 1000 - w.last_event < 7 * 86400;
+  const state = w.on
+    ? `<div class="banner ${recent ? "good" : ""}">${ic(recent ? "check-circle" : "clock", "sm")}<span><b>Temps réel activé</b>${w.last_event ? ` · dernier message ou commentaire reçu : <b>${esc(metaWhen(w.last_event))}</b> (${num(w.events)} reçu(s))` : " · rien reçu pour l'instant"}.</span></div>`
+    : `<div class="banner">${ic("zap", "sm")}<span><b>Temps réel non activé.</b> Les messages et commentaires arrivent par la vérification rapide (toutes les 2 minutes, tableau de bord ouvert) et la synchronisation.</span></div>`;
+  const steps = (w.steps || []).length ? `<ul class="sync-steps">${w.steps.map(x => `<li class="${x.ok ? "ok" : "error"}">${tile(x.ok ? "check" : "alert-c", x.ok ? "green" : "pink", "sm")}<span><b>${esc(x.label)}</b><small>${x.ok ? "Fait" : esc(x.message)}</small></span></li>`).join("")}</ul>` : "";
+  return `<section class="card" id="mLive"><div class="card-h"><h2>${tile("zap", "pink", "sm")}Temps réel : messages et commentaires</h2><div class="ctrl"><button type="button" class="btn${w.on ? "" : " pri"}" id="mLiveGo">${ic("zap", "sm")} ${w.on ? "Réactiver" : "Activer le temps réel"}</button></div></div>
+    <p class="muted" style="margin-top:0">Une fois activé, Meta envoie au tableau de bord <b>chaque nouveau message</b> (Messenger, Instagram) et <b>chaque nouveau commentaire</b> (Facebook, Instagram) dès qu'il arrive : il s'affiche dans Leads & Contacts › Messages et Commentaires, avec une notification, sans recharger la page.</p>
+    ${state}${steps}
+    <details class="mhelp"><summary>${ic("info", "sm")} Bon à savoir (mode Live, réglage à la main)</summary>
+      <p class="small">• Tant que l'app Meta est en <b>mode Développement</b>, Meta n'envoie en temps réel que les messages et commentaires des personnes qui ont un rôle dans l'app (vous, les testeurs). Pour tout recevoir, passez l'app en <b>mode Live</b> (avec l'accès avancé à pages_messaging, instagram_manage_messages et pages_read_user_content). En attendant, la vérification rapide toutes les 2 minutes prend le relais.</p>
+      <p class="small">• Si l'activation échoue, réglez-la dans l'app Meta › <b>Webhooks</b> : objet <b>Page</b> (champs <code>messages</code>, <code>message_echoes</code>, <code>feed</code>) et objet <b>Instagram</b> (champs <code>comments</code>, <code>messages</code>), avec :</p>
+      <div class="cfg"><small>URL de rappel</small><code id="mWhUrl">${esc(w.url || "")}</code><button type="button" class="btn sm" data-copy="#mWhUrl">${ic("copy", "sm")} Copier</button></div>
+      <div class="cfg"><small>Jeton de vérification</small><code id="mWhTok">${esc(w.verify_token || "créé à la première activation")}</code>${w.verify_token ? `<button type="button" class="btn sm" data-copy="#mWhTok">${ic("copy", "sm")} Copier</button>` : ""}</div>
+    </details></section>`;
+}
+
 VIEWS["connexions/meta"] = { fn: async param => {
   if (META_BACK[param]) {
     const [msg, kind] = META_BACK[param];
@@ -1883,13 +1903,15 @@ VIEWS["connexions/meta"] = { fn: async param => {
       ${step(1, appOk, !appOk, "App Meta", s1)}
       ${step(2, conn && !m.token_invalid, appOk && (!conn || m.token_invalid), "Connexion au compte Facebook", s2)}
       ${step(3, chosen, conn && !chosen, "Page, Instagram et comptes publicitaires", conn ? s3 : `<p class="muted" style="margin:0">Disponible une fois le compte connecté.</p>`)}
-      ${conn || m.instagram ? sync : ""}
+      ${conn || m.instagram ? sync + liveCard(m) : ""}
     </div><div class="side-col">
       <section class="card"><div class="card-h"><h2>${tile("sparkles", "amber", "sm")}Ce qui arrive tout seul</h2></div><div class="alist">${what.map(w => `<div class="arow">${tile(w[0], w[1], "sm")}<span><b>${w[2]}</b><small>${w[3]}</small></span></div>`).join("")}</div>
         <p class="small muted" style="margin:10px 0 0">Le classement suit vos <a href="#connexions/rules">règles de classement</a>. Une donnée importée puis supprimée n'est pas réimportée.</p></section>
       <section class="card"><div class="card-h"><h2>${tile("clock", "teal", "sm")}Même tableau de bord fermé</h2></div><p class="small" style="margin-top:0">Pour que tout se synchronise aussi quand personne n'a ouvert le tableau de bord : dans <b>cPanel › Tâches Cron</b>, « Paramètres communs » : <b>Une fois par heure</b>, puis collez cette commande et cliquez sur « Ajouter une nouvelle tâche Cron » :</p>
         <pre class="code" id="mCron">/usr/local/bin/php ~/public_html/marketing/cron.php --meta-only &gt; /dev/null 2&gt;&amp;1</pre><button type="button" class="btn sm" data-copy="#mCron">${ic("copy", "sm")} Copier la commande</button>
-        <p class="small muted" style="margin:10px 0 0">La tâche du matin (rapports) synchronise déjà une fois par jour ; celle-ci ajoute une synchronisation chaque heure.</p></section>
+        <p class="small muted" style="margin:10px 0 0">La tâche du matin (rapports) synchronise déjà une fois par jour ; celle-ci ajoute une synchronisation chaque heure.</p>
+        <p class="small" style="margin:12px 0 6px"><b>Messages et commentaires toutes les 5 minutes</b> (même tableau de bord fermé, utile si le temps réel n'est pas actif) : 2e tâche, « Paramètres communs » : <b>Toutes les cinq minutes</b> :</p>
+        <pre class="code" id="mCronLive">/usr/local/bin/php ~/public_html/marketing/cron.php --live &gt; /dev/null 2&gt;&amp;1</pre><button type="button" class="btn sm" data-copy="#mCronLive">${ic("copy", "sm")} Copier la commande</button></section>
     </div></div>`;
 }, after: async () => {
   const m = S.meta;
@@ -1916,6 +1938,17 @@ VIEWS["connexions/meta"] = { fn: async param => {
   if (el("mAuto")) el("mAuto").addEventListener("change", async e => {
     try { const d = await api("meta_save", {}, { auto_sync: +e.target.value }); S.boot.meta = d.meta; toast(+e.target.value ? "Synchronisation automatique : " + e.target.selectedOptions[0].textContent.toLowerCase() : "Synchronisation automatique désactivée"); }
     catch (err) { toast(err.message, "err"); }
+  });
+  if (el("mLiveGo")) el("mLiveGo").addEventListener("click", async e => {
+    const b = e.target.closest("button");
+    b.disabled = true;
+    b.innerHTML = `<span class="spin dark"></span> Activation…`;
+    try {
+      const d = await api("meta_webhook", {}, {});
+      S.boot.meta = d.meta;
+      toast(d.result.ok ? "Temps réel activé : les nouveaux messages et commentaires arrivent dès qu'ils sont envoyés" : "Temps réel activé en partie : voir le détail", d.result.ok ? "" : "err");
+      route();
+    } catch (err) { toast(err.message, "err"); b.disabled = false; b.innerHTML = `${ic("zap", "sm")} Activer le temps réel`; }
   });
   if (el("mGo")) el("mGo").addEventListener("click", async e => {
     const b = e.target.closest("button");
@@ -3805,6 +3838,51 @@ async function start() {
   $("#app").hidden = false;
   route();
   if (!S.autoTimer) { S.autoTimer = setInterval(autoSync, 60 * 1000); setTimeout(autoSync, 8000); }
+  if (!S.liveTimer) { S.liveTimer = setInterval(liveTick, 15 * 1000); setTimeout(liveTick, 1500); }
+}
+
+/**
+ * En direct : toutes les 15 secondes (1 minute quand l'onglet est caché), le tableau de bord demande
+ * au serveur les messages et commentaires arrivés depuis la dernière fois (par le temps réel de Meta ou
+ * la vérification rapide), les annonce, met les compteurs à jour et rafraîchit la liste affichée.
+ */
+async function liveTick() {
+  if (!S.boot || S.liveBusy) return;
+  if (document.hidden && Date.now() - (S.liveAt || 0) < 60000) return;
+  S.liveBusy = true;
+  S.liveAt = Date.now();
+  try {
+    const d = await api("live", S.liveM != null ? { m: S.liveM, c: S.liveC } : {});
+    const first = S.liveM == null;
+    // Quelque chose a bougé (nouveau message ou commentaire, réponse de la Page, compteurs) ?
+    const sig = [d.m, d.c, JSON.stringify(d.counts)].join("|");
+    const changed = !first && sig !== S.liveSig;
+    S.liveSig = sig;
+    S.liveM = d.m;
+    S.liveC = d.c;
+    Object.assign(S.boot, d.counts);
+    if (S.boot.meta) S.boot.meta.last_light = d.last_light;
+    const msgs = d.messages || [], cmts = d.comments || [];
+    if (changed) {
+      const news = [...msgs.filter(x => x.recent).map(x => `${ic("message", "sm")} Message de ${x.name} : « ${String(x.text).slice(0, 70)} »`), ...cmts.filter(x => x.recent).map(x => `Commentaire de ${x.name} : « ${String(x.text).slice(0, 70)} »`)];
+      news.slice(0, 3).forEach((t, i) => setTimeout(() => toast(t.replace(/<[^>]+>/g, "").trim()), i * 600));
+      if (news.length > 3) setTimeout(() => toast(`… et ${news.length - 3} autre(s) nouveauté(s)`), 1900);
+      S.cache.clear();
+      const h = location.hash;
+      const busy = !$("#modal").hidden || !$("#dlg").hidden || (document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName));
+      if (!busy && (/^#leads\/(messages|comments)/.test(h) || h === "" || h.startsWith("#overview/daily") || h === "#overview")) route();
+    }
+    liveDot(true);
+  } catch (err) {
+    if (err.status === 401) { clearInterval(S.liveTimer); S.liveTimer = null; }
+    liveDot(false);
+  }
+  S.liveBusy = false;
+}
+/** Petite pastille « En direct » dans les vues Messages et Commentaires. */
+function liveDot(ok) {
+  const el = $("#liveDot");
+  if (el) { el.classList.toggle("off", !ok); el.title = ok ? "Les nouveaux messages et commentaires s'affichent tout seuls" : "Connexion perdue : nouvelle tentative dans 15 secondes"; }
 }
 
 /**
@@ -3816,7 +3894,19 @@ async function autoSync() {
   if (!m || !m.connected || !+m.auto_sync || S.autoBusy || m.token_invalid) return;
   // Synchronisation pas terminée (gros import) : le lot suivant part tout de suite, sans attendre l'intervalle.
   const pend = S.autoPending || (m.last_result && m.last_result.more && !m.last_result.full ? m.last_result.pending : null);
-  if (!pend && Date.now() / 1000 - (+m.last_sync || 0) < +m.auto_sync * 60) return;
+  if (!pend && Date.now() / 1000 - (+m.last_sync || 0) < +m.auto_sync * 60) {
+    // Entre deux synchronisations : vérification rapide des nouveaux messages et commentaires,
+    // toutes les 2 minutes (toutes les 10 minutes quand le temps réel de Meta est actif).
+    const wh = m.webhook || {};
+    const every = wh.on && wh.last_event && Date.now() / 1000 - wh.last_event < 86400 ? 600 : 120;
+    if (Date.now() / 1000 - Math.max(+m.last_light || 0, S.lightAt || 0) < every) return;
+    S.autoBusy = true;
+    S.lightAt = Date.now() / 1000;
+    try { const d = await api("meta_sync", {}, { only: ["messages", "comments"], light: true }); m.last_light = d.result.at; }
+    catch (err) { if (err.status === 401) clearInterval(S.autoTimer); }
+    S.autoBusy = false;
+    return liveTick();
+  }
   S.autoBusy = true;
   try {
     const d = await api("meta_sync", {}, pend ? { only: pend, resume: true, clean: S.autoClean !== false } : {});

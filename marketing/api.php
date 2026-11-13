@@ -463,8 +463,36 @@ try {
             if (!$isPost) fail('Méthode invalide.', 405);
             ignore_user_abort(true);
             $only = array_values(array_intersect((array) ($b['only'] ?? []), ['fb_stats', 'ig_stats', 'fb_posts', 'ig_posts', 'comments', 'ads', 'leads', 'messages']));
-            $res = mk_meta_sync(['days' => (int) ($b['days'] ?? 0), 'only' => $only, 'full' => !empty($b['full']), 'resume' => !empty($b['resume']), 'clean' => !empty($b['clean'])]);
+            $res = mk_meta_sync(['days' => (int) ($b['days'] ?? 0), 'only' => $only, 'full' => !empty($b['full']), 'resume' => !empty($b['resume']), 'clean' => !empty($b['clean']), 'light' => !empty($b['light'])]);
             ok(['result' => $res, 'meta' => mk_meta_public()]);
+            break;
+        }
+
+        case 'meta_webhook': {
+            if (!$isPost) fail('Méthode invalide.', 405);
+            ok(['result' => mk_meta_webhook_setup(), 'meta' => mk_meta_public()]);
+            break;
+        }
+
+        case 'live': {
+            // Nouveautés depuis le dernier passage : messages et commentaires reçus (identifiants croissants).
+            $lm = (int) ($_GET['m'] ?? 0);
+            $lc = (int) ($_GET['c'] ?? 0);
+            $recent = date('Y-m-d H:i:s', time() - 86400);
+            $msgs = $lm > 0 ? q('SELECT m.id, m.text, m.at, c.id AS conv_id, c.platform, c.who_name, c.who_username FROM conversation_messages m JOIN conversations c ON c.id = m.conv_id
+                WHERE m.id > ? AND m.from_me = 0 ORDER BY m.id DESC LIMIT 30', [$lm]) : [];
+            $cmts = $lc > 0 ? q("SELECT id, platform, who_name, who_username, from_me, text, at FROM comments WHERE id > ? AND from_me = 0 ORDER BY id DESC LIMIT 30", [$lc]) : [];
+            foreach ($msgs as $i => $r) { $msgs[$i]['name'] = mk_conv_name($r); $msgs[$i]['recent'] = $r['at'] >= $recent; }
+            foreach ($cmts as $i => $r) { $cmts[$i]['name'] = mk_comment_name($r); $cmts[$i]['recent'] = $r['at'] >= $recent; }
+            ok(['m' => (int) qv('SELECT COALESCE(MAX(id), 0) FROM conversation_messages'), 'c' => (int) qv('SELECT COALESCE(MAX(id), 0) FROM comments'),
+                'messages' => $msgs, 'comments' => $cmts,
+                'counts' => [
+                    'messages_waiting' => (int) qv("SELECT COUNT(*) FROM conversations WHERE last_from_me = 0 AND status NOT IN ('ignore', 'traite')"),
+                    'messages_replied' => (int) qv("SELECT COUNT(*) FROM conversations WHERE last_from_me = 1 AND status != 'ignore'"),
+                    'comments_waiting' => (int) qv("SELECT COUNT(*) FROM comments WHERE parent_ext = '' AND from_me = 0 AND page_replied = 0 AND status = 'a_traiter' AND contact_id IS NULL"),
+                    'comments_replied' => (int) qv("SELECT COUNT(*) FROM comments WHERE parent_ext = '' AND from_me = 0 AND page_replied = 1"),
+                ],
+                'webhook' => mk_meta_webhook_public()['last_event'], 'last_light' => (int) mk_meta_state()['last_light']]);
             break;
         }
 
