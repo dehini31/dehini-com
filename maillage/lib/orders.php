@@ -29,6 +29,25 @@ function order_next(string $status, string $mode): array
     return [];
 }
 
+/**
+ * Étapes possibles pour une commande précise. Une commande radar qu'aucun point de vente n'a
+ * encore prise ne peut qu'être annulée : elle se « confirme » en étant prise en charge.
+ */
+function order_allowed(array $o): array
+{
+    if ((int) ($o['radar'] ?? 0) && !(int) $o['store_id']) return $o['status'] === 'pending' ? ['cancelled'] : [];
+    return order_next((string) $o['status'], (string) $o['mode']);
+}
+
+/** Wilaya, commune et adresse (facultative) d'une livraison. Lève InvalidArgumentException si la commune manque. */
+function delivery_place(array $b): array
+{
+    $zone = zone_code($b['zone'] ?? '');
+    $commune = $zone !== '' ? commune_clean($zone, $b['commune'] ?? ($b['city'] ?? '')) : '';
+    if ($zone === '' || $commune === '') throw new InvalidArgumentException('Choisissez la wilaya puis la commune de livraison.');
+    return ['zone' => $zone, 'commune' => $commune, 'address' => line_clean($b['address'] ?? '', 200)];
+}
+
 function order_ref(): string
 {
     $abc = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
@@ -44,7 +63,8 @@ function order_ref(): string
 
 /**
  * Crée une commande ou une réservation. $b : store_id, kind (order|reservation), mode
- * (pickup|delivery), items [{variant_id, qty}], name, phone, email, address, city, zone, note.
+ * (pickup|delivery), items [{variant_id, qty}], name, phone, email, zone, commune, address
+ * (facultative), note.
  * Retourne ['order' => ligne, 'token' => jeton de suivi] ou lève InvalidArgumentException
  * (message affichable).
  */
@@ -74,10 +94,10 @@ function order_create(array $b, ?int $at = null): array
     $city = '';
     $zone = '';
     if ($mode === 'delivery') {
-        $address = line_clean($b['address'] ?? '', 200);
-        $city = line_clean($b['city'] ?? '', 80);
-        $zone = zone_code($b['zone'] ?? '');
-        if (mb_strlen($address) < 5 || $city === '' || $zone === '') throw new InvalidArgumentException('Indiquez l\'adresse de livraison complète (adresse, ville, wilaya).');
+        $place = delivery_place($b);
+        $address = $place['address'];
+        $city = $place['commune'];
+        $zone = $place['zone'];
     }
 
     $items = [];
@@ -115,10 +135,10 @@ function order_create(array $b, ?int $at = null): array
             }
         }
         $ref = order_ref();
-        $pdo->prepare('INSERT INTO orders (ref, thash, kind, mode, store_id, seller_cid, status, total, cname, cphone, cemail, address, city, wilaya, note, created, updated, expires)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')->execute([
+        $pdo->prepare('INSERT INTO orders (ref, thash, kind, mode, store_id, seller_cid, status, total, cname, cphone, cemail, address, city, commune, wilaya, note, created, updated, expires)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')->execute([
             $ref, hash('sha256', $token), $kind, $mode, $store['id'], $store['company_id'], 'pending', $total, $name, $phone, $email,
-            $address, $city, $zone, str_clean($b['note'] ?? '', 500), $now, $now,
+            $address, $city, $city, $zone, str_clean($b['note'] ?? '', 500), $now, $now,
             $kind === 'reservation' ? $now + (int) MLG_RESERVATION_HOURS * 3600 : 0,
         ]);
         $oid = (int) $pdo->lastInsertId();
@@ -184,8 +204,14 @@ function order_view(array $o, bool $full = false): array
         ] : null,
         'items' => order_items((int) $o['id']),
         'events' => order_events((int) $o['id']),
-        'next' => order_next((string) $o['status'], (string) $o['mode']),
-        'delivery' => $o['mode'] === 'delivery' ? ['address' => (string) $o['address'], 'city' => (string) $o['city'], 'zone' => zone_name((string) $o['wilaya'])] : null,
+        'next' => order_allowed($o),
+        'delivery' => $o['mode'] === 'delivery' ? [
+            'address' => (string) $o['address'], 'city' => (string) $o['city'], 'zone' => zone_name((string) $o['wilaya']), 'wilaya' => (string) $o['wilaya'],
+            'commune' => (string) ($o['commune'] ?? ''), 'commune_ar' => commune_ar((string) $o['wilaya'], (string) ($o['commune'] ?? '')),
+        ] : null,
+        // Commande radar : reçue sans point de vente ; « waiting » tant qu'aucun ne l'a prise.
+        'radar' => (bool) ($o['radar'] ?? 0),
+        'waiting' => (int) ($o['radar'] ?? 0) && !(int) $o['store_id'] && $o['status'] === 'pending',
     ];
     if ($full) {
         $v['phone'] = (string) $o['cphone'];
@@ -204,7 +230,7 @@ function order_set_status(array $o, string $new, string $note, string $actor, ?i
 {
     $pdo = db();
     $now = $at ?? time();
-    if (!in_array($new, order_next((string) $o['status'], (string) $o['mode']), true)) {
+    if (!in_array($new, order_allowed($o), true)) {
         throw new InvalidArgumentException('Ce changement de statut n\'est pas possible.');
     }
     tx_begin();

@@ -14,7 +14,8 @@ declare(strict_types=1);
  */
 function seed_maybe(): void
 {
-    if (!MLG_SEED_DEMO || meta_get('seeded') !== null) return;
+    if (!MLG_SEED_DEMO) return;
+    if (meta_get('seeded') !== null) { seed_radar_maybe(); return; }
     $lock = @fopen(dirname(MLG_DB_PATH) . '/seed.lock', 'c');
     if ($lock) flock($lock, LOCK_EX);
     try {
@@ -30,6 +31,71 @@ function seed_maybe(): void
         meta_set('seeded', $state);
     } finally {
         if ($lock) { flock($lock, LOCK_UN); fclose($lock); }
+    }
+}
+
+/** Une démonstration chargée avant l'arrivée du radar reçoit ses exemples de commandes radar (une seule fois). */
+function seed_radar_maybe(): void
+{
+    if (meta_get('radar_seeded') !== null) return;
+    $lock = @fopen(dirname(MLG_DB_PATH) . '/seed.lock', 'c');
+    if ($lock) flock($lock, LOCK_EX);
+    try {
+        if (meta_get('radar_seeded') !== null) return;
+        meta_set('radar_seeded', '1');
+        if (demo_exists()) seed_radar_demo();
+    } catch (Throwable $e) {
+        tx_rollback();
+        error_log('maillage seed radar: ' . $e->getMessage());
+    } finally {
+        if ($lock) { flock($lock, LOCK_UN); fclose($lock); }
+    }
+}
+
+/**
+ * Exemples de commandes radar dans la démonstration : trois encore libres (une par niveau :
+ * commune, wilaya, partout), une prise en charge, une en livraison, une livrée.
+ */
+function seed_radar_demo(): void
+{
+    $pdo = db();
+    $now = time();
+    $rows = $pdo->query("SELECT v.id AS vid, s.id AS sid, s.wilaya, s.commune, s.company_id AS scid
+        FROM stock k JOIN variants v ON v.id = k.variant_id JOIN products p ON p.id = v.product_id
+        JOIN stores s ON s.id = k.store_id JOIN companies c ON c.id = s.company_id JOIN companies pc ON pc.id = p.company_id
+        WHERE k.qty >= 3 AND c.demo = 1 AND pc.demo = 1 AND s.status = 'active' AND s.commune <> '' ORDER BY p.id, v.id, s.id")->fetchAll();
+    if (!$rows) return;
+    $withStore = [];
+    foreach ($pdo->query("SELECT DISTINCT s.wilaya FROM stores s JOIN companies c ON c.id = s.company_id WHERE c.demo = 1") as $r) $withStore[(string) $r['wilaya']] = true;
+    $far = '';
+    foreach (['11', '39', '01', '33'] as $z) { if (!isset($withStore[$z]) && !empty(communes()[$z])) { $far = $z; break; } }
+    $clients = ['Yacine B.', 'Amina K.', 'Sofiane M.', 'Lina H.', 'Karim A.', 'Nadia T.', 'Mehdi S.'];
+    // [minutes écoulées, lieu du client, issue, position dans le catalogue (0 à 1)]
+    $plan = [[4, 'commune', 'open', .03], [9, 'commune', 'open', .13], [22, 'wilaya', 'open', .21], [55, 'far', 'open', .29],
+        [110, 'commune', 'claimed', .47], [420, 'wilaya', 'shipped', .72], [1700, 'commune', 'done', .91]];
+    foreach ($plan as $i => [$ago, $where, $end, $pos]) {
+        $r = $rows[min(count($rows) - 1, (int) floor($pos * count($rows)))];
+        $zone = (string) $r['wilaya'];
+        $commune = (string) $r['commune'];
+        if ($where === 'wilaya') {
+            foreach (communes()[$zone] ?? [] as $c) { if (commune_key($c[0]) !== commune_key($commune)) { $commune = (string) $c[0]; break; } }
+        } elseif ($where === 'far' && $far !== '') {
+            $zone = $far;
+            $commune = (string) communes()[$far][0][0];
+        }
+        $at = $now - $ago * 60;
+        try {
+            $res = radar_create(['variant_id' => (int) $r['vid'], 'qty' => 1, 'name' => $clients[$i % count($clients)],
+                'phone' => '05' . sprintf('%08d', 50000000 + $i * 1234567), 'zone' => $zone, 'commune' => $commune, 'address' => $i % 2 ? 'Adresse de démonstration' : ''], $at);
+            if ($end === 'open') continue;
+            $t = $at + 70 * 60;
+            $o = radar_claim((int) $r['scid'], (int) $res['order']['id'], (int) $r['sid'], $t)['order'];
+            if ($end === 'claimed') continue;
+            $o = order_set_status($o, 'shipped', '', 'store', $t + 90 * 60);
+            if ($end === 'done') order_set_status($o, 'done', '', 'store', $t + 900 * 60);
+        } catch (Throwable $e) {
+            tx_rollback();
+        }
     }
 }
 
@@ -382,6 +448,8 @@ function seed_demo(): void
     }
     log_activity($cid['relais'], 'partner', 'Demande de partenariat envoyée à Vélora Sport', 0, $cid['velora'], $today - 2 * 86400 + 11 * 3600);
     tx_commit();
+    seed_radar_demo();
+    meta_set('radar_seeded', '1');
     $pdo->exec('PRAGMA synchronous = NORMAL');
     mt_srand();
 }

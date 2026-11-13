@@ -7,13 +7,16 @@
  * connecté exigent en plus l'en-tête X-CSRF (reçu à la connexion).
  *
  * Public   GET  bootstrap | stores | store {id} | brand {slug} | products {q,brand,category,size,color,pmin,pmax,store,instock,sort,page,log}
- *          GET  product {slug} | availability {product,size,color,lat,lng,zone,log} | track {token | ref,phone}
- *          POST order {…} | order_cancel {token} | event {kind,id} | log_map {brand,zone,lat,lng,results}
- * Comptes  GET  me    POST signup | login | logout | forgot | reset | demo_login
- * Espace   GET  overview | brands | dash_products | dash_product {id} | dash_stores | stock {store} | orders | order_get {id} | network | analytics {days}
+ *          GET  product {slug} | availability {product,size,color,lat,lng,zone,log} | track {token | ref,phone} | communes {zone}
+ *          POST order {…} | order_radar {…} | order_cancel {token} | event {kind,id} | log_map {brand,zone,lat,lng,results}
+ * Comptes  GET  me    POST signup (marque, distributeur ou point de vente) | login | logout | forgot | reset | demo_login
+ * Espace   GET  overview | brands | dash_products | dash_product {id} | dash_stores | stock {store} | orders | order_get {id} | network | analytics {days} | radar
  *          POST brand_save | brand_delete | product_save | product_delete | upload (multipart) | store_save | store_delete | stock_save
- *          POST order_status | partner_request | partner_respond | partner_remove | company_save | account_save | password
+ *          POST order_status | radar_claim | radar_release | partner_request | partner_respond | partner_remove | company_save | account_save | password
  * Admin    GET  adm_overview    POST adm_company | adm_open | adm_demo | adm_settings   (session de /admin)
+ *
+ * Un compte limité à un point de vente (users.store_id) n'accède qu'à son magasin : vue d'ensemble,
+ * commandes, stock, fiche, radar et son propre compte ; tout le reste exige le compte de l'entreprise.
  */
 declare(strict_types=1);
 
@@ -22,6 +25,7 @@ require __DIR__ . '/lib/auth.php';
 require __DIR__ . '/lib/media.php';
 require __DIR__ . '/lib/catalog.php';
 require __DIR__ . '/lib/orders.php';
+require __DIR__ . '/lib/radar.php';
 require __DIR__ . '/lib/dash.php';
 require __DIR__ . '/lib/analytics.php';
 require __DIR__ . '/lib/seed.php';
@@ -45,8 +49,9 @@ try {
 
 if ($isPost && ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') !== 'maillage') fail('Requête refusée.', 403, 'forbidden');
 
-const POST_ONLY = ['order', 'order_cancel', 'event', 'log_map', 'signup', 'login', 'logout', 'forgot', 'reset', 'demo_login',
+const POST_ONLY = ['order', 'order_radar', 'order_cancel', 'event', 'log_map', 'signup', 'login', 'logout', 'forgot', 'reset', 'demo_login',
     'brand_save', 'brand_delete', 'product_save', 'product_delete', 'upload', 'store_save', 'store_delete', 'stock_save', 'order_status',
+    'radar_claim', 'radar_release',
     'partner_request', 'partner_respond', 'partner_remove', 'company_save', 'account_save', 'password',
     'adm_company', 'adm_open', 'adm_demo', 'adm_settings'];
 if (in_array($action, POST_ONLY, true) && !$isPost) fail('Méthode non autorisée.', 405, 'method');
@@ -82,6 +87,7 @@ try {
                     'name' => MLG_NAME, 'currency' => MLG_CURRENCY, 'tiles' => MLG_TILES_URL, 'attr' => MLG_TILES_ATTR,
                     'center' => MLG_MAP_CENTER, 'zoom' => (int) MLG_MAP_ZOOM, 'reservation_hours' => (int) MLG_RESERVATION_HOURS,
                     'cover_km' => (float) MLG_COVER_KM, 'tz' => MLG_TIMEZONE, 'demo' => demo_exists(),
+                    'radar_step_min' => intdiv(radar_step(), 60),
                 ],
                 'zones' => array_values(zones()),
                 'categories' => $cats,
@@ -173,11 +179,27 @@ try {
             ok(['order' => order_view($o)]);
         }
 
+        case 'communes': {
+            $zone = zone_code(g('zone'));
+            if ($zone === '') fail('Wilaya inconnue.', 404, 'notfound');
+            header('Cache-Control: public, max-age=86400');
+            ok(['zone' => $zone, 'communes' => communes()[$zone] ?? []]);
+        }
+
         case 'order': {
-            rate('order', 12, 3600);
+            rate('order', 40, 3600);
             if (!empty($b['website'])) ok(['ref' => 'ML-000000', 'token' => str_repeat('0', 40)]); // champ piège rempli par un robot
             $res = order_create($b);
             order_notify_created($res);
+            ok(['ref' => $res['order']['ref'], 'token' => $res['token'], 'order' => order_view($res['order'])]);
+        }
+
+        // Commande sans point de vente choisi : le radar la propose aux points de vente les plus proches du client.
+        case 'order_radar': {
+            rate('order', 40, 3600);
+            if (!empty($b['website'])) ok(['ref' => 'ML-000000', 'token' => str_repeat('0', 40)]);
+            $res = radar_create($b);
+            radar_notify_created($res);
             ok(['ref' => $res['order']['ref'], 'token' => $res['token'], 'order' => order_view($res['order'])]);
         }
 
@@ -226,12 +248,16 @@ try {
             $name = line_clean($b['name'] ?? '', 80);
             $email = strtolower(line_clean($b['email'] ?? '', 190));
             $phone = phone_clean($b['phone'] ?? '');
-            if ($kind === '') fail('Choisissez votre profil : entreprise / marque ou distributeur.');
-            if (mb_strlen($company) < 2) fail('Indiquez le nom de votre entreprise.');
+            if ($kind === '') fail('Choisissez votre profil : entreprise / marque, distributeur ou point de vente.');
+            $pos = $kind === 'pos';
+            if (mb_strlen($company) < 2) fail($pos ? 'Indiquez le nom de votre point de vente.' : 'Indiquez le nom de votre entreprise.');
             if (mb_strlen($name) < 2) fail('Indiquez votre nom.');
             if (!valid_email($email)) fail('Adresse email invalide.');
             if (!phone_ok($phone)) fail('Indiquez un numéro de téléphone valide.');
             $pass = password_in($b['password'] ?? '');
+            $zone = zone_code($b['wilaya'] ?? '');
+            $commune = $pos ? commune_clean($zone, $b['commune'] ?? '') : '';
+            if ($pos && ($zone === '' || $commune === '')) fail('Choisissez la wilaya puis la commune de votre point de vente.');
             if (empty($b['accept'])) fail('Merci d\'accepter les conditions d\'utilisation.');
             $s = $pdo->prepare('SELECT 1 FROM users WHERE email = ?');
             $s->execute([$email]);
@@ -240,7 +266,7 @@ try {
             tx_begin();
             [$cid, $uid] = account_create([
                 'kind' => $kind, 'company' => $company, 'name' => $name, 'email' => $email, 'phone' => $phone, 'password' => $pass,
-                'wilaya' => zone_code($b['wilaya'] ?? ''), 'city' => line_clean($b['city'] ?? '', 80),
+                'wilaya' => $zone, 'city' => $pos ? $commune : line_clean($b['city'] ?? '', 80),
                 'sector' => isset(MLG_CATEGORIES[$b['sector'] ?? '']) ? (string) $b['sector'] : '',
                 'size' => in_array($b['size'] ?? '', $sizes, true) ? (string) $b['size'] : '',
                 'status' => moderation_on() ? 'pending' : 'active',
@@ -248,10 +274,33 @@ try {
             tx_commit();
             // Une marque démarre avec sa marque déjà créée : une étape de moins.
             if ($kind === 'brand') brand_save($cid, ['name' => $company, 'category' => $b['sector'] ?? 'autre']);
+            if ($pos) {
+                // Un point de vente démarre avec sa fiche et ses demandes aux marques choisies. Sans position
+                // donnée, il est rangé au chef-lieu de sa wilaya en attendant qu'il place son épingle.
+                $lat = coord($b['lat'] ?? null, 90);
+                $lng = coord($b['lng'] ?? null, 180);
+                $located = $lat !== null && $lng !== null && !($lat == 0.0 && $lng == 0.0);
+                $z = zones()[$zone];
+                store_save($cid, [
+                    'name' => $company, 'type' => 'magasin', 'wilaya' => $zone, 'commune' => $commune, 'city' => $commune, 'address' => line_clean($b['address'] ?? '', 200),
+                    'lat' => $located ? $lat : (float) $z['lat'], 'lng' => $located ? $lng : (float) $z['lng'], 'phone' => $phone, 'email' => $email,
+                    'hours' => ['open' => '09:00', 'close' => '19:00', 'days' => [0, 1, 2, 3, 4, 6]], 'pickup' => 1, 'delivery' => 1, 'reserve' => 1,
+                ], ['unlocated' => !$located]);
+                $q = $pdo->prepare('SELECT company_id FROM brands WHERE id = ?');
+                $asked = [];
+                foreach (array_slice((array) ($b['brands'] ?? []), 0, 20) as $bid) {
+                    $q->execute([(int) $bid]);
+                    $bc = (int) $q->fetchColumn();
+                    if (!$bc || isset($asked[$bc])) continue;
+                    $asked[$bc] = true;
+                    try { partner_request($cid, 'pos', $bc, true); } catch (InvalidArgumentException $e) { /* marque indisponible : il la demandera depuis son espace */ }
+                }
+            }
             $csrf = start_session($uid);
             try_mail($email, 'Bienvenue sur ' . MLG_NAME, 'Votre espace est créé', [
                 'Bonjour ' . $name . ',',
-                'L\'espace de ' . $company . ' est prêt. Ajoutez vos points de vente, votre catalogue et la disponibilité de vos produits.',
+                $pos ? 'L\'espace de ' . $company . ' est prêt. Indiquez les produits que vous avez en stock : les commandes des clients proches de chez vous arrivent dans votre radar.'
+                    : 'L\'espace de ' . $company . ' est prêt. Ajoutez vos points de vente, votre catalogue et la disponibilité de vos produits.',
                 moderation_on() ? 'Votre réseau apparaîtra sur la carte publique dès que nous aurons validé votre inscription.' : 'Votre réseau apparaît sur la carte publique dès que vos points de vente sont enregistrés.',
             ], 'Ouvrir mon espace', site_url() . 'espace/');
             if (($to = setting('notify_email')) !== '') {
@@ -330,45 +379,46 @@ try {
 
         case 'overview': {
             $u = require_user();
+            if ($sid = user_store($u)) ok(store_overview((int) $u['company_id'], $sid));
             ok(dash_overview((int) $u['company_id'], (string) $u['c_kind']));
         }
 
         case 'brands': {
-            $u = require_user();
+            $u = require_company();
             ok(['brands' => brands_list((int) $u['company_id'])]);
         }
         case 'brand_save': {
-            $u = require_user();
+            $u = require_company();
             ok(['brand' => brand_save((int) $u['company_id'], $b)]);
         }
         case 'brand_delete': {
-            $u = require_user();
+            $u = require_company();
             brand_delete((int) $u['company_id'], (int) ($b['id'] ?? 0));
             ok();
         }
 
         case 'dash_products': {
-            $u = require_user();
+            $u = require_company();
             ok(['products' => dash_products((int) $u['company_id']), 'brands' => brands_list((int) $u['company_id'])]);
         }
         case 'dash_product': {
-            $u = require_user();
+            $u = require_company();
             $p = dash_product((int) $u['company_id'], (int) g('id'));
             if (!$p) fail('Produit introuvable.', 404, 'notfound');
             ok(['product' => $p]);
         }
         case 'product_save': {
-            $u = require_user();
+            $u = require_company();
             ok(['product' => product_save((int) $u['company_id'], $b)]);
         }
         case 'product_delete': {
-            $u = require_user();
+            $u = require_company();
             product_delete((int) $u['company_id'], (int) ($b['id'] ?? 0));
             ok();
         }
 
         case 'upload': {
-            $u = require_user();
+            $u = require_company();
             rate('upload', 200, 3600, 'c' . $u['company_id']);
             $f = $_FILES['file'] ?? null;
             if (!$f || !is_array($f) || ($f['error'] ?? 1) !== UPLOAD_ERR_OK || !is_uploaded_file((string) $f['tmp_name'])) {
@@ -380,73 +430,111 @@ try {
 
         case 'dash_stores': {
             $u = require_user();
-            ok(['stores' => dash_stores((int) $u['company_id'])]);
+            ok(['stores' => dash_stores((int) $u['company_id'], user_store($u))]);
         }
         case 'store_save': {
             $u = require_user();
-            ok(['store' => store_save((int) $u['company_id'], $b)]);
+            $sid = user_store($u);
+            if ($sid) $b['id'] = $sid;
+            ok(['store' => store_save((int) $u['company_id'], $b, ['strict' => true, 'only' => $sid])]);
         }
         case 'store_delete': {
-            $u = require_user();
+            $u = require_company();
             store_delete((int) $u['company_id'], (int) ($b['id'] ?? 0));
             ok();
         }
 
         case 'stock': {
             $u = require_user();
-            ok(['products' => stock_get((int) $u['company_id'], (string) $u['c_kind'], (int) g('store'))]);
+            ok(['products' => stock_get((int) $u['company_id'], (string) $u['c_kind'], user_store($u) ?: (int) g('store'))]);
         }
         case 'stock_save': {
             $u = require_user();
-            ok(['saved' => stock_save((int) $u['company_id'], (string) $u['c_kind'], (int) ($b['store_id'] ?? 0), (array) ($b['items'] ?? []))]);
+            ok(['saved' => stock_save((int) $u['company_id'], (string) $u['c_kind'], user_store($u) ?: (int) ($b['store_id'] ?? 0), (array) ($b['items'] ?? []))]);
         }
 
         case 'orders': {
             $u = require_user();
-            ok(dash_orders((int) $u['company_id'], ['status' => g('status') ?: 'open', 'store' => (int) g('store'), 'q' => g('q')]));
+            ok(dash_orders((int) $u['company_id'], ['status' => g('status') ?: 'open', 'store' => (int) g('store'), 'q' => g('q'), 'only' => user_store($u)]));
         }
         case 'order_get': {
             $u = require_user();
-            $o = own_order((int) $u['company_id'], (int) g('id'));
+            $cid = (int) $u['company_id'];
+            $o = own_order($cid, (int) g('id'), user_store($u));
             if (!$o) fail('Commande introuvable.', 404, 'notfound');
-            ok(['order' => order_view($o, true)]);
+            $view = order_view($o, true);
+            $mine = (int) $o['seller_cid'] === $cid;
+            // Commande radar prise par le point de vente d'un partenaire : la marque la suit sans la modifier.
+            if (!$mine) $view['next'] = [];
+            $view['foreign'] = !$mine;
+            $view['can_release'] = $mine && (int) $o['radar'] && (int) $o['store_id'] && $o['status'] === 'confirmed';
+            ok(['order' => $view]);
         }
         case 'order_status': {
             $u = require_user();
-            $o = own_order((int) $u['company_id'], (int) ($b['id'] ?? 0));
+            $cid = (int) $u['company_id'];
+            $o = own_order($cid, (int) ($b['id'] ?? 0), user_store($u));
             if (!$o) fail('Commande introuvable.', 404, 'notfound');
+            if ((int) $o['seller_cid'] !== $cid) fail('Cette commande est traitée par le point de vente qui l\'a prise.', 403, 'forbidden');
             $o = order_set_status($o, (string) ($b['status'] ?? ''), (string) ($b['note'] ?? ''), 'store');
             order_notify_status($o);
-            ok(['order' => order_view($o, true)]);
+            $view = order_view($o, true);
+            $view['foreign'] = false;
+            $view['can_release'] = (int) $o['radar'] && (int) $o['store_id'] && $o['status'] === 'confirmed';
+            ok(['order' => $view]);
+        }
+
+        /* ---------------------------------------------------------------- radar */
+
+        case 'radar': {
+            $u = require_user();
+            $cid = (int) $u['company_id'];
+            $sid = user_store($u);
+            ok(['nearby' => radar_nearby($cid, $sid), 'received' => $sid ? [] : radar_received($cid), 'step_min' => intdiv(radar_step(), 60)]);
+        }
+        case 'radar_claim': {
+            $u = require_user();
+            rate('claim', 120, 600, 'u' . $u['id']);
+            $res = radar_claim((int) $u['company_id'], (int) ($b['id'] ?? 0), user_store($u) ?: (int) ($b['store_id'] ?? 0));
+            radar_notify_claimed($res);
+            ok(['order' => order_view($res['order'], true)]);
+        }
+        case 'radar_release': {
+            $u = require_user();
+            $cid = (int) $u['company_id'];
+            $o = own_order($cid, (int) ($b['id'] ?? 0), user_store($u));
+            if (!$o || (int) $o['seller_cid'] !== $cid) fail('Commande introuvable.', 404, 'notfound');
+            radar_release($o, (string) ($b['note'] ?? ''));
+            ok();
         }
 
         case 'network': {
-            $u = require_user();
+            $u = require_company();
             ok(network_get((int) $u['company_id'], (string) $u['c_kind']));
         }
         case 'partner_request': {
-            $u = require_user();
+            $u = require_company();
             partner_request((int) $u['company_id'], (string) $u['c_kind'], (int) ($b['company_id'] ?? 0));
             ok();
         }
         case 'partner_respond': {
-            $u = require_user();
+            $u = require_company();
             partner_respond((int) $u['company_id'], (string) $u['c_kind'], (int) ($b['id'] ?? 0), !empty($b['accept']));
             ok();
         }
         case 'partner_remove': {
-            $u = require_user();
+            $u = require_company();
             partner_remove((int) $u['company_id'], (string) $u['c_kind'], (int) ($b['id'] ?? 0));
             ok();
         }
 
         case 'analytics': {
-            $u = require_user();
+            $u = require_company();
             ok(analytics((int) $u['company_id'], (string) $u['c_kind'], (int) g('days')));
         }
 
         case 'company_save': {
-            $u = require_user();
+            $u = require_company();
             ok(['company' => company_save((int) $u['company_id'], $b)]);
         }
         case 'account_save': {
@@ -459,7 +547,7 @@ try {
             $s->execute([$email, $u['id']]);
             if ($s->fetchColumn()) fail('Cette adresse est déjà utilisée par un autre compte.', 409, 'exists');
             $pdo->prepare('UPDATE users SET name = ?, email = ?, phone = ? WHERE id = ?')->execute([$name, $email, phone_clean($b['phone'] ?? ''), $u['id']]);
-            ok(['user' => ['id' => (int) $u['id'], 'name' => $name, 'email' => $email, 'phone' => phone_clean($b['phone'] ?? '')]]);
+            ok(['user' => ['id' => (int) $u['id'], 'name' => $name, 'email' => $email, 'phone' => phone_clean($b['phone'] ?? ''), 'store_id' => user_store($u)]]);
         }
         case 'password': {
             $u = require_user();
@@ -480,7 +568,7 @@ try {
                     (SELECT COUNT(*) FROM stores s WHERE s.company_id = c.id AND s.status <> 'archived') AS n_stores,
                     (SELECT COUNT(*) FROM products p WHERE p.company_id = c.id) AS n_products,
                     (SELECT COUNT(*) FROM orders o WHERE o.seller_cid = c.id) AS n_orders
-                FROM companies c LEFT JOIN users u ON u.id = (SELECT MIN(id) FROM users WHERE company_id = c.id)
+                FROM companies c LEFT JOIN users u ON u.id = (SELECT MIN(id) FROM users WHERE company_id = c.id AND store_id = 0)
                 ORDER BY c.demo, CASE c.status WHEN 'pending' THEN 0 ELSE 1 END, c.created DESC")->fetchAll();
             $list = [];
             foreach ($rows as $c) {
@@ -500,7 +588,7 @@ try {
                     'orders' => $one('SELECT COUNT(*) FROM orders o JOIN companies c ON c.id = o.seller_cid WHERE c.demo = 0'),
                     'searches7' => $one("SELECT COUNT(*) FROM searches WHERE created >= $week"),
                 ],
-                'settings' => ['moderation' => moderation_on(), 'notify_email' => setting('notify_email')],
+                'settings' => ['moderation' => moderation_on(), 'notify_email' => setting('notify_email'), 'radar_step_min' => intdiv(radar_step(), 60)],
                 'demo' => demo_exists(),
                 'mail' => MLG_SMTP_HOST !== '',
             ]);
@@ -517,7 +605,7 @@ try {
                 $new = $act === 'activate' ? 'active' : 'suspended';
                 $pdo->prepare('UPDATE companies SET status = ? WHERE id = ?')->execute([$new, $c['id']]);
                 if ($new === 'active' && $c['status'] === 'pending' && !(int) $c['demo']) {
-                    $s = $pdo->prepare('SELECT email, name FROM users WHERE company_id = ? ORDER BY id LIMIT 1');
+                    $s = $pdo->prepare('SELECT email, name FROM users WHERE company_id = ? AND store_id = 0 ORDER BY id LIMIT 1');
                     $s->execute([$c['id']]);
                     if ($usr = $s->fetch()) {
                         try_mail((string) $usr['email'], 'Votre espace ' . MLG_NAME . ' est validé', 'Votre réseau est en ligne', [
@@ -534,7 +622,7 @@ try {
 
         case 'adm_open': {
             require_admin();
-            $s = $pdo->prepare('SELECT * FROM users WHERE company_id = ? ORDER BY id LIMIT 1');
+            $s = $pdo->prepare('SELECT * FROM users WHERE company_id = ? AND store_id = 0 ORDER BY id LIMIT 1');
             $s->execute([(int) ($b['id'] ?? 0)]);
             $u = $s->fetch();
             if (!$u) fail('Entreprise introuvable.', 404, 'notfound');
@@ -558,6 +646,7 @@ try {
             if ($email !== '' && !valid_email($email)) fail('Adresse email invalide.');
             setting_set('moderation', !empty($b['moderation']) ? '1' : '0');
             setting_set('notify_email', $email);
+            if (isset($b['radar_step_min']) && is_numeric($b['radar_step_min'])) setting_set('radar_step_min', (string) max(0, min(1440, (int) $b['radar_step_min'])));
             ok();
         }
     }
