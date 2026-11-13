@@ -1001,8 +1001,8 @@ VIEWS["overview/daily"] = { fn: async (param, tok) => {
     ["stale", "Sans contact depuis 48\u00a0h", "Leads à rappeler en priorité", "alert-c", "pink", b.stale, "#leads/treatment/nouveau"],
     ["untreated", "Leads à traiter", "Nouveaux ou contactés, pas encore qualifiés", "users", "orange", b.untreated, "#leads/treatment/nouveau"],
     ["unassigned", "Leads sans commercial", "À confier à un commercial", "user-plus", "blue", b.unassigned, "#leads/assignment"],
-    ["messages", "Messages sans réponse", "Messenger et Instagram : à répondre ou à transformer en prospect", "message", "blue", +S.boot.messages_waiting || 0, "#leads/messages/attente"],
-    ["comments", "Commentaires sans réponse", "Facebook et Instagram : la Page n'a pas encore répondu", "message", "violet", +S.boot.comments_waiting || 0, "#leads/comments/attente"],
+    ["messages", "Messages sans réponse", `Messenger et Instagram · ${num(+S.boot.messages_replied || 0)} déjà répondue(s)`, "message", "blue", +S.boot.messages_waiting || 0, "#leads/messages/attente"],
+    ["comments", "Commentaires sans réponse", `Facebook et Instagram · ${num(+S.boot.comments_replied || 0)} déjà répondu(s)`, "message", "violet", +S.boot.comments_waiting || 0, "#leads/comments/attente"],
     ["open_inquiries", "Questions sans réponse", "Nouvelles ou en cours", "message", "teal", b.open_inquiries, "#leads/questions"],
     ["pending_projects", "Projets à étudier", "Demandes reçues ou en étude", "folder", "violet", b.pending_projects, "#projects/requests"],
   ];
@@ -1219,12 +1219,33 @@ function catChips(base, sel, rows, key) {
 }
 const inCat = (sel, key) => r => !sel || sel === "all" ? true : (catOf(r[key]) || "other") === sel;
 
+/**
+ * Synchronisation Meta par lots : chaque appel dure 40 secondes au plus (les hébergeurs coupent les requêtes
+ * longues) ; tant qu'il reste quelque chose, le lot suivant reprend là où le précédent s'est arrêté.
+ */
+async function metaSyncLots(body = {}, onLot = null) {
+  const tot = { added: 0, updated: 0 };
+  let d, lot = 0, clean = true, req = Object.assign({}, body);
+  do {
+    lot++;
+    if (onLot) onLot(lot);
+    d = await api("meta_sync", {}, req);
+    S.boot.meta = d.meta;
+    tot.added += +d.result.totals.added || 0;
+    tot.updated += +d.result.totals.updated || 0;
+    clean = clean && d.result.ok;
+    req = Object.assign({}, body, { only: d.result.pending || [], resume: true, clean });
+  } while (d.result.more && lot < 80);
+  return { d, tot, ok: clean, lots: lot, more: !!d.result.more };
+}
+
 /* ---------- messages et commentaires : période choisie ou tout l'historique, import complet, « afficher plus » */
 const histAll = () => { try { return localStorage.getItem("mk_hist") === "all"; } catch (e) { return false; } };
 const histToggle = () => {
   const all = histAll();
   return `<div class="seg" role="group" aria-label="Période affichée"><button type="button" data-hist="range" aria-selected="${!all}">${ic("calendar", "sm")} ${esc(rangeLabel())}</button><button type="button" data-hist="all" aria-selected="${all}">${ic("archive", "sm")} Tout l'historique</button></div>`;
 };
+const LIVE_PILL = `<span class="live-pill" id="liveDot" title="Les nouveaux messages et commentaires s'affichent tout seuls"><i></i>En direct</span>`;
 const fullBtn = what => `<button type="button" class="btn" data-fullsync="${what}">${ic("download", "sm")} Importer tout l'historique</button>`;
 const MORE = 100;
 const moreBtn = (shown, total) => total > shown
@@ -1242,12 +1263,10 @@ document.addEventListener("click", async e => {
     ok: "Importer tout", cancel: "Annuler" });
   if (!ok) return;
   b.disabled = true;
-  b.innerHTML = `<span class="spin dark"></span> Import en cours… (plusieurs minutes)`;
   try {
-    const d = await api("meta_sync", {}, { only: what, full: true });
-    S.boot.meta = d.meta;
-    const t = d.result.totals;
-    toast(d.result.ok ? `Historique importé : ${num(t.added)} nouveauté(s), ${num(t.updated)} mise(s) à jour` : "Import terminé avec des erreurs : détail dans Connexions › Historique", d.result.ok ? "" : "err");
+    const r = await metaSyncLots({ only: what, full: true }, n => { b.innerHTML = `<span class="spin dark"></span> Import en cours… lot ${n} (gardez la page ouverte)`; });
+    const t = r.tot;
+    toast(r.ok ? `Historique importé (${num(r.lots)} lot${r.lots > 1 ? "s" : ""}) : ${num(t.added)} nouveauté(s), ${num(t.updated)} mise(s) à jour` : "Import terminé avec des erreurs : détail dans Connexions › Historique", r.ok ? "" : "err");
     try { localStorage.setItem("mk_hist", "all"); } catch (err) {}
     S.cache.clear();
     route();
@@ -1257,10 +1276,12 @@ document.addEventListener("click", async e => {
 /* ================================================================ vue : Messages (Messenger, Instagram) */
 const HEAT = { chaud: ["Chaud", "crit"], tiede: ["Tiède", "warn"], froid: ["Froid", ""] };
 const PLAT = { messenger: ["Messenger", "message", "blue"], instagram: ["Instagram", "share", "pink"] };
-const CONV_FILTERS = [["all", "Toutes"], ["attente", "Sans réponse"], ["chaud", "Chaudes"], ["coordonnees", "Avec coordonnées"], ["sans", "Sans prospect"], ["prospects", "Prospects créés"], ["ignore", "Ignorées"]];
+const CONV_FILTERS = [["all", "Toutes"], ["attente", "Sans réponse"], ["repondues", "Répondues"], ["chaud", "Chaudes"], ["coordonnees", "Avec coordonnées"], ["sans", "Sans prospect"], ["prospects", "Prospects créés"], ["traite", "Traitées"], ["ignore", "Ignorées"]];
+/** Sans réponse : le dernier message vient de la personne, et la conversation n'est ni traitée ni ignorée. */
+const convWaiting = c => !+c.last_from_me && c.status !== "ignore" && c.status !== "traite";
 const convWho = c => c.name || (c.who_username ? "@" + c.who_username : "Inconnu");
-const convIn = (f, c) => f === "attente" ? !+c.last_from_me && c.status !== "ignore" : f === "chaud" ? c.heat === "chaud" : f === "coordonnees" ? !!(c.phone || c.email)
-  : f === "sans" ? !c.contact_id && c.status !== "ignore" : f === "prospects" ? !!c.contact_id : f === "ignore" ? c.status === "ignore" : c.status !== "ignore";
+const convIn = (f, c) => f === "attente" ? convWaiting(c) : f === "repondues" ? !!+c.last_from_me && c.status !== "ignore" : f === "chaud" ? c.heat === "chaud" && c.status !== "ignore" : f === "coordonnees" ? !!(c.phone || c.email) && c.status !== "ignore"
+  : f === "sans" ? !c.contact_id && c.status !== "ignore" : f === "prospects" ? !!c.contact_id : f === "traite" ? c.status === "traite" : f === "ignore" ? c.status === "ignore" : c.status !== "ignore";
 const minutes = v => v == null ? "—" : v < 60 ? num(v) + " min" : v < 1440 ? num(v / 60, 1) + " h" : num(v / 1440, 1) + " j";
 const initial = s => (String(s || "?").replace(/^@/, "").trim().charAt(0) || "?").toUpperCase();
 
@@ -1271,13 +1292,13 @@ VIEWS["leads/messages"] = { range: true, fn: async param => {
   S.convs = d.rows;
   const st = d.stats, f = CONV_FILTERS.some(x => x[0] === param) ? param : "all";
   if (!d.meta.connected) return empty("Les messages arrivent de Meta. Connectez votre Page Facebook (et son compte Instagram) dans Connexions : les conversations Messenger et Instagram s'afficheront ici, analysées.", `<a class="btn pri" href="#connexions/meta">${ic("link", "sm")} Relier Facebook et Instagram</a>`, { icon: ["message", "teal"] });
-  const bar = `<div class="toolbar">${histToggle()}<span class="grow"></span>${fullBtn("messages")}</div>`;
+  const bar = `<div class="toolbar">${histToggle()}${LIVE_PILL}<span class="grow"></span>${fullBtn("messages")}</div>`;
   if (!d.rows.length) return bar + `${!d.meta.messages ? `<div class="banner warn">${ic("alert", "sm")}<span>L'import des messages est désactivé : activez-le dans <a href="#connexions/meta">Connexions</a> › étape 3.</span></div>` : ""}`
     + empty(all ? "Aucune conversation importée. Lancez « Importer tout l'historique » : il faut les autorisations pages_messaging et instagram_manage_messages dans votre configuration Facebook Login for Business." : "Aucune conversation sur la période. Choisissez « Tout l'historique » pour voir toutes les conversations importées, ou lancez une synchronisation dans Connexions.", `<a class="btn pri" href="#connexions/meta">${ic("trend", "sm")} Synchroniser</a>`, { icon: ["message", "teal"] });
   const t = (l, v, sub, m, cls = "") => `<div class="kpi ${cls}">${tile(m[0], m[1])}<small>${esc(l)}</small><b>${v}</b><span class="d">${sub}</span></div>`;
   const counts = Object.fromEntries(CONV_FILTERS.map(([k]) => [k, d.rows.filter(c => convIn(k, c)).length]));
-  return bar + `<div class="kpis k6">${t("Conversations", num(st.total), all ? "tout l'historique" : esc(rangeLabel()), ["message", "teal"])}${t("Sans réponse", num(st.waiting), st.waiting ? "le dernier message vient de la personne" : "tout le monde a eu une réponse", ["clock", "amber"], st.waiting ? "warn" : "")}`
-    + `${t("Conversations chaudes", num(st.hot), "intention forte ou coordonnées laissées", ["zap", "pink"])}${t("Avec téléphone ou email", num(st.with_contact), pct(ratio(st.with_contact, st.total)) + " des conversations", ["phone", "green"])}`
+  return bar + `<div class="kpis k6">${t("Conversations", num(st.total), all ? "tout l'historique" : esc(rangeLabel()), ["message", "teal"])}${t("Déjà répondues", num(st.replied), pct(ratio(st.replied, st.total)) + " des conversations", ["check-circle", "green"])}${t("Sans réponse, à traiter", num(st.waiting), st.waiting ? "le dernier message vient de la personne" : "tout le monde a eu une réponse", ["clock", "amber"], st.waiting ? "warn" : "")}`
+    + `${t("Conversations chaudes", num(st.hot), "intention forte ou coordonnées laissées", ["zap", "pink"])}`
     + `${t("Prospects créés", num(st.prospects), pct(ratio(st.prospects, st.total)) + " des conversations", ["user-plus", "blue"])}${t("Première réponse", minutes(st.reply_median), "délai médian", ["send", "violet"])}</div>`
     + `<div class="grid3">${card("💬 Sujets", mapBars(st.by_category, "inq_categories", st.total))}${card("🔥 Chaleur", hbars(["chaud", "tiede", "froid"].filter(k => st.by_heat[k]).map(k => ({ label: HEAT[k][0], value: st.by_heat[k], sub: pct(st.by_heat[k] / st.total) }))))}${card("👥 Profils détectés", hbars(Object.entries(st.by_profile).map(([k, v]) => ({ label: k === "autre" ? "Non détecté" : L("contact_types", k), value: v, sub: pct(v / st.total) }))))}</div>`
     + `<div class="chips">${CONV_FILTERS.map(([k, l]) => `<a class="chip${f === k ? " on" : ""}" href="#leads/messages${k === "all" ? "" : "/" + k}">${esc(l)} (${num(counts[k])})</a>`).join("")}</div>`
@@ -1292,13 +1313,13 @@ VIEWS["leads/messages"] = { range: true, fn: async param => {
     const rows = S.convs.filter(c => convIn(f, c) && (!q || foldTxt([convWho(c), c.snippet, c.phone, c.email, c.city].join(" ")).includes(q)));
     list.innerHTML = rows.length ? `<div class="inbox">${rows.slice(0, shown).map(c => {
       const p = PLAT[c.platform] || PLAT.messenger, h = HEAT[c.heat] || HEAT.froid;
-      return `<div class="cv${+c.last_from_me ? "" : " waiting"}" data-cv="${c.id}">
+      return `<div class="cv${convWaiting(c) ? " waiting" : ""}" data-cv="${c.id}">
         <span class="av t-${p[2]}">${esc(initial(convWho(c)))}<i>${ic(p[1], "xs")}</i></span>
         <span class="cv-main"><span class="cv-top"><b>${esc(convWho(c))}</b><span class="muted small">${esc(p[0])} · ${esc(ago(Date.parse(String(c.updated).replace(" ", "T")) / 1000))}</span></span>
           <span class="cv-snip">${+c.last_from_me ? `<span class="muted">Vous : </span>` : ""}<bdi dir="auto">${esc(c.snippet || "")}</bdi></span>
-          <span class="cv-tags"><span class="pill ${h[1]}">${h[0]} · ${num(c.score)}</span>${c.category && c.category !== "autre" ? `<span class="pill blue">${esc(L("inq_categories", c.category))}</span>` : ""}${c.profile ? `<span class="pill">${esc(L("contact_types", c.profile))}</span>` : ""}${c.phone ? `<span class="chip static">${ic("phone", "xs")} ${esc(c.phone)}</span>` : ""}${c.email ? `<span class="chip static">${ic("mail", "xs")} ${esc(c.email)}</span>` : ""}${c.city ? `<span class="chip static">${ic("globe", "xs")} ${esc(c.city)}</span>` : ""}${+c.last_from_me ? "" : '<span class="pill warn">Sans réponse</span>'}</span></span>
+          <span class="cv-tags"><span class="pill ${h[1]}">${h[0]} · ${num(c.score)}</span>${c.category && c.category !== "autre" ? `<span class="pill blue">${esc(L("inq_categories", c.category))}</span>` : ""}${c.profile ? `<span class="pill">${esc(L("contact_types", c.profile))}</span>` : ""}${c.phone ? `<span class="chip static">${ic("phone", "xs")} ${esc(c.phone)}</span>` : ""}${c.email ? `<span class="chip static">${ic("mail", "xs")} ${esc(c.email)}</span>` : ""}${c.city ? `<span class="chip static">${ic("globe", "xs")} ${esc(c.city)}</span>` : ""}${convWaiting(c) ? '<span class="pill warn">Sans réponse</span>' : +c.last_from_me ? '<span class="pill good">Répondue</span>' : c.status === "traite" ? '<span class="pill">Traitée</span>' : ""}</span></span>
         <span class="cv-act">${c.contact_id ? `<a class="btn sm" href="javascript:void 0" data-edit="contacts:${c.contact_id}">${ic("check-circle", "sm")} Prospect</a>` : c.status === "ignore" ? `<button type="button" class="btn sm ghost" data-cvst="${c.id}:a_traiter">Rétablir</button>` : `<button type="button" class="btn sm pri" data-cvp="${c.id}">${ic("user-plus", "sm")} Créer le prospect</button>`}
-          <button type="button" class="btn sm" data-cvo="${c.id}">${ic("eye", "sm")} Lire</button></span></div>`;
+          <button type="button" class="btn sm" data-cvo="${c.id}">${ic("eye", "sm")} Lire</button>${c.status === "a_traiter" && !+c.last_from_me ? `<button type="button" class="btn sm ghost" data-cvst="${c.id}:traite">${ic("check", "sm")} Traitée</button>` : c.status === "traite" ? `<button type="button" class="btn sm ghost" data-cvst="${c.id}:a_traiter">Rétablir</button>` : ""}</span></div>`;
     }).join("")}</div>${moreBtn(shown, rows.length)}` : empty("Aucune conversation ne correspond à ce filtre.", "", { icon: ["search", "violet"] });
   };
   $("#cvQ").addEventListener("input", () => { shown = MORE; draw(); });
@@ -1377,9 +1398,9 @@ function prospectDialog(o) {
 
 /* ================================================================ vue : Commentaires (Facebook, Instagram) */
 const CPLAT = { facebook: ["Facebook", "share", "blue"], instagram: ["Instagram", "share", "pink"] };
-const CMT_FILTERS = [["all", "Tous"], ["attente", "Sans réponse"], ["questions", "Questions"], ["coordonnees", "Avec coordonnées"], ["facebook", "Facebook"], ["instagram", "Instagram"], ["prospects", "Prospects créés"], ["traite", "Traités"], ["ignore", "Ignorés"]];
+const CMT_FILTERS = [["all", "Tous"], ["attente", "Sans réponse"], ["repondus", "Répondus"], ["questions", "Questions"], ["coordonnees", "Avec coordonnées"], ["facebook", "Facebook"], ["instagram", "Instagram"], ["prospects", "Prospects créés"], ["traite", "Traités"], ["ignore", "Ignorés"]];
 const cmtWaiting = c => !+c.from_me && !+c.page_replied && c.status === "a_traiter" && !c.contact_id;
-const cmtIn = (f, c) => f === "attente" ? cmtWaiting(c) : f === "questions" ? !!+c.is_question && c.status !== "ignore" : f === "coordonnees" ? !!(c.phone || c.email) && c.status !== "ignore"
+const cmtIn = (f, c) => f === "attente" ? cmtWaiting(c) : f === "repondus" ? !!+c.page_replied && !+c.from_me : f === "questions" ? !!+c.is_question && c.status !== "ignore" : f === "coordonnees" ? !!(c.phone || c.email) && c.status !== "ignore"
   : f === "facebook" || f === "instagram" ? c.platform === f && c.status !== "ignore" : f === "prospects" ? !!c.contact_id
   : f === "traite" ? c.status === "traite" && !+c.from_me : f === "ignore" ? c.status === "ignore" : c.status !== "ignore";
 const atTs = v => Date.parse(String(v).replace(" ", "T")) / 1000;
@@ -1391,13 +1412,13 @@ VIEWS["leads/comments"] = { range: true, fn: async param => {
   S.cmts = d;
   const f = CMT_FILTERS.some(x => x[0] === param) ? param : "all";
   if (!d.meta.connected) return empty("Les commentaires arrivent de Meta. Connectez votre Page Facebook et son compte Instagram dans Connexions : tous les commentaires de vos publications s'afficheront ici, avec leurs réponses.", `<a class="btn pri" href="#connexions/meta">${ic("link", "sm")} Relier Facebook et Instagram</a>`, { icon: ["message", "violet"] });
-  const bar = `<div class="toolbar">${histToggle()}<span class="grow"></span>${fullBtn("comments")}</div>`;
+  const bar = `<div class="toolbar">${histToggle()}${LIVE_PILL}<span class="grow"></span>${fullBtn("comments")}</div>`;
   if (!d.rows.length) return bar + empty(all ? "Aucun commentaire importé pour l'instant. Lancez « Importer tout l'historique » : tous les commentaires des publications des 2 dernières années seront récupérés, avec leurs réponses." : "Aucun commentaire sur la période. Choisissez « Tout l'historique » pour voir tous les commentaires importés, ou lancez une synchronisation dans Connexions.", "", { icon: ["message", "violet"] });
   const st = d.stats;
   const t = (l, v, sub, m, cls = "") => `<div class="kpi ${cls}">${tile(m[0], m[1])}<small>${esc(l)}</small><b>${v}</b><span class="d">${sub}</span></div>`;
   const counts = Object.fromEntries(CMT_FILTERS.map(([k]) => [k, d.rows.filter(c => cmtIn(k, c)).length]));
-  return bar + `<div class="kpis k6">${t("Commentaires", num(st.total), all ? "tout l'historique" : esc(rangeLabel()), ["message", "violet"])}${t("Sans réponse", num(st.waiting), st.waiting ? "la Page n'a pas encore répondu" : "la Page a répondu à tout", ["clock", "amber"], st.waiting ? "warn" : "")}`
-    + `${t("Répondus par la Page", num(st.replied), pct(ratio(st.replied, st.total)) + " des commentaires", ["send", "green"])}${t("Questions", num(st.questions), pct(ratio(st.questions, st.total)) + " des commentaires", ["info", "teal"])}`
+  return bar + `<div class="kpis k6">${t("Commentaires", num(st.total), all ? "tout l'historique" : esc(rangeLabel()), ["message", "violet"])}${t("Sans réponse, à traiter", num(st.waiting), st.waiting ? "la Page n'a pas encore répondu" : "la Page a répondu à tout", ["clock", "amber"], st.waiting ? "warn" : "")}`
+    + `${t("Déjà répondus", num(st.replied), pct(ratio(st.replied, st.total)) + " des commentaires (réponse de la Page)", ["check-circle", "green"])}${t("Questions", num(st.questions), pct(ratio(st.questions, st.total)) + " des commentaires", ["info", "teal"])}`
     + `${t("Avec téléphone ou email", num(st.with_contact), "coordonnées laissées en public", ["phone", "blue"])}${t("Prospects créés", num(st.prospects), pct(ratio(st.prospects, st.total)) + " des commentaires", ["user-plus", "pink"])}</div>`
     + `<div class="grid3">${card("💬 Sujets", mapBars(st.by_category, "inq_categories", st.total))}${card("📱 Réseaux", hbars(Object.entries(st.by_platform).map(([k, v]) => ({ label: (CPLAT[k] || [k])[0], value: v, sub: pct(v / st.total) }))))}${card("👥 Profils détectés", hbars(Object.entries(st.by_profile).map(([k, v]) => ({ label: k === "autre" ? "Non détecté" : L("contact_types", k), value: v, sub: pct(v / st.total) }))))}</div>`
     + `<div class="chips">${CMT_FILTERS.map(([k, l]) => `<a class="chip${f === k ? " on" : ""}" href="#leads/comments${k === "all" ? "" : "/" + k}">${esc(l)} (${num(counts[k])})</a>`).join("")}</div>`
@@ -1791,6 +1812,25 @@ function metaResult(res) {
   }).join("")}</ul>`;
 }
 
+/** Carte « Temps réel » : Meta envoie chaque nouveau message et commentaire au tableau de bord (webhooks). */
+function liveCard(m) {
+  const w = m.webhook || {};
+  const recent = w.last_event && Date.now() / 1000 - w.last_event < 7 * 86400;
+  const state = w.on
+    ? `<div class="banner ${recent ? "good" : ""}">${ic(recent ? "check-circle" : "clock", "sm")}<span><b>Temps réel activé</b>${w.last_event ? ` · dernier message ou commentaire reçu : <b>${esc(metaWhen(w.last_event))}</b> (${num(w.events)} reçu(s))` : " · rien reçu pour l'instant"}.</span></div>`
+    : `<div class="banner">${ic("zap", "sm")}<span><b>Temps réel non activé.</b> Les messages et commentaires arrivent par la vérification rapide (toutes les 2 minutes, tableau de bord ouvert) et la synchronisation.</span></div>`;
+  const steps = (w.steps || []).length ? `<ul class="sync-steps">${w.steps.map(x => `<li class="${x.ok ? "ok" : "error"}">${tile(x.ok ? "check" : "alert-c", x.ok ? "green" : "pink", "sm")}<span><b>${esc(x.label)}</b><small>${x.ok ? "Fait" : esc(x.message)}</small></span></li>`).join("")}</ul>` : "";
+  return `<section class="card" id="mLive"><div class="card-h"><h2>${tile("zap", "pink", "sm")}Temps réel : messages et commentaires</h2><div class="ctrl"><button type="button" class="btn${w.on ? "" : " pri"}" id="mLiveGo">${ic("zap", "sm")} ${w.on ? "Réactiver" : "Activer le temps réel"}</button></div></div>
+    <p class="muted" style="margin-top:0">Une fois activé, Meta envoie au tableau de bord <b>chaque nouveau message</b> (Messenger, Instagram) et <b>chaque nouveau commentaire</b> (Facebook, Instagram) dès qu'il arrive : il s'affiche dans Leads & Contacts › Messages et Commentaires, avec une notification, sans recharger la page.</p>
+    ${state}${steps}
+    <details class="mhelp"><summary>${ic("info", "sm")} Bon à savoir (mode Live, réglage à la main)</summary>
+      <p class="small">• Tant que l'app Meta est en <b>mode Développement</b>, Meta n'envoie en temps réel que les messages et commentaires des personnes qui ont un rôle dans l'app (vous, les testeurs). Pour tout recevoir, passez l'app en <b>mode Live</b> (avec l'accès avancé à pages_messaging, instagram_manage_messages et pages_read_user_content). En attendant, la vérification rapide toutes les 2 minutes prend le relais.</p>
+      <p class="small">• Si l'activation échoue, réglez-la dans l'app Meta › <b>Webhooks</b> : objet <b>Page</b> (champs <code>messages</code>, <code>message_echoes</code>, <code>feed</code>) et objet <b>Instagram</b> (champs <code>comments</code>, <code>messages</code>), avec :</p>
+      <div class="cfg"><small>URL de rappel</small><code id="mWhUrl">${esc(w.url || "")}</code><button type="button" class="btn sm" data-copy="#mWhUrl">${ic("copy", "sm")} Copier</button></div>
+      <div class="cfg"><small>Jeton de vérification</small><code id="mWhTok">${esc(w.verify_token || "créé à la première activation")}</code>${w.verify_token ? `<button type="button" class="btn sm" data-copy="#mWhTok">${ic("copy", "sm")} Copier</button>` : ""}</div>
+    </details></section>`;
+}
+
 VIEWS["connexions/meta"] = { fn: async param => {
   if (META_BACK[param]) {
     const [msg, kind] = META_BACK[param];
@@ -1847,6 +1887,8 @@ VIEWS["connexions/meta"] = { fn: async param => {
   const s3 = `<div id="mAssets"><p class="loading">Chargement de vos Pages et comptes publicitaires…</p></div>`;
   const sync = `<section class="card" id="mSync"><div class="card-h"><h2>${tile("trend", "violet", "sm")}Synchronisation</h2><div class="ctrl">${chosen ? fullBtn("messages,comments") : ""}<button type="button" class="btn pri" id="mGo"${chosen ? "" : " disabled"}>${ic("trend", "sm")} Synchroniser maintenant</button></div></div>
       ${conn && !m.page ? `<div class="banner warn">${ic("alert", "sm")}<span>Aucune Page Facebook choisie : Facebook, les leads et les messages ne sont pas importés. Choisissez la Page à l'étape 3 ci-dessus, puis « Enregistrer ces choix ».</span></div>` : ""}
+      ${m.running ? `<div class="banner">${ic("clock", "sm")}<span>Une synchronisation est en cours (autre onglet, synchronisation automatique ou tâche cron) : les nouvelles données arrivent à la fin. Rechargez la page dans une minute.</span></div>` : ""}
+      ${m.last_result && m.last_result.more ? `<div class="banner warn">${ic("alert", "sm")}<span>La dernière synchronisation n'est pas terminée (beaucoup de données) : la suite se fait toute seule par lots, ou cliquez sur « Synchroniser maintenant ».</span></div>` : ""}
       <p class="muted" style="margin-top:0">Dernière : <b>${esc(metaWhen(m.last_sync))}</b>${m.last_result ? ` · du ${fdate(m.last_result.from, false)} au ${fdate(m.last_result.to)}` : ""}.</p>
       <div class="auto-sync"><label for="mAuto"><b>Synchronisation automatique</b><small>Facebook, Instagram, Meta Ads, leads, messages et commentaires, pendant que le tableau de bord est ouvert (même dans un onglet en arrière-plan).</small></label>
         <select id="mAuto">${[[15, "Toutes les 15 minutes"], [30, "Toutes les 30 minutes"], [60, "Toutes les heures"], [180, "Toutes les 3 heures"], [360, "Toutes les 6 heures"], [720, "Toutes les 12 heures"], [0, "Désactivée"]].map(([v, l]) => `<option value="${v}"${+m.auto_sync === v ? " selected" : ""}>${l}</option>`).join("")}</select></div>
@@ -1861,13 +1903,15 @@ VIEWS["connexions/meta"] = { fn: async param => {
       ${step(1, appOk, !appOk, "App Meta", s1)}
       ${step(2, conn && !m.token_invalid, appOk && (!conn || m.token_invalid), "Connexion au compte Facebook", s2)}
       ${step(3, chosen, conn && !chosen, "Page, Instagram et comptes publicitaires", conn ? s3 : `<p class="muted" style="margin:0">Disponible une fois le compte connecté.</p>`)}
-      ${conn || m.instagram ? sync : ""}
+      ${conn || m.instagram ? sync + liveCard(m) : ""}
     </div><div class="side-col">
       <section class="card"><div class="card-h"><h2>${tile("sparkles", "amber", "sm")}Ce qui arrive tout seul</h2></div><div class="alist">${what.map(w => `<div class="arow">${tile(w[0], w[1], "sm")}<span><b>${w[2]}</b><small>${w[3]}</small></span></div>`).join("")}</div>
         <p class="small muted" style="margin:10px 0 0">Le classement suit vos <a href="#connexions/rules">règles de classement</a>. Une donnée importée puis supprimée n'est pas réimportée.</p></section>
       <section class="card"><div class="card-h"><h2>${tile("clock", "teal", "sm")}Même tableau de bord fermé</h2></div><p class="small" style="margin-top:0">Pour que tout se synchronise aussi quand personne n'a ouvert le tableau de bord : dans <b>cPanel › Tâches Cron</b>, « Paramètres communs » : <b>Une fois par heure</b>, puis collez cette commande et cliquez sur « Ajouter une nouvelle tâche Cron » :</p>
         <pre class="code" id="mCron">/usr/local/bin/php ~/public_html/marketing/cron.php --meta-only &gt; /dev/null 2&gt;&amp;1</pre><button type="button" class="btn sm" data-copy="#mCron">${ic("copy", "sm")} Copier la commande</button>
-        <p class="small muted" style="margin:10px 0 0">La tâche du matin (rapports) synchronise déjà une fois par jour ; celle-ci ajoute une synchronisation chaque heure.</p></section>
+        <p class="small muted" style="margin:10px 0 0">La tâche du matin (rapports) synchronise déjà une fois par jour ; celle-ci ajoute une synchronisation chaque heure.</p>
+        <p class="small" style="margin:12px 0 6px"><b>Messages et commentaires toutes les 5 minutes</b> (même tableau de bord fermé, utile si le temps réel n'est pas actif) : 2e tâche, « Paramètres communs » : <b>Toutes les cinq minutes</b> :</p>
+        <pre class="code" id="mCronLive">/usr/local/bin/php ~/public_html/marketing/cron.php --live &gt; /dev/null 2&gt;&amp;1</pre><button type="button" class="btn sm" data-copy="#mCronLive">${ic("copy", "sm")} Copier la commande</button></section>
     </div></div>`;
 }, after: async () => {
   const m = S.meta;
@@ -1895,16 +1939,26 @@ VIEWS["connexions/meta"] = { fn: async param => {
     try { const d = await api("meta_save", {}, { auto_sync: +e.target.value }); S.boot.meta = d.meta; toast(+e.target.value ? "Synchronisation automatique : " + e.target.selectedOptions[0].textContent.toLowerCase() : "Synchronisation automatique désactivée"); }
     catch (err) { toast(err.message, "err"); }
   });
+  if (el("mLiveGo")) el("mLiveGo").addEventListener("click", async e => {
+    const b = e.target.closest("button");
+    b.disabled = true;
+    b.innerHTML = `<span class="spin dark"></span> Activation…`;
+    try {
+      const d = await api("meta_webhook", {}, {});
+      S.boot.meta = d.meta;
+      toast(d.result.ok ? "Temps réel activé : les nouveaux messages et commentaires arrivent dès qu'ils sont envoyés" : "Temps réel activé en partie : voir le détail", d.result.ok ? "" : "err");
+      route();
+    } catch (err) { toast(err.message, "err"); b.disabled = false; b.innerHTML = `${ic("zap", "sm")} Activer le temps réel`; }
+  });
   if (el("mGo")) el("mGo").addEventListener("click", async e => {
     const b = e.target.closest("button");
-    b.disabled = true; b.innerHTML = `<span class="spin"></span> Synchronisation… (jusqu'à une minute)`;
+    b.disabled = true;
     try {
-      const d = await api("meta_sync", {}, {});
-      S.boot.meta = d.meta;
-      const t = d.result.totals;
-      toast(d.result.ok ? `Synchronisé : ${num(t.added)} nouvelle(s) donnée(s), ${num(t.updated)} mise(s) à jour` : "Synchronisation terminée avec des erreurs : voir le détail", d.result.ok ? "" : "err");
+      const r = await metaSyncLots({}, n => { b.innerHTML = `<span class="spin"></span> Synchronisation… ${n > 1 ? "lot " + n : "(jusqu'à une minute)"}`; });
+      const t = r.tot;
+      toast(r.ok ? `Synchronisé : ${num(t.added)} nouvelle(s) donnée(s), ${num(t.updated)} mise(s) à jour` : "Synchronisation terminée avec des erreurs : voir le détail", r.ok ? "" : "err");
       S.cache.clear();
-      const r = await api("refs"); S.boot.refs = r.refs; S.boot.enums = r.enums;
+      const rf = await api("refs"); S.boot.refs = rf.refs; S.boot.enums = rf.enums;
       route();
     } catch (err) { toast(err.message, "err"); b.disabled = false; b.innerHTML = `${ic("trend", "sm")} Synchroniser maintenant`; }
   });
@@ -3784,6 +3838,51 @@ async function start() {
   $("#app").hidden = false;
   route();
   if (!S.autoTimer) { S.autoTimer = setInterval(autoSync, 60 * 1000); setTimeout(autoSync, 8000); }
+  if (!S.liveTimer) { S.liveTimer = setInterval(liveTick, 15 * 1000); setTimeout(liveTick, 1500); }
+}
+
+/**
+ * En direct : toutes les 15 secondes (1 minute quand l'onglet est caché), le tableau de bord demande
+ * au serveur les messages et commentaires arrivés depuis la dernière fois (par le temps réel de Meta ou
+ * la vérification rapide), les annonce, met les compteurs à jour et rafraîchit la liste affichée.
+ */
+async function liveTick() {
+  if (!S.boot || S.liveBusy) return;
+  if (document.hidden && Date.now() - (S.liveAt || 0) < 60000) return;
+  S.liveBusy = true;
+  S.liveAt = Date.now();
+  try {
+    const d = await api("live", S.liveM != null ? { m: S.liveM, c: S.liveC } : {});
+    const first = S.liveM == null;
+    // Quelque chose a bougé (nouveau message ou commentaire, réponse de la Page, compteurs) ?
+    const sig = [d.m, d.c, JSON.stringify(d.counts)].join("|");
+    const changed = !first && sig !== S.liveSig;
+    S.liveSig = sig;
+    S.liveM = d.m;
+    S.liveC = d.c;
+    Object.assign(S.boot, d.counts);
+    if (S.boot.meta) S.boot.meta.last_light = d.last_light;
+    const msgs = d.messages || [], cmts = d.comments || [];
+    if (changed) {
+      const news = [...msgs.filter(x => x.recent).map(x => `${ic("message", "sm")} Message de ${x.name} : « ${String(x.text).slice(0, 70)} »`), ...cmts.filter(x => x.recent).map(x => `Commentaire de ${x.name} : « ${String(x.text).slice(0, 70)} »`)];
+      news.slice(0, 3).forEach((t, i) => setTimeout(() => toast(t.replace(/<[^>]+>/g, "").trim()), i * 600));
+      if (news.length > 3) setTimeout(() => toast(`… et ${news.length - 3} autre(s) nouveauté(s)`), 1900);
+      S.cache.clear();
+      const h = location.hash;
+      const busy = !$("#modal").hidden || !$("#dlg").hidden || (document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName));
+      if (!busy && (/^#leads\/(messages|comments)/.test(h) || h === "" || h.startsWith("#overview/daily") || h === "#overview")) route();
+    }
+    liveDot(true);
+  } catch (err) {
+    if (err.status === 401) { clearInterval(S.liveTimer); S.liveTimer = null; }
+    liveDot(false);
+  }
+  S.liveBusy = false;
+}
+/** Petite pastille « En direct » dans les vues Messages et Commentaires. */
+function liveDot(ok) {
+  const el = $("#liveDot");
+  if (el) { el.classList.toggle("off", !ok); el.title = ok ? "Les nouveaux messages et commentaires s'affichent tout seuls" : "Connexion perdue : nouvelle tentative dans 15 secondes"; }
 }
 
 /**
@@ -3793,10 +3892,26 @@ async function start() {
 async function autoSync() {
   const m = S.boot && S.boot.meta;
   if (!m || !m.connected || !+m.auto_sync || S.autoBusy || m.token_invalid) return;
-  if (Date.now() / 1000 - (+m.last_sync || 0) < +m.auto_sync * 60) return;
+  // Synchronisation pas terminée (gros import) : le lot suivant part tout de suite, sans attendre l'intervalle.
+  const pend = S.autoPending || (m.last_result && m.last_result.more && !m.last_result.full ? m.last_result.pending : null);
+  if (!pend && Date.now() / 1000 - (+m.last_sync || 0) < +m.auto_sync * 60) {
+    // Entre deux synchronisations : vérification rapide des nouveaux messages et commentaires,
+    // toutes les 2 minutes (toutes les 10 minutes quand le temps réel de Meta est actif).
+    const wh = m.webhook || {};
+    const every = wh.on && wh.last_event && Date.now() / 1000 - wh.last_event < 86400 ? 600 : 120;
+    if (Date.now() / 1000 - Math.max(+m.last_light || 0, S.lightAt || 0) < every) return;
+    S.autoBusy = true;
+    S.lightAt = Date.now() / 1000;
+    try { const d = await api("meta_sync", {}, { only: ["messages", "comments"], light: true }); m.last_light = d.result.at; }
+    catch (err) { if (err.status === 401) clearInterval(S.autoTimer); }
+    S.autoBusy = false;
+    return liveTick();
+  }
   S.autoBusy = true;
   try {
-    const d = await api("meta_sync", {}, {});
+    const d = await api("meta_sync", {}, pend ? { only: pend, resume: true, clean: S.autoClean !== false } : {});
+    S.autoClean = (pend ? S.autoClean !== false : true) && d.result.ok;
+    S.autoPending = d.result.more ? d.result.pending : null;
     S.boot.meta = d.meta;
     const t = d.result.totals;
     if (!d.result.ok && !S.autoWarned) { S.autoWarned = true; toast("Synchronisation automatique Meta : une étape a échoué (détail dans Connexions).", "err"); }

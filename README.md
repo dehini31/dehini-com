@@ -1087,6 +1087,27 @@ les conversations ou tous les commentaires importés, quelle que soit la date) e
 chez Meta toutes les conversations avec tous leurs messages, et tous les commentaires des publications des 2 dernières
 années ; cela peut prendre plusieurs minutes, et s'il s'arrête avant la fin il suffit de le relancer.
 
+**Répondus / sans réponse.** Messages : « Déjà répondues » (la Page a répondu en dernier) et « Sans réponse, à
+traiter » (le dernier message vient de la personne, conversation ni traitée ni ignorée), avec les filtres Répondues
+et Traitées et un bouton « Traitée » ; un nouveau message de la personne remet la conversation « à traiter ».
+Commentaires : « Déjà répondus » (la Page a répondu) et « Sans réponse, à traiter », avec les filtres correspondants.
+L'accueil affiche les deux nombres.
+
+**Temps réel** (Connexions › *Temps réel : messages et commentaires* › « Activer le temps réel »). Le tableau de
+bord abonne l'app Meta et la Page (et le compte Instagram) : Meta envoie alors chaque nouveau message (Messenger,
+Instagram) et chaque nouveau commentaire (Facebook, Instagram) à `marketing/webhook.php`, qui le range aussitôt
+(envois refusés s'ils ne sont pas signés avec la clé secrète de l'app). Les pages ouvertes l'affichent toutes seules
+en quelques secondes (pastille « En direct », notification « Message de … »), sans recharger. Il faut une adresse en
+`https://`. Tant que l'app Meta est en mode Développement, Meta n'envoie en temps réel que les messages et
+commentaires des personnes qui ont un rôle dans l'app : pour tout recevoir, passer l'app en mode Live. En attendant
+(ou en complément), le tableau de bord vérifie les nouveaux messages et commentaires toutes les 2 minutes tant qu'il
+est ouvert, et la tâche cron `cron.php --live` (toutes les 5 minutes) le fait même tableau de bord fermé.
+
+**Synchronisation par lots.** Chaque synchronisation lancée depuis le tableau de bord travaille 40 secondes au plus
+(les hébergeurs coupent les requêtes plus longues) ; ce qui reste passe au lot suivant, enchaîné tout seul
+(« Synchroniser maintenant », « Importer tout l'historique », synchronisation automatique, tâche cron). La période
+n'avance qu'une fois tout importé sans erreur. Connexions signale une synchronisation en cours ou pas terminée.
+
 **Noms des commentateurs.** Meta ne donne le nom de l'auteur d'un commentaire Facebook qu'aux apps qui ont
 `pages_read_user_content` et sont « en ligne » (mode Live) ; sinon la question s'affiche « Nom masqué par Meta » avec
 un lien « Voir le commentaire » pour l'ouvrir sur Facebook. Sur Instagram, le nom d'utilisateur est toujours donné.
