@@ -35,6 +35,7 @@ require __DIR__ . '/lib/research.php';
 require __DIR__ . '/lib/dash.php';
 require __DIR__ . '/lib/analytics.php';
 require __DIR__ . '/lib/seed.php';
+require __DIR__ . '/lib/import.php';
 
 header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: same-origin');
@@ -60,7 +61,7 @@ const POST_ONLY = ['order', 'order_radar', 'order_cancel', 'event', 'log_map', '
     'brand_save', 'brand_delete', 'product_save', 'product_delete', 'upload', 'store_save', 'store_delete', 'stock_save', 'order_status',
     'radar_claim', 'radar_release', 'visual_identify', 'visual_search', 'research_create', 'research_close', 'research_reply', 'research_dismiss',
     'partner_request', 'partner_respond', 'partner_remove', 'company_save', 'account_save', 'password',
-    'adm_company', 'adm_open', 'adm_demo', 'adm_settings'];
+    'adm_company', 'adm_open', 'adm_demo', 'adm_settings', 'adm_import'];
 if (in_array($action, POST_ONLY, true) && !$isPost) fail('Méthode non autorisée.', 405, 'method');
 
 // Les envois de fichier arrivent en multipart : leurs champs sont dans $_POST.
@@ -179,7 +180,9 @@ try {
                 log_search('availability', ['product' => $pid, 'brand' => (int) $p['brand_id'], 'size' => $size, 'color' => $color, 'zone' => g('zone'),
                     'lat' => $lat, 'lng' => $lng, 'results' => count($found), 'nearest_km' => $found && $found[0]['km'] !== null ? $found[0]['km'] : null], [(int) $p['company_id']]);
             }
-            ok(['stores' => $found]);
+            // Sans stock confirmé : les points de vente qui vendent la marque, présentés comme tels.
+            $except = array_map(function ($st) { return (int) $st['id']; }, $found);
+            ok(['stores' => $found, 'brand_stores' => brand_stores($pid, $except, $lat, $lng)]);
         }
 
         case 'track': {
@@ -695,7 +698,14 @@ try {
                 'settings' => ['moderation' => moderation_on(), 'notify_email' => setting('notify_email'), 'radar_step_min' => intdiv(radar_step(), 60)],
                 'demo' => demo_exists(),
                 'mail' => MLG_SMTP_HOST !== '',
+                'import' => import_algerie_status(),
             ]);
+        }
+
+        // Base Algérie (sources publiques) : import ou mise à jour des fiches publiques.
+        case 'adm_import': {
+            require_admin();
+            ok(['result' => import_algerie(), 'import' => import_algerie_status()]);
         }
 
         case 'adm_company': {

@@ -1246,6 +1246,17 @@ photos suivantes du même produit le font proposer — comme proposition ou prod
 Limite à connaître : la comparaison porte sur les formes et les couleurs de l'image ; elle reconnaît une photo du
 catalogue ou une photo déjà apprise, pas un objet photographié sous un angle tout à fait nouveau.
 
+**Base Algérie (fiches publiques)** — 100 produits (50 téléphones du catalogue E-Mobile, 50 vêtements Decathlon),
+28 marques, 25 entreprises, 24 points de vente physiques (Alger, Oran, Constantine, Sétif) et 100 offres en ligne,
+relevés dans des sources publiques le 13 novembre 2026 (`maillage/lib/data/import/`, préparé par
+`tools/import/prepare_algerie.py`). Import depuis `admin.html` → « Base Algérie : fiches publiques » → **Importer la
+base** (relançable : mise à jour sans doublon). Ces entreprises n'ont pas de compte : elles sont publiées comme
+**fiches publiques** (mention visible, source et date de vérification), **sans prix ni stock inventés** (« Prix non
+communiqué », « Stock à confirmer par téléphone »), sans commande vers leurs magasins ; la page produit renvoie vers
+la fiche du vendeur en ligne et liste les magasins qui vendent la marque. Les magasins sont placés sur la carte
+(OpenStreetMap) ; ceux placés au centre de leur commune portent la mention « position approximative ». Les photos
+servent aussi à la recherche par photo.
+
 **Français / arabe** — toutes les pages (landings, plateforme publique, page de vente, espace, administration) sont
 bilingues : un bouton FR/AR (en haut de chaque page) bascule la langue, mémorisée par appareil (`localStorage`),
 avec mise en page RTL (sens de lecture, icônes directionnelles, carte, tableaux) et police Readex Pro (déjà

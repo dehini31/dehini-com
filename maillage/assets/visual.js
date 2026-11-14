@@ -301,6 +301,7 @@
         <div class="vs-near-end">${st.km != null ? html`<span class="km">${fmt.km(st.km)}</span>` : ''}<span class="row">${X.contactButtons(st, true)}</span></div>
       </li>`)}</ul>
     ${p.near_total > p.near.length ? html`<p class="muted vs-near-more">${ML.t('et')} ${fmt.plural(p.near_total - p.near.length, 'autre point de vente', 'autres points de vente')}</p>` : ''}`
+    : (p.near_brand || []).length ? html`<div data-near><p class="muted">${ML.t('Selon des sources publiques, ces magasins vendent la marque. Ils n\'indiquent pas leur stock sur Maillage : appelez avant de vous déplacer.')}</p>${X.brandStoresHtml(p.near_brand)}</div>`
     : html`<p class="notice is-warn" data-near>${icon('triangle-alert')}<span>${ML.t('Aucun point de vente ne l\'a en stock pour le moment. Vous pouvez le commander depuis sa fiche ou lancer une recherche active.')}</span></p>`);
 
   function exactHtml(p, evidence) {
@@ -316,7 +317,7 @@
           <div class="vs-exact-info">
             <a class="p-brand" href="#/marque/${p.brand.slug}">${ML.mono(p.brand.name, p.brand.color, p.brand.logo, 'mono-sm')}<span>${p.brand.name}</span>${p.demo ? html`<span class="badge">${ML.t('Démo')}</span>` : ''}</a>
             <h2>${p.name}</h2>
-            <p class="vs-price"><b class="price">${p.price_max > p.price ? ML.t('dès ') : ''}${fmt.price(p.price)}</b></p>
+            <p class="vs-price"><b class="price ${p.price > 0 ? '' : 'is-none'}">${X.priceText(p)}</b>${X.publicBadge(p.listing)}</p>
             ${p.about ? html`<p class="muted vs-about">${p.about}</p>` : ''}
             <p class="vs-src">${icon('shield-check', 'ico-sm')}${ML.t('Informations du catalogue de la marque')}</p>
           </div>

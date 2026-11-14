@@ -1,0 +1,4185 @@
+{
+ "source": "Base produits et points de vente — Algérie (sources publiques)",
+ "checked": "2026-11-13",
+ "companies": [
+  {
+   "ext": "DZ-apple",
+   "name": "Apple",
+   "kind": "brand",
+   "website": "https://www.apple.com/",
+   "email": "",
+   "phone": "",
+   "src": "https://www.apple.com/",
+   "checked": "2026-11-13",
+   "wilaya": "",
+   "city": "",
+   "notes": ""
+  },
+  {
+   "ext": "DZ-decathlon",
+   "name": "Decathlon",
+   "kind": "brand",
+   "website": "https://www.decathlon.com.dz/",
+   "email": "",
+   "phone": "0560015560",
+   "src": "https://www.decathlon.com.dz/",
+   "checked": "2026-11-13",
+   "wilaya": "16",
+   "city": "Mohammadia",
+   "notes": "",
+   "online": "https://www.decathlon.com.dz/"
+  },
+  {
+   "ext": "DZ-google",
+   "name": "Google",
+   "kind": "brand",
+   "website": "https://store.google.com/fr/category/phones?hl=fr",
+   "email": "",
+   "phone": "",
+   "src": "https://store.google.com/fr/category/phones?hl=fr",
+   "checked": "2026-11-13",
+   "wilaya": "",
+   "city": "",
+   "notes": ""
+  },
+  {
+   "ext": "DZ-honor",
+   "name": "HONOR",
+   "kind": "brand",
+   "website": "https://www.honor.com/",
+   "email": "",
+   "phone": "",
+   "src": "https://www.honor.com/global/?host=honor.com",
+   "checked": "2026-11-13",
+   "wilaya": "",
+   "city": "",
+   "notes": ""
+  },
+  {
+   "ext": "DZ-huawei",
+   "name": "Huawei",
+   "kind": "brand",
+   "website": "https://consumer.huawei.com/",
+   "email": "",
+   "phone": "",
+   "src": "https://consumer.huawei.com/en/",
+   "checked": "2026-11-13",
+   "wilaya": "",
+   "city": "",
+   "notes": ""
+  },
+  {
+   "ext": "DZ-infinix",
+   "name": "Infinix",
+   "kind": "brand",
+   "website": "https://www.infinixmobility.com/",
+   "email": "",
+   "phone": "",
+   "src": "https://www.infinixmobility.com/",
+   "checked": "2026-11-13",
+   "wilaya": "",
+   "city": "",
+   "notes": ""
+  },
+  {
+   "ext": "DZ-itel",
+   "name": "Itel",
+   "kind": "brand",
+   "website": "https://www.itel-life.com/",
+   "email": "",
+   "phone": "",
+   "src": "https://www.itel-life.com/ph/",
+   "checked": "2026-11-13",
+   "wilaya": "",
+   "city": "",
+   "notes": ""
+  },
+  {
+   "ext": "DZ-kiabi",
+   "name": "Kiabi",
+   "kind": "brand",
+   "website": "https://kiabi.dz/",
+   "email": "kiabi.algerie@greatwaydz.com",
+   "phone": "0558630000",
+   "src": "https://kiabi.dz/",
+   "checked": "2026-11-13",
+   "wilaya": "16",
+   "city": "Mohammadia",
+   "notes": "",
+   "online": "https://kiabi.dz/"
+  },
+  {
+   "ext": "DZ-lufian",
+   "name": "Lufian",
+   "kind": "brand",
+   "website": "https://www.lufian.com/",
+   "email": "",
+   "phone": "0560680629",
+   "src": "https://www.lufian.com/",
+   "checked": "2026-11-13",
+   "wilaya": "16",
+   "city": "Ben Aknoun",
+   "notes": ""
+  },
+  {
+   "ext": "DZ-nothing",
+   "name": "Nothing",
+   "kind": "brand",
+   "website": "https://nothing.tech/",
+   "email": "",
+   "phone": "",
+   "src": "https://nothing.tech/",
+   "checked": "2026-11-13",
+   "wilaya": "",
+   "city": "",
+   "notes": ""
+  },
+  {
+   "ext": "DZ-oneplus",
+   "name": "OnePlus",
+   "kind": "brand",
+   "website": "https://www.oneplus.com/",
+   "email": "",
+   "phone": "",
+   "src": "https://www.oneplus.com/pl",
+   "checked": "2026-11-13",
+   "wilaya": "",
+   "city": "",
+   "notes": ""
+  },
+  {
+   "ext": "DZ-oppo",
+   "name": "OPPO",
+   "kind": "brand",
+   "website": "https://www.oppo.com/",
+   "email": "",
+   "phone": "",
+   "src": "https://www.oppo.com/in/",
+   "checked": "2026-11-13",
+   "wilaya": "",
+   "city": "",
+   "notes": ""
+  },
+  {
+   "ext": "DZ-realme",
+   "name": "realme",
+   "kind": "brand",
+   "website": "https://www.realme.com/global/",
+   "email": "",
+   "phone": "",
+   "src": "https://www.realme.com/global/",
+   "checked": "2026-11-13",
+   "wilaya": "",
+   "city": "",
+   "notes": ""
+  },
+  {
+   "ext": "DZ-xiaomi",
+   "name": "Xiaomi",
+   "kind": "brand",
+   "website": "https://www.mi.com/",
+   "email": "",
+   "phone": "",
+   "src": "https://www.mi.com/us/",
+   "checked": "2026-11-13",
+   "wilaya": "",
+   "city": "",
+   "notes": ""
+  },
+  {
+   "ext": "DZ-samsung",
+   "name": "Samsung",
+   "kind": "brand",
+   "website": "https://www.samsung.com/",
+   "email": "",
+   "phone": "",
+   "src": "https://www.samsung.com/ch/",
+   "checked": "2026-11-13",
+   "wilaya": "",
+   "city": "",
+   "notes": ""
+  },
+  {
+   "ext": "DZ-tecno",
+   "name": "Tecno",
+   "kind": "brand",
+   "website": "https://www.tecno-mobile.com/",
+   "email": "",
+   "phone": "",
+   "src": "https://www.tecno-mobile.com/",
+   "checked": "2026-11-13",
+   "wilaya": "",
+   "city": "",
+   "notes": ""
+  },
+  {
+   "ext": "DZ-vivo",
+   "name": "vivo",
+   "kind": "brand",
+   "website": "https://www.vivo.com/",
+   "email": "",
+   "phone": "",
+   "src": "https://www.vivo.com/",
+   "checked": "2026-11-13",
+   "wilaya": "",
+   "city": "",
+   "notes": ""
+  },
+  {
+   "ext": "DZ-zte",
+   "name": "ZTE",
+   "kind": "brand",
+   "website": "https://www.ztedevices.com/",
+   "email": "",
+   "phone": "",
+   "src": "https://www.ztedevices.com/en/home/",
+   "checked": "2026-11-13",
+   "wilaya": "",
+   "city": "",
+   "notes": ""
+  },
+  {
+   "ext": "DZ-ib-store",
+   "name": "IB Store",
+   "kind": "distributor",
+   "website": "https://idealbrand.dz/",
+   "email": "contact@idealbrand.dz",
+   "phone": "0770072105",
+   "src": "https://idealbrand.dz/about/",
+   "checked": "2026-11-13",
+   "wilaya": "16",
+   "city": "Ouled Fayet",
+   "notes": "",
+   "online": "https://idealbrand.dz/"
+  },
+  {
+   "ext": "DZ-gr-phone-31",
+   "name": "GR PHONE 31",
+   "kind": "distributor",
+   "website": "https://grphone31.com/fr/",
+   "email": "contact@grphone31.com",
+   "phone": "0777599666",
+   "src": "https://grphone31.com/fr/magasins",
+   "checked": "2026-11-13",
+   "wilaya": "31",
+   "city": "Oran",
+   "notes": "",
+   "online": "https://grphone31.com/fr/"
+  },
+  {
+   "ext": "DZ-groupe-phone",
+   "name": "Groupe Phone",
+   "kind": "distributor",
+   "website": "https://groupe-phone.com/",
+   "email": "groupephonedjezzy@gmail.com",
+   "phone": "0771805757",
+   "src": "https://groupe-phone.com/contact/",
+   "checked": "2026-11-13",
+   "wilaya": "31",
+   "city": "Oran",
+   "notes": "",
+   "online": "https://groupe-phone.com/"
+  },
+  {
+   "ext": "DZ-didou-phone",
+   "name": "DIDOU PHONE",
+   "kind": "distributor",
+   "website": "https://oualidmenkhour.com/",
+   "email": "Mwalid25@live.com",
+   "phone": "0661329332",
+   "src": "https://oualidmenkhour.com/contact",
+   "checked": "2026-11-13",
+   "wilaya": "25",
+   "city": "Ali Mendjeli",
+   "notes": "",
+   "online": "https://oualidmenkhour.com/"
+  },
+  {
+   "ext": "DZ-e-mobile-algerie",
+   "name": "E-Mobile Algérie",
+   "kind": "distributor",
+   "website": "https://www.iphoneprixalgerie.com/",
+   "email": "contact@iphoneprixalgerie.com",
+   "phone": "0791491549 / 0558162566",
+   "src": "https://www.iphoneprixalgerie.com/",
+   "checked": "2026-11-13",
+   "wilaya": "16",
+   "city": "Chéraga",
+   "notes": "",
+   "online": "https://www.iphoneprixalgerie.com/"
+  },
+  {
+   "ext": "DZ-papilla-store",
+   "name": "Papilla Store",
+   "kind": "distributor",
+   "website": "",
+   "email": "",
+   "phone": "0552821394 / 0659739647",
+   "src": "https://www.cybo.com/DZ-biz/papilla-store",
+   "checked": "2026-11-13",
+   "wilaya": "19",
+   "city": "Sétif",
+   "notes": ""
+  },
+  {
+   "ext": "DZ-istorealgeria",
+   "name": "iStore.Algeria",
+   "kind": "distributor",
+   "website": "https://istorealgeria.com/",
+   "email": "istore.algeria@gmail.com",
+   "phone": "0775151531",
+   "src": "https://istorealgeria.com/policies/privacy-policy",
+   "checked": "2026-11-13",
+   "wilaya": "",
+   "city": "",
+   "notes": "",
+   "online": "https://istorealgeria.com/"
+  }
+ ],
+ "brands": [
+  {
+   "ext": "B001",
+   "company": "DZ-apple",
+   "name": "Apple",
+   "website": "https://www.apple.com/",
+   "src": "https://www.apple.com/",
+   "color": "#1d1d1f",
+   "notes": "Site officiel international. Sa présence ne confirme pas de livraison ou de stock en Algérie."
+  },
+  {
+   "ext": "B002",
+   "company": "DZ-decathlon",
+   "name": "Decathlon",
+   "website": "https://www.decathlon.com.dz/",
+   "src": "https://www.decathlon.com.dz/",
+   "color": "#0082c3",
+   "notes": "Site officiel Algérie."
+  },
+  {
+   "ext": "B003",
+   "company": "DZ-decathlon",
+   "name": "Domyos",
+   "website": "https://www.decathlon.com.dz/",
+   "src": "https://help.decathlon.nl/hc/nl/articles/31776353472156-Wat-zijn-de-eigen-merken-van-Decathlon-en-hoe-herken-ik-ze",
+   "color": "#0082c3",
+   "notes": "Marque Decathlon listée par la source officielle. URL du distributeur officiel Decathlon Algérie utilisée comme site de marque."
+  },
+  {
+   "ext": "B004",
+   "company": "DZ-decathlon",
+   "name": "Forclaz",
+   "website": "https://www.decathlon.com.dz/",
+   "src": "https://help.decathlon.nl/hc/nl/articles/31776353472156-Wat-zijn-de-eigen-merken-van-Decathlon-en-hoe-herken-ik-ze",
+   "color": "#0082c3",
+   "notes": "Marque Decathlon listée par la source officielle. URL du distributeur officiel Decathlon Algérie utilisée comme site de marque."
+  },
+  {
+   "ext": "B005",
+   "company": "DZ-google",
+   "name": "Google",
+   "website": "https://store.google.com/fr/category/phones?hl=fr",
+   "src": "https://store.google.com/fr/category/phones?hl=fr",
+   "color": "#4285f4",
+   "notes": "Site officiel Google Store pour la gamme Pixel. Catalogue France."
+  },
+  {
+   "ext": "B006",
+   "company": "DZ-honor",
+   "name": "HONOR",
+   "website": "https://www.honor.com/",
+   "src": "https://www.honor.com/global/?host=honor.com",
+   "color": "#0f4fd6",
+   "notes": "Site officiel international. Sa présence ne confirme pas de livraison ou de stock en Algérie."
+  },
+  {
+   "ext": "B007",
+   "company": "DZ-huawei",
+   "name": "Huawei",
+   "website": "https://consumer.huawei.com/",
+   "src": "https://consumer.huawei.com/en/",
+   "color": "#c7000b",
+   "notes": "Site officiel international Huawei Consumer. Aucune livraison ou disponibilité en Algérie déduite."
+  },
+  {
+   "ext": "B008",
+   "company": "DZ-infinix",
+   "name": "Infinix",
+   "website": "https://www.infinixmobility.com/",
+   "src": "https://www.infinixmobility.com/",
+   "color": "#0a7c5a",
+   "notes": "Site officiel international. Sa présence ne confirme pas de livraison ou de stock en Algérie."
+  },
+  {
+   "ext": "B009",
+   "company": "DZ-itel",
+   "name": "Itel",
+   "website": "https://www.itel-life.com/",
+   "src": "https://www.itel-life.com/ph/",
+   "color": "#e60012",
+   "notes": "Site officiel itel vérifié via le catalogue Philippines et la politique de confidentialité. Accès au site global en délai dépassé lors de la consultation."
+  },
+  {
+   "ext": "B010",
+   "company": "DZ-decathlon",
+   "name": "Kalenji",
+   "website": "https://www.decathlon.com.dz/",
+   "src": "https://help.decathlon.nl/hc/nl/articles/31776353472156-Wat-zijn-de-eigen-merken-van-Decathlon-en-hoe-herken-ik-ze",
+   "color": "#0082c3",
+   "notes": "Marque Decathlon listée par la source officielle. URL du distributeur officiel Decathlon Algérie utilisée comme site de marque."
+  },
+  {
+   "ext": "B011",
+   "company": "DZ-kiabi",
+   "name": "Kiabi",
+   "website": "https://kiabi.dz/",
+   "src": "https://kiabi.dz/",
+   "color": "#00a4b4",
+   "notes": "Site officiel Algérie."
+  },
+  {
+   "ext": "B012",
+   "company": "DZ-decathlon",
+   "name": "Kiprun",
+   "website": "https://www.decathlon.com.dz/",
+   "src": "https://help.decathlon.nl/hc/nl/articles/31776353472156-Wat-zijn-de-eigen-merken-van-Decathlon-en-hoe-herken-ik-ze",
+   "color": "#0082c3",
+   "notes": "Marque Decathlon listée par la source officielle. URL du distributeur officiel Decathlon Algérie utilisée comme site de marque."
+  },
+  {
+   "ext": "B013",
+   "company": "DZ-decathlon",
+   "name": "Kipsta",
+   "website": "https://www.decathlon.com.dz/",
+   "src": "https://help.decathlon.nl/hc/nl/articles/31776353472156-Wat-zijn-de-eigen-merken-van-Decathlon-en-hoe-herken-ik-ze",
+   "color": "#0082c3",
+   "notes": "Marque Decathlon listée par la source officielle. URL du distributeur officiel Decathlon Algérie utilisée comme site de marque."
+  },
+  {
+   "ext": "B014",
+   "company": "DZ-lufian",
+   "name": "Lufian",
+   "website": "https://www.lufian.com/",
+   "src": "https://www.lufian.com/",
+   "color": "#222222",
+   "notes": "Site officiel international. Sa présence ne confirme pas de livraison ou de stock en Algérie."
+  },
+  {
+   "ext": "B015",
+   "company": "DZ-nothing",
+   "name": "Nothing",
+   "website": "https://nothing.tech/",
+   "src": "https://nothing.tech/",
+   "color": "#111111",
+   "notes": "Site officiel international. Sa présence ne confirme pas de livraison ou de stock en Algérie."
+  },
+  {
+   "ext": "B016",
+   "company": "DZ-oneplus",
+   "name": "OnePlus",
+   "website": "https://www.oneplus.com/",
+   "src": "https://www.oneplus.com/pl",
+   "color": "#eb0029",
+   "notes": "Site officiel international. Sa présence ne confirme pas de livraison ou de stock en Algérie."
+  },
+  {
+   "ext": "B017",
+   "company": "DZ-oppo",
+   "name": "OPPO",
+   "website": "https://www.oppo.com/",
+   "src": "https://www.oppo.com/in/",
+   "color": "#1ba784",
+   "notes": "Site officiel international. Sa présence ne confirme pas de livraison ou de stock en Algérie."
+  },
+  {
+   "ext": "B018",
+   "company": "DZ-decathlon",
+   "name": "Quechua",
+   "website": "https://www.decathlon.com.dz/",
+   "src": "https://help.decathlon.nl/hc/nl/articles/31776353472156-Wat-zijn-de-eigen-merken-van-Decathlon-en-hoe-herken-ik-ze",
+   "color": "#0082c3",
+   "notes": "Marque Decathlon listée par la source officielle. URL du distributeur officiel Decathlon Algérie utilisée comme site de marque."
+  },
+  {
+   "ext": "B019",
+   "company": "DZ-realme",
+   "name": "realme",
+   "website": "https://www.realme.com/global/",
+   "src": "https://www.realme.com/global/",
+   "color": "#e8b400",
+   "notes": "Site officiel international. Sa présence ne confirme pas de livraison ou de stock en Algérie."
+  },
+  {
+   "ext": "B020",
+   "company": "DZ-xiaomi",
+   "name": "Redmi",
+   "website": "https://www.mi.com/",
+   "src": "https://www.mi.com/uk/product-list/phone/redmi/",
+   "color": "#ff6900",
+   "notes": "Marque Redmi présentée par Xiaomi sur son site officiel. Aucune disponibilité en Algérie déduite."
+  },
+  {
+   "ext": "B021",
+   "company": "DZ-samsung",
+   "name": "Samsung",
+   "website": "https://www.samsung.com/",
+   "src": "https://www.samsung.com/ch/",
+   "color": "#1428a0",
+   "notes": "Site officiel international. Sa présence ne confirme pas de livraison ou de stock en Algérie."
+  },
+  {
+   "ext": "B022",
+   "company": "DZ-decathlon",
+   "name": "Simond",
+   "website": "https://www.decathlon.com.dz/",
+   "src": "https://help.decathlon.nl/hc/nl/articles/31776353472156-Wat-zijn-de-eigen-merken-van-Decathlon-en-hoe-herken-ik-ze",
+   "color": "#0082c3",
+   "notes": "Marque Decathlon listée par la source officielle. URL du distributeur officiel Decathlon Algérie utilisée comme site de marque."
+  },
+  {
+   "ext": "B023",
+   "company": "DZ-decathlon",
+   "name": "Tarmak",
+   "website": "https://www.decathlon.com.dz/",
+   "src": "https://help.decathlon.nl/hc/nl/articles/31776353472156-Wat-zijn-de-eigen-merken-van-Decathlon-en-hoe-herken-ik-ze",
+   "color": "#0082c3",
+   "notes": "Marque Decathlon listée par la source officielle. URL du distributeur officiel Decathlon Algérie utilisée comme site de marque."
+  },
+  {
+   "ext": "B024",
+   "company": "DZ-tecno",
+   "name": "Tecno",
+   "website": "https://www.tecno-mobile.com/",
+   "src": "https://www.tecno-mobile.com/",
+   "color": "#0046be",
+   "notes": "Site officiel international TECNO. Le sélecteur régional comporte Algérie. Aucune disponibilité article déduite."
+  },
+  {
+   "ext": "B025",
+   "company": "DZ-vivo",
+   "name": "vivo",
+   "website": "https://www.vivo.com/",
+   "src": "https://www.vivo.com/",
+   "color": "#415fff",
+   "notes": "Site officiel international. Sa présence ne confirme pas de livraison ou de stock en Algérie."
+  },
+  {
+   "ext": "B026",
+   "company": "DZ-decathlon",
+   "name": "Wedze",
+   "website": "https://www.decathlon.com.dz/",
+   "src": "https://help.decathlon.nl/hc/nl/articles/31776353472156-Wat-zijn-de-eigen-merken-van-Decathlon-en-hoe-herken-ik-ze",
+   "color": "#0082c3",
+   "notes": "Marque Decathlon listée par la source officielle. URL du distributeur officiel Decathlon Algérie utilisée comme site de marque."
+  },
+  {
+   "ext": "B027",
+   "company": "DZ-xiaomi",
+   "name": "Xiaomi",
+   "website": "https://www.mi.com/",
+   "src": "https://www.mi.com/us/",
+   "color": "#ff6900",
+   "notes": "Site officiel international. Sa présence ne confirme pas de livraison ou de stock en Algérie."
+  },
+  {
+   "ext": "B028",
+   "company": "DZ-zte",
+   "name": "ZTE",
+   "website": "https://www.ztedevices.com/",
+   "src": "https://www.ztedevices.com/en/home/",
+   "color": "#0066b3",
+   "notes": "Site officiel ZTE Devices confirmé par son résultat indexé et un manuel hébergé sur download.ztedevices.com. La page principale ne restitue pas de texte lisible."
+  }
+ ],
+ "stores": [
+  {
+   "ext": "S001",
+   "company": "DZ-kiabi",
+   "name": "Kiabi Kids City Center",
+   "address": "Centre commercial City Center, El Mohammadia, 16000 Alger",
+   "city": "Mohammadia",
+   "wilaya": "16",
+   "commune": "Mohammadia",
+   "lat": 36.728993,
+   "lng": 3.179501,
+   "precision": "lieu",
+   "phone": "0558630000",
+   "email": "kiabi.algerie@greatwaydz.com",
+   "src": "https://kiabi.dz/pages/magasins",
+   "source_kind": "site_officiel",
+   "checked": "2026-11-13",
+   "notes": "Téléphone du magasin publié par l'enseigne. E-mail du service client national. Disponibilité d'un article en magasin non vérifiée."
+  },
+  {
+   "ext": "S002",
+   "company": "DZ-kiabi",
+   "name": "Kiabi Constantine Ritaj Mall",
+   "address": "Centre commercial Ritaj Mall, Nouvelle ville Ali Mendjeli, 25001 Constantine",
+   "city": "Ali Mendjeli",
+   "wilaya": "25",
+   "commune": "El Khroub",
+   "lat": 36.251021,
+   "lng": 6.572698,
+   "precision": "lieu",
+   "phone": "0554525252",
+   "email": "kiabi.algerie@greatwaydz.com",
+   "src": "https://kiabi.dz/pages/magasins",
+   "source_kind": "site_officiel",
+   "checked": "2026-11-13",
+   "notes": "Téléphone du magasin publié par l'enseigne. E-mail du service client national. Disponibilité d'un article en magasin non vérifiée."
+  },
+  {
+   "ext": "S003",
+   "company": "DZ-kiabi",
+   "name": "Kiabi Sétif Park Mall",
+   "address": "Centre commercial Sétif Park Mall, Avenue de l'ALN, Sétif 19000",
+   "city": "Sétif",
+   "wilaya": "19",
+   "commune": "Setif",
+   "lat": 36.190823,
+   "lng": 5.409202,
+   "precision": "lieu",
+   "phone": "0558393939",
+   "email": "kiabi.algerie@greatwaydz.com",
+   "src": "https://kiabi.dz/pages/magasins",
+   "source_kind": "site_officiel",
+   "checked": "2026-11-13",
+   "notes": "Téléphone du magasin publié par l'enseigne. E-mail du service client national. Disponibilité d'un article en magasin non vérifiée."
+  },
+  {
+   "ext": "S004",
+   "company": "DZ-kiabi",
+   "name": "Kiabi Es Senia",
+   "address": "Centre commercial Es Senia, El Kerma, 31000 Oran",
+   "city": "El Kerma",
+   "wilaya": "31",
+   "commune": "El Kerma",
+   "lat": 35.638041,
+   "lng": -0.590721,
+   "precision": "lieu",
+   "phone": "0559878787",
+   "email": "kiabi.algerie@greatwaydz.com",
+   "src": "https://kiabi.dz/pages/magasins",
+   "source_kind": "site_officiel",
+   "checked": "2026-11-13",
+   "notes": "Téléphone du magasin publié par l'enseigne. E-mail du service client national. Disponibilité d'un article en magasin non vérifiée."
+  },
+  {
+   "ext": "S005",
+   "company": "DZ-kiabi",
+   "name": "Kiabi Ben Aknoun",
+   "address": "Ben Aknoun Shopping Center, Cité Les Asphodels N°4, Ben Aknoun, Alger",
+   "city": "Ben Aknoun",
+   "wilaya": "16",
+   "commune": "Ben Aknoun",
+   "lat": 36.760103,
+   "lng": 3.013075,
+   "precision": "lieu",
+   "phone": "0556343434",
+   "email": "kiabi.algerie@greatwaydz.com",
+   "src": "https://kiabi.dz/pages/magasins",
+   "source_kind": "site_officiel",
+   "checked": "2026-11-13",
+   "notes": "Téléphone du magasin publié par l'enseigne. E-mail du service client national. Disponibilité d'un article en magasin non vérifiée."
+  },
+  {
+   "ext": "S006",
+   "company": "DZ-kiabi",
+   "name": "Kiabi Ardis Alger",
+   "address": "Centre commercial Medina Center, Pins Maritimes, 16000 Alger",
+   "city": "Mohammadia",
+   "wilaya": "16",
+   "commune": "Mohammadia",
+   "lat": 36.7404,
+   "lng": 3.143527,
+   "precision": "lieu",
+   "phone": "0556373737",
+   "email": "kiabi.algerie@greatwaydz.com",
+   "src": "https://kiabi.dz/pages/magasins",
+   "source_kind": "site_officiel",
+   "checked": "2026-11-13",
+   "notes": "Téléphone du magasin publié par l'enseigne. E-mail du service client national. Disponibilité d'un article en magasin non vérifiée."
+  },
+  {
+   "ext": "S007",
+   "company": "DZ-kiabi",
+   "name": "Kiabi Bab Ezzouar",
+   "address": "Centre commercial Bab Ezzouar, Alger 16024",
+   "city": "Bab Ezzouar",
+   "wilaya": "16",
+   "commune": "Bab Ezzouar",
+   "lat": 36.712133,
+   "lng": 3.196851,
+   "precision": "lieu",
+   "phone": "0560074040",
+   "email": "kiabi.algerie@greatwaydz.com",
+   "src": "https://kiabi.dz/pages/magasins",
+   "source_kind": "site_officiel",
+   "checked": "2026-11-13",
+   "notes": "Téléphone du magasin publié par l'enseigne. E-mail du service client national. Disponibilité d'un article en magasin non vérifiée."
+  },
+  {
+   "ext": "S008",
+   "company": "DZ-kiabi",
+   "name": "Kiabi Garden City",
+   "address": "Centre commercial Garden City, 2 route de Ouled Fayet, Dely Ibrahim",
+   "city": "Dely Ibrahim",
+   "wilaya": "16",
+   "commune": "Dely Ibrahim",
+   "lat": 36.75039,
+   "lng": 2.952846,
+   "precision": "lieu",
+   "phone": "0554161616",
+   "email": "kiabi.algerie@greatwaydz.com",
+   "src": "https://kiabi.dz/pages/magasins",
+   "source_kind": "site_officiel",
+   "checked": "2026-11-13",
+   "notes": "Téléphone du magasin publié par l'enseigne. E-mail du service client national. Disponibilité d'un article en magasin non vérifiée."
+  },
+  {
+   "ext": "S009",
+   "company": "DZ-kiabi",
+   "name": "Kiabi AZ Mall Grand Oran",
+   "address": "Avenue des 40 Martyrs, Oran",
+   "city": "Oran",
+   "wilaya": "31",
+   "commune": "Oran",
+   "lat": 35.688555,
+   "lng": -0.622575,
+   "precision": "rue",
+   "phone": "0560720023",
+   "email": "kiabi.algerie@greatwaydz.com",
+   "src": "https://kiabi.dz/pages/magasins",
+   "source_kind": "site_officiel",
+   "checked": "2026-11-13",
+   "notes": "Téléphone du magasin publié par l'enseigne. E-mail du service client national. Disponibilité d'un article en magasin non vérifiée."
+  },
+  {
+   "ext": "S010",
+   "company": "DZ-decathlon",
+   "name": "Decathlon Ardis Alger",
+   "address": "Centre Commercial Ardis, Médina Center, Pins Maritimes, Alger",
+   "city": "Mohammadia",
+   "wilaya": "16",
+   "commune": "Mohammadia",
+   "lat": 36.7404,
+   "lng": 3.143527,
+   "precision": "lieu",
+   "phone": "0560015560",
+   "email": "",
+   "src": "https://www.decathlon.com.dz/magasins",
+   "source_kind": "site_officiel",
+   "checked": "2026-11-13",
+   "notes": "Téléphone affiché sur la fiche magasin. Le 0560015560 est partagé par plusieurs fiches. Stock par article non vérifié."
+  },
+  {
+   "ext": "S011",
+   "company": "DZ-decathlon",
+   "name": "Decathlon Bab Ezzouar Alger",
+   "address": "Centre commercial & de loisirs de Bab Ezzouar, 16311 Bab Ezzouar",
+   "city": "Bab Ezzouar",
+   "wilaya": "16",
+   "commune": "Bab Ezzouar",
+   "lat": 36.712133,
+   "lng": 3.196851,
+   "precision": "lieu",
+   "phone": "0561608417",
+   "email": "",
+   "src": "https://www.decathlon.com.dz/magasins",
+   "source_kind": "site_officiel",
+   "checked": "2026-11-13",
+   "notes": "Téléphone affiché sur la fiche magasin. Le 0560015560 est partagé par plusieurs fiches. Stock par article non vérifié."
+  },
+  {
+   "ext": "S012",
+   "company": "DZ-decathlon",
+   "name": "Decathlon Cheraga Garden City",
+   "address": "Centre commercial Garden City, 2 route de Ouled Fayet, 16014 Dely Brahim",
+   "city": "Dely Brahim",
+   "wilaya": "16",
+   "commune": "Dely Ibrahim",
+   "lat": 36.75039,
+   "lng": 2.952846,
+   "precision": "lieu",
+   "phone": "0560015580",
+   "email": "",
+   "src": "https://www.decathlon.com.dz/magasins",
+   "source_kind": "site_officiel",
+   "checked": "2026-11-13",
+   "notes": "Téléphone affiché sur la fiche magasin. Le 0560015560 est partagé par plusieurs fiches. Stock par article non vérifié."
+  },
+  {
+   "ext": "S013",
+   "company": "DZ-decathlon",
+   "name": "Decathlon Es-Senia Oran",
+   "address": "Centre Commercial Es-Senia Oran, 31005 Oran",
+   "city": "Oran",
+   "wilaya": "31",
+   "commune": "El Kerma",
+   "lat": 35.638041,
+   "lng": -0.590721,
+   "precision": "lieu",
+   "phone": "0560015560",
+   "email": "",
+   "src": "https://www.decathlon.com.dz/magasins",
+   "source_kind": "site_officiel",
+   "checked": "2026-11-13",
+   "notes": "Téléphone affiché sur la fiche magasin. Le 0560015560 est partagé par plusieurs fiches. Stock par article non vérifié."
+  },
+  {
+   "ext": "S014",
+   "company": "DZ-decathlon",
+   "name": "Decathlon Ritaj Mall Constantine",
+   "address": "Ritaj Mall, UV02 lot N 5-6, nouvelle ville Ali Mendjeli, 25001 El Khroub",
+   "city": "El Khroub",
+   "wilaya": "25",
+   "commune": "El Khroub",
+   "lat": 36.251021,
+   "lng": 6.572698,
+   "precision": "lieu",
+   "phone": "0560015560",
+   "email": "",
+   "src": "https://www.decathlon.com.dz/magasins",
+   "source_kind": "site_officiel",
+   "checked": "2026-11-13",
+   "notes": "Téléphone affiché sur la fiche magasin. Le 0560015560 est partagé par plusieurs fiches. Stock par article non vérifié."
+  },
+  {
+   "ext": "S015",
+   "company": "DZ-lufian",
+   "name": "Lufian Ben Aknoun",
+   "address": "Chemin Arezki Mouri, Ben Aknoun, Alger",
+   "city": "Ben Aknoun",
+   "wilaya": "16",
+   "commune": "Ben Aknoun",
+   "lat": 36.760103,
+   "lng": 3.013075,
+   "precision": "rue",
+   "phone": "0560680629",
+   "email": "",
+   "src": "https://www.lufian.com/magazalarimiz?pg=11",
+   "source_kind": "site_officiel",
+   "checked": "2026-11-13",
+   "notes": "Adresse et téléphone de la fiche officielle. Les libellés régionaux secondaires du site sont incohérents. Commune retenue depuis l'adresse."
+  },
+  {
+   "ext": "S016",
+   "company": "DZ-lufian",
+   "name": "Lufian Es Senia",
+   "address": "Centre commercial Es Senia, Oran",
+   "city": "Oran",
+   "wilaya": "31",
+   "commune": "El Kerma",
+   "lat": 35.638041,
+   "lng": -0.590721,
+   "precision": "lieu",
+   "phone": "0560685721",
+   "email": "",
+   "src": "https://www.lufian.com/magazalarimiz?pg=11",
+   "source_kind": "site_officiel",
+   "checked": "2026-11-13",
+   "notes": "La source indique Oran dans l'adresse. Commune exacte à compléter. Téléphone officiel normalisé depuis 213 560 68 57 21."
+  },
+  {
+   "ext": "S017",
+   "company": "DZ-ib-store",
+   "name": "IB Store Ouled Fayet",
+   "address": "Lot N°83, Coopérative Elhidab, Ouled Fayet, Alger 16094",
+   "city": "Ouled Fayet",
+   "wilaya": "16",
+   "commune": "Ouled Fayet",
+   "lat": 36.735525,
+   "lng": 2.950906,
+   "precision": "commune",
+   "phone": "0770072105",
+   "email": "contact@idealbrand.dz",
+   "src": "https://idealbrand.dz/about/",
+   "source_kind": "site_officiel",
+   "checked": "2026-11-13",
+   "notes": "Téléphone du magasin. E-mail commun à l'enseigne. Stock de chaque référence par agence non vérifié."
+  },
+  {
+   "ext": "S018",
+   "company": "DZ-ib-store",
+   "name": "IB Store Chéraga",
+   "address": "Route de Amara, Chéraga, Alger",
+   "city": "Chéraga",
+   "wilaya": "16",
+   "commune": "Cheraga",
+   "lat": 36.762564,
+   "lng": 2.956314,
+   "precision": "rue",
+   "phone": "0770072106",
+   "email": "contact@idealbrand.dz",
+   "src": "https://idealbrand.dz/about/",
+   "source_kind": "site_officiel",
+   "checked": "2026-11-13",
+   "notes": "Téléphone du magasin. E-mail commun à l'enseigne. Stock de chaque référence par agence non vérifié."
+  },
+  {
+   "ext": "S019",
+   "company": "DZ-ib-store",
+   "name": "IB Store Douera",
+   "address": "Ain Dzair, Douera, Alger",
+   "city": "Douera",
+   "wilaya": "16",
+   "commune": "Douira",
+   "lat": 36.669409,
+   "lng": 2.942103,
+   "precision": "commune",
+   "phone": "0770074905",
+   "email": "contact@idealbrand.dz",
+   "src": "https://idealbrand.dz/about/",
+   "source_kind": "site_officiel",
+   "checked": "2026-11-13",
+   "notes": "Téléphone du magasin. E-mail commun à l'enseigne. Stock de chaque référence par agence non vérifié."
+  },
+  {
+   "ext": "S020",
+   "company": "DZ-gr-phone-31",
+   "name": "GR PHONE 31",
+   "address": "Résidence El Chourouk, Akid Lotfi, Oran 31000",
+   "city": "Oran",
+   "wilaya": "31",
+   "commune": "Oran",
+   "lat": 35.704442,
+   "lng": -0.650298,
+   "precision": "commune",
+   "phone": "0777599666",
+   "email": "contact@grphone31.com",
+   "src": "https://grphone31.com/fr/magasins",
+   "source_kind": "site_officiel",
+   "checked": "2026-11-13",
+   "notes": "Coordonnées publiées sur la page officielle, retrouvées dans l'index web. Ouverture directe de la page bloquée par HTTP 403."
+  },
+  {
+   "ext": "S021",
+   "company": "DZ-groupe-phone",
+   "name": "Groupe Phone",
+   "address": "68 Boulevard Docteur Benzerdjeb (ex. Sébastopol), Plateaux, Oran 31000",
+   "city": "Oran",
+   "wilaya": "31",
+   "commune": "Oran",
+   "lat": 35.704442,
+   "lng": -0.650298,
+   "precision": "commune",
+   "phone": "0771805757",
+   "email": "groupephonedjezzy@gmail.com",
+   "src": "https://groupe-phone.com/contact/",
+   "source_kind": "site_officiel",
+   "checked": "2026-11-13",
+   "notes": "Coordonnées du point de vente et du site marchand."
+  },
+  {
+   "ext": "S022",
+   "company": "DZ-didou-phone",
+   "name": "DIDOU PHONE",
+   "address": "Porte 379, bâtiment 61, UV6, Cité 392 logements, Ali Mendjeli, Constantine",
+   "city": "Ali Mendjeli",
+   "wilaya": "25",
+   "commune": "El Khroub",
+   "lat": 36.253904,
+   "lng": 6.575866,
+   "precision": "commune",
+   "phone": "0661329332",
+   "email": "Mwalid25@live.com",
+   "src": "https://oualidmenkhour.com/contact",
+   "source_kind": "site_officiel",
+   "checked": "2026-11-13",
+   "notes": "Téléphone et adresse publiés par la boutique. La page indique que le contact WhatsApp et les horaires restent à confirmer."
+  },
+  {
+   "ext": "S023",
+   "company": "DZ-e-mobile-algerie",
+   "name": "E-Mobile Algérie",
+   "address": "85, Cité Djaafer Slimane, Chéraga",
+   "city": "Chéraga",
+   "wilaya": "16",
+   "commune": "Cheraga",
+   "lat": 36.766927,
+   "lng": 2.960257,
+   "precision": "commune",
+   "phone": "0791491549 / 0558162566",
+   "email": "contact@iphoneprixalgerie.com",
+   "src": "https://www.iphoneprixalgerie.com/",
+   "source_kind": "site_officiel",
+   "checked": "2026-11-13",
+   "notes": "Adresse lue au header et au footer du site via l'outil web. Toute adresse différente d'une autre page doit être confirmée avant visite."
+  },
+  {
+   "ext": "S024",
+   "company": "DZ-papilla-store",
+   "name": "Papilla Store",
+   "address": "Rue Djebel Boutaleb, rue Les Frères Meslem, Sétif 19000",
+   "city": "Sétif",
+   "wilaya": "19",
+   "commune": "Setif",
+   "lat": 36.189349,
+   "lng": 5.404688,
+   "precision": "commune",
+   "phone": "0552821394 / 0659739647",
+   "email": "",
+   "src": "https://www.cybo.com/DZ-biz/papilla-store",
+   "source_kind": "annuaire_secondaire",
+   "checked": "2026-11-13",
+   "notes": "Source secondaire : annuaire Cybo, coordonnées corroborées par AfricaBizInfo. Confirmation directe du marchand nécessaire. Aucune disponibilité produit déduite de cette fiche."
+  }
+ ],
+ "products": [
+  {
+   "ext": "P001",
+   "company": "DZ-samsung",
+   "brand": "B021",
+   "name": "Galaxy A56 5G",
+   "category": "high-tech",
+   "about": "Smartphone Samsung avec écran Super AMOLED de 6,7 pouces à 120 Hz. Son capteur photo principal est annoncé à 50 MP.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "Samsung Galaxy A56 8GB 128GB"
+    }
+   ],
+   "photo": "P001.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/277/main.jpg",
+   "official": "https://www.samsung.com/fr/smartphones/galaxy-a/galaxy-a56-5g/buy/",
+   "src": "https://iphoneprixalgerie.com/product/277/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis."
+  },
+  {
+   "ext": "P002",
+   "company": "DZ-samsung",
+   "brand": "B021",
+   "name": "Galaxy A36 5G",
+   "category": "high-tech",
+   "about": "Smartphone Samsung avec écran Super AMOLED de 6,7 pouces à 120 Hz. Son capteur photo principal est annoncé à 50 MP.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "SAMSUNG GALAXY A36 8GB 128GB"
+    }
+   ],
+   "photo": "P002.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/328/main.jpg",
+   "official": "https://www.samsung.com/fr/smartphones/galaxy-a/galaxy-a36-5g-awesome-black-128gb-sm-a366bzkbeub/",
+   "src": "https://iphoneprixalgerie.com/product/328/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis."
+  },
+  {
+   "ext": "P003",
+   "company": "DZ-samsung",
+   "brand": "B021",
+   "name": "Galaxy S25 Ultra",
+   "category": "high-tech",
+   "about": "Smartphone Samsung avec écran Dynamic LTPO AMOLED 2X de 6,9 pouces à 120 Hz. Son capteur photo principal est annoncé à 200 MP.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "Samsung Galaxy S25 Ultra 12 GB 256 GB"
+    }
+   ],
+   "photo": "P003.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/261/main.jpg",
+   "official": "https://www.samsung.com/fr/smartphones/galaxy-s25-ultra/",
+   "src": "https://iphoneprixalgerie.com/product/261/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis."
+  },
+  {
+   "ext": "P004",
+   "company": "DZ-samsung",
+   "brand": "B021",
+   "name": "Galaxy S25",
+   "category": "high-tech",
+   "about": "Smartphone Samsung avec écran Dynamic LTPO AMOLED 2X de 6,2 pouces à 120 Hz. Son capteur photo principal est annoncé à 50 MP.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "Samsung Galaxy S25 12GB 128GB"
+    }
+   ],
+   "photo": "P004.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/359/main.jpg",
+   "official": "",
+   "src": "https://iphoneprixalgerie.com/product/359/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis."
+  },
+  {
+   "ext": "P005",
+   "company": "DZ-samsung",
+   "brand": "B021",
+   "name": "Galaxy S24",
+   "category": "high-tech",
+   "about": "Smartphone Samsung avec écran Dynamic LTPO AMOLED 2X de 6,2 pouces à 120 Hz. Son capteur photo principal est annoncé à 50 MP.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "SAMSUNG GALAXY S24 8GB 128GB"
+    }
+   ],
+   "photo": "P005.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/414/main.jpg",
+   "official": "",
+   "src": "https://iphoneprixalgerie.com/product/414/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis."
+  },
+  {
+   "ext": "P006",
+   "company": "DZ-samsung",
+   "brand": "B021",
+   "name": "Galaxy S24 FE",
+   "category": "high-tech",
+   "about": "Smartphone Samsung avec écran Dynamic AMOLED 2X de 6,7 pouces à 120 Hz. Son capteur photo principal est annoncé à 50 MP.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "Samsung Galaxy S24 FE 8GB/256GB"
+    }
+   ],
+   "photo": "P006.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/223/main.jpg",
+   "official": "",
+   "src": "https://iphoneprixalgerie.com/product/223/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis."
+  },
+  {
+   "ext": "P007",
+   "company": "DZ-samsung",
+   "brand": "B021",
+   "name": "Galaxy A55 5G",
+   "category": "high-tech",
+   "about": "Smartphone Samsung avec écran Super AMOLED de 6,6 pouces à 120 Hz. Son capteur photo principal est annoncé à 50 MP.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "Samsung Galaxy A55 8GB RAM 128GB MEMOIR"
+    }
+   ],
+   "photo": "P007.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/127/main.jpg",
+   "official": "",
+   "src": "https://iphoneprixalgerie.com/product/127/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis."
+  },
+  {
+   "ext": "P008",
+   "company": "DZ-samsung",
+   "brand": "B021",
+   "name": "Galaxy A25 5G",
+   "category": "high-tech",
+   "about": "Smartphone Samsung avec écran Super AMOLED de 6,5 pouces à 120 Hz. Son capteur photo principal est annoncé à 50 MP.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "Samsung Galaxy A25 5G 8GB RAM 256GB MEMOIR"
+    }
+   ],
+   "photo": "P008.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/203/main.jpg",
+   "official": "",
+   "src": "https://iphoneprixalgerie.com/product/203/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis."
+  },
+  {
+   "ext": "P009",
+   "company": "DZ-samsung",
+   "brand": "B021",
+   "name": "Galaxy A16",
+   "category": "high-tech",
+   "about": "Smartphone Samsung avec écran Super AMOLED de 6,7 pouces à 90 Hz. Son capteur photo principal est annoncé à 50 MP.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "Samsung Galaxy A16 6GB 128GB"
+    }
+   ],
+   "photo": "P009.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/282/main.jpg",
+   "official": "",
+   "src": "https://iphoneprixalgerie.com/product/282/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis. Contrôle qualité : La fiche Galaxy A16 ne précise pas la variante 4G/5G, mais présente plusieurs processeurs régionaux. Nom conservé sans ajout 5G ; aucune affirmation réseau ou processeur dans la description."
+  },
+  {
+   "ext": "P010",
+   "company": "DZ-samsung",
+   "brand": "B021",
+   "name": "Galaxy A06",
+   "category": "high-tech",
+   "about": "Smartphone Samsung avec écran PLS LCD de 6,7 pouces. Son capteur photo principal est annoncé à 50 MP.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "Samsung Galaxy A06 4GB 128GB"
+    }
+   ],
+   "photo": "P010.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/306/main.jpg",
+   "official": "",
+   "src": "https://iphoneprixalgerie.com/product/306/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis."
+  },
+  {
+   "ext": "P011",
+   "company": "DZ-xiaomi",
+   "brand": "B027",
+   "name": "Xiaomi 15",
+   "category": "high-tech",
+   "about": "Smartphone Xiaomi avec écran LTPO AMOLED de 6,36 pouces à 120 Hz. Son capteur photo principal est annoncé à 50 MP.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "Xiaomi 15 12GB 512GB"
+    }
+   ],
+   "photo": "P011.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/318/main.jpg",
+   "official": "",
+   "src": "https://iphoneprixalgerie.com/product/318/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis."
+  },
+  {
+   "ext": "P012",
+   "company": "DZ-xiaomi",
+   "brand": "B027",
+   "name": "Xiaomi 15 Ultra",
+   "category": "high-tech",
+   "about": "Smartphone Xiaomi avec écran LTPO AMOLED à 120 Hz. Son capteur photo principal est annoncé à 50 MP.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "Xiaomi 15 Ultra 16GB 512GB GLOBALE"
+    }
+   ],
+   "photo": "P012.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/304/main.jpg",
+   "official": "",
+   "src": "https://iphoneprixalgerie.com/product/304/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis."
+  },
+  {
+   "ext": "P013",
+   "company": "DZ-xiaomi",
+   "brand": "B027",
+   "name": "Xiaomi 14T Pro",
+   "category": "high-tech",
+   "about": "Smartphone Xiaomi avec écran AMOLED de 6,67 pouces à 144 Hz. Son capteur photo principal est annoncé à 50 MP.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "Xiaomi 14T Pro 12GB 256GB"
+    }
+   ],
+   "photo": "P013.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/421/main.jpg",
+   "official": "",
+   "src": "https://iphoneprixalgerie.com/product/421/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis."
+  },
+  {
+   "ext": "P014",
+   "company": "DZ-xiaomi",
+   "brand": "B027",
+   "name": "Xiaomi 14T",
+   "category": "high-tech",
+   "about": "Smartphone Xiaomi avec écran AMOLED de 6,67 pouces à 144 Hz. Son capteur photo principal est annoncé à 50 MP.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "Xiaomi 14T 12GB RAM 256GB MEMOIR"
+    }
+   ],
+   "photo": "P014.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/197/main.jpg",
+   "official": "https://www.mi.com/fr/product/xiaomi-14t/specs/",
+   "src": "https://iphoneprixalgerie.com/product/197/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis."
+  },
+  {
+   "ext": "P015",
+   "company": "DZ-xiaomi",
+   "brand": "B027",
+   "name": "Redmi Note 14 Pro+ 5G",
+   "category": "high-tech",
+   "about": "Smartphone Xiaomi avec écran AMOLED de 6,67 pouces à rafraîchissement jusqu’à 120 Hz et capteur photo principal de 200 MP avec stabilisation optique.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "REDMI NOTE 14 PRO PLUS 5G 12Gb 256Gb"
+    }
+   ],
+   "photo": "P015.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/317/main.jpg",
+   "official": "https://www.mi.com/fr/product/redmi-note-14-pro-plus-5g/specs/",
+   "src": "https://iphoneprixalgerie.com/product/317/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis. Contrôle qualité : Le titre et le tableau ne concordent pas totalement sur la mémoire. Mémoire exclue de la description ; écran et appareil photo vérifiés sur le site Xiaomi France."
+  },
+  {
+   "ext": "P016",
+   "company": "DZ-xiaomi",
+   "brand": "B027",
+   "name": "POCO X7 Pro",
+   "category": "high-tech",
+   "about": "Smartphone Xiaomi avec écran AMOLED de 6,67 pouces à 120 Hz. Son capteur photo principal est annoncé à 50 MP.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "Poco X7 PRO 12GB 512GB"
+    }
+   ],
+   "photo": "P016.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/275/main.jpg",
+   "official": "",
+   "src": "https://iphoneprixalgerie.com/product/275/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis."
+  },
+  {
+   "ext": "P017",
+   "company": "DZ-xiaomi",
+   "brand": "B027",
+   "name": "Redmi Note 13 Pro 5G",
+   "category": "high-tech",
+   "about": "Smartphone Xiaomi avec écran AMOLED de 6,67 pouces à 120 Hz. Son capteur photo principal est annoncé à 200 MP.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "Xiaomi Redmi Note 13 Pro 5G 8GB RAM 256GB MEMOIR"
+    }
+   ],
+   "photo": "P017.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/195/main.jpg",
+   "official": "",
+   "src": "https://iphoneprixalgerie.com/product/195/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis."
+  },
+  {
+   "ext": "P018",
+   "company": "DZ-xiaomi",
+   "brand": "B027",
+   "name": "Redmi 14C",
+   "category": "high-tech",
+   "about": "Smartphone Xiaomi avec écran de 6,88 pouces à rafraîchissement jusqu’à 120 Hz, capteur principal de 50 MP et batterie de 5 160 mAh.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "Xiaomi Redmi 14C 8GB 256 GB"
+    }
+   ],
+   "photo": "P018.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/270/main.jpg",
+   "official": "https://www.mi.com/global/product/redmi-14-c/specs/",
+   "src": "https://iphoneprixalgerie.com/product/270/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis. Contrôle qualité : La fiche vendeur attribue 13 MP au capteur principal et 5 MP à la caméra frontale, contrairement à Xiaomi (50 MP et 13 MP). Description appuyée sur Xiaomi ; capteur principal corrigé à 50 MP. Aucun champ technique vendeur erroné repris."
+  },
+  {
+   "ext": "P019",
+   "company": "DZ-apple",
+   "brand": "B001",
+   "name": "iPhone 16",
+   "category": "high-tech",
+   "about": "Smartphone Apple avec écran OLED Super Retina XDR de 6,1 pouces, puce A18 et caméra principale Fusion de 48 MP.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "Apple iPhone 16 128 GB"
+    }
+   ],
+   "photo": "P019.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/525/main.jpg",
+   "official": "https://www.apple.com/fr/iphone-16/specs/",
+   "src": "https://iphoneprixalgerie.com/product/525/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis."
+  },
+  {
+   "ext": "P020",
+   "company": "DZ-apple",
+   "brand": "B001",
+   "name": "iPhone 16 Plus",
+   "category": "high-tech",
+   "about": "Smartphone Apple à écran OLED de 6,7 pouces, équipé de la puce A18 et d’un système à deux caméras avec capteur principal Fusion de 48 MP.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "Apple iPhone 16 Plus 256 GB"
+    }
+   ],
+   "photo": "P020.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/515/main.jpg",
+   "official": "https://support.apple.com/fr-ca/121030",
+   "src": "https://iphoneprixalgerie.com/product/515/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis."
+  },
+  {
+   "ext": "P021",
+   "company": "DZ-apple",
+   "brand": "B001",
+   "name": "iPhone 16 Pro Max",
+   "category": "high-tech",
+   "about": "Smartphone Apple avec écran LTPO Super Retina XDR OLED de 6,9 pouces à 120 Hz. Son capteur photo principal est annoncé à 48 MP.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "IPHONE 16 PRO MAX 256 GB"
+    }
+   ],
+   "photo": "P021.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/225/main.jpg",
+   "official": "https://support.apple.com/fr-fr/121032",
+   "src": "https://iphoneprixalgerie.com/product/225/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis."
+  },
+  {
+   "ext": "P022",
+   "company": "DZ-apple",
+   "brand": "B001",
+   "name": "iPhone 15 Pro",
+   "category": "high-tech",
+   "about": "Smartphone Apple avec boîtier en titane et écran OLED de 6,1 pouces. L’affichage ProMotion adapte son rafraîchissement jusqu’à 120 Hz.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "iPhone 15 Pro 128 GB"
+    }
+   ],
+   "photo": "P022.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/155/main.jpg",
+   "official": "https://support.apple.com/fr-ca/111829",
+   "src": "https://iphoneprixalgerie.com/product/155/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis."
+  },
+  {
+   "ext": "P023",
+   "company": "DZ-apple",
+   "brand": "B001",
+   "name": "iPhone 14 Pro Max",
+   "category": "high-tech",
+   "about": "Smartphone Apple doté d’un écran OLED de 6,7 pouces, de Dynamic Island et d’un affichage ProMotion adaptatif jusqu’à 120 Hz.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "IPHONE 14 PRO MAX SILVER 1TB"
+    }
+   ],
+   "photo": "P023.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/76/main.jpg",
+   "official": "https://support.apple.com/fr-ca/111846",
+   "src": "https://iphoneprixalgerie.com/product/76/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis."
+  },
+  {
+   "ext": "P024",
+   "company": "DZ-apple",
+   "brand": "B001",
+   "name": "iPhone 14",
+   "category": "high-tech",
+   "about": "Smartphone Apple avec écran OLED Super Retina XDR de 6,1 pouces, puce A15 Bionic et double appareil photo de 12 MP.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "iPhone 14 128GB"
+    }
+   ],
+   "photo": "P024.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/310/main.jpg",
+   "official": "https://support.apple.com/fr-fr/111850",
+   "src": "https://iphoneprixalgerie.com/product/310/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis."
+  },
+  {
+   "ext": "P025",
+   "company": "DZ-oppo",
+   "brand": "B017",
+   "name": "Reno13",
+   "category": "high-tech",
+   "about": "Smartphone OPPO avec écran AMOLED de 6,59 pouces à 120 Hz. Son capteur photo principal est annoncé à 50 MP.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "OPPO RENO 13 12GB 256GB"
+    }
+   ],
+   "photo": "P025.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/431/main.jpg",
+   "official": "https://www.oppo.com/fr/smartphones/series-reno/reno13/specs/",
+   "src": "https://iphoneprixalgerie.com/product/431/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis."
+  },
+  {
+   "ext": "P026",
+   "company": "DZ-oppo",
+   "brand": "B017",
+   "name": "Reno12 Pro",
+   "category": "high-tech",
+   "about": "Smartphone OPPO avec écran AMOLED de 6,7 pouces à rafraîchissement jusqu’à 120 Hz, capteur principal de 50 MP et batterie de 5 000 mAh. La variante régionale est à confirmer auprès du vendeur.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "Oppo Reno 12 Pro 16GB 256GB"
+    }
+   ],
+   "photo": "P026.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/344/main.jpg",
+   "official": "https://www.oppo.com/en/smartphones/series-reno/reno12-pro/specs/",
+   "src": "https://iphoneprixalgerie.com/product/344/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis. Contrôle qualité : La fiche vendeur Reno12 Pro présente un processeur Dimensity 9200+, tandis que la fiche globale utilise le Dimensity 7300-Energy. CPU exclu de la description ; variante régionale à confirmer. Écran, photo et batterie communs aux informations consultées."
+  },
+  {
+   "ext": "P027",
+   "company": "DZ-oppo",
+   "brand": "B017",
+   "name": "Find X8 Pro",
+   "category": "high-tech",
+   "about": "Smartphone OPPO avec écran LTPO AMOLED de 6,78 pouces à 120 Hz. Son capteur photo principal est annoncé à 50 MP.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "Oppo Find X8 Pro 12 GB 512 GB"
+    }
+   ],
+   "photo": "P027.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/260/main.jpg",
+   "official": "",
+   "src": "https://iphoneprixalgerie.com/product/260/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis."
+  },
+  {
+   "ext": "P028",
+   "company": "DZ-oppo",
+   "brand": "B017",
+   "name": "A60",
+   "category": "high-tech",
+   "about": "Smartphone OPPO avec écran IPS LCD de 6,67 pouces à 90 Hz. Son capteur photo principal est annoncé à 50 MP.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "Oppo A60"
+    }
+   ],
+   "photo": "P028.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/173/main.jpg",
+   "official": "",
+   "src": "https://iphoneprixalgerie.com/product/173/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis."
+  },
+  {
+   "ext": "P029",
+   "company": "DZ-oppo",
+   "brand": "B017",
+   "name": "A18",
+   "category": "high-tech",
+   "about": "Smartphone OPPO avec écran IPS LCD de 6,56 pouces à 90 Hz. Son capteur photo principal est annoncé à 8 MP.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "Oppo A18"
+    }
+   ],
+   "photo": "P029.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/159/main.jpg",
+   "official": "",
+   "src": "https://iphoneprixalgerie.com/product/159/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis."
+  },
+  {
+   "ext": "P030",
+   "company": "DZ-honor",
+   "brand": "B006",
+   "name": "HONOR 200",
+   "category": "high-tech",
+   "about": "Smartphone HONOR avec écran OLED à 120 Hz. Son capteur photo principal est annoncé à 50 MP.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "HONOR 200 12GB 512GB"
+    }
+   ],
+   "photo": "P030.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/443/main.jpg",
+   "official": "",
+   "src": "https://iphoneprixalgerie.com/product/443/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis."
+  },
+  {
+   "ext": "P031",
+   "company": "DZ-honor",
+   "brand": "B006",
+   "name": "HONOR 200 Pro",
+   "category": "high-tech",
+   "about": "Smartphone HONOR avec écran OLED de 6,78 pouces à 120 Hz. Son capteur photo principal est annoncé à 50 MP.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "Honor 200 Pro"
+    }
+   ],
+   "photo": "P031.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/148/main.jpg",
+   "official": "",
+   "src": "https://iphoneprixalgerie.com/product/148/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis."
+  },
+  {
+   "ext": "P032",
+   "company": "DZ-honor",
+   "brand": "B006",
+   "name": "Magic6 Pro",
+   "category": "high-tech",
+   "about": "Smartphone HONOR avec écran de 6,8 pouces à rafraîchissement adaptatif de 1 à 120 Hz, processeur Snapdragon 8 Gen 3 et batterie de 5 600 mAh.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "Honor Magic 6 Pro 12 GB 512 GB"
+    }
+   ],
+   "photo": "P032.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/140/main.jpg",
+   "official": "https://www.honor.com/fr/phones/honor-magic6-pro/",
+   "src": "https://iphoneprixalgerie.com/product/140/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis."
+  },
+  {
+   "ext": "P033",
+   "company": "DZ-honor",
+   "brand": "B006",
+   "name": "Magic7 Pro",
+   "category": "high-tech",
+   "about": "Smartphone HONOR avec écran LTPO OLED de 6,8 pouces à 120 Hz. Son capteur photo principal est annoncé à 50 MP.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "Honor Magic 7 Pro 12 512"
+    }
+   ],
+   "photo": "P033.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/199/main.jpg",
+   "official": "",
+   "src": "https://iphoneprixalgerie.com/product/199/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis."
+  },
+  {
+   "ext": "P034",
+   "company": "DZ-honor",
+   "brand": "B006",
+   "name": "X8c",
+   "category": "high-tech",
+   "about": "Smartphone HONOR avec écran AMOLED de 6,7 pouces à 120 Hz. Son capteur photo principal est annoncé à 108 MP.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "HONOR X8C 8GB 512GB"
+    }
+   ],
+   "photo": "P034.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/302/main.jpg",
+   "official": "",
+   "src": "https://iphoneprixalgerie.com/product/302/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis."
+  },
+  {
+   "ext": "P035",
+   "company": "DZ-realme",
+   "brand": "B019",
+   "name": "GT 6",
+   "category": "high-tech",
+   "about": "Smartphone de la gamme realme GT avec écran de 6,78 pouces à rafraîchissement jusqu’à 120 Hz. La version régionale et la mémoire sont à confirmer auprès du vendeur.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "Realme GT6 16Gb 256Gb"
+    }
+   ],
+   "photo": "P035.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/348/main.jpg",
+   "official": "https://www.realme.com/fr/realme-gt-6/specs",
+   "src": "https://iphoneprixalgerie.com/product/348/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis. Contrôle qualité : La fiche vendeur GT 6 est peu détaillée ; les versions Chine et internationale ont des processeurs et batteries différents. Description limitée à écran 6,78 pouces et rafraîchissement jusqu’à 120 Hz, communs aux deux versions."
+  },
+  {
+   "ext": "P036",
+   "company": "DZ-realme",
+   "brand": "B019",
+   "name": "C75",
+   "category": "high-tech",
+   "about": "Smartphone realme avec écran IPS LCD de 6,72 pouces à 90 Hz. Son capteur photo principal est annoncé à 50 MP.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "Realme C75 8GB 128GB"
+    }
+   ],
+   "photo": "P036.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/255/main.jpg",
+   "official": "",
+   "src": "https://iphoneprixalgerie.com/product/255/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis."
+  },
+  {
+   "ext": "P037",
+   "company": "DZ-realme",
+   "brand": "B019",
+   "name": "13 Pro+",
+   "category": "high-tech",
+   "about": "Smartphone realme avec écran AMOLED de 6,7 pouces à 120 Hz. Son capteur photo principal est annoncé à 50 MP.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "Realme 13 Pro Plus 12GB/256GB"
+    }
+   ],
+   "photo": "P037.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/244/main.jpg",
+   "official": "",
+   "src": "https://iphoneprixalgerie.com/product/244/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis."
+  },
+  {
+   "ext": "P038",
+   "company": "DZ-realme",
+   "brand": "B019",
+   "name": "Note 60",
+   "category": "high-tech",
+   "about": "Smartphone realme avec écran IPS LCD de 6,74 pouces à 90 Hz. Son capteur photo principal est annoncé à 32 MP.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "REALME NOTE 60 4GB 128GB"
+    }
+   ],
+   "photo": "P038.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/276/main.jpg",
+   "official": "",
+   "src": "https://iphoneprixalgerie.com/product/276/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis."
+  },
+  {
+   "ext": "P039",
+   "company": "DZ-oneplus",
+   "brand": "B016",
+   "name": "OnePlus 13",
+   "category": "high-tech",
+   "about": "Smartphone OnePlus avec écran LTPO 4.1 AMOLED de 6,82 pouces à 120 Hz. Son capteur photo principal est annoncé à 50 MP.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "OnePlus 13 16GB 512GB GLOBAL"
+    }
+   ],
+   "photo": "P039.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/375/main.jpg",
+   "official": "https://www.oneplus.com/global/13/specs",
+   "src": "https://iphoneprixalgerie.com/product/375/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis."
+  },
+  {
+   "ext": "P040",
+   "company": "DZ-oneplus",
+   "brand": "B016",
+   "name": "OnePlus 12",
+   "category": "high-tech",
+   "about": "Smartphone OnePlus avec écran LTPO AMOLED de 6,82 pouces à 120 Hz. Son capteur photo principal est annoncé à 50 MP.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "ONEPLUS 12 512 GB 16GB"
+    }
+   ],
+   "photo": "P040.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/116/main.jpg",
+   "official": "https://www.oneplus.com/global/12/specs",
+   "src": "https://iphoneprixalgerie.com/product/116/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis. Contrôle qualité : Titre OnePlus 12 16 GB / 512 GB mais tableau vendeur 12 GB / 256 GB. Aucune capacité de mémoire affirmée dans le nom normalisé ou dans la description. Vérification vendeur requise."
+  },
+  {
+   "ext": "P041",
+   "company": "DZ-oneplus",
+   "brand": "B016",
+   "name": "OnePlus 12R",
+   "category": "high-tech",
+   "about": "Smartphone OnePlus avec écran LTPO4 AMOLED de 6,78 pouces à 120 Hz. Son capteur photo principal est annoncé à 50 MP.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "OnePlus 12R 12GB RAM 256GB memoir"
+    }
+   ],
+   "photo": "P041.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/191/main.jpg",
+   "official": "https://www.oneplus.com/global/12r/specs",
+   "src": "https://iphoneprixalgerie.com/product/191/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis."
+  },
+  {
+   "ext": "P042",
+   "company": "DZ-nothing",
+   "brand": "B015",
+   "name": "Phone (3a)",
+   "category": "high-tech",
+   "about": "Smartphone Nothing avec écran AMOLED de 6,77 pouces à 120 Hz. Son capteur photo principal est annoncé à 50 MP.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "Nothing Phone (3a) 8GB 128GB"
+    }
+   ],
+   "photo": "P042.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/439/main.jpg",
+   "official": "https://fr.nothing.tech/products/phone-3a",
+   "src": "https://iphoneprixalgerie.com/product/439/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis."
+  },
+  {
+   "ext": "P043",
+   "company": "DZ-nothing",
+   "brand": "B015",
+   "name": "Phone (2a)",
+   "category": "high-tech",
+   "about": "Smartphone Nothing avec écran AMOLED de 6,7 pouces à 120 Hz. Son capteur photo principal est annoncé à 50 MP.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "Nothing Phone (2a)"
+    }
+   ],
+   "photo": "P043.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/145/main.jpg",
+   "official": "",
+   "src": "https://iphoneprixalgerie.com/product/145/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis."
+  },
+  {
+   "ext": "P044",
+   "company": "DZ-google",
+   "brand": "B005",
+   "name": "Pixel 9 Pro",
+   "category": "high-tech",
+   "about": "Smartphone Google avec écran LTPO OLED de 6,3 pouces à 120 Hz. Son capteur photo principal est annoncé à 50 MP.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "Google Pixel 9 Pro 128GB"
+    }
+   ],
+   "photo": "P044.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/420/main.jpg",
+   "official": "",
+   "src": "https://iphoneprixalgerie.com/product/420/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis."
+  },
+  {
+   "ext": "P045",
+   "company": "DZ-google",
+   "brand": "B005",
+   "name": "Pixel 9 Pro XL",
+   "category": "high-tech",
+   "about": "Smartphone Google avec écran LTPO OLED de 6,8 pouces à 120 Hz. Son capteur photo principal est annoncé à 50 MP.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "Google Pixel 9 pro XL"
+    }
+   ],
+   "photo": "P045.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/171/main.jpg",
+   "official": "",
+   "src": "https://iphoneprixalgerie.com/product/171/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis."
+  },
+  {
+   "ext": "P046",
+   "company": "DZ-google",
+   "brand": "B005",
+   "name": "Pixel 8a",
+   "category": "high-tech",
+   "about": "Smartphone Google avec écran OLED de 6,1 pouces à 120 Hz. Son capteur photo principal est annoncé à 64 MP.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "Google Pixel 8a"
+    }
+   ],
+   "photo": "P046.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/170/main.jpg",
+   "official": "",
+   "src": "https://iphoneprixalgerie.com/product/170/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis."
+  },
+  {
+   "ext": "P047",
+   "company": "DZ-infinix",
+   "brand": "B008",
+   "name": "GT 20 Pro",
+   "category": "high-tech",
+   "about": "Smartphone Infinix avec écran AMOLED de 6,78 pouces à 144 Hz. Son capteur photo principal est annoncé à 108 MP.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "Infinix GT 20 Pro"
+    }
+   ],
+   "photo": "P047.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/139/main.jpg",
+   "official": "",
+   "src": "https://iphoneprixalgerie.com/product/139/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis."
+  },
+  {
+   "ext": "P048",
+   "company": "DZ-infinix",
+   "brand": "B008",
+   "name": "SMART 9",
+   "category": "high-tech",
+   "about": "Smartphone Infinix avec écran IPS LCD de 6,7 pouces à 90 Hz. Son capteur photo principal est annoncé à 13 MP.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "Infinix Smart 9 3GB 64GB"
+    }
+   ],
+   "photo": "P048.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/286/main.jpg",
+   "official": "",
+   "src": "https://iphoneprixalgerie.com/product/286/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis."
+  },
+  {
+   "ext": "P049",
+   "company": "DZ-vivo",
+   "brand": "B025",
+   "name": "X200 Pro",
+   "category": "high-tech",
+   "about": "Smartphone vivo avec écran LTPO AMOLED de 6,78 pouces à 120 Hz. Son capteur photo principal est annoncé à 50 MP.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "vivo X200 Pro GLOBALE"
+    }
+   ],
+   "photo": "P049.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/273/main.jpg",
+   "official": "",
+   "src": "https://iphoneprixalgerie.com/product/273/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis."
+  },
+  {
+   "ext": "P050",
+   "company": "DZ-vivo",
+   "brand": "B025",
+   "name": "V50",
+   "category": "high-tech",
+   "about": "Smartphone vivo avec écran AMOLED de 6,77 pouces à 120 Hz. Son capteur photo principal est annoncé à 50 MP.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Smartphones"
+    },
+    {
+     "k": "Référence vendeur",
+     "v": "vivo V50 12 GB 256 GB"
+    }
+   ],
+   "photo": "P050.jpg",
+   "photo_src": "https://iphoneprixalgerie.com/img/product/268/main.jpg",
+   "official": "",
+   "src": "https://iphoneprixalgerie.com/product/268/details",
+   "checked": "2026-11-13",
+   "notes": "Référence et caractéristiques relevées dans le catalogue E-Mobile Algérie. Variante régionale, mémoire, garantie et stock à confirmer auprès du vendeur. Photos hébergées par le vendeur ; droits de réutilisation non établis."
+  },
+  {
+   "ext": "P051",
+   "company": "DZ-decathlon",
+   "brand": "B002",
+   "name": "T-shirt Manches Longues Modesty - Vert",
+   "category": "mode",
+   "about": "Haut de sport à manches longues, conçu pour couvrir le corps tout en laissant bouger librement pendant l’entraînement.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "T-shirts"
+    }
+   ],
+   "photo": "P051.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p2905644/k$cf9b1312c541e68379d41e50c169ef32/t-shirt-manches-longues-modesty-vert.jpg?format=auto&quality=40&f=520x520",
+   "official": "https://www.decathlon.com.dz/p/370408-231823-t-shirt-manches-longues-modesty-vert.html",
+   "src": "https://www.decathlon.com.dz/p/370408-231823-t-shirt-manches-longues-modesty-vert.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P052",
+   "company": "DZ-decathlon",
+   "brand": "B010",
+   "name": "T-shirt manches longues running femme - sun protect noir",
+   "category": "mode",
+   "about": "T-shirt de course pour femme à manches longues, destiné aux sorties par temps doux ou chaud avec protection contre le soleil.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "T-shirts"
+    }
+   ],
+   "photo": "P052.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p2924627/k$e267e273a062deebb3ef91890d98be30/t-shirt-manches-longues-running-femme-sun-protect-noir.jpg?format=auto&quality=40&f=520x520",
+   "official": "https://www.decathlon.com.dz/p/145846-191529-t-shirt-manches-longues-running-femme-sun-protect-noir.html",
+   "src": "https://www.decathlon.com.dz/p/145846-191529-t-shirt-manches-longues-running-femme-sun-protect-noir.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P053",
+   "company": "DZ-decathlon",
+   "brand": "B010",
+   "name": "T-shirt manches courtes running respirant femme - Dry blanc",
+   "category": "mode",
+   "about": "T-shirt de running pour femme dont le tissu aide à évacuer l’humidité pendant l’effort.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "T-shirts"
+    }
+   ],
+   "photo": "P053.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p1855183/k$788f8ebda7bc5c0a8d4e1081243180b3/t-shirt-manches-courtes-running-respirant-femme-dry-blanc.jpg?format=auto&quality=40&f=520x520",
+   "official": "https://www.decathlon.com.dz/p/302707-146388-t-shirt-manches-courtes-running-respirant-femme-dry-blanc.html",
+   "src": "https://www.decathlon.com.dz/p/302707-146388-t-shirt-manches-courtes-running-respirant-femme-dry-blanc.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P054",
+   "company": "DZ-decathlon",
+   "brand": "B003",
+   "name": "Débardeur de fitness coupe droite femme, bleu",
+   "category": "mode",
+   "about": "Débardeur de cardio pour femme, associant une coupe droite à une matière respirante et extensible.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Débardeurs"
+    }
+   ],
+   "photo": "P054.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p3074789/k$e7085afcb4f7d87ed95419560ed474fa/debardeur-de-fitness-coupe-droite-femme-bleu.jpg?format=auto&quality=40&f=520x520",
+   "official": "https://www.decathlon.com.dz/p/345914-250326-debardeur-de-fitness-coupe-droite-femme-bleu.html",
+   "src": "https://www.decathlon.com.dz/p/345914-250326-debardeur-de-fitness-coupe-droite-femme-bleu.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P055",
+   "company": "DZ-decathlon",
+   "brand": "B003",
+   "name": "T-shirt manches courtes fitness cardio femme, bleu marine",
+   "category": "mode",
+   "about": "T-shirt pour femme adapté au fitness et aux tenues décontractées, avec une matière pensée pour le confort et la respiration.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "T-shirts"
+    }
+   ],
+   "photo": "P055.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p3036048/k$174d0de278cf396c8af46f7161e2df30/t-shirt-manches-courtes-fitness-cardio-femme-bleu-marine.jpg?format=auto&quality=40&f=520x520",
+   "official": "https://www.decathlon.com.dz/p/346303-250295-t-shirt-manches-courtes-fitness-cardio-femme-bleu-marine.html",
+   "src": "https://www.decathlon.com.dz/p/346303-250295-t-shirt-manches-courtes-fitness-cardio-femme-bleu-marine.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P056",
+   "company": "DZ-decathlon",
+   "brand": "B002",
+   "name": "T-Shirt Manches Longues Modesty 150 - Noir",
+   "category": "mode",
+   "about": "T-shirt de sport à manches longues et coupe couvrante, prévu pour accompagner les mouvements lors des séances en salle.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "T-shirts"
+    }
+   ],
+   "photo": "P056.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p2905631/k$6cf0c9b1ca2d62cb233a2d7a92b5c5aa/t-shirt-manches-longues-modesty-150-noir.jpg?format=auto&quality=40&f=520x520",
+   "official": "https://www.decathlon.com.dz/p/370541-231785-t-shirt-manches-longues-modesty-150-noir.html",
+   "src": "https://www.decathlon.com.dz/p/370541-231785-t-shirt-manches-longues-modesty-150-noir.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P057",
+   "company": "DZ-decathlon",
+   "brand": "B012",
+   "name": "T-shirt running respirant femme Kiprun run 100 noir",
+   "category": "mode",
+   "about": "T-shirt de running pour femme avec col rond, coupe ample et tissu léger favorisant la respiration pendant la course.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "T-shirts"
+    }
+   ],
+   "photo": "P057.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p2600498/k$04e451540a306d9a8a981689d5ae42e9/t-shirt-running-respirant-femme-kiprun-run-100-noir.jpg?format=auto&quality=40&f=520x520",
+   "official": "https://www.decathlon.com.dz/p/346523-224733-t-shirt-running-respirant-femme-kiprun-run-100-noir.html",
+   "src": "https://www.decathlon.com.dz/p/346523-224733-t-shirt-running-respirant-femme-kiprun-run-100-noir.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P058",
+   "company": "DZ-decathlon",
+   "brand": "B002",
+   "name": "Tee shirt anti uv manches courtes femme - malou bleu",
+   "category": "mode",
+   "about": "Haut de plage pour femme à manches courtes, prévu pour limiter l’exposition au soleil et les frottements contre une planche.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "T-shirts"
+    }
+   ],
+   "photo": "P058.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p2585837/k$8c6f286176c382e9ef77372c5127b5c1/tee-shirt-anti-uv-surf-malou-manches-courtes-femme-rose-corail.jpg?format=auto&quality=40&f=250x250",
+   "official": "https://www.decathlon.com.dz/p/324760-213826-tee-shirt-anti-uv-manches-courtes-femme-malou-bleu.html",
+   "src": "https://www.decathlon.com.dz/p/324760-213826-tee-shirt-anti-uv-manches-courtes-femme-malou-bleu.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P059",
+   "company": "DZ-decathlon",
+   "brand": "B003",
+   "name": "T-shirt Fitness Femme - 100 Blanc",
+   "category": "mode",
+   "about": "T-shirt basique pour femme en coton, réalisé dans un tissu de 150 g/m² pour les usages quotidiens et sportifs.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "T-shirts"
+    }
+   ],
+   "photo": "P059.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p2672522/k$a3583b90b3d5c7b6a011dc2c4b3ed56f/t-shirt-fitness-femme-100-blanc.jpg?format=auto&quality=40&f=520x520",
+   "official": "https://www.decathlon.com.dz/p/339063-202340-t-shirt-fitness-femme-100-blanc.html",
+   "src": "https://www.decathlon.com.dz/p/339063-202340-t-shirt-fitness-femme-100-blanc.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P060",
+   "company": "DZ-decathlon",
+   "brand": "B018",
+   "name": "T-shirt manches courtes de randonnée montagne femme, MH100 noir",
+   "category": "mode",
+   "about": "T-shirt pour les randonnées occasionnelles en montagne, conçu pour faciliter l’évacuation de la transpiration.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "T-shirts"
+    }
+   ],
+   "photo": "P060.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p3068718/k$ce48445f57aae245e38a2508d8560bd6/t-shirt-manches-courtes-de-randonnee-montagne-femme-mh100-noir.jpg?format=auto&quality=40&f=520x520",
+   "official": "https://www.decathlon.com.dz/p/172246-245735-t-shirt-manches-courtes-de-randonnee-montagne-femme-mh100-noir.html",
+   "src": "https://www.decathlon.com.dz/p/172246-245735-t-shirt-manches-courtes-de-randonnee-montagne-femme-mh100-noir.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P061",
+   "company": "DZ-decathlon",
+   "brand": "B003",
+   "name": "Débardeur slim col rond fitness femme, noir ultra",
+   "category": "mode",
+   "about": "Débardeur de fitness pour femme à coupe près du corps, avec col rond et dos dégagé.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Débardeurs"
+    }
+   ],
+   "photo": "P061.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p2632534/k$28e192c0010ce159359b33fbb7336803/debardeur-fitness-ajuste-500-noir.jpg?format=auto&quality=40&f=250x250",
+   "official": "https://www.decathlon.com.dz/p/333131-172992-debardeur-slim-col-rond-fitness-femme-noir-ultra.html",
+   "src": "https://www.decathlon.com.dz/p/333131-172992-debardeur-slim-col-rond-fitness-femme-noir-ultra.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P062",
+   "company": "DZ-decathlon",
+   "brand": "B002",
+   "name": "Débardeur femme, Elementals, gris",
+   "category": "mode",
+   "about": "Débardeur pour femme à coupe ajustée, proposé comme pièce basique de la gamme sportswear Elementals.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Débardeurs"
+    }
+   ],
+   "photo": "P062.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p2845263/k$d3c704391550232df2931ec994e7a47a/debardeur-femme-elementals-gris.jpg?format=auto&quality=40&f=520x520",
+   "official": "https://www.decathlon.com.dz/p/360578-236821-debardeur-femme-elementals-gris.html",
+   "src": "https://www.decathlon.com.dz/p/360578-236821-debardeur-femme-elementals-gris.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P063",
+   "company": "DZ-decathlon",
+   "brand": "B018",
+   "name": "PANTALON CHAUD DÉPERLANT DE RANDONNÉE NEIGE - SH500 MOUNTAIN - FEMME",
+   "category": "mode",
+   "about": "Pantalon de randonnée hivernale pour femme, avec tissu chaud, extensible et déperlant ainsi qu’une attache pour lacets en bas de jambe.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Pantalons"
+    }
+   ],
+   "photo": "P063.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p2583303/k$fc346b96d32b5f1114cbeaab4ff587b5/pantalon-chaud-deperlant-de-randonnee-neige-sh500-x-warm-stretch-femme.jpg?format=auto&quality=40&f=250x250",
+   "official": "https://www.decathlon.com.dz/p/324683-251127-pantalon-chaud-deperlant-de-randonnee-neige-sh500-mountain-femme.html",
+   "src": "https://www.decathlon.com.dz/p/324683-251127-pantalon-chaud-deperlant-de-randonnee-neige-sh500-mountain-femme.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P064",
+   "company": "DZ-decathlon",
+   "brand": "B003",
+   "name": "Pantalon jogging droit chaud et doux femme, noir",
+   "category": "mode",
+   "about": "Pantalon de jogging pour femme à jambe droite, destiné aux activités en salle et aux moments de détente par temps frais.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Pantalons"
+    }
+   ],
+   "photo": "P064.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p2730712/k$4788c0efc55acc52f0e6c36d4665f10c/pantalon-fitness-femme-coton-droit-100-noir.jpg?format=auto&quality=40&f=250x250",
+   "official": "https://www.decathlon.com.dz/p/333231-191163-pantalon-jogging-droit-chaud-et-doux-femme-noir.html",
+   "src": "https://www.decathlon.com.dz/p/333231-191163-pantalon-jogging-droit-chaud-et-doux-femme-noir.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P065",
+   "company": "DZ-decathlon",
+   "brand": "B018",
+   "name": "Pantalon de randonnée en lin femme, NH500 vert",
+   "category": "mode",
+   "about": "Pantalon de randonnée pour femme contenant du lin, avec taille élastique et entretien en machine.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Pantalons"
+    }
+   ],
+   "photo": "P065.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p2643782/k$1b10d2e86af41141ef66a8bbebf9bec7/pantalon-en-lin-de-randonnee-nh500-femme-beige.jpg?format=auto&quality=40&f=250x250",
+   "official": "https://www.decathlon.com.dz/p/346726-239977-pantalon-de-randonnee-en-lin-femme-nh500-vert.html",
+   "src": "https://www.decathlon.com.dz/p/346726-239977-pantalon-de-randonnee-en-lin-femme-nh500-vert.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P066",
+   "company": "DZ-decathlon",
+   "brand": "B003",
+   "name": "Pantalon Jogging Slim Fitness Femme - 500 noir",
+   "category": "mode",
+   "about": "Pantalon de fitness pour femme à coupe slim, conçu pour accompagner les mouvements avec une matière résistante.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Pantalons"
+    }
+   ],
+   "photo": "P066.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p2730722/k$af03da8170cf92b3d8330dd6f9ed3a6d/pantalon-jogging-fitness-bas-resserre-slim-gris.jpg?format=auto&quality=40&f=250x250",
+   "official": "https://www.decathlon.com.dz/p/304025-147557-pantalon-jogging-slim-fitness-femme-500-noir.html",
+   "src": "https://www.decathlon.com.dz/p/304025-147557-pantalon-jogging-slim-fitness-femme-500-noir.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P067",
+   "company": "DZ-decathlon",
+   "brand": "B013",
+   "name": "Pantalon football essentiel adulte noir",
+   "category": "mode",
+   "about": "Pantalon de football pour adulte à coupe ajustée, prévu pour l’échauffement et les séances d’entraînement.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Pantalons"
+    }
+   ],
+   "photo": "P067.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p2937136/k$c8f767154331a7e11ec29bfc527d6160/pantalon-football-adulte-t100-noir.jpg?format=auto&quality=40&f=250x250",
+   "official": "https://www.decathlon.com.dz/p/309989-235348-pantalon-football-essentiel-adulte-noir.html",
+   "src": "https://www.decathlon.com.dz/p/309989-235348-pantalon-football-essentiel-adulte-noir.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P068",
+   "company": "DZ-decathlon",
+   "brand": "B018",
+   "name": "Pantalon de randonnée montagne - mh100 - femme",
+   "category": "mode",
+   "about": "Pantalon pour les randonnées occasionnelles en montagne, associant légèreté, évacuation de l’humidité et séchage rapide.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Pantalons"
+    }
+   ],
+   "photo": "P068.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p2583606/k$8a69c84e34f9407b1d57b021c70dda3c/pantalon-de-randonnee-montagne-mh100-femme.jpg?format=auto&quality=40&f=250x250",
+   "official": "https://www.decathlon.com.dz/p/330939-219170-pantalon-de-randonnee-montagne-mh100-femme.html",
+   "src": "https://www.decathlon.com.dz/p/330939-219170-pantalon-de-randonnee-montagne-mh100-femme.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P069",
+   "company": "DZ-decathlon",
+   "brand": "B018",
+   "name": "Pantalon de randonnée femme, NH100 noir",
+   "category": "mode",
+   "about": "Pantalon de randonnée pour femme destiné aux sorties occasionnelles en forêt, sur le littoral ou en plaine par temps doux.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Pantalons"
+    }
+   ],
+   "photo": "P069.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p2582538/k$6117baa0ba8a8a0a2c6a4e38635b2db8/pantalon-de-randonnee-femme-nh100-noir.jpg?format=auto&quality=40&f=520x520",
+   "official": "https://www.decathlon.com.dz/p/308204-211622-pantalon-de-randonnee-femme-nh100-noir.html",
+   "src": "https://www.decathlon.com.dz/p/308204-211622-pantalon-de-randonnee-femme-nh100-noir.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P070",
+   "company": "DZ-decathlon",
+   "brand": "B003",
+   "name": "Pantalon de jogging droit en coton femme, noir",
+   "category": "mode",
+   "about": "Pantalon de jogging pour femme en coton, avec une coupe droite adaptée aux tenues décontractées.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Pantalons"
+    }
+   ],
+   "photo": "P070.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p2730706/k$2cd925ae950889c4bb2cd899d9dc330e/pantalon-fitness-femme-coton-regular-essentiel-noir.jpg?format=auto&quality=40&f=250x250",
+   "official": "https://www.decathlon.com.dz/p/336810-173405-pantalon-de-jogging-droit-en-coton-femme-noir.html",
+   "src": "https://www.decathlon.com.dz/p/336810-173405-pantalon-de-jogging-droit-en-coton-femme-noir.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P071",
+   "company": "DZ-decathlon",
+   "brand": "B018",
+   "name": "Pantalon de randonnée femme, NH500 Regular gris",
+   "category": "mode",
+   "about": "Pantalon de randonnée pour femme avec taille élastique, passants de ceinture et quatre poches pour les petits objets.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Pantalons"
+    }
+   ],
+   "photo": "P071.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p2852856/k$9c100932ad82230c18303fdc458b56de/pantalon-de-randonnee-femme-nh500-regular-gris.jpg?format=auto&quality=40&f=250x250",
+   "official": "https://www.decathlon.com.dz/p/352534-219625-pantalon-de-randonnee-femme-nh500-regular-gris.html",
+   "src": "https://www.decathlon.com.dz/p/352534-219625-pantalon-de-randonnee-femme-nh500-regular-gris.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P072",
+   "company": "DZ-decathlon",
+   "brand": "B003",
+   "name": "Pantalon jogging chaud fitness homme - 100 noir",
+   "category": "mode",
+   "about": "Pantalon de jogging pour homme conçu pour apporter une couche chaude aux activités et déplacements quotidiens.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Pantalons"
+    }
+   ],
+   "photo": "P072.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p2731034/k$807ff2841444c4980e6ec279ba0fd189/pantalon-jogging-chaud-fitness-homme-100-noir.jpg?format=auto&quality=40&f=520x520",
+   "official": "https://www.decathlon.com.dz/p/307272-148552-pantalon-jogging-chaud-fitness-homme-100-noir.html",
+   "src": "https://www.decathlon.com.dz/p/307272-148552-pantalon-jogging-chaud-fitness-homme-100-noir.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P073",
+   "company": "DZ-decathlon",
+   "brand": "B003",
+   "name": "Pantalon de fitness essential respirant regular homme, noir",
+   "category": "mode",
+   "about": "Pantalon de fitness pour homme à coupe regular, prévu pour débuter ou reprendre l’entraînement avec liberté de mouvement.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Pantalons"
+    }
+   ],
+   "photo": "P073.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p2732073/k$f3a7d72dd90b79dd6a400ab9d1b59250/pantalon-de-fitness-essential-respirant-regular-homme-noir.jpg?format=auto&quality=40&f=520x520",
+   "official": "https://www.decathlon.com.dz/p/312019-165807-pantalon-de-fitness-essential-respirant-regular-homme-noir.html",
+   "src": "https://www.decathlon.com.dz/p/312019-165807-pantalon-de-fitness-essential-respirant-regular-homme-noir.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P074",
+   "company": "DZ-decathlon",
+   "brand": "B012",
+   "name": "Pantalon de running respirant Homme - KIPRUN Run 100 Dry Noir",
+   "category": "mode",
+   "about": "Pantalon de running pour homme, conçu pour courir avec aisance grâce à une coupe favorisant les mouvements.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Pantalons"
+    }
+   ],
+   "photo": "P074.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p3187108/k$51ea59b1ae11f74c5a16b36d2aba5dfa/pantalon-de-running-respirant-homme-kiprun-run-100-dry-noir.jpg?format=auto&quality=40&f=520x520",
+   "official": "https://www.decathlon.com.dz/p/354616-225694-pantalon-de-running-respirant-homme-kiprun-run-100-dry-noir.html",
+   "src": "https://www.decathlon.com.dz/p/354616-225694-pantalon-de-running-respirant-homme-kiprun-run-100-dry-noir.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P075",
+   "company": "DZ-decathlon",
+   "brand": "B018",
+   "name": "Pantalon de randonnée homme, NH100 gris",
+   "category": "mode",
+   "about": "Pantalon de randonnée pour homme majoritairement en coton, avec matière extensible et poches pour les sorties occasionnelles.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Pantalons"
+    }
+   ],
+   "photo": "P075.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p2852838/k$c0a4d934351f83f39b7805231db6a243/pantalon-de-randonnee-nh100-homme.jpg?format=auto&quality=40&f=250x250",
+   "official": "https://www.decathlon.com.dz/p/347183-215560-pantalon-de-randonnee-homme-nh100-gris.html",
+   "src": "https://www.decathlon.com.dz/p/347183-215560-pantalon-de-randonnee-homme-nh100-gris.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P076",
+   "company": "DZ-decathlon",
+   "brand": "B018",
+   "name": "Pantalon de randonnée homme, NH500 Regular bleu",
+   "category": "mode",
+   "about": "Pantalon pour homme adapté à la randonnée et au quotidien, avec une poche destinée au téléphone.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Pantalons"
+    }
+   ],
+   "photo": "P076.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p2582547/k$ebd60311286c86c329de57cff084599f/pantalon-de-randonnee-nature-nh500-regular-homme.jpg?format=auto&quality=40&f=250x250",
+   "official": "https://www.decathlon.com.dz/p/327102-219210-pantalon-de-randonnee-homme-nh500-regular-bleu.html",
+   "src": "https://www.decathlon.com.dz/p/327102-219210-pantalon-de-randonnee-homme-nh500-regular-bleu.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P077",
+   "company": "DZ-decathlon",
+   "brand": "B003",
+   "name": "Short fitness homme - 500 noir",
+   "category": "mode",
+   "about": "Short de fitness pour homme dans un tissu de 220 g/m², adapté aux séances de sport et aux tenues quotidiennes.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Shorts"
+    }
+   ],
+   "photo": "P077.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p2073394/k$6ca93b9157eb07bac7c4c11c1c566427/short-fitness-homme-500-noir.jpg?format=auto&quality=40&f=520x520",
+   "official": "https://www.decathlon.com.dz/p/300824-219107-short-fitness-homme-500-noir.html",
+   "src": "https://www.decathlon.com.dz/p/300824-219107-short-fitness-homme-500-noir.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P078",
+   "company": "DZ-decathlon",
+   "brand": "B003",
+   "name": "Short court fitness homme - 100 gris foncé",
+   "category": "mode",
+   "about": "Short court pour homme de la gamme fitness 100, proposé comme basique pour les activités quotidiennes.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Shorts"
+    }
+   ],
+   "photo": "P078.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p2073168/k$09fa82c126f3049bc2b76e18d708fa5a/short-court-fitness-homme-100-gris-fonce.jpg?format=auto&quality=40&f=520x520",
+   "official": "https://www.decathlon.com.dz/p/327730-134571-short-court-fitness-homme-100-gris-fonce.html",
+   "src": "https://www.decathlon.com.dz/p/327730-134571-short-court-fitness-homme-100-gris-fonce.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P079",
+   "company": "DZ-decathlon",
+   "brand": "B013",
+   "name": "Short de football adulte essentiel blanc",
+   "category": "mode",
+   "about": "Short de football pour adulte, destiné aux matchs et entraînements pratiqués jusqu’à deux fois par semaine.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Shorts"
+    }
+   ],
+   "photo": "P079.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p2960013/k$998fef603018077aa88a5215ef3bc788/short-de-football-adulte-essentiel-blanc.jpg?format=auto&quality=40&f=520x520",
+   "official": "https://www.decathlon.com.dz/p/108306-132279-short-de-football-adulte-essentiel-blanc.html",
+   "src": "https://www.decathlon.com.dz/p/108306-132279-short-de-football-adulte-essentiel-blanc.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P080",
+   "company": "DZ-decathlon",
+   "brand": "B003",
+   "name": "Short fitness homme - 500 essentials noir",
+   "category": "mode",
+   "about": "Short pour homme de la gamme fitness 500 Essentials, à porter pour le sport ou dans une tenue décontractée.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Shorts"
+    }
+   ],
+   "photo": "P080.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p2197706/k$cf71967e62754c761a1723b1f54850fa/short-fitness-homme-500-essentials-noir.jpg?format=auto&quality=40&f=520x520",
+   "official": "https://www.decathlon.com.dz/p/332643-151311-short-fitness-homme-500-essentials-noir.html",
+   "src": "https://www.decathlon.com.dz/p/332643-151311-short-fitness-homme-500-essentials-noir.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P081",
+   "company": "DZ-decathlon",
+   "brand": "B012",
+   "name": "Short de running homme - kiprun run 100 noir",
+   "category": "mode",
+   "about": "Short pour homme de la gamme Kiprun Run 100, destiné aux sorties de course à pied.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Shorts"
+    }
+   ],
+   "photo": "P081.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p2788433/k$206c4eab2acd658b094be425bdce8a5d/short-de-running-homme-kiprun-run-100-noir.jpg?format=auto&quality=40&f=520x520",
+   "official": "https://www.decathlon.com.dz/p/346892-200010-short-de-running-homme-kiprun-run-100-noir.html",
+   "src": "https://www.decathlon.com.dz/p/346892-200010-short-de-running-homme-kiprun-run-100-noir.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P082",
+   "company": "DZ-decathlon",
+   "brand": "B003",
+   "name": "Short de fitness basic respirant homme - noir",
+   "category": "mode",
+   "about": "Short de fitness pour homme, associant une matière extensible et respirante pour les séances en salle.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Shorts"
+    }
+   ],
+   "photo": "P082.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p2732081/k$f1d8dd512a251d6311ffbc4828150868/short-de-fitness-basic-respirant-homme-noir.jpg?format=auto&quality=40&f=520x520",
+   "official": "https://www.decathlon.com.dz/p/302706-165729-short-de-fitness-basic-respirant-homme-noir.html",
+   "src": "https://www.decathlon.com.dz/p/302706-165729-short-de-fitness-basic-respirant-homme-noir.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P083",
+   "company": "DZ-decathlon",
+   "brand": "B023",
+   "name": "Short De Basketball Adulte - SH100 rouge",
+   "category": "mode",
+   "about": "Short de basketball pour adulte, conçu pour les joueurs qui commencent ce sport.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Shorts"
+    }
+   ],
+   "photo": "P083.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p2345391/k$05c5df07d989efcc11bcff93eba06cf4/short-de-basketball-adulte-sh100-rouge.jpg?format=auto&quality=40&f=520x520",
+   "official": "https://www.decathlon.com.dz/p/148880-142716-short-de-basketball-adulte-sh100-rouge.html",
+   "src": "https://www.decathlon.com.dz/p/148880-142716-short-de-basketball-adulte-sh100-rouge.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P084",
+   "company": "DZ-decathlon",
+   "brand": "B012",
+   "name": "Short de running homme - kiprun run 500 dry bleu noir",
+   "category": "mode",
+   "about": "Short de running pour homme à matière légère et respirante, avec rangement pour téléphone pour les sorties par temps chaud.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Shorts"
+    }
+   ],
+   "photo": "P084.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p2788609/k$d330f10d8a2a4f624f685b89784eeea1/short-de-running-homme-kiprun-run-500-dry-bleu-noir.jpg?format=auto&quality=40&f=520x520",
+   "official": "https://www.decathlon.com.dz/p/333374-200744-short-de-running-homme-kiprun-run-500-dry-bleu-noir.html",
+   "src": "https://www.decathlon.com.dz/p/333374-200744-short-de-running-homme-kiprun-run-500-dry-bleu-noir.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P085",
+   "company": "DZ-decathlon",
+   "brand": "B012",
+   "name": "Short de running Homme - KIPRUN Run 500 Confort bleu canard",
+   "category": "mode",
+   "about": "Short de running pour homme, pensé pour limiter le poids du vêtement pendant les courses par temps chaud.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Shorts"
+    }
+   ],
+   "photo": "P085.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p3014321/k$5194ab4a25603a3f301e7c35775a9b12/short-de-running-homme-kiprun-run-500-confort-bleu-canard.jpg?format=auto&quality=40&f=520x520",
+   "official": "https://www.decathlon.com.dz/p/325737-245037-short-de-running-homme-kiprun-run-500-confort-bleu-canard.html",
+   "src": "https://www.decathlon.com.dz/p/325737-245037-short-de-running-homme-kiprun-run-500-confort-bleu-canard.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P086",
+   "company": "DZ-decathlon",
+   "brand": "B003",
+   "name": "Short de fitness respirant poches zippées homme,vert kaki",
+   "category": "mode",
+   "about": "Short de fitness pour homme, avec tissu respirant et poches fermées par des zips.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Shorts"
+    }
+   ],
+   "photo": "P086.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p3055811/k$b32524c6a61536ae65279cdb9e9c680a/short-de-fitness-respirant-poches-zippees-hommevert-kaki.jpg?format=auto&quality=40&f=520x520",
+   "official": "https://www.decathlon.com.dz/p/305836-243941-short-de-fitness-respirant-poches-zippees-hommevert-kaki.html",
+   "src": "https://www.decathlon.com.dz/p/305836-243941-short-de-fitness-respirant-poches-zippees-hommevert-kaki.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P087",
+   "company": "DZ-decathlon",
+   "brand": "B018",
+   "name": "Polaire de randonnée montagne femme, MH500 full zip vert",
+   "category": "mode",
+   "about": "Veste polaire pour femme à fermeture intégrale, destinée aux randonnées régulières en montagne par temps frais.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Polaires"
+    }
+   ],
+   "photo": "P087.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p3016409/k$b5594faf997485a26f664a7c657eebfd/polaire-de-randonnee-montagne-femme-mh500-full-zip-vert.jpg?format=auto&quality=40&f=520x520",
+   "official": "https://www.decathlon.com.dz/p/358684-248401-polaire-de-randonnee-montagne-femme-mh500-full-zip-vert.html",
+   "src": "https://www.decathlon.com.dz/p/358684-248401-polaire-de-randonnee-montagne-femme-mh500-full-zip-vert.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P088",
+   "company": "DZ-decathlon",
+   "brand": "B018",
+   "name": "Polaire de randonnée montagne femme, MH100 full zip noir",
+   "category": "mode",
+   "about": "Polaire pour femme à zip intégral et col haut, conçue pour les randonnées par temps frais.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Polaires"
+    }
+   ],
+   "photo": "P088.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p2937531/k$2e7ec021074dca4e2cf717d56d39f2af/polaire-de-randonnee-montagne-femme-mh100-full-zip-noir.jpg?format=auto&quality=40&f=520x520",
+   "official": "https://www.decathlon.com.dz/p/302526-233865-polaire-de-randonnee-montagne-femme-mh100-full-zip-noir.html",
+   "src": "https://www.decathlon.com.dz/p/302526-233865-polaire-de-randonnee-montagne-femme-mh100-full-zip-noir.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P089",
+   "company": "DZ-decathlon",
+   "brand": "B022",
+   "name": "Doudoune à capuche de randonnée -5°C homme, MT100 vert",
+   "category": "mode",
+   "about": "Doudoune de trekking pour homme avec capuche et garnissage en duvet, conçue pour les sorties par temps froid.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Doudounes"
+    }
+   ],
+   "photo": "P089.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p2688044/k$7ca3a5b1ff069c31bd32ece7dd7669c8/doudoune-a-capuche-de-randonnee-5c-homme-mt100-vert.jpg?format=auto&quality=40&f=520x520",
+   "official": "https://www.decathlon.com.dz/p/167571-248249-doudoune-a-capuche-de-randonnee-5c-homme-mt100-vert.html",
+   "src": "https://www.decathlon.com.dz/p/167571-248249-doudoune-a-capuche-de-randonnee-5c-homme-mt100-vert.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P090",
+   "company": "DZ-decathlon",
+   "brand": "B018",
+   "name": "Polaire de randonnée montagne homme, MH100 demi zip rouge",
+   "category": "mode",
+   "about": "Polaire de randonnée pour homme en polyester dense, avec ouverture partielle zippée et col haut.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Polaires"
+    }
+   ],
+   "photo": "P090.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p2038940/k$e52ea5a0ab66501eb7da3fad27d8c3be/polaire-de-randonnee-montagne-homme-mh100-demi-zip-rouge.jpg?format=auto&quality=40&f=520x520",
+   "official": "https://www.decathlon.com.dz/p/333884-251134-polaire-de-randonnee-montagne-homme-mh100-demi-zip-rouge.html",
+   "src": "https://www.decathlon.com.dz/p/333884-251134-polaire-de-randonnee-montagne-homme-mh100-demi-zip-rouge.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P091",
+   "company": "DZ-decathlon",
+   "brand": "B004",
+   "name": "Doudoune sans manches en duvet de trek montagne - MT100 - Homme",
+   "category": "mode",
+   "about": "Doudoune sans manches pour homme à garnissage en duvet et plumes, prévue pour apporter de la chaleur avec un volume compressible.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Doudounes"
+    }
+   ],
+   "photo": "P091.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p2688098/k$ca8a23a58b23955d8649ad2cfe03729c/doudoune-sans-manche-en-duvet-de-trek-montagne-mt100-homme.jpg?format=auto&quality=40&f=250x250",
+   "official": "https://www.decathlon.com.dz/p/169275-248352-doudoune-sans-manches-en-duvet-de-trek-montagne-mt100-homme.html",
+   "src": "https://www.decathlon.com.dz/p/169275-248352-doudoune-sans-manches-en-duvet-de-trek-montagne-mt100-homme.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P092",
+   "company": "DZ-decathlon",
+   "brand": "B022",
+   "name": "T-shirt manches longues de trekking en laine mérinos - MT900 -Homme",
+   "category": "mode",
+   "about": "Haut de trekking pour homme en laine mérinos, avec manches longues, col haut et passages pour les pouces.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "T-shirts"
+    }
+   ],
+   "photo": "P092.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p2028692/1cr1/k$8e87765ed234c201d8b313d94c2fdbdf/prod.jpg?format=auto&f=1024x0",
+   "official": "https://www.decathlon.com.dz/p/324215-236250-t-shirt-manches-longues-de-trekking-en-laine-merinos-mt900-homme.html",
+   "src": "https://www.decathlon.com.dz/p/324215-236250-t-shirt-manches-longues-de-trekking-en-laine-merinos-mt900-homme.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P093",
+   "company": "DZ-decathlon",
+   "brand": "B018",
+   "name": "Veste polaire de randonnée enfant 7-15 ans, MH500 zip noir",
+   "category": "mode",
+   "about": "Veste polaire à fermeture zippée pour les enfants de 7 à 15 ans, destinée aux activités en extérieur.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Polaires"
+    }
+   ],
+   "photo": "P093.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p2941409/k$6f1aa2e33798e98521998c2bcdf2c455/veste-polaire-de-randonnee-enfant-7-15-ans-mh500-zip-noir.jpg?format=auto&quality=40&f=520x520",
+   "official": "https://www.decathlon.com.dz/p/346016-234356-veste-polaire-de-randonnee-enfant-7-15-ans-mh500-zip-noir.html",
+   "src": "https://www.decathlon.com.dz/p/346016-234356-veste-polaire-de-randonnee-enfant-7-15-ans-mh500-zip-noir.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P094",
+   "company": "DZ-decathlon",
+   "brand": "B022",
+   "name": "Doudoune à capuche en duvet de trek montagne - mt100 -5 °c - femme",
+   "category": "mode",
+   "about": "Doudoune de trekking pour femme avec capuche et duvet, conçue pour offrir de la chaleur tout en restant compacte dans un sac.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Doudounes"
+    }
+   ],
+   "photo": "P094.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p2688009/k$77008052fc9a71bd08f1b25a769c5673/doudoune-duvet-de-trek-en-montagne-trek-100-marine-femme.jpg?format=auto&quality=40&f=250x250",
+   "official": "https://www.decathlon.com.dz/p/167572-222501-doudoune-a-capuche-en-duvet-de-trek-montagne-mt100-5-c-femme.html",
+   "src": "https://www.decathlon.com.dz/p/167572-222501-doudoune-a-capuche-en-duvet-de-trek-montagne-mt100-5-c-femme.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P095",
+   "company": "DZ-decathlon",
+   "brand": "B018",
+   "name": "Polaire de randonnée enfant 7-15 ans, MH100 demi zip bleu",
+   "category": "mode",
+   "about": "Polaire de randonnée pour enfant de 7 à 15 ans, avec demi-zip et matière prévue pour garder la chaleur tout en respirant.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Polaires"
+    }
+   ],
+   "photo": "P095.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p2726988/k$177e328548f94621f7ab14512b43aa0b/polaire-de-randonnee-enfant-7-15-ans-mh100-demi-zip-bleu.jpg?format=auto&quality=40&f=520x520",
+   "official": "https://www.decathlon.com.dz/p/308610-235178-polaire-de-randonnee-enfant-7-15-ans-mh100-demi-zip-bleu.html",
+   "src": "https://www.decathlon.com.dz/p/308610-235178-polaire-de-randonnee-enfant-7-15-ans-mh100-demi-zip-bleu.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P096",
+   "company": "DZ-decathlon",
+   "brand": "B018",
+   "name": "Veste imperméable de randonnée - MH100 zip - enfant 7-15 ans",
+   "category": "mode",
+   "about": "Veste de pluie zippée pour enfant de 7 à 15 ans, destinée à protéger pendant les randonnées exposées au vent et aux précipitations.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Vestes"
+    }
+   ],
+   "photo": "P096.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p2627242/k$46354adb435703aafd65fe3c30441645/veste-impermeable-de-randonnee-mh100-zip-enfant-7-15-ans.jpg?format=auto&quality=40&f=520x520",
+   "official": "https://www.decathlon.com.dz/p/151453-222314-veste-impermeable-de-randonnee-mh100-zip-enfant-7-15-ans.html",
+   "src": "https://www.decathlon.com.dz/p/151453-222314-veste-impermeable-de-randonnee-mh100-zip-enfant-7-15-ans.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P097",
+   "company": "DZ-decathlon",
+   "brand": "B018",
+   "name": "Polaire de randonnée chaude femme, NH500 blanc",
+   "category": "mode",
+   "about": "Polaire de randonnée pour femme avec capuche et tissu dense, conçue pour les sorties occasionnelles par temps froid.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Polaires"
+    }
+   ],
+   "photo": "P097.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p2718214/k$a4f100649a0c1562314084f6b0aa41d4/polaire-de-randonnee-chaude-femme-nh500-blanc.jpg?format=auto&quality=40&f=520x520",
+   "official": "https://www.decathlon.com.dz/p/305153-248304-polaire-de-randonnee-chaude-femme-nh500-blanc.html",
+   "src": "https://www.decathlon.com.dz/p/305153-248304-polaire-de-randonnee-chaude-femme-nh500-blanc.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P098",
+   "company": "DZ-decathlon",
+   "brand": "B004",
+   "name": "Doudoune de trek synthétique femme, MT50 5°C bleu",
+   "category": "mode",
+   "about": "Doudoune de trekking pour femme à isolation synthétique, avec deux poches fermées par des zips.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Doudounes"
+    }
+   ],
+   "photo": "P098.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p2710383/k$f2ceb27a2ba262f321490ebb0ebfd35f/doudoune-de-trek-montagne-trek-50-marine-femme.jpg?format=auto&quality=40&f=250x250",
+   "official": "https://www.decathlon.com.dz/p/138625-248238-doudoune-de-trek-synthetique-femme-mt50-5c-bleu.html",
+   "src": "https://www.decathlon.com.dz/p/138625-248238-doudoune-de-trek-synthetique-femme-mt50-5c-bleu.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P099",
+   "company": "DZ-decathlon",
+   "brand": "B003",
+   "name": "Survêtement enfant synthétique respirant - Gym'y rose et pantalon marine",
+   "category": "mode",
+   "about": "Ensemble de sport pour enfant comprenant un haut rose et un pantalon marine, dans une matière synthétique respirante.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Survêtements"
+    }
+   ],
+   "photo": "P099.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p2807368/k$75b1e504d1498fc87ceb65b59ad57b1f/survetement-gym-y-chaud-synthetique-respirant-s500-fille-gym-enfant-rose.jpg?format=auto&quality=40&f=250x250",
+   "official": "https://www.decathlon.com.dz/p/303891-147301-survetement-enfant-synthetique-respirant-gym-y-rose-et-pantalon-marine.html",
+   "src": "https://www.decathlon.com.dz/p/303891-147301-survetement-enfant-synthetique-respirant-gym-y-rose-et-pantalon-marine.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  },
+  {
+   "ext": "P100",
+   "company": "DZ-decathlon",
+   "brand": "B026",
+   "name": "Veste de ski et snowboard chaude homme 100 - blanc / noir",
+   "category": "mode",
+   "about": "Veste de ski et snowboard pour homme à coupe mi-longue, avec col haut, capuche et composant imperméable pour les sorties dans la neige.",
+   "specs": [
+    {
+     "k": "Type",
+     "v": "Vestes"
+    }
+   ],
+   "photo": "P100.jpg",
+   "photo_src": "https://contents.mediadecathlon.com/p2579722/k$d8a1cb075c3f90cdfa78613f7c20a00c/veste-de-ski-chaude-mi-longue-homme-100-marineslashrouge.jpg?format=auto&quality=40&f=250x250",
+   "official": "https://www.decathlon.com.dz/p/332684-233933-veste-de-ski-et-snowboard-chaude-homme-100-blanc-noir.html",
+   "src": "https://www.decathlon.com.dz/p/332684-233933-veste-de-ski-et-snowboard-chaude-homme-100-blanc-noir.html",
+   "checked": "2026-11-13",
+   "notes": "Référence et photo issues du catalogue algérien officiel de Decathlon. Les variantes de couleur et de taille ne sont pas comptées comme produits supplémentaires."
+  }
+ ],
+ "offers": [
+  {
+   "ext": "O001",
+   "product": "P001",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/277/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O002",
+   "product": "P002",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/328/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O003",
+   "product": "P003",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/261/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O004",
+   "product": "P004",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/359/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O005",
+   "product": "P005",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/414/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O006",
+   "product": "P006",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/223/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O007",
+   "product": "P007",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/127/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O008",
+   "product": "P008",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/203/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O009",
+   "product": "P009",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/282/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O010",
+   "product": "P010",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/306/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O011",
+   "product": "P011",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/318/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O012",
+   "product": "P012",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/304/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O013",
+   "product": "P013",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/421/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O014",
+   "product": "P014",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/197/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O015",
+   "product": "P015",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/317/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O016",
+   "product": "P016",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/275/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O017",
+   "product": "P017",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/195/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O018",
+   "product": "P018",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/270/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O019",
+   "product": "P019",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/525/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O020",
+   "product": "P020",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/515/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O021",
+   "product": "P021",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/225/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O022",
+   "product": "P022",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/155/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O023",
+   "product": "P023",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/76/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O024",
+   "product": "P024",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/310/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O025",
+   "product": "P025",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/431/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O026",
+   "product": "P026",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/344/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O027",
+   "product": "P027",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/260/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O028",
+   "product": "P028",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/173/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O029",
+   "product": "P029",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/159/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O030",
+   "product": "P030",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/443/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O031",
+   "product": "P031",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/148/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O032",
+   "product": "P032",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/140/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O033",
+   "product": "P033",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/199/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O034",
+   "product": "P034",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/302/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O035",
+   "product": "P035",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/348/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O036",
+   "product": "P036",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/255/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O037",
+   "product": "P037",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/244/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O038",
+   "product": "P038",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/276/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O039",
+   "product": "P039",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/375/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O040",
+   "product": "P040",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/116/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O041",
+   "product": "P041",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/191/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O042",
+   "product": "P042",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/439/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O043",
+   "product": "P043",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/145/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O044",
+   "product": "P044",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/420/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O045",
+   "product": "P045",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/171/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O046",
+   "product": "P046",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/170/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O047",
+   "product": "P047",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/139/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O048",
+   "product": "P048",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/286/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O049",
+   "product": "P049",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/273/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O050",
+   "product": "P050",
+   "company": "DZ-e-mobile-algerie",
+   "url": "https://iphoneprixalgerie.com/product/268/details",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O051",
+   "product": "P051",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/370408-231823-t-shirt-manches-longues-modesty-vert.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O052",
+   "product": "P052",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/145846-191529-t-shirt-manches-longues-running-femme-sun-protect-noir.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O053",
+   "product": "P053",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/302707-146388-t-shirt-manches-courtes-running-respirant-femme-dry-blanc.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O054",
+   "product": "P054",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/345914-250326-debardeur-de-fitness-coupe-droite-femme-bleu.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O055",
+   "product": "P055",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/346303-250295-t-shirt-manches-courtes-fitness-cardio-femme-bleu-marine.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O056",
+   "product": "P056",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/370541-231785-t-shirt-manches-longues-modesty-150-noir.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O057",
+   "product": "P057",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/346523-224733-t-shirt-running-respirant-femme-kiprun-run-100-noir.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O058",
+   "product": "P058",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/324760-213826-tee-shirt-anti-uv-manches-courtes-femme-malou-bleu.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O059",
+   "product": "P059",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/339063-202340-t-shirt-fitness-femme-100-blanc.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O060",
+   "product": "P060",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/172246-245735-t-shirt-manches-courtes-de-randonnee-montagne-femme-mh100-noir.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O061",
+   "product": "P061",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/333131-172992-debardeur-slim-col-rond-fitness-femme-noir-ultra.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O062",
+   "product": "P062",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/360578-236821-debardeur-femme-elementals-gris.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O063",
+   "product": "P063",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/324683-251127-pantalon-chaud-deperlant-de-randonnee-neige-sh500-mountain-femme.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O064",
+   "product": "P064",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/333231-191163-pantalon-jogging-droit-chaud-et-doux-femme-noir.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O065",
+   "product": "P065",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/346726-239977-pantalon-de-randonnee-en-lin-femme-nh500-vert.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O066",
+   "product": "P066",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/304025-147557-pantalon-jogging-slim-fitness-femme-500-noir.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O067",
+   "product": "P067",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/309989-235348-pantalon-football-essentiel-adulte-noir.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O068",
+   "product": "P068",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/330939-219170-pantalon-de-randonnee-montagne-mh100-femme.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O069",
+   "product": "P069",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/308204-211622-pantalon-de-randonnee-femme-nh100-noir.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O070",
+   "product": "P070",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/336810-173405-pantalon-de-jogging-droit-en-coton-femme-noir.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O071",
+   "product": "P071",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/352534-219625-pantalon-de-randonnee-femme-nh500-regular-gris.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O072",
+   "product": "P072",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/307272-148552-pantalon-jogging-chaud-fitness-homme-100-noir.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O073",
+   "product": "P073",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/312019-165807-pantalon-de-fitness-essential-respirant-regular-homme-noir.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O074",
+   "product": "P074",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/354616-225694-pantalon-de-running-respirant-homme-kiprun-run-100-dry-noir.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O075",
+   "product": "P075",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/347183-215560-pantalon-de-randonnee-homme-nh100-gris.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O076",
+   "product": "P076",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/327102-219210-pantalon-de-randonnee-homme-nh500-regular-bleu.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O077",
+   "product": "P077",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/300824-219107-short-fitness-homme-500-noir.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O078",
+   "product": "P078",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/327730-134571-short-court-fitness-homme-100-gris-fonce.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O079",
+   "product": "P079",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/108306-132279-short-de-football-adulte-essentiel-blanc.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O080",
+   "product": "P080",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/332643-151311-short-fitness-homme-500-essentials-noir.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O081",
+   "product": "P081",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/346892-200010-short-de-running-homme-kiprun-run-100-noir.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O082",
+   "product": "P082",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/302706-165729-short-de-fitness-basic-respirant-homme-noir.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O083",
+   "product": "P083",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/148880-142716-short-de-basketball-adulte-sh100-rouge.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O084",
+   "product": "P084",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/333374-200744-short-de-running-homme-kiprun-run-500-dry-bleu-noir.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O085",
+   "product": "P085",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/325737-245037-short-de-running-homme-kiprun-run-500-confort-bleu-canard.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O086",
+   "product": "P086",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/305836-243941-short-de-fitness-respirant-poches-zippees-hommevert-kaki.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O087",
+   "product": "P087",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/358684-248401-polaire-de-randonnee-montagne-femme-mh500-full-zip-vert.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O088",
+   "product": "P088",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/302526-233865-polaire-de-randonnee-montagne-femme-mh100-full-zip-noir.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O089",
+   "product": "P089",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/167571-248249-doudoune-a-capuche-de-randonnee-5c-homme-mt100-vert.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O090",
+   "product": "P090",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/333884-251134-polaire-de-randonnee-montagne-homme-mh100-demi-zip-rouge.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O091",
+   "product": "P091",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/169275-248352-doudoune-sans-manches-en-duvet-de-trek-montagne-mt100-homme.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O092",
+   "product": "P092",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/324215-236250-t-shirt-manches-longues-de-trekking-en-laine-merinos-mt900-homme.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O093",
+   "product": "P093",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/346016-234356-veste-polaire-de-randonnee-enfant-7-15-ans-mh500-zip-noir.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O094",
+   "product": "P094",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/167572-222501-doudoune-a-capuche-en-duvet-de-trek-montagne-mt100-5-c-femme.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O095",
+   "product": "P095",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/308610-235178-polaire-de-randonnee-enfant-7-15-ans-mh100-demi-zip-bleu.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O096",
+   "product": "P096",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/151453-222314-veste-impermeable-de-randonnee-mh100-zip-enfant-7-15-ans.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O097",
+   "product": "P097",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/305153-248304-polaire-de-randonnee-chaude-femme-nh500-blanc.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O098",
+   "product": "P098",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/138625-248238-doudoune-de-trek-synthetique-femme-mt50-5c-bleu.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O099",
+   "product": "P099",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/303891-147301-survetement-enfant-synthetique-respirant-gym-y-rose-et-pantalon-marine.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  },
+  {
+   "ext": "O100",
+   "product": "P100",
+   "company": "DZ-decathlon",
+   "url": "https://www.decathlon.com.dz/p/332684-233933-veste-de-ski-et-snowboard-chaude-homme-100-blanc-noir.html",
+   "status": "Stock à confirmer",
+   "checked": "2026-11-13"
+  }
+ ],
+ "store_brands": [
+  {
+   "store": "S001",
+   "brand": "B011"
+  },
+  {
+   "store": "S002",
+   "brand": "B011"
+  },
+  {
+   "store": "S003",
+   "brand": "B011"
+  },
+  {
+   "store": "S004",
+   "brand": "B011"
+  },
+  {
+   "store": "S005",
+   "brand": "B011"
+  },
+  {
+   "store": "S006",
+   "brand": "B011"
+  },
+  {
+   "store": "S007",
+   "brand": "B011"
+  },
+  {
+   "store": "S008",
+   "brand": "B011"
+  },
+  {
+   "store": "S009",
+   "brand": "B011"
+  },
+  {
+   "store": "S010",
+   "brand": "B002"
+  },
+  {
+   "store": "S011",
+   "brand": "B002"
+  },
+  {
+   "store": "S012",
+   "brand": "B002"
+  },
+  {
+   "store": "S013",
+   "brand": "B002"
+  },
+  {
+   "store": "S014",
+   "brand": "B002"
+  },
+  {
+   "store": "S015",
+   "brand": "B014"
+  },
+  {
+   "store": "S016",
+   "brand": "B014"
+  },
+  {
+   "store": "S022",
+   "brand": "B001"
+  },
+  {
+   "store": "S022",
+   "brand": "B021"
+  },
+  {
+   "store": "S022",
+   "brand": "B027"
+  },
+  {
+   "store": "S022",
+   "brand": "B020"
+  },
+  {
+   "store": "S022",
+   "brand": "B017"
+  },
+  {
+   "store": "S022",
+   "brand": "B016"
+  },
+  {
+   "store": "S022",
+   "brand": "B006"
+  },
+  {
+   "store": "S023",
+   "brand": "B001"
+  },
+  {
+   "store": "S023",
+   "brand": "B021"
+  },
+  {
+   "store": "S023",
+   "brand": "B027"
+  },
+  {
+   "store": "S023",
+   "brand": "B017"
+  },
+  {
+   "store": "S023",
+   "brand": "B006"
+  },
+  {
+   "store": "S023",
+   "brand": "B019"
+  },
+  {
+   "store": "S023",
+   "brand": "B008"
+  },
+  {
+   "store": "S023",
+   "brand": "B025"
+  },
+  {
+   "store": "S023",
+   "brand": "B016"
+  },
+  {
+   "store": "S023",
+   "brand": "B024"
+  },
+  {
+   "store": "S023",
+   "brand": "B009"
+  },
+  {
+   "store": "S023",
+   "brand": "B007"
+  },
+  {
+   "store": "S023",
+   "brand": "B028"
+  },
+  {
+   "store": "S023",
+   "brand": "B005"
+  },
+  {
+   "store": "S023",
+   "brand": "B015"
+  }
+ ]
+}

@@ -128,8 +128,9 @@ const mails = () => (fs.existsSync(path.join(DIR, 'mail.jsonl')) ? fs.readFileSy
   await bp.click('[data-act="st-all"][data-q="10"]');
   ok(/6/.test(await bp.locator('[data-nchanges]').innerText()), '6 modifications en attente');
   await bp.click('[data-act="st-save"]');
-  await bp.waitForFunction(() => document.querySelectorAll('.stock-rows .badge-good').length === 6, null, { timeout: 8000 }).catch(() => {});
-  ok(await bp.locator('.stock-rows .badge-good').count() === 6, 'stock enregistré : 6 déclinaisons en stock');
+  const inStock = () => bp.evaluate(() => Array.from(document.querySelectorAll('.stock-rows .badge')).filter((b) => b.textContent.trim() === 'En stock').length);
+  await bp.waitForFunction(() => Array.from(document.querySelectorAll('.stock-rows .badge')).filter((b) => b.textContent.trim() === 'En stock').length === 6, null, { timeout: 8000 }).catch(() => {});
+  ok(await inStock() === 6, 'stock enregistré : 6 déclinaisons en stock', { inStock: await inStock(), toast: await bp.locator('.toast').allInnerTexts() });
   await bp.screenshot({ path: path.join(SHOTS, '02-stock.png'), fullPage: true });
 
   /* ------------------------------------------------------------ validation */
@@ -636,11 +637,37 @@ const mails = () => (fs.existsSync(path.join(DIR, 'mail.jsonl')) ? fs.readFileSy
   const noDemo = await call(cp, 'demo_login', {});
   ok(noDemo.status === 404, 'plus de démonstration proposée');
 
+  /* --------------------------------------------- base Algérie (fiches publiques) */
+  step('Base Algérie : import des fiches publiques');
+  await op.waitForSelector('[data-import] [data-act="import"]');
+  await op.click('[data-import] [data-act="import"]');
+  await op.waitForFunction(() => /Sur le site/.test((document.querySelector('[data-import]') || {}).textContent || ''), null, { timeout: 120000 });
+  const imp1 = (await call(op, 'adm_overview')).import;
+  ok(imp1.site.products === 100 && imp1.site.stores === 24 && imp1.site.companies === 25, 'import : 100 produits, 24 points de vente, 25 entreprises', imp1.site);
+  const again = await call(op, 'adm_import', {});
+  ok(again.import.site.products === 100 && again.result.created === 0, 'relance de l\'import : mise à jour, sans doublon', again.result);
+  const galaxy = (await call(cp, 'products', undefined, { q: 'galaxy s25 ultra' })).items[0];
+  ok(galaxy && galaxy.listing && galaxy.price === 0 && galaxy.stores === 0 && /^media\//.test(galaxy.image), 'produit importé : fiche publique avec photo, sans prix ni stock inventés', galaxy);
+  await cp.goto(B + 'explorer/#/produit/' + galaxy.slug);
+  await cp.waitForSelector('.p-info .notice.is-public');
+  ok(/Prix non communiqué/.test(await cp.locator('[data-price]').innerText()) && await cp.locator('[data-act="cod"]').count() === 0, 'page produit : prix non communiqué, pas de commande vers un magasin non géré');
+  await cp.waitForSelector('.av-maybe li');
+  ok(/stock à confirmer/i.test(await cp.locator('.av-maybe').innerText()) && await cp.locator('.offers li a[target=_blank][rel*=noopener]').count() === 1, 'magasins qui vendent la marque (stock à confirmer) et fiche du vendeur en ligne');
+  await noOverflow(cp, 'produit importé (mobile)');
+  const kiabi = (await call(cp, 'stores')).stores.find((x) => x.name === 'Kiabi Es Senia');
+  ok(kiabi && kiabi.listing && !kiabi.pickup && !kiabi.reserve && kiabi.commune === 'El Kerma' && kiabi.zone, 'point de vente importé : commune et wilaya reconnues, ni retrait ni réservation', kiabi);
+  await cp.goto(B + 'explorer/#/pdv/' + kiabi.id);
+  await cp.waitForSelector('.store-main .notice.is-public');
+  ok(true, 'page du point de vente : mention « fiche publique »');
+  const seen = await fd('visual_identify', 'public_html/maillage/lib/data/import/algerie/P003.jpg', {});
+  ok(seen.auto && /Galaxy S25 Ultra/.test(seen.info.name), 'recherche par photo : la photo importée retrouve le produit', seen.info);
+
   /* ---------------------------------------------------------------- sécurité */
   step('Fichiers internes et requêtes forgées');
   const status = (u, o) => cp.evaluate(async ({ u, o }) => (await fetch(u, o)).status, { u: B + u, o });
   ok(await status('lib/core.php') === 403, 'lib/ interdit');
   ok(await status('config.php') === 403, 'config.php interdit');
+  ok(await status('lib/data/import/algerie.json') === 403 && await status('lib/data/import/algerie/P001.jpg') === 403, 'données d\'import non servies directement');
   ok(await status('api.php?action=logout', { method: 'POST' }) === 403, 'écriture refusée sans l\'en-tête X-Requested-With');
   ok(await status('api.php?action=overview') === 401, 'espace entreprise fermé sans session');
   ok(await status('api.php?action=adm_overview') === 401, 'administration fermée sans session');

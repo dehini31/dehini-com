@@ -76,7 +76,21 @@
             : html`<p class="muted">${ML.t("La démonstration n'est pas chargée.")}</p><div><button class="btn btn-line" type="button" data-act="demo" data-do="seed">${icon('refresh-cw')}${ML.t('Charger la démonstration')}</button></div>`}
         </section>
       </div>
+      ${importCard(d.import)}
       ${demo.length ? html`<section class="card card-pad"><div class="card-head"><h2 class="card-title">${ML.t('Entreprises de démonstration')}</h2></div>${table(demo)}</section>` : ''}`);
+  }
+
+  /** Base Algérie : fiches publiques (marques, magasins, produits relevés dans des sources publiques). */
+  function importCard(im) {
+    if (!im) return '';
+    const last = im.last ? JSON.parse(im.last) : null;
+    return html`
+      <section class="card card-pad stack" data-import>
+        <div><h2 class="card-title">${ML.t('Base Algérie : fiches publiques')}</h2>
+          <p class="card-sub">${fmt.num(im.file.products)} ${ML.t('produits')}, ${fmt.num(im.file.brands)} ${ML.t('marques')}, ${fmt.num(im.file.stores)} ${ML.t('points de vente physiques et')} ${fmt.num(im.file.offers)} ${ML.t('offres en ligne, relevés dans des sources publiques (vérification du')} ${im.file.checked}). ${ML.t('Les entreprises sont publiées comme fiches non gérées, sans stock ni prix confirmés.')}</p></div>
+        <p>${im.site.products ? html`<b>${ML.t('Sur le site :')}</b> ${fmt.num(im.site.companies)} ${ML.t('entreprises')}, ${fmt.num(im.site.stores)} ${ML.t('points de vente')}, ${fmt.num(im.site.products)} ${ML.t('produits')}.${last ? html` <span class="muted">${ML.t('Dernier import :')} ${fmt.date(last.at)}.</span>` : ''}` : html`<span class="muted">${ML.t('Pas encore importée.')}</span>`}</p>
+        <div><button class="btn ${im.site.products ? 'btn-line' : 'btn-primary'}" type="button" data-act="import">${icon('refresh-cw')}${im.site.products ? ML.t('Mettre à jour depuis la base') : ML.t('Importer la base')}</button></div>
+      </section>`;
   }
 
   const post = async (action, body, el) => {
@@ -94,6 +108,14 @@
     const del = el.dataset.do === 'delete';
     if (del && !await ML.confirm(ML.t('Supprimer toutes les données de démonstration (entreprises, points de vente, produits, commandes) ?'), { ok: ML.t('Supprimer'), danger: true })) return;
     if (await post('adm_demo', { action: el.dataset.do }, el)) { ML.toast(del ? ML.t('Démonstration supprimée.') : ML.t('Démonstration chargée.'), 'good'); load(); }
+  };
+  ML.actions.import = async (el) => {
+    ML.busy(el, true);
+    try {
+      const r = await api('adm_import', { body: {} });
+      ML.toast(ML.t('Base importée :') + ' ' + fmt.num(r.result.products) + ' ' + ML.t('produits') + ', ' + fmt.num(r.result.stores) + ' ' + ML.t('points de vente') + '.', 'good');
+      load();
+    } catch (e) { ML.fail(e); } finally { ML.busy(el, false); }
   };
   ML.forms.settings = async (f) => {
     try { await api('adm_settings', { body: ML.formData(f) }); ML.toast(ML.t('Réglages enregistrés.'), 'good'); load(); } catch (e) { ML.fail(e, f); }

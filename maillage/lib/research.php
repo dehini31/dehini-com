@@ -250,7 +250,7 @@ function research_view(array $r): array
     $pids = array_values(array_filter(array_map(function ($x) { return (int) $x['product_id']; }, $rows)));
     if ($pids) {
         $in = implode(',', $pids);
-        $products = $pdo->query("SELECT p.*, b.name AS b_name, b.slug AS b_slug, b.color AS b_color, c.demo AS c_demo
+        $products = $pdo->query("SELECT p.*, b.name AS b_name, b.slug AS b_slug, b.color AS b_color, c.demo AS c_demo, c.listing AS c_listing
             FROM products p JOIN brands b ON b.id = p.brand_id JOIN companies c ON c.id = p.company_id
             WHERE p.id IN ($in) AND p.status = 'active' AND c.status = 'active'")->fetchAll();
         $variants = variants_of($pids);

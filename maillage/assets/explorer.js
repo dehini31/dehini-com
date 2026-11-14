@@ -115,6 +115,36 @@
   };
   const typeBadge = (s) => html`<span class="badge badge-line"><span class="type-dot" style="--c:${color(ML.TYPE_COLORS[s.type])}"></span>${TYPES()[s.type] || s.type}</span>`;
   const demoBadge = (on) => (on ? html`<span class="badge" title="${ML.t('Donnée de démonstration')}">${ML.t('Démo')}</span>` : '');
+  /* ------------------------------------------------ fiches publiques (import) */
+  /** Lien externe sûr (http/https seulement). */
+  const safeUrl = (u) => (/^https?:\/\//i.test(u || '') ? u : '');
+  /** Date AAAA-MM-JJ d'une vérification. */
+  const checkedText = (d) => { const t = Date.parse(d || ''); return isNaN(t) ? '' : fmt.date(t / 1000); };
+  /** Prix d'une fiche : « Prix non communiqué » quand la source n'en donne pas. */
+  const priceText = X.priceText = (p) => (p.price > 0 ? (p.price_max > p.price ? ML.t('dès ') : '') + fmt.price(p.price) : ML.t('Prix non communiqué'));
+  const publicBadge = X.publicBadge = (on) => (on ? html`<span class="badge badge-line" title="${ML.t('Informations relevées dans des sources publiques ; fiche non gérée par l\'entreprise')}">${ML.t('Fiche publique')}</span>` : '');
+  /** Bandeau d'une fiche publique : d'où viennent les informations et ce qui reste à confirmer. */
+  const publicNote = X.publicNote = (o, text) => html`
+    <p class="notice is-public">${icon('info')}<span><b>${ML.t('Fiche publique')}</b> · ${text}${checkedText(o.checked) ? html` ${ML.t('Vérifiée le')} ${checkedText(o.checked)}.` : ''}${safeUrl(o.src) ? html` <a class="link" href="${safeUrl(o.src)}" target="_blank" rel="noopener noreferrer nofollow">${ML.t('Voir la source')}</a>` : ''}</span></p>`;
+  /** Points de vente à fiche publique qui vendent la marque, sans stock connu. */
+  const brandStoresHtml = X.brandStoresHtml = (list) => html`
+    <ul class="av-list av-maybe">${list.map((st) => html`
+      <li class="av-item">
+        <div class="av-main">
+          <div class="row between"><h3>${st.name}</h3>${st.km != null ? html`<span class="km">${st.precision === 'commune' ? '≈ ' : ''}${fmt.km(st.km)}</span>` : ''}</div>
+          <p class="scard-addr">${st.address || st.city}</p>
+          <div class="scard-tags"><span class="stock is-maybe">${icon('phone', 'ico-sm')}${ML.t('Vend la marque · stock à confirmer par téléphone')}</span>${st.precision === 'commune' ? html`<span class="av-opts">${ML.t('Position approximative')}</span>` : ''}</div>
+        </div>
+        <div class="av-actions">${contactButtons(st, true)}<a class="btn btn-ghost btn-sm" href="#/pdv/${st.id}" aria-label="${ML.t('Voir')} ${st.name}">${icon('arrow-right', 'ico-sm')}</a></div>
+      </li>`)}</ul>`;
+  /** Fiches du produit chez des vendeurs en ligne. */
+  const offersHtml = (offers) => html`
+    <ul class="offers">${offers.map((o) => html`
+      <li>
+        <div class="grow"><b>${o.seller}</b><small class="muted">${o.status || ML.t('Disponibilité à confirmer')}${checkedText(o.checked) ? ' · ' + ML.t('vu le') + ' ' + checkedText(o.checked) : ''}</small></div>
+        ${safeUrl(o.url) ? html`<a class="btn btn-line btn-sm" href="${safeUrl(o.url)}" target="_blank" rel="noopener noreferrer nofollow">${icon('external-link', 'ico-sm')}${ML.t('Voir chez le vendeur')}</a>` : ''}
+      </li>`)}</ul>`;
+
   const services = (s) => html`
     ${s.pickup ? html`<span class="svc">${icon('shopping-bag')}${ML.t('Retrait')}</span>` : ''}
     ${s.reserve ? html`<span class="svc">${icon('bookmark-check')}${ML.t('Réservation')}</span>` : ''}
@@ -134,10 +164,10 @@
         <span class="pcard-brand">${p.brand.name}${p.demo ? html` <span class="badge">${ML.t('Démo')}</span>` : ''}</span>
         <h3>${p.name}</h3>
         <div class="pcard-row">
-          <b class="price">${p.price_max > p.price ? ML.t('dès ') : ''}${fmt.price(p.price)}</b>
+          <b class="price ${p.price > 0 ? '' : 'is-none'}">${priceText(p)}</b>
           ${p.colors.length ? html`<span class="swatches">${p.colors.slice(0, 5).map((c) => html`<i class="swatch" style="--c:${color(c.hex)}" title="${c.name}"></i>`)}${p.colors.length > 5 ? html`<small>+${p.colors.length - 5}</small>` : ''}</span>` : ''}
         </div>
-        <span class="pcard-stock ${p.stores ? '' : 'is-out'}">${icon(p.stores ? 'store' : 'circle-slash')}${p.stores ? ML.t('Dans ') + fmt.plural(p.stores, 'point de vente', 'points de vente') : ML.t('Indisponible pour le moment')}</span>
+        <span class="pcard-stock ${p.stores ? '' : p.listing ? 'is-maybe' : 'is-out'}">${icon(p.stores ? 'store' : p.listing ? 'info' : 'circle-slash')}${p.stores ? ML.t('Dans ') + fmt.plural(p.stores, 'point de vente', 'points de vente') : p.listing ? ML.t('Disponibilité à confirmer') : ML.t('Indisponible pour le moment')}</span>
       </div>
     </a>`;
 
@@ -312,17 +342,19 @@
         <a class="back" href="#/carte">${icon('arrow-left')}${ML.t('Carte des points de vente')}</a>
         <div class="store-top">
           <div class="store-main card card-pad">
-            <div class="scard-tags">${typeBadge(s)}${openBadge(s)}${demoBadge(s.company.demo)}</div>
+            <div class="scard-tags">${typeBadge(s)}${openBadge(s)}${demoBadge(s.company.demo)}${publicBadge(s.listing)}</div>
             <h1>${s.name}</h1>
             <p class="muted">${s.company.name}</p>
+            ${s.listing ? publicNote(s, ML.t('Coordonnées publiées par l\'enseigne ou un annuaire ; magasin non géré sur Maillage. Assortiment et stock non vérifiés : appelez avant de vous déplacer.') + (s.precision === 'commune' ? ' ' + ML.t('Position sur la carte approximative (centre de la commune).') : '')) : ''}
             <ul class="facts">
               <li>${icon('map-pin')}<span>${s.address}${ML.storeZone(s) ? html`<br><span class="muted">${s.city}${ML.storeZone(s) !== s.city ? ' · ' + ML.storeZone(s) : ''}</span>` : ''}${km != null ? html`<br><b>${ML.t('à')} ${fmt.km(km)}</b>` : ''}</span></li>
               ${s.phone ? html`<li>${icon('phone')}<a class="link" href="tel:${s.phone}" data-track="call" data-id="${s.id}">${s.phone}</a></li>` : ''}
               ${ML.hoursText(s.hours) ? html`<li>${icon('clock')}<span>${ML.hoursText(s.hours)}</span></li>` : ''}
-              <li>${icon('check')}<span class="svcs">${services(s)}</span></li>
+              ${s.pickup || s.reserve || s.delivery ? html`<li>${icon('check')}<span class="svcs">${services(s)}</span></li>` : ''}
+              ${s.listing && safeUrl(s.company.website) ? html`<li>${icon('external-link')}<a class="link" href="${safeUrl(s.company.website)}" target="_blank" rel="noopener noreferrer nofollow">${s.company.website.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}</a></li>` : ''}
             </ul>
             <div class="row row-wrap">${contactButtons(s)}</div>
-            ${s.brands.length ? html`<div class="store-brands"><span class="label">${ML.t('Marques sur place')}</span><div class="chips wrap">${s.brands.map((b) => (S.brandById[b] ? html`<a class="chip" href="#/marque/${S.brandById[b].slug}"><span class="dot" style="--c:${color(S.brandById[b].color)}"></span>${S.brandById[b].name}</a>` : ''))}</div></div>` : ''}
+            ${s.brands.length ? html`<div class="store-brands"><span class="label">${s.listing ? ML.t('Marques vendues (selon la source)') : ML.t('Marques sur place')}</span><div class="chips wrap">${s.brands.map((b) => (S.brandById[b] ? html`<a class="chip" href="#/marque/${S.brandById[b].slug}"><span class="dot" style="--c:${color(S.brandById[b].color)}"></span>${S.brandById[b].name}</a>` : ''))}</div></div>` : ''}
           </div>
           <div class="store-map card"><div id="map"></div></div>
         </div>
@@ -340,7 +372,7 @@
     S.cleanup = () => map.remove();
     const load = async (q) => {
       const res = await api('products', { params: { store: id, q, instock: 1 } });
-      $('[data-grid]').innerHTML = res.items.length ? html`<div class="pgrid">${res.items.map(productCard)}</div>` : html`<div class="empty">${icon('package-search')}<h3>${q ? ML.t('Aucun produit ne correspond') : ML.t('Pas encore de produit en stock ici')}</h3><p>${q ? ML.t('Essayez un autre mot.') : ML.t('Appelez le point de vente pour connaître son assortiment.')}</p></div>`;
+      $('[data-grid]').innerHTML = res.items.length ? html`<div class="pgrid">${res.items.map(productCard)}</div>` : html`<div class="empty">${icon('package-search')}<h3>${q ? ML.t('Aucun produit ne correspond') : s.listing ? ML.t('Stock non communiqué') : ML.t('Pas encore de produit en stock ici')}</h3><p>${q ? ML.t('Essayez un autre mot.') : ML.t('Appelez le point de vente pour connaître son assortiment.')}</p></div>`;
     };
     ML.forms.storeq = (f) => load(f.q.value.trim());
     await load('');
@@ -466,6 +498,7 @@
     const colors = p.colors;
     const sel = { size: sizes.length === 1 ? sizes[0] : '', color: colors.length === 1 ? colors[0].name : '' };
     let found = [];
+    let maybe = [];
     let map = null;
     let layer = null;
     let seq = 0;
@@ -476,6 +509,7 @@
       const vs = p.variants.filter((v) => (!sel.size || v.size === sel.size) && (!sel.color || v.color === sel.color));
       const list = (vs.length ? vs : p.variants).map((v) => v.price);
       const lo = Math.min(...list); const hi = Math.max(...list);
+      if (!(lo > 0)) return ML.t('Prix non communiqué');
       return (hi > lo ? ML.t('dès ') : '') + fmt.price(lo);
     };
 
@@ -488,16 +522,23 @@
             ${p.images.length > 1 ? html`<div class="p-thumbs">${p.images.map((im, i) => html`<button type="button" class="${i === 0 ? 'is-on' : ''}" data-act="shot" data-i="${i}" aria-label="Photo ${i + 1}"><img src="${ML.media(im, 480)}" alt="" loading="lazy"></button>`)}</div>` : ''}
           </div>
           <div class="p-info">
-            <a class="p-brand" href="#/marque/${p.brand.slug}">${ML.mono(p.brand.name, p.brand.color, p.brand.logo, 'mono-sm')}<span>${p.brand.name}</span>${demoBadge(p.demo)}</a>
+            <a class="p-brand" href="#/marque/${p.brand.slug}">${ML.mono(p.brand.name, p.brand.color, p.brand.logo, 'mono-sm')}<span>${p.brand.name}</span>${demoBadge(p.demo)}${publicBadge(p.listing)}</a>
             <h1>${p.name}</h1>
             <p class="p-price" data-price></p>
             ${colors.length ? html`<div class="opt"><span class="label">${ML.t('Couleur')} <b data-color-name></b></span><div class="opt-row" data-colors></div></div>` : ''}
             ${sizes.length ? html`<div class="opt"><span class="label">${ML.t('Taille')}</span><div class="opt-row" data-sizes></div></div>` : ''}
+            ${p.listing ? html`
+            ${publicNote(p, ML.t('Référence relevée dans le catalogue d\'un vendeur. Prix, stock et variantes à confirmer auprès du vendeur.'))}
+            <div class="p-ctas">
+              ${p.offers.length && safeUrl(p.offers[0].url) ? html`<a class="btn btn-primary btn-lg" href="${safeUrl(p.offers[0].url)}" target="_blank" rel="noopener noreferrer nofollow">${icon('external-link')}${ML.t('Voir chez')} ${p.offers[0].seller}</a>` : ''}
+              <a class="btn btn-line btn-lg" href="#ou">${icon('map-pin')}${ML.t('Voir où le trouver')}</a>
+            </div>
+            ${safeUrl(p.official) ? html`<p class="p-cod-note">${icon('external-link', 'ico-sm')}<a class="link" href="${safeUrl(p.official)}" target="_blank" rel="noopener noreferrer nofollow">${ML.t('Fiche du fabricant')}</a></p>` : ''}` : html`
             <div class="p-ctas">
               <button class="btn btn-primary btn-lg" type="button" data-act="cod">${icon('truck')}${ML.t('Commander · livraison à domicile')}</button>
               <a class="btn btn-line btn-lg" href="#ou">${icon('map-pin')}${ML.t('Voir où le trouver')}</a>
             </div>
-            <p class="p-cod-note">${icon('shield-check', 'ico-sm')}${ML.t('Paiement à la livraison · le point de vente le plus proche de chez vous vous livre')}</p>
+            <p class="p-cod-note">${icon('shield-check', 'ico-sm')}${ML.t('Paiement à la livraison · le point de vente le plus proche de chez vous vous livre')}</p>`}
             ${p.about ? html`<p class="p-about">${p.about}</p>` : ''}
             ${p.specs.length ? html`<dl class="specs">${p.specs.map((s) => html`<div><dt>${s.k}</dt><dd>${s.v}</dd></div>`)}</dl>` : ''}
           </div>
@@ -511,7 +552,9 @@
             <ul class="av-list" data-avail></ul>
             <div class="av-map card"><div id="map"></div></div>
           </div>
+          <div data-maybe></div>
         </section>
+        ${p.offers.length ? html`<section class="section"><div class="section-head"><div><h2>${ML.t('Vu en ligne')}</h2><p class="muted">${ML.t('Fiches de ce produit chez des vendeurs en ligne. La disponibilité est à confirmer auprès d\'eux.')}</p></div></div>${offersHtml(p.offers)}</section>` : ''}
       </div>`;
     paintLoc();
 
@@ -547,6 +590,10 @@
       $('[data-avail-sub]').textContent = found.length
         ? fmt.plural(found.length, 'point de vente', 'points de vente') + (what ? ' ' + ML.t('pour :') + ' ' + what : '') + (ML.loc ? ' · ' + ML.t('du plus proche au plus loin') : '')
         : '';
+      const maybeBox = $('[data-maybe]');
+      if (maybeBox) {
+        maybeBox.innerHTML = maybe.length ? html`<div class="maybe-head"><h3>${found.length ? ML.t('Autres magasins qui vendent la marque') : ML.t('Magasins qui vendent la marque')}</h3><p class="muted">${ML.t('Selon des sources publiques. Ils n\'indiquent pas leur stock sur Maillage : appelez avant de vous déplacer.')}</p></div>${brandStoresHtml(maybe)}` : '';
+      }
       $('[data-avail]').innerHTML = found.length ? html`${found.map((st) => html`
         <li class="av-item" data-store="${st.id}">
           <div class="av-main">
@@ -560,8 +607,8 @@
             <a class="btn btn-ghost btn-sm" href="#/pdv/${st.id}" aria-label="${ML.t('Voir')} ${st.name}">${icon('arrow-right', 'ico-sm')}</a>
           </div>
         </li>`)}` : html`
-        <li class="empty">${icon('map-pin-off')}<h3>${ML.t('Indisponible')}${what ? ML.t(' dans cette déclinaison') : ML.t(' pour le moment')}</h3>
-          <p>${what ? ML.t("Aucun point de vente n\'a cette taille ou cette couleur en stock. Essayez une autre déclinaison.") : ML.t("Aucun point de vente n\'a ce produit en stock aujourd\'hui.")}</p>
+        <li class="empty">${icon('map-pin-off')}<h3>${p.listing && !what ? ML.t('Stock non communiqué') : html`${ML.t('Indisponible')}${what ? ML.t(' dans cette déclinaison') : ML.t(' pour le moment')}`}</h3>
+          <p>${what ? ML.t("Aucun point de vente n\'a cette taille ou cette couleur en stock. Essayez une autre déclinaison.") : p.listing ? ML.t('Aucun point de vente n\'indique ce produit en stock sur Maillage.') + (maybe.length ? ' ' + ML.t('Voir ci-dessous les magasins qui vendent la marque.') : '') : ML.t("Aucun point de vente n\'a ce produit en stock aujourd\'hui.")}</p>
           ${what ? html`<button class="btn btn-line btn-sm" data-act="pclear">${ML.t('Voir toutes les déclinaisons')}</button>` : ''}</li>`;
       if (!map) return;
       layer.clearLayers();
@@ -571,6 +618,12 @@
         m.bindPopup(html`<b>${st.name}</b><br><span class="muted">${st.address || st.city}</span>${st.km != null ? html`<br>${ML.t('à')} ${fmt.km(st.km)}` : ''}`.toString());
         layer.addLayer(m);
         pts.push([st.lat, st.lng]);
+      });
+      maybe.forEach((st) => {
+        const m = L.marker([st.lat, st.lng], { icon: ML.pin('#98a2b3'), title: st.name });
+        m.bindPopup(html`<b>${st.name}</b><br><span class="muted">${st.address || st.city}</span><br>${ML.t('Stock à confirmer par téléphone')}`.toString());
+        layer.addLayer(m);
+        if (!found.length) pts.push([st.lat, st.lng]);
       });
       if (ML.loc) { L.marker([ML.loc.lat, ML.loc.lng], { icon: ML.mePin(), interactive: false }).addTo(layer); }
       if (pts.length) {
@@ -585,6 +638,7 @@
       const res = await api('availability', { params: { product: p.id, size: sel.size, color: sel.color, lat: ML.loc ? ML.loc.lat : '', lng: ML.loc ? ML.loc.lng : '', zone: ML.loc ? ML.loc.zone : '', log: once(sig) ? 1 : '' } });
       if (my !== seq) return;
       found = res.stores;
+      maybe = res.brand_stores || [];
       paintAvail();
     };
 
@@ -602,10 +656,12 @@
 
     map = ML.makeMap($('#map'), { wheel: false });
     layer = L.layerGroup().addTo(map);
-    S.cleanup = () => { document.removeEventListener('mlg:loc', onLoc); map.remove(); };
+    // Page quittée avant la fin du chargement : plus rien ne doit toucher la carte retirée.
+    let gone = false;
+    S.cleanup = () => { gone = true; seq++; document.removeEventListener('mlg:loc', onLoc); map.remove(); };
     paintOptions();
     await loadAvail();
-    setTimeout(() => map.invalidateSize(), 60);
+    setTimeout(() => { if (!gone) map.invalidateSize(); }, 60);
   }
 
   /* ============================================ COMMANDE / RÉSERVATION */
@@ -759,9 +815,10 @@
         <div class="brand-hero" style="--c:${color(b.color, '#101828')}">
           ${ML.mono(b.name, b.color, b.logo, 'mono-lg brand-mono')}
           <div class="grow">
-            <h1>${b.name}${demoBadge(b.company.demo)}</h1>
+            <h1>${b.name}${demoBadge(b.company.demo)}${publicBadge(b.listing)}</h1>
             ${b.tagline ? html`<p class="brand-tag">${b.tagline}</p>` : ''}
-            ${b.about ? html`<p class="brand-about">${b.about}</p>` : ''}
+            ${b.listing ? html`<p class="brand-about">${ML.t('Fiche créée à partir de sources publiques ; elle n\'est pas gérée par la marque. Prix et stock à confirmer auprès des vendeurs.')}</p>` : b.about ? html`<p class="brand-about">${b.about}</p>` : ''}
+            ${safeUrl(b.website) ? html`<p><a class="btn btn-white btn-sm" href="${safeUrl(b.website)}" target="_blank" rel="noopener noreferrer nofollow">${icon('external-link', 'ico-sm')}${ML.t('Site officiel')}</a></p>` : ''}
           </div>
           <div class="brand-side">
             <div class="brand-stats"><span><b>${fmt.num(b.products)}</b>${ML.t('produits')}</span><span><b>${fmt.num(b.stores)}</b>${ML.t('points de vente')}</span></div>

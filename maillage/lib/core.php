@@ -120,7 +120,7 @@ function tx_rollback(): void
 /** Schéma compatible avec les vieilles versions de SQLite des hébergeurs mutualisés. */
 function migrate(PDO $pdo): void
 {
-    if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= 3) return;
+    if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= 4) return;
     // Deux premières visites simultanées : la seconde attend la fin de la création, puis ne fait rien.
     $pdo->exec('BEGIN IMMEDIATE');
     try {
@@ -439,6 +439,57 @@ function migrate(PDO $pdo): void
         CREATE INDEX IF NOT EXISTS research_replies_c ON research_replies(company_id);
         SQL);
             $pdo->exec('PRAGMA user_version = 3');
+        }
+        if ($v < 4) {
+            // Fiches publiques : entreprises, magasins et produits relevés dans des sources publiques
+            // (lib/import.php), affichés comme tels tant que l'entreprise ne gère pas son espace.
+            $has = function (string $table, string $col) use ($pdo): bool {
+                foreach ($pdo->query("PRAGMA table_info($table)") as $c) {
+                    if ($c['name'] === $col) return true;
+                }
+                return false;
+            };
+            $add = [
+                ['companies', 'listing', 'INTEGER NOT NULL DEFAULT 0'], // 1 = fiche publique, non gérée par l'entreprise
+                ['companies', 'ext', "TEXT NOT NULL DEFAULT ''"],       // identifiant dans la source importée
+                ['companies', 'src', "TEXT NOT NULL DEFAULT ''"],       // page source
+                ['companies', 'checked', "TEXT NOT NULL DEFAULT ''"],   // date de vérification (AAAA-MM-JJ)
+                ['brands', 'ext', "TEXT NOT NULL DEFAULT ''"],
+                ['brands', 'website', "TEXT NOT NULL DEFAULT ''"],
+                ['stores', 'ext', "TEXT NOT NULL DEFAULT ''"],
+                ['stores', 'src', "TEXT NOT NULL DEFAULT ''"],
+                ['stores', 'checked', "TEXT NOT NULL DEFAULT ''"],
+                ['stores', 'precision', "TEXT NOT NULL DEFAULT ''"],    // '' (placé par l'entreprise), lieu, rue, commune (approximatif)
+                ['products', 'ext', "TEXT NOT NULL DEFAULT ''"],
+                ['products', 'src', "TEXT NOT NULL DEFAULT ''"],
+                ['products', 'official', "TEXT NOT NULL DEFAULT ''"],   // fiche du fabricant
+                ['products', 'checked', "TEXT NOT NULL DEFAULT ''"],
+            ];
+            foreach ($add as [$table, $col, $def]) {
+                if (!$has($table, $col)) $pdo->exec("ALTER TABLE $table ADD COLUMN $col $def");
+            }
+            $pdo->exec(<<<SQL
+        -- Produit vu en ligne chez un vendeur (lien vers sa fiche) : la disponibilité reste à confirmer.
+        CREATE TABLE IF NOT EXISTS offers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+            company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+            url TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT '',
+            checked TEXT NOT NULL DEFAULT '',
+            ext TEXT NOT NULL DEFAULT ''
+        );
+        CREATE INDEX IF NOT EXISTS offers_p ON offers(product_id);
+        -- Marque vendue dans un point de vente, selon une source (assortiment et stock non vérifiés).
+        CREATE TABLE IF NOT EXISTS store_brands (
+            store_id INTEGER NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
+            brand_id INTEGER NOT NULL REFERENCES brands(id) ON DELETE CASCADE,
+            PRIMARY KEY (store_id, brand_id)
+        );
+        CREATE INDEX IF NOT EXISTS companies_ext ON companies(ext);
+        CREATE INDEX IF NOT EXISTS products_ext ON products(ext);
+        SQL);
+            $pdo->exec('PRAGMA user_version = 4');
         }
         $pdo->exec('COMMIT');
     } catch (Throwable $e) {

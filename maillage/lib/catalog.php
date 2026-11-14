@@ -40,8 +40,12 @@ function store_view(array $s, array $brandIds = []): array
         'hours' => hours_clean(jdec($s['hours'])),
         'pickup' => (bool) $s['pickup'], 'delivery' => (bool) $s['delivery'], 'reserve' => (bool) $s['reserve'],
         'status' => (string) $s['status'],
-        'company' => ['id' => (int) $s['company_id'], 'name' => (string) ($s['c_name'] ?? ''), 'kind' => (string) ($s['c_kind'] ?? ''), 'demo' => (bool) ($s['c_demo'] ?? 0)],
+        'company' => ['id' => (int) $s['company_id'], 'name' => (string) ($s['c_name'] ?? ''), 'kind' => (string) ($s['c_kind'] ?? ''), 'demo' => (bool) ($s['c_demo'] ?? 0),
+            'listing' => (bool) ($s['c_listing'] ?? 0), 'website' => (string) ($s['c_website'] ?? '')],
         'brands' => array_values(array_map('intval', $brandIds)),
+        // Fiche publique : source, date de vérification, précision de la position (commune = approximative).
+        'listing' => (bool) ($s['c_listing'] ?? 0), 'src' => (string) ($s['src'] ?? ''), 'checked' => (string) ($s['checked'] ?? ''),
+        'precision' => (string) ($s['precision'] ?? ''),
     ];
 }
 
@@ -54,7 +58,9 @@ function store_brand_map(): array
             JOIN products p ON p.id = v.product_id AND p.status = 'active'
             JOIN companies pc ON pc.id = p.company_id AND pc.status = 'active'
             UNION
-            SELECT s.id AS sid, b.id AS bid FROM stores s JOIN brands b ON b.company_id = s.company_id";
+            SELECT s.id AS sid, b.id AS bid FROM stores s JOIN brands b ON b.company_id = s.company_id
+            UNION
+            SELECT store_id AS sid, brand_id AS bid FROM store_brands";
     foreach (db()->query($sql) as $r) $map[(int) $r['sid']][] = (int) $r['bid'];
     return $map;
 }
@@ -63,7 +69,7 @@ function public_stores(): array
 {
     $map = store_brand_map();
     $out = [];
-    $q = db()->query("SELECT s.*, c.name AS c_name, c.kind AS c_kind, c.demo AS c_demo
+    $q = db()->query("SELECT s.*, c.name AS c_name, c.kind AS c_kind, c.demo AS c_demo, c.listing AS c_listing, c.website AS c_website
         FROM stores s JOIN companies c ON c.id = s.company_id
         WHERE s.status = 'active' AND c.status = 'active' ORDER BY s.name");
     foreach ($q as $s) $out[] = store_view($s, $map[(int) $s['id']] ?? []);
@@ -72,7 +78,7 @@ function public_stores(): array
 
 function public_store(int $id): ?array
 {
-    $s = db()->prepare("SELECT s.*, c.name AS c_name, c.kind AS c_kind, c.demo AS c_demo
+    $s = db()->prepare("SELECT s.*, c.name AS c_name, c.kind AS c_kind, c.demo AS c_demo, c.listing AS c_listing, c.website AS c_website
         FROM stores s JOIN companies c ON c.id = s.company_id
         WHERE s.id = ? AND s.status = 'active' AND c.status = 'active'");
     $s->execute([$id]);
@@ -89,6 +95,7 @@ function brand_view(array $b, int $nStores = 0): array
         'about' => (string) $b['about'], 'logo' => (string) $b['logo'], 'color' => (string) $b['color'], 'category' => (string) $b['category'],
         'company' => ['id' => (int) $b['company_id'], 'name' => (string) ($b['c_name'] ?? ''), 'demo' => (bool) ($b['c_demo'] ?? 0)],
         'products' => (int) ($b['n_products'] ?? 0), 'stores' => $nStores,
+        'website' => (string) ($b['website'] ?? ''), 'listing' => (bool) ($b['c_listing'] ?? 0),
     ];
 }
 
@@ -102,7 +109,7 @@ function public_brands(): array
         foreach ($bids as $bid) $count[$bid] = ($count[$bid] ?? 0) + 1;
     }
     $out = [];
-    $q = db()->query("SELECT b.*, c.name AS c_name, c.demo AS c_demo,
+    $q = db()->query("SELECT b.*, c.name AS c_name, c.demo AS c_demo, c.listing AS c_listing,
             (SELECT COUNT(*) FROM products p WHERE p.brand_id = b.id AND p.status = 'active') AS n_products
         FROM brands b JOIN companies c ON c.id = b.company_id WHERE c.status = 'active' ORDER BY b.name COLLATE NOCASE");
     foreach ($q as $b) $out[] = brand_view($b, $count[(int) $b['id']] ?? 0);
@@ -171,6 +178,8 @@ function product_card(array $p, array $variants, int $nStores): array
         'price' => min($prices), 'price_max' => max($prices), 'image' => (string) ($imgs[0] ?? ''),
         'colors' => array_values($colors), 'sizes' => array_values($sizes), 'stores' => $nStores,
         'demo' => (bool) ($p['c_demo'] ?? 0),
+        // Fiche publique : prix et stock non communiqués (price = 0).
+        'listing' => (bool) ($p['c_listing'] ?? 0),
     ];
 }
 
@@ -194,7 +203,7 @@ function catalog_search(array $f): array
         $where .= " AND p.search LIKE ? ESCAPE '\\'";
         $args[] = '%' . like_escape($t) . '%';
     }
-    $s = $pdo->prepare("SELECT p.*, b.name AS b_name, b.slug AS b_slug, b.color AS b_color, c.demo AS c_demo
+    $s = $pdo->prepare("SELECT p.*, b.name AS b_name, b.slug AS b_slug, b.color AS b_color, c.demo AS c_demo, c.listing AS c_listing
         FROM products p JOIN brands b ON b.id = p.brand_id JOIN companies c ON c.id = p.company_id WHERE $where");
     $s->execute($args);
     $rows = $s->fetchAll();
@@ -309,7 +318,7 @@ function catalog_search(array $f): array
 function public_product(string $slug): ?array
 {
     $s = db()->prepare("SELECT p.*, b.name AS b_name, b.slug AS b_slug, b.color AS b_color, b.logo AS b_logo,
-            c.demo AS c_demo, c.name AS c_name
+            c.demo AS c_demo, c.listing AS c_listing, c.name AS c_name
         FROM products p JOIN brands b ON b.id = p.brand_id JOIN companies c ON c.id = p.company_id
         WHERE p.slug = ? AND p.status = 'active' AND c.status = 'active'");
     $s->execute([$slug]);
@@ -325,7 +334,53 @@ function public_product(string $slug): ?array
     $card['brand']['logo'] = (string) $p['b_logo'];
     $card['company'] = ['id' => (int) $p['company_id'], 'name' => (string) $p['c_name']];
     $card['landing'] = landing_clean(jdec($p['landing'] ?? '{}'));
+    $card['src'] = (string) ($p['src'] ?? '');
+    $card['official'] = (string) ($p['official'] ?? '');
+    $card['checked'] = (string) ($p['checked'] ?? '');
+    $card['offers'] = product_offers((int) $p['id']);
     return $card;
+}
+
+/** Fiches du produit chez des vendeurs en ligne (disponibilité à confirmer auprès du vendeur). */
+function product_offers(int $productId): array
+{
+    $s = db()->prepare("SELECT o.*, c.name AS c_name, c.website AS c_website, c.phone AS c_phone FROM offers o
+        JOIN companies c ON c.id = o.company_id WHERE o.product_id = ? AND c.status = 'active' ORDER BY c.name");
+    $s->execute([$productId]);
+    $out = [];
+    foreach ($s as $o) {
+        $out[] = ['seller' => (string) $o['c_name'], 'url' => (string) $o['url'], 'status' => (string) $o['status'], 'checked' => (string) $o['checked'],
+            'phone' => (string) $o['c_phone']];
+    }
+    return $out;
+}
+
+/**
+ * Points de vente à fiche publique qui vendent la marque du produit (marque de l'entreprise ou
+ * marque indiquée par la source), sans stock connu : à appeler avant de se déplacer. Les points
+ * de vente qui gèrent leur stock sur Maillage n'y figurent pas (leur stock fait foi).
+ */
+function brand_stores(int $productId, array $except, ?float $lat, ?float $lng): array
+{
+    $s = db()->prepare("SELECT DISTINCT s.*, c.name AS c_name, c.kind AS c_kind, c.demo AS c_demo, c.listing AS c_listing, c.website AS c_website
+        FROM products p JOIN brands b ON b.id = p.brand_id
+        JOIN stores s ON (s.company_id = b.company_id OR s.id IN (SELECT store_id FROM store_brands WHERE brand_id = b.id))
+        JOIN companies c ON c.id = s.company_id
+        WHERE p.id = ? AND s.status = 'active' AND c.status = 'active' AND c.listing = 1");
+    $s->execute([$productId]);
+    $out = [];
+    foreach ($s as $st) {
+        if (in_array((int) $st['id'], $except, true)) continue;
+        $v = store_view($st);
+        unset($v['brands']);
+        $v['km'] = ($lat !== null && $lng !== null) ? round(haversine($lat, $lng, (float) $st['lat'], (float) $st['lng']), 1) : null;
+        $out[] = $v;
+    }
+    usort($out, function ($a, $b) {
+        if ($a['km'] !== null && $b['km'] !== null) return $a['km'] <=> $b['km'];
+        return strcmp($a['city'] . $a['name'], $b['city'] . $b['name']);
+    });
+    return array_slice($out, 0, 12);
 }
 
 /**
@@ -353,7 +408,7 @@ function availability(int $productId, string $size, string $color, ?float $lat, 
     if (!$byStore) return [];
     $in = implode(',', array_keys($byStore));
     $out = [];
-    $q = db()->query("SELECT s.*, c.name AS c_name, c.kind AS c_kind, c.demo AS c_demo
+    $q = db()->query("SELECT s.*, c.name AS c_name, c.kind AS c_kind, c.demo AS c_demo, c.listing AS c_listing
         FROM stores s JOIN companies c ON c.id = s.company_id
         WHERE s.id IN ($in) AND s.status = 'active' AND c.status = 'active'");
     foreach ($q as $st) {

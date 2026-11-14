@@ -283,3 +283,18 @@ body.facets-open .facets { display: block; position: fixed; inset: 0; z-index: 1
 .mine li:last-child a { border-bottom: 0; }
 .mine a > span:first-child { flex: 1; display: grid; }
 .mine small { font-size: 13px; }
+
+/* ------------------------------------------- fiches publiques (base importée) */
+.notice.is-public { background: #f2f4f7; color: var(--ink-2); }
+.notice.is-public .ico { color: var(--ink-3); flex: none; }
+.notice.is-public .link { font-weight: 600; }
+.stock.is-maybe { color: var(--ink-2); }
+.pcard-stock.is-maybe { color: var(--ink-2); }
+.price.is-none { font-size: 14px; font-weight: 600; color: var(--ink-2); }
+.maybe-head { margin: 18px 0 10px; }
+.maybe-head h3 { font-size: 17px; }
+.av-maybe .av-item { background: #fcfcfd; }
+.offers { display: grid; gap: 8px; }
+.offers li { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.offers li .grow { display: grid; gap: 2px; min-width: 180px; }
+.offers small { font-size: 13px; }

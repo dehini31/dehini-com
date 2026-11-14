@@ -204,6 +204,7 @@ function company_view(array $c): array
         'phone' => (string) ($c['phone'] ?? ''), 'email' => (string) ($c['email'] ?? ''), 'website' => (string) ($c['website'] ?? ''),
         'wilaya' => (string) ($c['wilaya'] ?? ''), 'city' => (string) ($c['city'] ?? ''), 'sector' => (string) ($c['sector'] ?? ''),
         'status' => (string) ($c['status'] ?? ''), 'demo' => (bool) ($c['demo'] ?? 0), 'created' => (int) ($c['created'] ?? 0),
+        'listing' => (bool) ($c['listing'] ?? 0),
     ];
 }
 

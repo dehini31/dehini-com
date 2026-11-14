@@ -258,7 +258,7 @@ function visual_search($im, array $q, ?float $lat, ?float $lng): array
         $where = [];
         $args = [];
         foreach ($all as $t) { $where[] = "p.search LIKE ? ESCAPE '\\'"; $args[] = '%' . like_escape($t) . '%'; }
-        $s = $pdo->prepare("SELECT p.*, b.name AS b_name, b.slug AS b_slug, b.color AS b_color, c.demo AS c_demo
+        $s = $pdo->prepare("SELECT p.*, b.name AS b_name, b.slug AS b_slug, b.color AS b_color, c.demo AS c_demo, c.listing AS c_listing
             FROM products p JOIN brands b ON b.id = p.brand_id JOIN companies c ON c.id = p.company_id
             WHERE p.status = 'active' AND c.status = 'active' AND (" . implode(' OR ', $where) . ') LIMIT 400');
         $s->execute($args);
@@ -272,7 +272,7 @@ function visual_search($im, array $q, ?float $lat, ?float $lng): array
     }
     if ($need) {
         $in = implode(',', array_slice($need, 0, 200));
-        foreach ($pdo->query("SELECT p.*, b.name AS b_name, b.slug AS b_slug, b.color AS b_color, c.demo AS c_demo
+        foreach ($pdo->query("SELECT p.*, b.name AS b_name, b.slug AS b_slug, b.color AS b_color, c.demo AS c_demo, c.listing AS c_listing
             FROM products p JOIN brands b ON b.id = p.brand_id JOIN companies c ON c.id = p.company_id WHERE p.id IN ($in)") as $p) $rows[(int) $p['id']] = $p;
     }
 
@@ -333,7 +333,7 @@ function visual_search($im, array $q, ?float $lat, ?float $lng): array
     // Produit trouvé : les alternatives sont complétées par le même rayon (la marque d'abord).
     if ($exact && count($similar) < 6) {
         $have = array_merge([(int) $exact['p']['id']], array_map(function ($v) { return (int) $v['id']; }, $similar));
-        $s = $pdo->prepare("SELECT p.*, b.name AS b_name, b.slug AS b_slug, b.color AS b_color, c.demo AS c_demo
+        $s = $pdo->prepare("SELECT p.*, b.name AS b_name, b.slug AS b_slug, b.color AS b_color, c.demo AS c_demo, c.listing AS c_listing
             FROM products p JOIN brands b ON b.id = p.brand_id JOIN companies c ON c.id = p.company_id
             WHERE p.status = 'active' AND c.status = 'active' AND p.category = ? AND c.demo = ? AND p.id NOT IN (" . implode(',', $have) . ')
             ORDER BY (p.brand_id = ?) DESC, p.updated DESC LIMIT ' . (6 - count($similar)));
@@ -359,6 +359,8 @@ function visual_search($im, array $q, ?float $lat, ?float $lng): array
                 'city' => (string) ($br['c_city'] ?? ''), 'wilaya' => (string) ($br['c_wilaya'] ?? '')];
             $full['near'] = array_slice($stores, 0, 4);
             $full['near_total'] = count($stores);
+            // Fiche publique sans stock connu : les magasins qui vendent la marque (stock à confirmer).
+            $full['near_brand'] = $stores ? [] : array_slice(brand_stores((int) $exact['p']['id'], [], $lat, $lng), 0, 4);
             $out['exact'] = $full;
         }
     }
