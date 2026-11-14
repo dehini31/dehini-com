@@ -522,7 +522,7 @@ try {
                 'prospects' => $count(fn ($r) => (int) $r['contact_id'] > 0), 'hot' => $count(fn ($r) => $r['heat'] === 'chaud'),
                 'with_contact' => $count(fn ($r) => $r['phone'] !== '' || $r['email'] !== ''), 'reply_median' => $med,
                 'by_category' => $by('category'), 'by_platform' => $by('platform'), 'by_heat' => $by('heat'), 'by_profile' => $by('profile'),
-            ], 'meta' => ['messages' => mk_meta_state()['messages'], 'connected' => mk_meta_fb_connected()]]);
+            ], 'meta' => ['messages' => mk_meta_state()['messages'], 'connected' => mk_meta_fb_connected() || mk_meta_state()['ig_token'] !== '', 'diag' => mk_meta_state()['msg_diag']]]);
             break;
         }
 

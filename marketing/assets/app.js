@@ -1274,6 +1274,25 @@ document.addEventListener("click", async e => {
 });
 
 /* ================================================================ vue : Messages (Messenger, Instagram) */
+/** Bilan de la dernière lecture des messages chez Meta : ce qui marche, ce qui bloque et quoi faire. */
+function msgDiag(dg) {
+  if (!dg || !dg.items || !dg.items.length) return "";
+  const bad = dg.items.filter(x => !x.ok), warn = dg.items.filter(x => x.ok && x.note);
+  const line = dg.items.map(x => `<b>${esc(x.label)}</b> ${x.ok ? (x.added || x.messages ? `${num(x.messages)} nouveau(x) message(s)` : "à jour") + (x.via ? ` <span class="muted">(via ${esc(x.via)})</span>` : "") : '<span class="crit">bloqué</span>'}`).join(" · ");
+  return (bad.length ? `<div class="banner warn">${ic("alert", "sm")}<span><b>Messages non synchronisés.</b> ${bad.map(x => esc(x.note)).join(" ")}</span></div>` : "")
+    + `<p class="small muted msg-diag">${ic(bad.length ? "alert" : "check", "xs")} Messages lus chez Meta ${esc(metaWhen(dg.at))} : ${line}${warn.length ? " — " + warn.map(x => esc(x.note)).join(" ") : ""}</p>`;
+}
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-msgsync]");
+  if (!b) return;
+  b.disabled = true;
+  try {
+    const r = await metaSyncLots({ only: ["messages"] }, n => { b.innerHTML = `<span class="spin dark"></span> Lecture des messages…${n > 1 ? " lot " + n : ""}`; });
+    toast(r.ok ? `Messages synchronisés : ${num(r.tot.added)} nouvelle(s) conversation(s), ${num(r.tot.updated)} mise(s) à jour` : "Les messages n'ont pas pu être lus : voir l'explication en haut de la page", r.ok ? "" : "err");
+  } catch (err) { toast(err.message, "err"); }
+  S.cache.clear();
+  route();
+});
 const HEAT = { chaud: ["Chaud", "crit"], tiede: ["Tiède", "warn"], froid: ["Froid", ""] };
 const PLAT = { messenger: ["Messenger", "message", "blue"], instagram: ["Instagram", "share", "pink"] };
 const CONV_FILTERS = [["all", "Toutes"], ["attente", "Sans réponse"], ["repondues", "Répondues"], ["chaud", "Chaudes"], ["coordonnees", "Avec coordonnées"], ["sans", "Sans prospect"], ["prospects", "Prospects créés"], ["traite", "Traitées"], ["ignore", "Ignorées"]];
@@ -1292,7 +1311,7 @@ VIEWS["leads/messages"] = { range: true, fn: async param => {
   S.convs = d.rows;
   const st = d.stats, f = CONV_FILTERS.some(x => x[0] === param) ? param : "all";
   if (!d.meta.connected) return empty("Les messages arrivent de Meta. Connectez votre Page Facebook (et son compte Instagram) dans Connexions : les conversations Messenger et Instagram s'afficheront ici, analysées.", `<a class="btn pri" href="#connexions/meta">${ic("link", "sm")} Relier Facebook et Instagram</a>`, { icon: ["message", "teal"] });
-  const bar = `<div class="toolbar">${histToggle()}${LIVE_PILL}<span class="grow"></span>${fullBtn("messages")}</div>`;
+  const bar = `<div class="toolbar">${histToggle()}${LIVE_PILL}<span class="grow"></span><button type="button" class="btn" data-msgsync>${ic("trend", "sm")} Synchroniser les messages</button>${fullBtn("messages")}</div>` + msgDiag(d.meta.diag);
   if (!d.rows.length) return bar + `${!d.meta.messages ? `<div class="banner warn">${ic("alert", "sm")}<span>L'import des messages est désactivé : activez-le dans <a href="#connexions/meta">Connexions</a> › étape 3.</span></div>` : ""}`
     + empty(all ? "Aucune conversation importée. Lancez « Importer tout l'historique » : il faut les autorisations pages_messaging et instagram_manage_messages dans votre configuration Facebook Login for Business." : "Aucune conversation sur la période. Choisissez « Tout l'historique » pour voir toutes les conversations importées, ou lancez une synchronisation dans Connexions.", `<a class="btn pri" href="#connexions/meta">${ic("trend", "sm")} Synchroniser</a>`, { icon: ["message", "teal"] });
   const t = (l, v, sub, m, cls = "") => `<div class="kpi ${cls}">${tile(m[0], m[1])}<small>${esc(l)}</small><b>${v}</b><span class="d">${sub}</span></div>`;

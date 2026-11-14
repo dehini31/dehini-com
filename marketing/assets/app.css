@@ -785,6 +785,8 @@ button.fl-el:hover{border-color:var(--primary);color:var(--primary-ink)}
 .banner.good{background:var(--good-bg);color:var(--good-ink)}
 .mhelp{margin-top:12px;border-top:1px solid var(--line-2);padding-top:10px}
 .mhelp summary{cursor:pointer;font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px;color:var(--ink-2)}
+.msg-diag{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:-6px 0 16px}
+.msg-diag .crit{color:var(--crit-ink);font-weight:700}
 .more-row{display:flex;justify-content:center;margin:14px 0 4px;text-align:center}
 .spin.dark{border-color:var(--line);border-top-color:var(--primary)}
 .cm-text{color:var(--ink);font-size:14px;line-height:1.5;white-space:pre-line;overflow-wrap:anywhere}
