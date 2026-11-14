@@ -1752,7 +1752,7 @@ function mk_meta_msg_hint(string $platform, MkMetaError $e): string
     $c = $e->metaCode();
     if (in_array($c, [4, 17, 32, 613, 80006], true)) return 'Meta limite les requêtes pour le moment : nouvel essai au prochain passage.';
     if ($platform === 'instagram') return "Vérifiez : 1) l'autorisation instagram_manage_messages (et pages_manage_metadata) dans la configuration Facebook Login for Business, puis « Reconnecter » ; 2) dans l'application Instagram : Paramètres › Messages et réponses aux stories › Outils connectés › « Autoriser l'accès aux messages ».";
-    return "Vérifiez que pages_messaging et pages_manage_metadata sont dans la configuration Facebook Login for Business, puis cliquez sur « Reconnecter » (Connexions, étape 2).";
+    return "Vérifiez : 1) le cas d'utilisation Messenger (« Interagir avec les clients sur Messenger ») est ajouté à l'app Meta, avec pages_messaging et pages_manage_metadata ; 2) ces autorisations sont cochées dans votre configuration Facebook Login for Business ; 3) Connexions › étape 2 : « Reconnecter ».";
 }
 
 /**
@@ -1767,7 +1767,8 @@ function mk_meta_msg_doctor(): array
     $add = function (string $label, ?bool $ok, string $detail, string $fix = '') use (&$checks): void {
         $checks[] = ['label' => $label, 'ok' => $ok, 'detail' => $detail, 'fix' => $fix];
     };
-    $reconnect = "Connexions › étape 2 : ajoutez l'autorisation à votre configuration Facebook Login for Business (developers.facebook.com › votre app › Facebook Login for Business › Configurations), puis cliquez sur « Reconnecter ».";
+    $reconnect = "1) developers.facebook.com › votre app › Cas d'utilisation : pages_messaging et pages_manage_metadata sont dans le cas d'utilisation Messenger (« Interagir avec les clients sur Messenger »), pas dans « API Instagram » : ajoutez-le s'il manque. "
+        . "2) Facebook Login for Business › Configurations › votre configuration : cochez ces autorisations. 3) Connexions › étape 2 : « Reconnecter » et acceptez tout.";
     $add('Import des messages activé', (bool) $st['messages'], $st['messages'] ? 'Oui.' : 'Non : les messages ne sont jamais lus.', $st['messages'] ? '' : 'Connexions › étape 3 : cochez « Importer et analyser les messages Messenger et Instagram », puis « Enregistrer ces choix ».');
     $add('Page Facebook choisie', $st['page_id'] !== '' && $st['page_token'] !== '', $st['page_id'] !== '' ? '« ' . $st['page_name'] . ' ».' : 'Aucune.', $st['page_id'] !== '' ? '' : 'Connexions › étape 3 : choisissez la Page, puis « Enregistrer ces choix ».');
     // Autorisations réellement accordées (Meta les donne pour le jeton de la Page).
