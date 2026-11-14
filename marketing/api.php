@@ -468,6 +468,11 @@ try {
             break;
         }
 
+        case 'meta_msg_doctor': {
+            ok(['doctor' => mk_meta_msg_doctor()]);
+            break;
+        }
+
         case 'meta_webhook': {
             if (!$isPost) fail('Méthode invalide.', 405);
             ok(['result' => mk_meta_webhook_setup(), 'meta' => mk_meta_public()]);

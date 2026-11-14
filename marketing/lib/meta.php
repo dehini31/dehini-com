@@ -1732,6 +1732,9 @@ const MK_META_CONV_FIELDS = [
     'id,updated_time,participants,messages{id,message,from,created_time}',
 ];
 
+/** Dossiers de Messenger lus : boîte de réception, « Terminé », « Autres », demandes de message. */
+const MK_META_MSG_FOLDERS = ['inbox', 'page_done', 'other', 'pending'];
+
 /** Accès possibles aux messages d'une plateforme : [nom, nœud, jeton, base]. */
 function mk_meta_msg_routes(string $platform): array
 {
@@ -1752,6 +1755,128 @@ function mk_meta_msg_hint(string $platform, MkMetaError $e): string
     return "Vérifiez que pages_messaging et pages_manage_metadata sont dans la configuration Facebook Login for Business, puis cliquez sur « Reconnecter » (Connexions, étape 2).";
 }
 
+/**
+ * Diagnostic des messages : pose à Meta, une par une, les questions dont dépend l'affichage des
+ * messages (connexion, autorisations, Page, lecture des conversations et d'un message, Instagram),
+ * compare avec ce que le tableau de bord a enregistré, et dit quoi faire. Aucun jeton n'est montré.
+ */
+function mk_meta_msg_doctor(): array
+{
+    $st = mk_meta_state(true);
+    $checks = [];
+    $add = function (string $label, ?bool $ok, string $detail, string $fix = '') use (&$checks): void {
+        $checks[] = ['label' => $label, 'ok' => $ok, 'detail' => $detail, 'fix' => $fix];
+    };
+    $reconnect = "Connexions › étape 2 : ajoutez l'autorisation à votre configuration Facebook Login for Business (developers.facebook.com › votre app › Facebook Login for Business › Configurations), puis cliquez sur « Reconnecter ».";
+    $add('Import des messages activé', (bool) $st['messages'], $st['messages'] ? 'Oui.' : 'Non : les messages ne sont jamais lus.', $st['messages'] ? '' : 'Connexions › étape 3 : cochez « Importer et analyser les messages Messenger et Instagram », puis « Enregistrer ces choix ».');
+    $add('Page Facebook choisie', $st['page_id'] !== '' && $st['page_token'] !== '', $st['page_id'] !== '' ? '« ' . $st['page_name'] . ' ».' : 'Aucune.', $st['page_id'] !== '' ? '' : 'Connexions › étape 3 : choisissez la Page, puis « Enregistrer ces choix ».');
+    // Autorisations réellement accordées (Meta les donne pour le jeton de la Page).
+    [$appId, $secret] = mk_meta_app();
+    $need = ['pages_messaging' => 'lire les messages Messenger', 'pages_manage_metadata' => 'accéder aux conversations de la Page', 'pages_read_engagement' => 'lire le contenu de la Page'];
+    if ($st['ig_id'] !== '' && $st['ig_via'] !== 'instagram') $need['instagram_manage_messages'] = 'lire les messages Instagram';
+    $tokForDebug = $st['page_token'] !== '' ? mk_unseal($st['page_token']) : mk_unseal($st['user_token']);
+    if ($appId !== '' && $secret !== '' && $tokForDebug !== '') {
+        try {
+            $dbg = mk_graph('debug_token', ['input_token' => $tokForDebug], $appId . '|' . $secret)['data'] ?? [];
+            $scopes = array_map('strval', (array) ($dbg['scopes'] ?? []));
+            if (empty($dbg['is_valid'])) {
+                $add('Connexion à Meta valide', false, 'Meta dit que la connexion n\'est plus valide (' . (string) ($dbg['error']['message'] ?? 'expirée ou retirée') . ').', 'Connexions › étape 2 : cliquez sur « Reconnecter ».');
+            } else {
+                $add('Connexion à Meta valide', true, 'Oui.');
+                $miss = array_diff(array_keys($need), $scopes);
+                $add('Autorisations pour les messages', !$miss, $miss ? 'Manquante(s) : ' . implode(', ', array_map(fn ($k) => "$k (pour {$need[$k]})", $miss)) . '.' : 'Toutes accordées (' . implode(', ', array_keys($need)) . ').', $miss ? $reconnect : '');
+            }
+        } catch (MkMetaError $e) {
+            $add('Autorisations pour les messages', null, 'Vérification impossible (« ' . rtrim($e->getMessage(), '.') . ' »).');
+        }
+    } else {
+        $add('Autorisations pour les messages', null, "Vérification impossible sans l'ID et la clé secrète de l'app (Connexions › étape 1).");
+    }
+    $now = time();
+    $newestMeta = [];
+    foreach (mk_meta_msg_routes('messenger') ? ['messenger'] : [] as $platform) {
+        // Messenger : chaque dossier.
+        [$via, $node, $tok, $base] = mk_meta_msg_routes('messenger')[0];
+        $tot = 0;
+        $latest = null;
+        $parts = [];
+        $err = null;
+        foreach (MK_META_MSG_FOLDERS as $folder) {
+            try {
+                $d = mk_graph("$node/conversations", ['platform' => 'messenger', 'folder' => $folder, 'fields' => 'id,updated_time', 'limit' => 25], $tok, $base);
+                $rows = $d['data'] ?? [];
+                $tot += count($rows);
+                $parts[] = ['inbox' => 'boîte de réception', 'page_done' => 'Terminé', 'other' => 'Autres', 'pending' => 'demandes'][$folder] . ' : ' . count($rows) . (count($rows) >= 25 ? '+' : '');
+                foreach ($rows as $r) if (!$latest || strcmp((string) $r['updated_time'], (string) $latest['updated_time']) > 0) $latest = $r;
+            } catch (MkMetaError $e) {
+                if ($folder === 'inbox') $err = $e;
+            }
+        }
+        if ($err) {
+            $add('Messenger : Meta donne les conversations', false, 'Non : Meta répond « ' . rtrim($err->getMessage(), '.') . ' ».', mk_meta_msg_hint('messenger', $err));
+        } else {
+            $add('Messenger : Meta donne les conversations', true, $tot . ' conversation(s) récente(s) (' . implode(', ', $parts) . ')' . ($latest ? ', la plus récente : ' . mk_meta_local((string) $latest['updated_time']) : '') . '.');
+            if ($latest) {
+                $newestMeta['messenger'] = $latest;
+                try {
+                    $m = mk_graph($latest['id'] . '/messages', ['fields' => 'message,from,created_time', 'limit' => 1], $tok, $base)['data'][0] ?? null;
+                    $add('Messenger : Meta donne le texte des messages', $m !== null, $m ? 'Dernier message : « ' . mb_substr(mk_meta_msg_text($m), 0, 60) . ' » (' . mk_meta_local((string) ($m['created_time'] ?? '')) . ').' : 'Conversation vide.');
+                } catch (MkMetaError $e) {
+                    $add('Messenger : Meta donne le texte des messages', false, 'Non : Meta répond « ' . rtrim($e->getMessage(), '.') . ' ».', mk_meta_msg_hint('messenger', $e));
+                }
+            }
+        }
+    }
+    if ($st['ig_id'] === '') {
+        $add('Instagram : compte relié', null, "Aucun compte Instagram relié : seuls les messages Messenger sont lus.");
+    } else {
+        $add('Instagram : compte relié', true, '@' . $st['ig_username'] . ($st['ig_via'] === 'instagram' ? ' (Se connecter avec Instagram)' : ' (relié à la Page)') . '.');
+        $ok = false;
+        $errs = [];
+        foreach (mk_meta_msg_routes('instagram') as [$via, $node, $tok, $base]) {
+            try {
+                $d = mk_graph("$node/conversations", ['platform' => 'instagram', 'fields' => 'id,updated_time', 'limit' => 25], $tok, $base);
+                $rows = $d['data'] ?? [];
+                $latest = $rows[0] ?? null;
+                foreach ($rows as $r) if (strcmp((string) $r['updated_time'], (string) $latest['updated_time']) > 0) $latest = $r;
+                $add('Instagram : Meta donne les conversations', true, count($rows) . ' conversation(s) récente(s) via ' . $via . ($latest ? ', la plus récente : ' . mk_meta_local((string) $latest['updated_time']) : '') . '.');
+                if ($latest) $newestMeta['instagram'] = $latest;
+                $ok = true;
+                break;
+            } catch (MkMetaError $e) {
+                $errs[] = $via . ' : « ' . rtrim($e->getMessage(), '.') . ' »';
+                $lastE = $e;
+            }
+        }
+        if (!$ok) $add('Instagram : Meta donne les conversations', false, 'Non. Meta répond ' . implode(' ; ', $errs) . '.', isset($lastE) ? mk_meta_msg_hint('instagram', $lastE) : '');
+    }
+    // Ce que le tableau de bord a enregistré, comparé à Meta.
+    foreach (['messenger' => 'Messenger', 'instagram' => 'Instagram'] as $platform => $label) {
+        $n = (int) qv('SELECT COUNT(*) FROM conversations WHERE platform = ?', [$platform]);
+        $last = (string) qv('SELECT MAX(updated) FROM conversations WHERE platform = ?', [$platform]);
+        if (!isset($newestMeta[$platform]) && !$n) continue;
+        $metaLast = isset($newestMeta[$platform]) ? mk_meta_local((string) $newestMeta[$platform]['updated_time']) : '';
+        $known = isset($newestMeta[$platform]) ? qv('SELECT updated FROM conversations WHERE ext_id = ?', ['meta:conv:' . $newestMeta[$platform]['id']]) : null;
+        $late = $metaLast !== '' && ($known === false || $known === null || strcmp((string) $known, $metaLast) < 0);
+        $add("$label : enregistré dans le tableau de bord", !$late, $n . ' conversation(s), la plus récente : ' . ($last ?: 'aucune') . '.' . ($late ? " Meta a une conversation plus récente ($metaLast) pas encore importée." : ''),
+            $late ? 'Cliquez sur « Synchroniser les messages ». Si elle n\'arrive toujours pas, envoyez ce diagnostic.' : '');
+    }
+    $dg = (array) $st['msg_diag'];
+    if ($dg) {
+        $bad = array_values(array_filter((array) ($dg['items'] ?? []), fn ($x) => empty($x['ok'])));
+        $add('Dernière lecture automatique des messages', !$bad, date('d/m H:i', (int) ($dg['at'] ?? 0)) . ($bad ? ' : ' . implode(' ', array_column($bad, 'note')) : ' : réussie.'));
+    } else {
+        $add('Dernière lecture automatique des messages', null, 'Pas encore faite avec cette version : cliquez sur « Synchroniser les messages ».');
+    }
+    $w = (array) $st['webhook'];
+    $add('Temps réel', empty($w['on']) ? null : true, empty($w['on']) ? 'Non activé : les messages arrivent toutes les 2 minutes (tableau de bord ouvert) ou par la tâche cron.' : 'Activé' . (!empty($w['last_event']) ? ', dernier envoi reçu de Meta : ' . date('d/m H:i', (int) $w['last_event']) : ', aucun envoi reçu pour l\'instant (normal si l\'app Meta est en mode Développement)') . '.');
+    $first = null;
+    foreach ($checks as $c) if ($c['ok'] === false) { $first = $c; break; }
+    $verdict = $first ? 'À corriger : ' . $first['label'] . ' — ' . $first['detail'] . ($first['fix'] !== '' ? ' ' . $first['fix'] : '') : 'Tout répond correctement chez Meta : les messages doivent s\'afficher. S\'il en manque, cliquez sur « Synchroniser les messages ».';
+    $text = "Diagnostic des messages — " . date('d/m/Y H:i') . "\n" . implode("\n", array_map(fn ($c) => ($c['ok'] === true ? '[OK] ' : ($c['ok'] === false ? '[X]  ' : '[i]  ')) . $c['label'] . ' : ' . $c['detail'] . ($c['fix'] !== '' ? ' → ' . $c['fix'] : ''), $checks));
+    return ['checks' => $checks, 'verdict' => $verdict, 'ok' => $first === null, 'text' => $text];
+}
+
 /** Messages Messenger (Page) et Instagram (compte relié à la Page, ou relié par « Se connecter avec Instagram »). */
 function mk_meta_sync_messages(string $from, string $to): array
 {
@@ -1769,10 +1894,16 @@ function mk_meta_sync_messages(string $from, string $to): array
         $lastErr = null;
         foreach ($routes as [$via, $node, $tok, $base]) {
             $level = (int) (mk_meta_state()['metrics']['conv_fields_' . $platform . $base] ?? 0);
-            $params = ['platform' => $platform, 'limit' => 25];
-            $cursor = $full ? (string) (mk_meta_state()['full_cursor'][$platform] ?? '') : '';
-            if ($cursor !== '') $params['after'] = $cursor;
             try {
+              // Messenger range les conversations dans des dossiers : Meta ne renvoie que la boîte de réception si
+              // on ne demande rien. Les conversations « Terminé », « Autres » et les demandes de message sont lues aussi.
+              foreach ($platform === 'messenger' && $base === '' ? MK_META_MSG_FOLDERS : [''] as $folder) {
+                $params = ['platform' => $platform, 'limit' => 25];
+                if ($folder !== '') $params['folder'] = $folder;
+                $ck = $platform . ($folder !== '' ? ':' . $folder : '');
+                $cursor = $full ? (string) (mk_meta_state()['full_cursor'][$ck] ?? '') : '';
+                if ($cursor !== '') $params['after'] = $cursor;
+                if (mk_meta_more()) break;
                 for ($page = 0; $page < ($full ? 400 : 40); $page++) {
                     // Champs refusés par Meta : on réessaie avec une liste plus simple, et on la garde pour la suite.
                     for (;;) {
@@ -1781,6 +1912,8 @@ function mk_meta_sync_messages(string $from, string $to): array
                             $d = mk_graph("$node/conversations", $params, $tok, $base);
                             break;
                         } catch (MkMetaError $e) {
+                            // Dossier inconnu pour ce compte : on passe au suivant (la boîte de réception, elle, doit marcher).
+                            if ($folder !== '' && $folder !== 'inbox' && $e->metaCode() === 100 && stripos($e->getMessage(), 'folder') !== false) continue 3;
                             if ($level >= count(MK_META_CONV_FIELDS) - 1 || !in_array($e->metaCode(), [1, 2, 12, 100], true)) throw $e;
                             $level++;
                             mk_meta_put(['metrics' => array_merge((array) mk_meta_state()['metrics'], ['conv_fields_' . $platform . $base => $level])]);
@@ -1806,9 +1939,10 @@ function mk_meta_sync_messages(string $from, string $to): array
                 if ($full) {
                     // Lot interrompu : on reprendra à la page en cours (ses conversations déjà lues passent vite).
                     $fc = (array) (mk_meta_state()['full_cursor'] ?? []);
-                    if (mk_meta_more()) $fc[$platform] = (string) ($params['after'] ?? ''); else unset($fc[$platform]);
+                    if (mk_meta_more()) $fc[$ck] = (string) ($params['after'] ?? ''); else unset($fc[$ck]);
                     mk_meta_put(['full_cursor' => $fc]);
                 }
+              }
                 $c['via'] = $via;
                 $lastErr = null;
                 break; // cet accès marche : pas besoin du suivant

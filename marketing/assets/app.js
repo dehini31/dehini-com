@@ -1282,6 +1282,23 @@ function msgDiag(dg) {
   return (bad.length ? `<div class="banner warn">${ic("alert", "sm")}<span><b>Messages non synchronisés.</b> ${bad.map(x => esc(x.note)).join(" ")}</span></div>` : "")
     + `<p class="small muted msg-diag">${ic(bad.length ? "alert" : "check", "xs")} Messages lus chez Meta ${esc(metaWhen(dg.at))} : ${line}${warn.length ? " — " + warn.map(x => esc(x.note)).join(" ") : ""}</p>`;
 }
+/** Diagnostic des messages : chaque question posée à Meta, sa réponse et quoi faire. */
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-msgdoc]");
+  if (!b) return;
+  b.disabled = true;
+  b.innerHTML = `<span class="spin dark"></span> Diagnostic…`;
+  let d;
+  try { d = (await api("meta_msg_doctor")).doctor; } catch (err) { toast(err.message, "err"); b.disabled = false; b.innerHTML = `${ic("info", "sm")} Diagnostiquer`; return; }
+  b.disabled = false;
+  b.innerHTML = `${ic("info", "sm")} Diagnostiquer`;
+  const mark = ok => ok === true ? tile("check", "green", "sm") : ok === false ? tile("x", "pink", "sm") : tile("info", "blue", "sm");
+  openModal(`<div class="imp">${tile("info", "blue")}<h2>Diagnostic des messages</h2>
+    <div class="banner ${d.ok ? "good" : "warn"}">${ic(d.ok ? "check-circle" : "alert", "sm")}<span>${esc(d.verdict)}</span></div>
+    <ul class="sync-steps doc">${d.checks.map(c => `<li class="${c.ok === false ? "error" : "ok"}">${mark(c.ok)}<span><b>${esc(c.label)}</b><small>${esc(c.detail)}${c.fix ? `<br><span class="fix">${ic("chev-r", "xs")} ${esc(c.fix)}</span>` : ""}</small></span></li>`).join("")}</ul>
+    <pre class="code" id="docText" hidden>${esc(d.text)}</pre>
+    <div class="form-foot"><button type="button" class="btn" data-copy="#docText">${ic("copy", "sm")} Copier le diagnostic</button><button type="button" class="btn" data-msgsync>${ic("trend", "sm")} Synchroniser les messages</button><button type="button" class="btn pri" data-close>Fermer</button></div></div>`);
+});
 document.addEventListener("click", async e => {
   const b = e.target.closest("[data-msgsync]");
   if (!b) return;
@@ -1311,7 +1328,7 @@ VIEWS["leads/messages"] = { range: true, fn: async param => {
   S.convs = d.rows;
   const st = d.stats, f = CONV_FILTERS.some(x => x[0] === param) ? param : "all";
   if (!d.meta.connected) return empty("Les messages arrivent de Meta. Connectez votre Page Facebook (et son compte Instagram) dans Connexions : les conversations Messenger et Instagram s'afficheront ici, analysées.", `<a class="btn pri" href="#connexions/meta">${ic("link", "sm")} Relier Facebook et Instagram</a>`, { icon: ["message", "teal"] });
-  const bar = `<div class="toolbar">${histToggle()}${LIVE_PILL}<span class="grow"></span><button type="button" class="btn" data-msgsync>${ic("trend", "sm")} Synchroniser les messages</button>${fullBtn("messages")}</div>` + msgDiag(d.meta.diag);
+  const bar = `<div class="toolbar">${histToggle()}${LIVE_PILL}<span class="grow"></span><button type="button" class="btn" data-msgdoc>${ic("info", "sm")} Diagnostiquer</button><button type="button" class="btn" data-msgsync>${ic("trend", "sm")} Synchroniser les messages</button>${fullBtn("messages")}</div>` + msgDiag(d.meta.diag);
   if (!d.rows.length) return bar + `${!d.meta.messages ? `<div class="banner warn">${ic("alert", "sm")}<span>L'import des messages est désactivé : activez-le dans <a href="#connexions/meta">Connexions</a> › étape 3.</span></div>` : ""}`
     + empty(all ? "Aucune conversation importée. Lancez « Importer tout l'historique » : il faut les autorisations pages_messaging et instagram_manage_messages dans votre configuration Facebook Login for Business." : "Aucune conversation sur la période. Choisissez « Tout l'historique » pour voir toutes les conversations importées, ou lancez une synchronisation dans Connexions.", `<a class="btn pri" href="#connexions/meta">${ic("trend", "sm")} Synchroniser</a>`, { icon: ["message", "teal"] });
   const t = (l, v, sub, m, cls = "") => `<div class="kpi ${cls}">${tile(m[0], m[1])}<small>${esc(l)}</small><b>${v}</b><span class="d">${sub}</span></div>`;
