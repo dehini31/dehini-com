@@ -12,5 +12,7 @@ php -r 'file_put_contents($argv[1], "<?php\ndefine(\"ADMIN_PASSWORD_HASH\", " . 
 cat > "$DIR/public_html/maillage/config.php" <<PHP
 <?php
 define('MLG_MAIL_LOG', '$DIR/mail.jsonl');
+// La base Algérie est importée par le test, depuis l'administration (pas automatiquement).
+define('MLG_AUTO_IMPORT', false);
 PHP
 echo "OK $DIR"

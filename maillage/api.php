@@ -99,6 +99,7 @@ try {
         /* ------------------------------------------------------------ public */
 
         case 'bootstrap': {
+            import_algerie_auto();
             $cats = [];
             foreach (MLG_CATEGORIES as $k => $label) $cats[] = ['key' => $k, 'label' => $label];
             $one = function (string $sql) use ($pdo): int { return (int) $pdo->query($sql)->fetchColumn(); };

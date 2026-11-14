@@ -21,6 +21,23 @@ function import_algerie_data(): array
     return $d;
 }
 
+/**
+ * Import automatique, une seule fois après la mise en ligne du fichier (à la première visite du
+ * site) : l'administrateur n'a rien à faire. Relancer ou mettre à jour se fait depuis l'administration.
+ */
+function import_algerie_auto(): void
+{
+    if (!MLG_AUTO_IMPORT || !is_file(IMPORT_ALGERIE) || meta_get('import.algerie') !== null || meta_get('import.algerie.auto') !== null) return;
+    meta_set('import.algerie.auto', (string) time());
+    try {
+        import_algerie();
+    } catch (Throwable $e) {
+        // Nouvel essai à une visite suivante.
+        db()->prepare('DELETE FROM meta WHERE k = ?')->execute(['import.algerie.auto']);
+        error_log('maillage import auto: ' . $e->getMessage());
+    }
+}
+
 /** Ce que contient le fichier, et ce qui est déjà sur le site. */
 function import_algerie_status(): array
 {

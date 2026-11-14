@@ -26,6 +26,7 @@ $defaults = [
     'MLG_RESERVATION_HOURS' => 48,          // durée pendant laquelle un article réservé est mis de côté
     'MLG_COVER_KM'          => 30,          // au-delà, une zone est considérée comme non couverte
     'MLG_RADAR_STEP_MIN'    => 30,          // radar : minutes avant d'élargir une commande (commune → wilaya → partout)
+    'MLG_AUTO_IMPORT'       => true,        // importe la base Algérie (lib/data/import) une fois, à la première visite
     'MLG_RESEARCH_DAYS'     => 14,          // durée d'une recherche active avant sa clôture automatique
     // Recherche par photo : identification du produit par l'API Claude. Sans clé (ici ou dans
     // l'administration), la recherche reste possible : description saisie + ressemblance des photos.
