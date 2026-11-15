@@ -1135,8 +1135,9 @@ tâche cron (cPanel › Tâches Cron › « Une fois par heure ») :
 ### Changer d'app Meta sans rien perdre (Connexions › Nouvelle app Meta)
 
 Pour passer à une nouvelle app Meta (ici « chatgptapp », ID `3025910297765050`) pendant que l'ancienne continue de
-fonctionner. Le guide complet (réglages chez Meta, textes et vidéo pour l'examen, mode Live) est dans
-[`docs/meta-app-review.md`](docs/meta-app-review.md).
+fonctionner. Guides : [`docs/meta-app-review.md`](docs/meta-app-review.md) (autorisations exactes et leur usage,
+configuration Facebook Login for Business, webhooks, jeton d'utilisateur système, Instagram, examen par Meta) et
+[`docs/meta-real-test-checklist.md`](docs/meta-real-test-checklist.md) (liste de contrôle avec les vrais comptes).
 
 1. **Sur le serveur**, dans `~/public_html/marketing/config.php` (jamais dans GitHub) :
 
@@ -1147,25 +1148,29 @@ fonctionner. Le guide complet (réglages chez Meta, textes et vidéo pour l'exam
    define('MK_META_WEBHOOK_VERIFY_TOKEN', '… texte secret au choix, 20 caractères ou plus …');
    ```
 
-   L'ID et la clé peuvent aussi être saisis dans l'écran (clé chiffrée en base). La clé n'est jamais envoyée au
-   navigateur.
+   La clé n'est jamais envoyée au navigateur.
 2. **Chez Meta**, dans la nouvelle app : URI de redirection `https://dehini.com/marketing/meta.php`, politique de
    confidentialité `https://dehini.com/marketing/confidentialite.html`, suppression des données
-   `https://dehini.com/marketing/suppression-donnees.html`, et une configuration Facebook Login for Business avec un
-   jeton d'utilisateur système qui n'expire « Jamais ».
-3. **Dans le tableau de bord**, Connexions › Nouvelle app Meta : « Se connecter avec la nouvelle app » (la même Page et le
-   même Instagram sont choisis d'office), puis « Lancer les tests » (16 vérifications : autorisations, Page,
-   statistiques, publications et commentaires, messages Messenger et Instagram, publicité, Lead Ads, webhooks). Rien
-   ne change pour le tableau de bord tant que ce n'est pas basculé.
-4. **« Basculer vers la nouvelle app »** : l'ancienne app est désabonnée des webhooks de la Page, la nouvelle y est
-   abonnée, les synchronisations passent par la nouvelle app. Aucune donnée n'est touchée : messages, commentaires,
-   publications, campagnes et leads sont reconnus par leur numéro chez Meta (le même quelle que soit l'app), donc pas de
-   doublon, et ce que l'équipe a complété à la main reste tel quel. **« Revenir à l'ancienne app »** remet tout comme
-   avant en un clic.
+   `https://dehini.com/marketing/suppression-donnees.html`, une configuration Facebook Login for Business (jeton
+   d'utilisateur système, les 15 autorisations listées dans l'écran, la Page, @yinvesti_ et le compte publicitaire comme
+   ressources), et l'objet **Instagram** des webhooks (`comments`, `messages`) réglé une fois dans le tableau de bord de
+   l'app : l'API de Meta ne permet pas de le faire automatiquement.
+3. **Dans le tableau de bord**, Connexions › Nouvelle app Meta : « Se connecter avec la nouvelle app », puis
+   « Lancer les tests » : connexion (validité, expiration), autorisations par fonction et par ressource, Page,
+   statistiques, publications et commentaires, messages, Instagram, publicité, Lead Ads, numéros identiques à ceux
+   déjà enregistrés (aucun doublon), abonnements aux webhooks relus chez Meta. Puis « Activer le temps réel en
+   parallèle » : la Page est abonnée aux deux apps, chaque envoi est enregistré une fois, et un compteur montre ce que
+   la nouvelle app envoie vraiment. Rien ne change pour la production tant que ce n'est pas basculé.
+4. **« Basculer vers la nouvelle app »** : l'ancienne app est désabonnée de la Page, la nouvelle y est abonnée et
+   vérifiée. Aucune donnée n'est touchée ; un Instagram connecté par « Se connecter avec Instagram » passe par la Page
+   (relevés renumérotés si le numéro du compte diffère, conversations rattachées par personne).
+   **« Revenir à l'ancienne app »** remet tout comme avant (la nouvelle reste prête), **« Terminer la migration »**
+   oublie l'ancienne app une fois tout validé.
 
-Pendant la migration, `webhook.php` accepte les messages signés par l'ancienne et par la nouvelle app ; la vérification
-de l'adresse utilise `MK_META_WEBHOOK_VERIFY_TOKEN` s'il est défini (sinon le jeton affiché dans Connexions › Temps
-réel).
+**Santé de la connexion.** Meta ne prévient pas quand un jeton est retiré, même un jeton « sans expiration » : la
+connexion active est vérifiée chez Meta toutes les 6 heures (et par « Vérifier maintenant »). Jeton de Page refusé :
+redemandé tout seul. Connexion refusée : raison affichée, synchronisations suspendues sans rien effacer, un email aux
+destinataires des rapports. Trop de requêtes : les passages automatiques attendent 15 minutes.
 
 ### Rapports automatiques par email
 

@@ -508,6 +508,22 @@ try {
             ok(['migration' => mk_meta_next_reset()]);
             break;
         }
+        case 'meta_next_webhooks': {
+            if (!$isPost) fail('Méthode invalide.', 405);
+            @set_time_limit(90);
+            ok(mk_meta_next_webhooks());
+            break;
+        }
+        case 'meta_next_finalize': {
+            if (!$isPost) fail('Méthode invalide.', 405);
+            ok(mk_meta_next_finalize());
+            break;
+        }
+        case 'meta_token_check': {
+            if (!$isPost) fail('Méthode invalide.', 405);
+            ok(['health' => mk_meta_token_check(true), 'meta' => mk_meta_public()]);
+            break;
+        }
 
         case 'meta_msg_doctor': {
             ok(['doctor' => mk_meta_msg_doctor()]);

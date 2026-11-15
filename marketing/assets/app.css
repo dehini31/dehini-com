@@ -794,6 +794,13 @@ button.fl-el:hover{border-color:var(--primary);color:var(--primary-ink)}
 .mig-list{padding-left:18px;display:grid;gap:6px;margin:8px 0;min-width:0}
 .mig-list li{min-width:0;overflow-wrap:anywhere}
 .mig-list code{overflow-wrap:anywhere;word-break:break-all}
+.mig-live{margin-top:16px;padding-top:14px;border-top:1px dashed var(--line)}
+.mig-live h3{margin:0 0 6px}
+.perm-grp{margin:6px 0}
+.perm-grp summary{font-size:13px}
+.perm-list{margin:8px 0 6px;padding-left:16px;display:grid;gap:4px;min-width:0}
+.perm-list li{overflow-wrap:anywhere}
+.health .banner ul,.health ul.plain{margin:0;padding-left:16px}
 .pick-list{display:grid;gap:6px}
 .pick-list .pick{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:12px;padding:8px 10px;cursor:pointer}
 .btn.disabled{opacity:.5;pointer-events:none}

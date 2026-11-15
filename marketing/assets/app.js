@@ -1013,7 +1013,7 @@ VIEWS["overview/daily"] = { fn: async (param, tok) => {
     + (ins.length > insMax ? `<details class="more"><summary>Voir les ${ins.length - insMax} autres points</summary><ul class="ins">${ins.slice(insMax).map(i => `<li class="${i.level}"><span class="lv">${ic(LV[i.level][0])}</span><span class="it"><small>${LV[i.level][1]}</small>${esc(i.text)}</span></li>`).join("")}</ul></details>` : "")
     : empty("Rien à signaler. Aucun point d'alerte aujourd'hui : tout suit son cours.", "", { icon: ["check-circle", "green"] });
   const mt = S.boot.meta || {};
-  const metaWarn = mt.connected && mt.token_invalid ? `<a class="banner warn" href="#connexions/meta">${ic("alert", "sm")} La connexion à Meta a expiré : les chiffres de Facebook, Instagram et Meta Ads ne se mettent plus à jour. Reconnectez-vous.</a>`
+  const metaWarn = mt.connected && mt.token_invalid ? `<a class="banner warn" href="#connexions/meta">${ic("alert", "sm")} <span>${esc(mt.token_problem || "La connexion à Meta a expiré ou a été retirée.")} Les chiffres de Facebook, Instagram et Meta Ads ne se mettent plus à jour (les données déjà importées sont gardées).</span></a>`
     : mt.connected && mt.token_kind !== "manual" && mt.days_left != null && mt.days_left <= 7 ? `<a class="banner warn" href="#connexions/meta">${ic("clock", "sm")} La connexion à Meta expire dans ${num(Math.max(0, mt.days_left))} jour(s) : cliquez ici pour la renouveler.</a>`
     : mt.fb_connected && !mt.page ? `<a class="banner warn" href="#connexions/meta">${ic("alert", "sm")} Aucune Page Facebook choisie : Facebook, les leads et les messages ne sont pas importés. Cliquez ici pour choisir la Page.</a>` : "";
   return metaWarn + `<div class="hello"><div><h1>${hello}</h1><p>${intro}</p></div><div class="rep-ctrl">${dateNav("daily", "day", date, isToday ? "Aujourd'hui" : "Jour affiché")}${reportActions("day", date)}</div></div>
@@ -1283,19 +1283,21 @@ const MIG_BACK = {
 };
 /** Textes à copier dans l'examen de l'app par Meta (App Review), autorisation par autorisation. */
 const REVIEW_TEXTS = [
-  ["pages_show_list", "Lists the Facebook Pages the business owner manages so they can pick the YINVESTI Page whose data is shown in their private marketing dashboard (dehini.com/marketing)."],
-  ["pages_read_engagement", "Reads the YINVESTI Page's posts, reactions, comment counts and Page metrics to display engagement statistics in the business's internal marketing dashboard."],
-  ["pages_read_user_content", "Reads comments left on the YINVESTI Page's posts (including the author's name) so the marketing team can see questions from prospective investors and answer them."],
+  ["pages_show_list", "Lists the Facebook Pages the business owner manages so they can pick the YINVESTI Page whose data is shown in their private marketing dashboard (dehini.com/marketing). Also required by Meta to subscribe the Page to webhooks."],
+  ["business_management", "Required by Meta as a dependency of pages_messaging, pages_show_list and instagram_manage_messages when access is granted through Facebook Login for Business. The app only reads the YINVESTI business assets selected during login."],
+  ["pages_read_engagement", "Reads the YINVESTI Page's posts, reactions and comment counts to display engagement statistics in the business's internal marketing dashboard. Also required for Page insights, conversations and the linked Instagram account."],
+  ["pages_read_user_content", "Reads comments left on the YINVESTI Page's posts, including the author's name, so the marketing team can see questions from prospective investors and answer them on Facebook."],
   ["read_insights", "Reads Page insights (reach, views, follows) to build daily, weekly and monthly marketing reports for the YINVESTI team."],
-  ["pages_manage_metadata", "Subscribes the YINVESTI Page to webhooks so new messages and comments appear in the dashboard in real time, and reads the Page's conversations list."],
-  ["pages_messaging", "Reads Messenger conversations of the YINVESTI Page (read only, no message is sent by the app) so the team can see who is waiting for an answer and turn interested people into leads."],
-  ["instagram_basic", "Reads the YINVESTI Instagram professional account profile and its media list to display posts and their engagement in the dashboard."],
-  ["instagram_manage_comments", "Reads comments on the YINVESTI Instagram account's posts (read only) so the team can follow questions and answer them on Instagram."],
+  ["pages_manage_metadata", "Subscribes the YINVESTI Page to webhooks so new messages and comments appear in the dashboard in real time; required by Meta to read the Page's conversations. Nothing is changed on the Page."],
+  ["pages_messaging", "Reads Messenger conversations of the YINVESTI Page and receives the messages webhook (read only: the app never sends messages) so the team sees who is waiting for an answer."],
+  ["instagram_basic", "Reads the YINVESTI Instagram professional account profile, media and stories to display posts and their engagement in the dashboard."],
+  ["instagram_manage_comments", "Reads comments (with the commenter's username) on the YINVESTI Instagram account's posts and receives the comments webhook (read only) so the team can follow and answer questions on Instagram."],
   ["instagram_manage_insights", "Reads Instagram account and media insights (reach, views, interactions) for the marketing reports."],
-  ["instagram_manage_messages", "Reads Instagram Direct conversations of the YINVESTI account (read only, no message is sent) to list unanswered messages and create leads."],
-  ["ads_read", "Reads results of the business's own Meta Ads campaigns (spend, impressions, clicks, leads) to compare campaigns in the marketing dashboard."],
+  ["instagram_manage_messages", "Reads Instagram Direct conversations of the YINVESTI account and receives the messages webhook (read only: no message is sent) to list unanswered messages and create leads."],
+  ["ads_read", "Reads the business's own ad accounts, campaigns, ad sets and their results (spend, impressions, clicks, leads) to compare campaigns in the marketing dashboard."],
   ["leads_retrieval", "Retrieves leads submitted through the YINVESTI Page's Lead Ads forms into the business's private lead list so sales can call them back."],
-  ["business_management", "Lists the ad accounts and assets owned by the business in Business Manager so the owner can choose which ones the dashboard reads."],
+  ["pages_manage_ads", "Lists the YINVESTI Page's Lead Ads forms; Meta requires it together with leads_retrieval to read leads. No ad or form is created or changed."],
+  ["ads_management", "Listed by Meta's Lead Ads retrieval guide as required to read leads with their ad and campaign (ad_id, campaign_id). The app only reads: it never creates, edits or pauses ads."],
 ];
 
 VIEWS["connexions/migration"] = { fn: async param => {
@@ -1329,10 +1331,10 @@ VIEWS["connexions/migration"] = { fn: async param => {
 define('MK_META_NEXT_APP_SECRET', 'clé secrète de la nouvelle app');
 define('MK_META_NEXT_CONFIG_ID', 'ID de configuration (facultatif)');
 define('MK_META_WEBHOOK_VERIFY_TOKEN', 'le même texte que dans l\\'app › Webhooks');</pre>
-      <p class="small">Pour ne jamais avoir à renouveler la connexion : dans <b>Facebook Login for Business › Configurations</b>, créez une configuration avec le jeton <b>« Jeton d'accès d'utilisateur système »</b> et l'expiration <b>« Jamais »</b>, avec toutes les autorisations de l'étape 4.</p></details>`;
+      <p class="small">Pour ne pas avoir à renouveler la connexion : dans <b>Facebook Login for Business › Configurations</b>, créez une configuration avec le jeton <b>« Jeton d'accès d'utilisateur système »</b> sans expiration, les <b>${g.perms.length} autorisations</b> de la carte « Autorisations exactes » et, comme ressources, la Page YINVESTI, @yinvesti_ et le compte publicitaire. Une connexion « sans expiration » peut quand même être retirée (app enlevée des intégrations de l'entreprise, rôle perdu sur la Page) : le tableau de bord la vérifie toutes les 6 heures et prévient par email.</p></details>`;
   // 2. Connexion
   const s2 = g.connected
-    ? `<p style="margin-top:0">${ic("check-circle", "sm")} Connecté : <b>${esc(g.user_name)}</b> · ${g.token_expires ? `connexion valable jusqu'au ${esc(fdate(new Date(g.token_expires * 1000).toISOString().slice(0, 10)))}` : "sans date d'expiration"}.</p>
+    ? `<p style="margin-top:0">${ic("check-circle", "sm")} Connecté : <b>${esc(g.user_name)}</b> · ${g.token_expires ? `connexion valable jusqu'au ${esc(fdate(new Date(g.token_expires * 1000).toISOString().slice(0, 10)))}` : "sans date d'expiration"}${g.data_access_expires ? ` · accès aux données jusqu'au ${esc(fdate(new Date(g.data_access_expires * 1000).toISOString().slice(0, 10)))}` : ""}.</p>
        <div class="toolbar" style="margin:0"><a class="btn" href="meta.php?start=next">${ic("link", "sm")} Reconnecter</a></div>`
     : `<p class="muted" style="margin-top:0">Ouvre la fenêtre de Facebook pour la <b>nouvelle</b> app : cochez la Page YINVESTI, son compte Instagram et les comptes publicitaires, puis acceptez toutes les autorisations. L'app actuelle continue de fonctionner pendant ce temps.</p>
        <a class="btn pri${g.app_ready ? "" : " disabled"}" href="${g.app_ready ? "meta.php?start=next" : "javascript:void 0"}">${ic("link", "sm")} Se connecter avec la nouvelle app</a>`;
@@ -1345,7 +1347,12 @@ define('MK_META_WEBHOOK_VERIFY_TOKEN', 'le même texte que dans l\\'app › Webh
   const s4 = `${t ? `<div class="banner ${t.ok ? "good" : "warn"}">${ic(t.ok ? "check-circle" : "alert", "sm")}<span>${t.ok ? `<b>Tous les tests essentiels passent</b> (${esc(metaWhen(t.at))}) : la nouvelle app peut remplacer l'actuelle.` : `<b>À corriger avant de basculer :</b> ${esc(t.blocking.join(", "))}.`}</span></div>
       <ul class="sync-steps doc">${t.checks.map(c => `<li class="${c.ok === false ? "error" : "ok"}">${mark(c.ok)}<span><b>${esc(c.label)}${c.essential ? "" : ' <span class="muted small">(facultatif)</span>'}</b><small>${esc(c.detail)}${c.fix ? `<br><span class="fix">${ic("chev-r", "xs")} ${esc(c.fix)}</span>` : ""}</small></span></li>`).join("")}</ul>
       <pre class="code" id="gReport" hidden>${esc("Test de la nouvelle app Meta — " + metaWhen(t.at) + "\n" + t.checks.map(c => (c.ok === true ? "[OK] " : c.ok === false ? "[X]  " : "[i]  ") + c.label + " : " + c.detail + (c.fix ? " → " + c.fix : "")).join("\n"))}</pre>` : '<p class="muted" style="margin-top:0">Chaque accès est testé avec la nouvelle app : Page, statistiques, publications et commentaires, messages Messenger et Instagram, publicité, leads, webhooks. Rien n\'est modifié.</p>'}
-    <div class="toolbar" style="margin:${t ? "12px" : "0"} 0 0"><button type="button" class="btn${t ? "" : " pri"}" id="gTest"${g.connected ? "" : " disabled"}>${ic("check-circle", "sm")} ${t ? "Relancer les tests" : "Lancer les tests"}</button>${t ? `<button type="button" class="btn" data-copy="#gReport">${ic("copy", "sm")} Copier le rapport</button>` : ""}</div>`;
+    <div class="toolbar" style="margin:${t ? "12px" : "0"} 0 0"><button type="button" class="btn${t ? "" : " pri"}" id="gTest"${g.connected ? "" : " disabled"}>${ic("check-circle", "sm")} ${t ? "Relancer les tests" : "Lancer les tests"}</button>${t ? `<button type="button" class="btn" data-copy="#gReport">${ic("copy", "sm")} Copier le rapport</button>` : ""}</div>
+    <div class="mig-live"><h3 class="small">Temps réel avec de vrais messages, avant la bascule</h3>
+      <p class="small muted" style="margin-top:0">Abonne la Page à la nouvelle app <b>en plus</b> de l'actuelle : chaque message ou commentaire arrive deux fois et n'est enregistré qu'une fois. Envoyez alors un message et un commentaire de test (voir la liste de contrôle) : le compteur ci-dessous prouve que la nouvelle app les envoie.</p>
+      ${g.webhook ? `<ul class="sync-steps doc">${g.webhook.steps.map(x => `<li class="${x.ok ? "ok" : x.manual ? "ok" : "error"}">${mark(x.ok ? true : x.manual ? null : false)}<span><b>${esc(x.label)}</b>${x.message ? `<small>${esc(x.message)}</small>` : ""}</span></li>`).join("")}</ul>` : ""}
+      <p class="small" style="margin:8px 0">${ic(g.received && g.received.events ? "check-circle" : "info", "sm")} Envois reçus de la nouvelle app : <b>${num(g.received ? g.received.events : 0)}</b>${g.received && g.received.last ? ` · dernier ${esc(metaWhen(g.received.last))} (${esc(g.received.objects.join(", "))})` : ""}</p>
+      <div class="toolbar" style="margin:0"><button type="button" class="btn sm" id="gLive"${g.connected && g.page ? "" : " disabled"}>${ic("zap", "sm")} ${g.webhook ? "Revérifier le temps réel" : "Activer le temps réel en parallèle"}</button></div></div>`;
   // 5. Bascule
   const s5 = `<p class="muted" style="margin-top:0">En un clic, la nouvelle app remplace l'actuelle : synchronisation, messages, commentaires, statistiques, publicité et temps réel passent par elle. <b>Aucune donnée n'est modifiée</b>, et l'ancienne connexion est gardée pour revenir en arrière.</p>
     <button type="button" class="btn ${t && t.ok ? "pri" : ""}" id="gSwitch"${g.connected && g.page ? "" : " disabled"}>${ic("zap", "sm")} Basculer vers la nouvelle app</button>`;
@@ -1355,8 +1362,11 @@ define('MK_META_WEBHOOK_VERIFY_TOKEN', 'le même texte que dans l\\'app › Webh
       ${st(4, !!(t && t.ok), g.connected && !!g.page && !(t && t.ok), "Tests de la nouvelle app", s4)}
       ${st(5, false, !!(t && t.ok), "Bascule", s5)}`
     : `<section class="card"><div class="card-h"><h2>${tile("check-circle", "green", "sm")}La nouvelle app est active</h2></div>
-        <p style="margin-top:0">« ${esc(g.app_name || g.app_id)} » (${esc(g.app_id)}) est maintenant l'app du tableau de bord${g.switched_at ? ` depuis le ${esc(metaWhen(g.switched_at))}` : ""}. Lancez une synchronisation dans <a href="#connexions/meta">Connexions</a> et vérifiez le temps réel.</p>
-        ${g.previous ? `<p class="small muted">L'ancienne app (${esc(g.previous.app_id)}) est gardée : vous pouvez y revenir si quelque chose ne va pas.</p><button type="button" class="btn" id="gBack">${ic("chev-l", "sm")} Revenir à l'ancienne app</button>` : ""}</section>`;
+        <p style="margin-top:0">« ${esc(g.app_name || g.app_id)} » (${esc(g.app_id)}) est maintenant l'app du tableau de bord${g.switched_at ? ` depuis le ${esc(metaWhen(g.switched_at))}` : ""}. Lancez une synchronisation dans <a href="#connexions/meta">Connexions</a> et suivez la liste de contrôle (messages, commentaires, statistiques, publicité, Lead Ads).</p>
+        <p class="small" style="margin:0 0 10px">${ic(g.received && g.received.events ? "check-circle" : "info", "sm")} Envois de webhooks reçus de la nouvelle app : <b>${num(g.received ? g.received.events : 0)}</b>${g.received && g.received.last ? ` · dernier ${esc(metaWhen(g.received.last))} (${esc(g.received.objects.join(", "))})` : ""}</p>
+        ${g.previous ? `<p class="small muted">L'ancienne app (${esc(g.previous.app_id)}) est gardée${g.previous.ig_login ? ", avec sa connexion « Se connecter avec Instagram » (ses webhooks restent acceptés, sans doublon)" : ""} : vous pouvez y revenir si quelque chose ne va pas. Quand tout est validé, terminez la migration.</p>
+          <div class="toolbar" style="margin:0"><button type="button" class="btn" id="gBack">${ic("chev-l", "sm")} Revenir à l'ancienne app</button><button type="button" class="btn ghost" id="gFinal">${ic("check", "sm")} Terminer la migration</button></div>`
+          : g.finalized_at ? `<p class="small muted">Migration terminée le ${esc(metaWhen(g.finalized_at))}. Pensez à retirer l'ancienne app de la Page (Paramètres de l'entreprise › Intégrations › Apps connectées) et d'Instagram (Paramètres › Apps et sites web).</p>` : ""}</section>`;
   const review = `<section class="card"><div class="card-h"><h2>${tile("check", "violet", "sm")}Publication de l'app chez Meta</h2></div>
       <p class="small" style="margin-top:0">En <b>mode Développement</b> (« Prête pour le test »), l'app lit déjà vos propres Page et compte Instagram. Pour recevoir en temps réel les messages et commentaires de <b>tout le monde</b> et voir les noms des auteurs, Meta demande l'<b>accès avancé</b> (examen de l'app) puis le <b>mode Live</b> :</p>
       <ol class="small mig-list"><li><b>Paramètres › Général</b> : URL de la politique de confidentialité <code>https://dehini.com/marketing/confidentialite.html</code>, URL des instructions de suppression des données <code>https://dehini.com/marketing/suppression-donnees.html</code>, icône, catégorie, adresse e-mail de contact.</li>
@@ -1374,6 +1384,11 @@ define('MK_META_WEBHOOK_VERIFY_TOKEN', 'le même texte que dans l\\'app › Webh
         <div class="rv"><span class="rv-l">Page</span><span class="rv-v">${cur.page ? esc(cur.page.name) : "—"}</span></div>
         <div class="rv"><span class="rv-l">Instagram</span><span class="rv-v">${cur.instagram ? "@" + esc(cur.instagram.username) : "—"}</span></div></div>
         ${!switched && g.app_id ? `<p class="small muted" style="margin:10px 0 0">Nouvelle app : <b>${esc(g.app_name || g.app_id)}</b>. ${g.connected ? "" : "Pas encore connectée."}</p>${g.app_ready || g.connected ? '<button type="button" class="btn sm ghost" id="gReset">Abandonner la préparation</button>' : ""}` : ""}</section>
+      <section class="card"><div class="card-h"><h2>${tile("check", "blue", "sm")}Autorisations exactes</h2></div>
+        <p class="small" style="margin-top:0">Les ${g.perms.length} autorisations dont se servent les fonctions du tableau de bord (lecture seule), à cocher dans la configuration Facebook Login for Business et à demander à l'examen :</p>
+        ${Object.entries(g.perm_groups).map(([k, lab]) => { const list = g.perms.filter(p => p.group === k); return `<details class="mhelp perm-grp"><summary><b>${esc(lab)}</b> · ${list.length} ${g.perm_groups_used.includes(k) ? '<span class="pill good">utilisé aujourd\'hui</span>' : '<span class="pill">pas utilisé aujourd\'hui</span>'}</summary>
+          <ul class="small perm-list">${list.map(p => `<li><code>${esc(p.name)}</code> — ${esc(p.use)} <span class="muted">(${esc(p.calls)})</span></li>`).join("")}</ul></details>`; }).join("")}
+        <div class="cfg mig-copy"><code id="gPermList">${esc(g.perms.map(p => p.name).join(", "))}</code><button type="button" class="btn sm" data-copy="#gPermList">${ic("copy", "sm")} Copier</button></div></section>
       ${review}
     </div></div>`;
 }, after: () => {
@@ -1428,9 +1443,20 @@ define('MK_META_WEBHOOK_VERIFY_TOKEN', 'le même texte que dans l\\'app › Webh
       route();
     } catch (err) { toast(err.message, "err"); b.disabled = false; b.innerHTML = `${ic("zap", "sm")} Basculer vers la nouvelle app`; }
   });
+  if (el("gLive")) el("gLive").addEventListener("click", async e => {
+    const b = e.target.closest("button");
+    b.disabled = true;
+    b.innerHTML = `<span class="spin dark"></span> Abonnement…`;
+    try { const d = await api("meta_next_webhooks", {}, {}); toast(d.ok ? "Temps réel de la nouvelle app actif en parallèle : envoyez un message de test" : "Temps réel de la nouvelle app : voir le détail", d.ok ? "" : "err"); route(); }
+    catch (err) { toast(err.message, "err"); b.disabled = false; b.innerHTML = `${ic("zap", "sm")} Activer le temps réel en parallèle`; }
+  });
+  if (el("gFinal")) el("gFinal").addEventListener("click", async () => {
+    if (!(await askDialog({ icon: ["check", "violet"], title: "Terminer la migration ?", text: "À faire une fois la liste de contrôle validée avec de vrais messages. L'ancienne app est oubliée : plus de retour en arrière, et ses envois de webhooks sont refusés. Aucune donnée n'est modifiée.", ok: "Terminer la migration", cancel: "Pas encore" }))) return;
+    try { const d = await api("meta_next_finalize", {}, {}); S.boot.meta = d.meta; toast("Migration terminée"); (d.notes || []).forEach((n, i) => setTimeout(() => toast(n), 700 * (i + 1))); route(); } catch (err) { toast(err.message, "err"); }
+  });
   if (el("gBack")) el("gBack").addEventListener("click", async e => {
-    if (!(await askDialog({ icon: ["chev-l", "amber"], title: "Revenir à l'ancienne app ?", text: "L'ancienne app reprend la synchronisation et le temps réel. Aucune donnée n'est modifiée ; vous pourrez rebasculer plus tard.", ok: "Revenir à l'ancienne app", cancel: "Annuler" }))) return;
-    try { const d = await api("meta_next_rollback", {}, {}); S.boot.meta = d.meta; toast("Ancienne app rétablie"); route(); } catch (err) { toast(err.message, "err"); }
+    if (!(await askDialog({ icon: ["chev-l", "amber"], title: "Revenir à l'ancienne app ?", text: "L'ancienne app reprend la synchronisation et le temps réel ; la nouvelle est désabonnée de la Page et reste prête (connexion gardée) pour corriger, retester et rebasculer. Aucune donnée n'est modifiée.", ok: "Revenir à l'ancienne app", cancel: "Annuler" }))) return;
+    try { const d = await api("meta_next_rollback", {}, {}); S.boot.meta = d.meta; toast("Ancienne app rétablie"); (d.notes || []).forEach((n, i) => setTimeout(() => toast(n), 700 * (i + 1))); route(); } catch (err) { toast(err.message, "err"); }
   });
   if (el("gReset")) el("gReset").addEventListener("click", async () => {
     if (!(await askDialog({ icon: ["trash", "pink"], title: "Abandonner la préparation ?", text: "La connexion de la nouvelle app est oubliée par le tableau de bord (rien n'est changé chez Meta, ni dans l'app actuelle).", ok: "Abandonner", cancel: "Garder", danger: true }))) return;
@@ -2013,6 +2039,22 @@ function metaResult(res) {
   }).join("")}</ul>`;
 }
 
+/** Santé de la connexion (vérifiée chez Meta toutes les 6 heures) : avertissements et bouton « Vérifier maintenant ». */
+function healthBox(m) {
+  const h = m.health && !Array.isArray(m.health) ? m.health : {}; // tableau vide côté PHP = pas encore vérifiée
+  const warn = (h.warn || []).map(x => `<li>${esc(x)}</li>`).join(""), info = (h.info || []).map(x => `<li>${esc(x)}</li>`).join("");
+  return `<div class="health small">${warn ? `<div class="banner warn">${ic("alert", "sm")}<ul class="plain">${warn}</ul></div>` : ""}
+    <p class="muted" style="margin:6px 0">${ic(h.at ? (h.ok ? "check-circle" : "alert") : "clock", "xs")} ${h.at ? `Connexion vérifiée chez Meta ${esc(metaWhen(h.at))}${h.ok ? " : acceptée" : " : refusée"}${h.expires_at ? ` · expire le ${esc(fdate(new Date(h.expires_at * 1000).toISOString().slice(0, 10)))}` : h.ok ? " · sans date d'expiration" : ""}.` : "Pas encore vérifiée chez Meta."} Meta ne prévient pas quand une connexion est retirée : elle est revérifiée toutes les 6 heures.
+    <button type="button" class="btn sm ghost" id="mHealth">${ic("check-circle", "sm")} Vérifier maintenant</button></p>${info ? `<ul class="plain muted">${info}</ul>` : ""}</div>`;
+}
+document.addEventListener("click", async e => {
+  const b = e.target.closest("#mHealth");
+  if (!b) return;
+  b.disabled = true;
+  try { const d = await api("meta_token_check", {}, {}); S.boot.meta = d.meta; toast(d.health.ok ? "Connexion acceptée par Meta" : "Meta refuse la connexion : " + d.health.problem, d.health.ok ? "" : "err"); route(); }
+  catch (err) { toast(err.message, "err"); b.disabled = false; }
+});
+
 /** Carte « Temps réel » : Meta envoie chaque nouveau message et commentaire au tableau de bord (webhooks). */
 function liveCard(m) {
   const w = m.webhook || {};
@@ -2020,13 +2062,15 @@ function liveCard(m) {
   const state = w.on
     ? `<div class="banner ${recent ? "good" : ""}">${ic(recent ? "check-circle" : "clock", "sm")}<span><b>Temps réel activé</b>${w.last_event ? ` · dernier message ou commentaire reçu : <b>${esc(metaWhen(w.last_event))}</b> (${num(w.events)} reçu(s))` : " · rien reçu pour l'instant"}.</span></div>`
     : `<div class="banner">${ic("zap", "sm")}<span><b>Temps réel non activé.</b> Les messages et commentaires arrivent par la vérification rapide (toutes les 2 minutes, tableau de bord ouvert) et la synchronisation.</span></div>`;
-  const steps = (w.steps || []).length ? `<ul class="sync-steps">${w.steps.map(x => `<li class="${x.ok ? "ok" : "error"}">${tile(x.ok ? "check" : "alert-c", x.ok ? "green" : "pink", "sm")}<span><b>${esc(x.label)}</b><small>${x.ok ? "Fait" : esc(x.message)}</small></span></li>`).join("")}</ul>` : "";
+  const steps = (w.steps || []).length ? `<ul class="sync-steps">${w.steps.map(x => `<li class="${x.ok || x.manual ? "ok" : "error"}">${tile(x.ok ? "check" : x.manual ? "info" : "alert-c", x.ok ? "green" : x.manual ? "amber" : "pink", "sm")}<span><b>${esc(x.label)}</b><small>${x.ok ? esc(x.message || "Fait") : esc(x.message)}</small></span></li>`).join("")}</ul>` : "";
+  const recv = (w.received || []).length ? `<p class="small" style="margin:8px 0 0">Envois reçus par app : ${w.received.map(r => `<b>${esc(r.role)}</b> (${esc(r.app_id)}) ${num(r.events)}, dernier ${esc(metaWhen(r.last))}`).join(" · ")}</p>` : "";
   return `<section class="card" id="mLive"><div class="card-h"><h2>${tile("zap", "pink", "sm")}Temps réel : messages et commentaires</h2><div class="ctrl"><button type="button" class="btn${w.on ? "" : " pri"}" id="mLiveGo">${ic("zap", "sm")} ${w.on ? "Réactiver" : "Activer le temps réel"}</button></div></div>
     <p class="muted" style="margin-top:0">Une fois activé, Meta envoie au tableau de bord <b>chaque nouveau message</b> (Messenger, Instagram) et <b>chaque nouveau commentaire</b> (Facebook, Instagram) dès qu'il arrive : il s'affiche dans Leads & Contacts › Messages et Commentaires, avec une notification, sans recharger la page.</p>
-    ${state}${steps}
+    ${state}${recv}${steps}
     <details class="mhelp"><summary>${ic("info", "sm")} Bon à savoir (mode Live, réglage à la main)</summary>
       <p class="small">• Tant que l'app Meta est en <b>mode Développement</b>, Meta n'envoie en temps réel que les messages et commentaires des personnes qui ont un rôle dans l'app (vous, les testeurs). Pour tout recevoir, passez l'app en <b>mode Live</b> (avec l'accès avancé à pages_messaging, instagram_manage_messages et pages_read_user_content). En attendant, la vérification rapide toutes les 2 minutes prend le relais.</p>
-      <p class="small">• Si l'activation échoue, réglez-la dans l'app Meta › <b>Webhooks</b> : objet <b>Page</b> (champs <code>messages</code>, <code>message_echoes</code>, <code>feed</code>) et objet <b>Instagram</b> (champs <code>comments</code>, <code>messages</code>), avec :</p>
+      <p class="small">• L'objet <b>Page</b> (champs <code>messages</code>, <code>message_echoes</code>, <code>feed</code>) et l'abonnement de la Page sont faits par « Activer », puis relus chez Meta. L'objet <b>Instagram</b> (champs <code>comments</code>, <code>messages</code>) ne se règle que dans le tableau de bord de l'app Meta (Webhooks › Instagram, ou cas d'utilisation Instagram › Configurer les webhooks), une fois, avec :</p>
+      <p class="small">• Messages Instagram : dans l'app Instagram de @yinvesti_, Paramètres › Messages et réponses aux stories › Contrôle des messages › Outils connectés › « Autoriser l'accès aux messages ».</p>
       <div class="cfg"><small>URL de rappel</small><code id="mWhUrl">${esc(w.url || "")}</code><button type="button" class="btn sm" data-copy="#mWhUrl">${ic("copy", "sm")} Copier</button></div>
       <div class="cfg"><small>Jeton de vérification</small><code id="mWhTok">${esc(w.verify_token || "créé à la première activation")}</code>${w.verify_token ? `<button type="button" class="btn sm" data-copy="#mWhTok">${ic("copy", "sm")} Copier</button>` : ""}</div>
     </details></section>`;
@@ -2064,9 +2108,9 @@ VIEWS["connexions/meta"] = { fn: async param => {
     : `<p class="muted" style="margin-top:0">Une app Meta (gratuite) sert de « clé » au tableau de bord pour lire vos chiffres. À faire une seule fois.</p>${howApp}${appForm}`;
   const exp = m.token_kind === "manual" && !m.token_expires ? "n'expire pas" : m.days_left == null ? "" : m.days_left < 0 ? "a expiré" : `expire dans ${num(m.days_left)} jour(s)`;
   const s2 = conn
-    ? `${m.token_invalid ? `<div class="banner warn">${ic("alert", "sm")} Meta refuse la connexion (expirée ou retirée) : reconnectez-vous pour reprendre la synchronisation.</div>` : ""}${m.oauth_error ? `<div class="banner warn">${ic("alert", "sm")}<span>Dernière tentative refusée : ${esc(m.oauth_error)}</span></div>` : ""}
+    ? `${m.token_invalid ? `<div class="banner warn">${ic("alert", "sm")}<span><b>Meta refuse la connexion.</b> ${esc(m.token_problem || "Elle a expiré ou a été retirée : reconnectez-vous.")} Les synchronisations sont suspendues ; les données déjà importées sont gardées.</span></div>` : ""}${m.oauth_error ? `<div class="banner warn">${ic("alert", "sm")}<span>Dernière tentative refusée : ${esc(m.oauth_error)}</span></div>` : ""}
        <div class="who-card">${tile("users", "blue")}<span><b>${esc(m.user_name || "Compte Meta")}</b><small>${m.token_kind === "manual" ? "Jeton d'utilisateur système" : "Connecté avec Facebook"}${exp ? " · " + exp : ""}</small></span>
-       <span class="grow"></span>${appOk ? `<a class="btn sm" href="meta.php?start=1">${ic("link", "sm")} Reconnecter</a>` : ""}<button type="button" class="btn sm del" id="mOff">${ic("logout", "sm")} Déconnecter</button></div>
+       <span class="grow"></span>${appOk ? `<a class="btn sm" href="meta.php?start=1">${ic("link", "sm")} Reconnecter</a>` : ""}<button type="button" class="btn sm del" id="mOff">${ic("logout", "sm")} Déconnecter</button></div>${healthBox(m)}
        ${m.days_left != null && m.days_left >= 0 && m.days_left <= 10 && m.token_kind !== "manual" ? `<p class="small" style="margin:10px 0 0">Les connexions Facebook durent environ 60 jours : cliquez sur « Reconnecter » avant l'échéance, ou utilisez un jeton d'utilisateur système qui n'expire pas.</p>` : ""}`
     : `${m.oauth_error ? `<div class="banner warn">${ic("alert", "sm")} ${esc(m.oauth_error)}</div>` : ""}
        <p class="muted" style="margin-top:0">Le tableau de bord ne fait que <b>lire</b> : il ne publie rien, n'envoie aucun message et ne dépense rien chez Meta.</p>
