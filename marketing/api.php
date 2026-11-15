@@ -468,6 +468,47 @@ try {
             break;
         }
 
+        case 'meta_next': {
+            ok(['migration' => mk_meta_next_public()]);
+            break;
+        }
+        case 'meta_next_save': {
+            if (!$isPost) fail('Méthode invalide.', 405);
+            ok(['migration' => mk_meta_next_save($b)]);
+            break;
+        }
+        case 'meta_next_pages': {
+            ok(['pages' => mk_meta_next_pages()]);
+            break;
+        }
+        case 'meta_next_page': {
+            if (!$isPost) fail('Méthode invalide.', 405);
+            ok(['migration' => mk_meta_next_page((string) ($b['page_id'] ?? ''))]);
+            break;
+        }
+        case 'meta_next_test': {
+            if (!$isPost) fail('Méthode invalide.', 405);
+            @set_time_limit(120);
+            $t = mk_meta_next_test();
+            ok(['test' => $t, 'migration' => mk_meta_next_public()]);
+            break;
+        }
+        case 'meta_next_switch': {
+            if (!$isPost) fail('Méthode invalide.', 405);
+            ok(mk_meta_next_switch(!empty($b['force'])));
+            break;
+        }
+        case 'meta_next_rollback': {
+            if (!$isPost) fail('Méthode invalide.', 405);
+            ok(mk_meta_next_rollback());
+            break;
+        }
+        case 'meta_next_reset': {
+            if (!$isPost) fail('Méthode invalide.', 405);
+            ok(['migration' => mk_meta_next_reset()]);
+            break;
+        }
+
         case 'meta_msg_doctor': {
             ok(['doctor' => mk_meta_msg_doctor()]);
             break;

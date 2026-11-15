@@ -266,7 +266,7 @@ for (const id of ["rangeFrom", "rangeTo"]) {
 const NAV = [
   { group: "Pilotage" },
   { id: "overview", ic: "home", label: "Overview", tabs: [["daily", "Daily Monitoring"], ["weekly", "Weekly Reports"], ["monthly", "Monthly Reports"], ["archives", "Archives"]] },
-  { id: "connexions", ic: "link", label: "Connexions", tabs: [["meta", "Facebook · Instagram · Ads"], ["rules", "Classement automatique"], ["history", "Historique"]] },
+  { id: "connexions", ic: "link", label: "Connexions", tabs: [["meta", "Facebook · Instagram · Ads"], ["migration", "Nouvelle app Meta"], ["rules", "Classement automatique"], ["history", "Historique"]] },
   { group: "Marketing" },
   { id: "comm", ic: "megaphone", label: "Communication", tabs: [["actions", "Actions"], ["performance", "Performance"], ["taxonomy", "Canaux & supports"]] },
   { id: "social", ic: "share", label: "Social Media", tabs: [["overview", "Vue d'ensemble"], ["stats", "Relevés des comptes"]] },
@@ -1273,6 +1273,171 @@ document.addEventListener("click", async e => {
   } catch (err) { toast(err.message, "err"); b.disabled = false; b.innerHTML = `${ic("download", "sm")} Importer tout l'historique`; }
 });
 
+/* ================================================================ vue : Connexions › Nouvelle app Meta (migration) */
+const MIG_BACK = {
+  connecte: ["Compte Facebook connecté à la nouvelle app. Vérifiez la Page, puis lancez les tests.", ""],
+  annule: ["Connexion annulée : rien n'a été autorisé.", "err"],
+  expire: ["La demande a expiré : relancez « Se connecter avec la nouvelle app ».", "err"],
+  erreur: ["Facebook a refusé la connexion à la nouvelle app : le détail s'affiche à l'étape 2.", "err"],
+  "sans-app": ["Renseignez d'abord l'ID et la clé secrète de la nouvelle app (étape 1).", "err"],
+};
+/** Textes à copier dans l'examen de l'app par Meta (App Review), autorisation par autorisation. */
+const REVIEW_TEXTS = [
+  ["pages_show_list", "Lists the Facebook Pages the business owner manages so they can pick the YINVESTI Page whose data is shown in their private marketing dashboard (dehini.com/marketing)."],
+  ["pages_read_engagement", "Reads the YINVESTI Page's posts, reactions, comment counts and Page metrics to display engagement statistics in the business's internal marketing dashboard."],
+  ["pages_read_user_content", "Reads comments left on the YINVESTI Page's posts (including the author's name) so the marketing team can see questions from prospective investors and answer them."],
+  ["read_insights", "Reads Page insights (reach, views, follows) to build daily, weekly and monthly marketing reports for the YINVESTI team."],
+  ["pages_manage_metadata", "Subscribes the YINVESTI Page to webhooks so new messages and comments appear in the dashboard in real time, and reads the Page's conversations list."],
+  ["pages_messaging", "Reads Messenger conversations of the YINVESTI Page (read only, no message is sent by the app) so the team can see who is waiting for an answer and turn interested people into leads."],
+  ["instagram_basic", "Reads the YINVESTI Instagram professional account profile and its media list to display posts and their engagement in the dashboard."],
+  ["instagram_manage_comments", "Reads comments on the YINVESTI Instagram account's posts (read only) so the team can follow questions and answer them on Instagram."],
+  ["instagram_manage_insights", "Reads Instagram account and media insights (reach, views, interactions) for the marketing reports."],
+  ["instagram_manage_messages", "Reads Instagram Direct conversations of the YINVESTI account (read only, no message is sent) to list unanswered messages and create leads."],
+  ["ads_read", "Reads results of the business's own Meta Ads campaigns (spend, impressions, clicks, leads) to compare campaigns in the marketing dashboard."],
+  ["leads_retrieval", "Retrieves leads submitted through the YINVESTI Page's Lead Ads forms into the business's private lead list so sales can call them back."],
+  ["business_management", "Lists the ad accounts and assets owned by the business in Business Manager so the owner can choose which ones the dashboard reads."],
+];
+
+VIEWS["connexions/migration"] = { fn: async param => {
+  if (MIG_BACK[param]) {
+    const [msg, kind] = MIG_BACK[param];
+    setTimeout(() => toast(msg, kind), 50);
+    history.replaceState(null, "", "#connexions/migration");
+  }
+  const g = (await api("meta_next")).migration;
+  S.mig = g;
+  const cur = g.current;
+  const switched = g.app_id && cur.app_id === g.app_id;
+  const st = (n, done, now, title, body) => `<section class="card mstep${done ? " done" : ""}${now ? " cur" : ""}"><div class="card-h"><h2><span class="mnum">${done ? ic("check", "sm") : n}</span>${esc(title)}</h2></div>${body}</section>`;
+  const copy = (id, v) => `<div class="cfg mig-copy"><code id="${id}">${esc(v)}</code><button type="button" class="btn sm" data-copy="#${id}">${ic("copy", "sm")} Copier</button></div>`;
+  const t = g.test;
+  // 1. La nouvelle app
+  const s1 = g.app_in_file
+    ? `<p class="muted" style="margin-top:0">Réglée dans <code>marketing/config.php</code> : ${g.app_id ? `ID <b>${esc(g.app_id)}</b>` : "<b>ID manquant</b> (MK_META_NEXT_APP_ID)"} · clé secrète ${g.secret_in_file ? "<b>présente</b> (jamais affichée)" : "<b>manquante</b> (MK_META_NEXT_APP_SECRET)"}${g.app_name ? ` · « ${esc(g.app_name)} »` : ""}.</p>`
+    : `<p class="muted" style="margin-top:0">Le plus sûr : mettez l'ID et la clé secrète dans <code>marketing/config.php</code> sur le serveur (voir ci-dessous). Ou saisissez-les ici : la clé est chiffrée sur le serveur et n'est plus jamais affichée.</p>
+      <div class="form"><div class="fld"><label for="gApp">ID de la nouvelle app</label><input type="text" id="gApp" inputmode="numeric" value="${esc(g.app_id)}" placeholder="ex. 3025910297765050"></div>
+      <div class="fld"><label for="gSec">Clé secrète de la nouvelle app</label><input type="password" id="gSec" autocomplete="off" placeholder="${g.app_ready ? "Enregistrée — tapez-en une autre pour la remplacer" : "32 caractères"}"></div></div>`;
+  const cfgField = g.config_in_file ? `<p class="small muted">ID de configuration Facebook Login for Business : <b>${esc(g.config_id)}</b> (config.php).</p>`
+    : `<div class="form" style="margin-top:10px"><div class="fld"><label for="gCfg">ID de configuration Facebook Login for Business <span class="muted">(si votre app l'utilise)</span></label><input type="text" id="gCfg" inputmode="numeric" value="${esc(g.config_id)}" placeholder="Facebook Login for Business › Configurations › ID"></div></div>`;
+  const s1b = `${s1}${cfgField}${!g.app_in_file || !g.config_in_file ? `<div class="toolbar" style="margin:10px 0 0"><button type="button" class="btn pri" id="gSave">Enregistrer et vérifier</button></div>` : ""}
+    <details class="mhelp"><summary>${ic("info", "sm")} À régler dans la nouvelle app et dans config.php</summary>
+      <p class="small">Dans la nouvelle app (developers.facebook.com), <b>Facebook Login for Business › Paramètres › URI de redirection OAuth valides</b> :</p>${copy("gRedir", g.redirect_uri)}
+      <p class="small"><b>Webhooks</b> (objets Page et Instagram), URL de rappel — faite aussi automatiquement à la bascule :</p>${copy("gWh", g.webhook_url)}
+      <p class="small">Jeton de vérification des webhooks : ${g.verify_token_file ? "<b>défini dans config.php</b> (MK_META_WEBHOOK_VERIFY_TOKEN) : utilisez le même dans l'app." : "créé par le tableau de bord ; pour le choisir vous-même, ajoutez MK_META_WEBHOOK_VERIFY_TOKEN dans config.php."}</p>
+      <p class="small">Dans <code>~/public_html/marketing/config.php</code> (jamais dans GitHub) :</p>
+      <pre class="code">define('MK_META_NEXT_APP_ID', '${esc(g.app_id || "3025910297765050")}');
+define('MK_META_NEXT_APP_SECRET', 'clé secrète de la nouvelle app');
+define('MK_META_NEXT_CONFIG_ID', 'ID de configuration (facultatif)');
+define('MK_META_WEBHOOK_VERIFY_TOKEN', 'le même texte que dans l\\'app › Webhooks');</pre>
+      <p class="small">Pour ne jamais avoir à renouveler la connexion : dans <b>Facebook Login for Business › Configurations</b>, créez une configuration avec le jeton <b>« Jeton d'accès d'utilisateur système »</b> et l'expiration <b>« Jamais »</b>, avec toutes les autorisations de l'étape 4.</p></details>`;
+  // 2. Connexion
+  const s2 = g.connected
+    ? `<p style="margin-top:0">${ic("check-circle", "sm")} Connecté : <b>${esc(g.user_name)}</b> · ${g.token_expires ? `connexion valable jusqu'au ${esc(fdate(new Date(g.token_expires * 1000).toISOString().slice(0, 10)))}` : "sans date d'expiration"}.</p>
+       <div class="toolbar" style="margin:0"><a class="btn" href="meta.php?start=next">${ic("link", "sm")} Reconnecter</a></div>`
+    : `<p class="muted" style="margin-top:0">Ouvre la fenêtre de Facebook pour la <b>nouvelle</b> app : cochez la Page YINVESTI, son compte Instagram et les comptes publicitaires, puis acceptez toutes les autorisations. L'app actuelle continue de fonctionner pendant ce temps.</p>
+       <a class="btn pri${g.app_ready ? "" : " disabled"}" href="${g.app_ready ? "meta.php?start=next" : "javascript:void 0"}">${ic("link", "sm")} Se connecter avec la nouvelle app</a>`;
+  const s2e = g.oauth_error ? `<div class="banner warn" style="margin-top:12px">${ic("alert", "sm")}<span>${esc(g.oauth_error)}</span></div>` : "";
+  // 3. Page et Instagram
+  const s3 = g.connected ? `${g.page ? `<p style="margin-top:0">Page : <b>${esc(g.page.name)}</b>${cur.page && cur.page.id !== g.page.id ? ` <span class="pill warn">pas la même que l'app actuelle (${esc(cur.page.name)})</span>` : cur.page ? ' <span class="pill good">même Page que l\'app actuelle</span>' : ""} · Instagram : ${g.instagram ? `<b>@${esc(g.instagram.username)}</b>` : '<span class="muted">aucun compte relié à cette Page</span>'}</p>` : '<p class="muted" style="margin-top:0">Aucune Page choisie.</p>'}
+      <div class="toolbar" style="margin:0"><button type="button" class="btn sm" id="gPages">${ic("edit", "sm")} ${g.page ? "Changer de Page" : "Choisir la Page"}</button></div><div id="gPageList"></div>` : '<p class="muted" style="margin:0">Après la connexion (étape 2).</p>';
+  // 4. Tests
+  const mark = ok => ok === true ? tile("check", "green", "sm") : ok === false ? tile("x", "pink", "sm") : tile("info", "blue", "sm");
+  const s4 = `${t ? `<div class="banner ${t.ok ? "good" : "warn"}">${ic(t.ok ? "check-circle" : "alert", "sm")}<span>${t.ok ? `<b>Tous les tests essentiels passent</b> (${esc(metaWhen(t.at))}) : la nouvelle app peut remplacer l'actuelle.` : `<b>À corriger avant de basculer :</b> ${esc(t.blocking.join(", "))}.`}</span></div>
+      <ul class="sync-steps doc">${t.checks.map(c => `<li class="${c.ok === false ? "error" : "ok"}">${mark(c.ok)}<span><b>${esc(c.label)}${c.essential ? "" : ' <span class="muted small">(facultatif)</span>'}</b><small>${esc(c.detail)}${c.fix ? `<br><span class="fix">${ic("chev-r", "xs")} ${esc(c.fix)}</span>` : ""}</small></span></li>`).join("")}</ul>
+      <pre class="code" id="gReport" hidden>${esc("Test de la nouvelle app Meta — " + metaWhen(t.at) + "\n" + t.checks.map(c => (c.ok === true ? "[OK] " : c.ok === false ? "[X]  " : "[i]  ") + c.label + " : " + c.detail + (c.fix ? " → " + c.fix : "")).join("\n"))}</pre>` : '<p class="muted" style="margin-top:0">Chaque accès est testé avec la nouvelle app : Page, statistiques, publications et commentaires, messages Messenger et Instagram, publicité, leads, webhooks. Rien n\'est modifié.</p>'}
+    <div class="toolbar" style="margin:${t ? "12px" : "0"} 0 0"><button type="button" class="btn${t ? "" : " pri"}" id="gTest"${g.connected ? "" : " disabled"}>${ic("check-circle", "sm")} ${t ? "Relancer les tests" : "Lancer les tests"}</button>${t ? `<button type="button" class="btn" data-copy="#gReport">${ic("copy", "sm")} Copier le rapport</button>` : ""}</div>`;
+  // 5. Bascule
+  const s5 = `<p class="muted" style="margin-top:0">En un clic, la nouvelle app remplace l'actuelle : synchronisation, messages, commentaires, statistiques, publicité et temps réel passent par elle. <b>Aucune donnée n'est modifiée</b>, et l'ancienne connexion est gardée pour revenir en arrière.</p>
+    <button type="button" class="btn ${t && t.ok ? "pri" : ""}" id="gSwitch"${g.connected && g.page ? "" : " disabled"}>${ic("zap", "sm")} Basculer vers la nouvelle app</button>`;
+  const done = !switched ? `${st(1, g.app_ready, !g.app_ready, "La nouvelle app (ID, clé secrète)", s1b)}
+      ${st(2, g.connected, g.app_ready && !g.connected, "Connexion du compte Facebook à la nouvelle app", s2 + s2e)}
+      ${st(3, !!g.page, g.connected && !g.page, "Page Facebook et compte Instagram", s3)}
+      ${st(4, !!(t && t.ok), g.connected && !!g.page && !(t && t.ok), "Tests de la nouvelle app", s4)}
+      ${st(5, false, !!(t && t.ok), "Bascule", s5)}`
+    : `<section class="card"><div class="card-h"><h2>${tile("check-circle", "green", "sm")}La nouvelle app est active</h2></div>
+        <p style="margin-top:0">« ${esc(g.app_name || g.app_id)} » (${esc(g.app_id)}) est maintenant l'app du tableau de bord${g.switched_at ? ` depuis le ${esc(metaWhen(g.switched_at))}` : ""}. Lancez une synchronisation dans <a href="#connexions/meta">Connexions</a> et vérifiez le temps réel.</p>
+        ${g.previous ? `<p class="small muted">L'ancienne app (${esc(g.previous.app_id)}) est gardée : vous pouvez y revenir si quelque chose ne va pas.</p><button type="button" class="btn" id="gBack">${ic("chev-l", "sm")} Revenir à l'ancienne app</button>` : ""}</section>`;
+  const review = `<section class="card"><div class="card-h"><h2>${tile("check", "violet", "sm")}Publication de l'app chez Meta</h2></div>
+      <p class="small" style="margin-top:0">En <b>mode Développement</b> (« Prête pour le test »), l'app lit déjà vos propres Page et compte Instagram. Pour recevoir en temps réel les messages et commentaires de <b>tout le monde</b> et voir les noms des auteurs, Meta demande l'<b>accès avancé</b> (examen de l'app) puis le <b>mode Live</b> :</p>
+      <ol class="small mig-list"><li><b>Paramètres › Général</b> : URL de la politique de confidentialité <code>https://dehini.com/marketing/confidentialite.html</code>, URL des instructions de suppression des données <code>https://dehini.com/marketing/suppression-donnees.html</code>, icône, catégorie, adresse e-mail de contact.</li>
+        <li><b>Vérification de l'entreprise</b> dans le Business Manager (Centre de sécurité) — obligatoire pour l'accès avancé.</li>
+        <li><b>Examen de l'app › Autorisations et fonctionnalités</b> : « Demander l'accès avancé » pour chaque autorisation ci-dessous, avec le texte à copier et une courte vidéo du tableau de bord qui montre son usage.</li>
+        <li>Une fois validée : bouton <b>Live</b> en haut de l'app, puis « Réactiver » le temps réel dans Connexions.</li></ol>
+      <details class="mhelp"><summary>${ic("copy", "sm")} Textes à copier pour l'examen (en anglais, langue de l'examen)</summary>
+        ${REVIEW_TEXTS.map(([k, v], i) => `<p class="small" style="margin:10px 0 4px"><b>${esc(k)}</b></p><div class="cfg mig-copy"><span id="rv${i}">${esc(v)}</span><button type="button" class="btn sm" data-copy="#rv${i}">${ic("copy", "sm")} Copier</button></div>`).join("")}
+        <p class="small muted">Vidéo : connectez-vous au tableau de bord, montrez Connexions, puis la section qui utilise chaque autorisation (Messages, Commentaires, Social Media, Ads Manager, Leads), en anglais ou avec des sous-titres.</p></details></section>`;
+  return `<div class="hero">${tile("zap", "violet")}<div><h1>Nouvelle app Meta</h1><p>Préparez et testez la nouvelle app à côté de l'actuelle : le tableau de bord continue avec l'app en place jusqu'à la bascule. Les messages, commentaires, publications, campagnes et leads sont identifiés par leur numéro chez Meta, le même quelle que soit l'app : rien n'est importé en double, et ce que vous avez complété n'est jamais écrasé.</p></div></div>
+    <div class="dash"><div class="main-col">${done}</div><div class="side-col">
+      <section class="card"><div class="card-h"><h2>${tile("link", "blue", "sm")}App actuelle</h2></div><div class="rv-list">
+        <div class="rv"><span class="rv-l">App</span><span class="rv-v">${esc(cur.app_id || "—")}</span></div>
+        <div class="rv"><span class="rv-l">Compte</span><span class="rv-v">${esc(cur.user_name || "—")}</span></div>
+        <div class="rv"><span class="rv-l">Page</span><span class="rv-v">${cur.page ? esc(cur.page.name) : "—"}</span></div>
+        <div class="rv"><span class="rv-l">Instagram</span><span class="rv-v">${cur.instagram ? "@" + esc(cur.instagram.username) : "—"}</span></div></div>
+        ${!switched && g.app_id ? `<p class="small muted" style="margin:10px 0 0">Nouvelle app : <b>${esc(g.app_name || g.app_id)}</b>. ${g.connected ? "" : "Pas encore connectée."}</p>${g.app_ready || g.connected ? '<button type="button" class="btn sm ghost" id="gReset">Abandonner la préparation</button>' : ""}` : ""}</section>
+      ${review}
+    </div></div>`;
+}, after: () => {
+  const el = id => document.getElementById(id);
+  const g = S.mig;
+  if (el("gSave")) el("gSave").addEventListener("click", async e => {
+    e.target.disabled = true;
+    const body = {};
+    if (el("gApp")) { body.app_id = el("gApp").value; body.app_secret = el("gSec").value; }
+    if (el("gCfg")) body.config_id = el("gCfg").value;
+    try { const d = await api("meta_next_save", {}, body); toast(d.migration.app_name ? `Nouvelle app « ${d.migration.app_name} » reconnue par Meta` : "Enregistré"); route(); }
+    catch (err) { toast(err.message, "err"); e.target.disabled = false; }
+  });
+  if (el("gPages")) el("gPages").addEventListener("click", async e => {
+    e.target.disabled = true;
+    try {
+      const pages = (await api("meta_next_pages")).pages;
+      el("gPageList").innerHTML = pages.length ? `<div class="pick-list" style="margin-top:10px">${pages.map(p => `<label class="pick"><input type="radio" name="gPage" value="${esc(p.id)}"${g.page && g.page.id === p.id ? " checked" : ""}> <b>${esc(p.name)}</b>${p.instagram ? ` <span class="muted small">· @${esc(p.instagram.username)}</span>` : ""}</label>`).join("")}</div><button type="button" class="btn sm pri" id="gPageSave" style="margin-top:8px">Utiliser cette Page</button>`
+        : `<p class="small muted">Aucune Page accessible avec la nouvelle app : reconnectez-vous et cochez la Page dans la fenêtre de Facebook.</p>`;
+      if (el("gPageSave")) el("gPageSave").addEventListener("click", async () => {
+        const v = (document.querySelector("input[name=gPage]:checked") || {}).value;
+        if (!v) return toast("Choisissez une Page.", "err");
+        try { await api("meta_next_page", {}, { page_id: v }); toast("Page choisie pour la nouvelle app"); route(); } catch (err) { toast(err.message, "err"); }
+      });
+    } catch (err) { toast(err.message, "err"); }
+    e.target.disabled = false;
+  });
+  if (el("gTest")) el("gTest").addEventListener("click", async e => {
+    const b = e.target.closest("button");
+    b.disabled = true;
+    b.innerHTML = `<span class="spin dark"></span> Tests en cours…`;
+    try { const d = await api("meta_next_test", {}, {}); toast(d.test.ok ? "Tests réussis : la nouvelle app est prête" : "Des tests ne passent pas : voir le détail", d.test.ok ? "" : "err"); route(); }
+    catch (err) { toast(err.message, "err"); b.disabled = false; b.innerHTML = `${ic("check-circle", "sm")} Lancer les tests`; }
+  });
+  if (el("gSwitch")) el("gSwitch").addEventListener("click", async e => {
+    const t = g.test;
+    const force = !(t && t.ok);
+    const ok = await askDialog({ icon: ["zap", "violet"], title: "Basculer vers la nouvelle app ?",
+      text: (force ? (t ? "Attention : des tests essentiels ne passent pas (" + t.blocking.join(", ") + "). " : "Attention : les tests n'ont pas été lancés. ") : "")
+        + "La nouvelle app remplace l'actuelle pour la synchronisation, les messages, les commentaires, les statistiques, la publicité et le temps réel. Aucune donnée n'est modifiée, et vous pourrez revenir à l'ancienne app.",
+      ok: force ? "Basculer quand même" : "Basculer", cancel: "Annuler", danger: force });
+    if (!ok) return;
+    const b = e.target.closest("button");
+    b.disabled = true;
+    b.innerHTML = `<span class="spin"></span> Bascule…`;
+    try {
+      const d = await api("meta_next_switch", {}, { force });
+      S.boot.meta = d.meta;
+      const wh = d.webhook && d.webhook.steps ? d.webhook.steps.filter(x => !x.ok).length : null;
+      toast("Nouvelle app active" + (wh === 0 ? " · temps réel activé" : wh ? " · temps réel activé en partie (voir Connexions)" : ""));
+      (d.notes || []).forEach((n, i) => setTimeout(() => toast(n), 700 * (i + 1)));
+      route();
+    } catch (err) { toast(err.message, "err"); b.disabled = false; b.innerHTML = `${ic("zap", "sm")} Basculer vers la nouvelle app`; }
+  });
+  if (el("gBack")) el("gBack").addEventListener("click", async e => {
+    if (!(await askDialog({ icon: ["chev-l", "amber"], title: "Revenir à l'ancienne app ?", text: "L'ancienne app reprend la synchronisation et le temps réel. Aucune donnée n'est modifiée ; vous pourrez rebasculer plus tard.", ok: "Revenir à l'ancienne app", cancel: "Annuler" }))) return;
+    try { const d = await api("meta_next_rollback", {}, {}); S.boot.meta = d.meta; toast("Ancienne app rétablie"); route(); } catch (err) { toast(err.message, "err"); }
+  });
+  if (el("gReset")) el("gReset").addEventListener("click", async () => {
+    if (!(await askDialog({ icon: ["trash", "pink"], title: "Abandonner la préparation ?", text: "La connexion de la nouvelle app est oubliée par le tableau de bord (rien n'est changé chez Meta, ni dans l'app actuelle).", ok: "Abandonner", cancel: "Garder", danger: true }))) return;
+    try { await api("meta_next_reset", {}, {}); toast("Préparation abandonnée"); route(); } catch (err) { toast(err.message, "err"); }
+  });
+} };
+
 /* ================================================================ vue : Messages (Messenger, Instagram) */
 /** Bilan de la dernière lecture des messages chez Meta : ce qui marche, ce qui bloque et quoi faire. */
 function msgDiag(dg) {
@@ -1878,7 +2043,7 @@ VIEWS["connexions/meta"] = { fn: async param => {
   S.boot.meta = m;
   const appOk = !!m.app_source, conn = m.fb_connected, chosen = !!(m.page || m.ad_accounts.length || m.instagram);
   const step = (n, done, cur, title, body, open = true) => `<section class="card mstep${done ? " done" : ""}${cur ? " cur" : ""}"><div class="card-h"><h2><span class="mnum">${done ? ic("check", "sm") : n}</span>${esc(title)}</h2></div>${open ? body : ""}</section>`;
-  const appSrc = { ecom: "L'app Meta d'ecom.dehini.com est utilisée", config: "App Meta réglée dans config.php", dashboard: "App Meta enregistrée" }[m.app_source] || "";
+  const appSrc = { ecom: "L'app Meta d'ecom.dehini.com est utilisée", config: "App Meta réglée dans config.php", config_next: "Nouvelle app Meta (config.php, MK_META_NEXT_…)", dashboard: "App Meta enregistrée" }[m.app_source] || "";
   const appForm = `<div class="form"><div class="fld"><label for="mApp">Identifiant de l'app (App ID)</label><input type="text" id="mApp" inputmode="numeric" placeholder="ex. 1234567890123456" value="${esc(m.app_source === "dashboard" ? m.app_id : "")}"></div>
       <div class="fld"><label for="mSec">Clé secrète de l'app</label><input type="password" id="mSec" autocomplete="off" placeholder="${m.app_source === "dashboard" ? "Inchangée — tapez-en une nouvelle pour la remplacer" : "32 caractères"}"></div></div>
     <div class="toolbar" style="margin:10px 0 0"><button type="button" class="btn pri" id="mAppSave">Enregistrer l'app</button></div>`;

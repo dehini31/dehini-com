@@ -28,7 +28,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'GET') {
     // PHP remplace les points des paramètres par des « _ » : hub.mode → hub_mode.
     $mode = (string) ($_GET['hub_mode'] ?? '');
     $token = (string) ($_GET['hub_verify_token'] ?? '');
-    if ($mode === 'subscribe' && $st['wh_token'] !== '' && hash_equals((string) $st['wh_token'], $token)) {
+    $expected = MK_META_WEBHOOK_VERIFY_TOKEN !== '' ? (string) MK_META_WEBHOOK_VERIFY_TOKEN : (string) $st['wh_token'];
+    if ($mode === 'subscribe' && $expected !== '' && hash_equals($expected, $token)) {
         exit((string) preg_replace('/[^0-9A-Za-z_.\-]/', '', (string) ($_GET['hub_challenge'] ?? '')));
     }
     http_response_code(403);

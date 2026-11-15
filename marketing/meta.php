@@ -19,9 +19,9 @@ header('X-Frame-Options: DENY');
 header('Referrer-Policy: no-referrer');
 header('Cache-Control: no-store');
 
-function back(string $what): void
+function back(string $what, string $view = 'meta'): void
 {
-    header('Location: ./#connexions/meta/' . $what, true, 302);
+    header('Location: ./#connexions/' . $view . '/' . $what, true, 302);
     exit;
 }
 
@@ -36,6 +36,16 @@ if (!$okAdmin) {
 $flow = 'facebook';
 try {
     db();
+    if (($_GET['start'] ?? '') === 'next') {
+        // Nouvelle app Meta (migration) : même adresse de retour, autre app.
+        if (!mk_meta_next_public()['app_ready']) back('sans-app', 'migration');
+        $state = bin2hex(random_bytes(16));
+        $_SESSION['mk_meta_state'] = $state;
+        $_SESSION['mk_meta_flow'] = 'next';
+        session_write_close();
+        header('Location: ' . mk_meta_next_login_url($state), true, 302);
+        exit;
+    }
     if (isset($_GET['start'])) {
         $ig = $_GET['start'] === 'instagram';
         if ($ig && !mk_meta_public()['ig_app_ready']) back('sans-app-instagram');
@@ -51,10 +61,14 @@ try {
     $flow = (string) ($_SESSION['mk_meta_flow'] ?? 'facebook');
     unset($_SESSION['mk_meta_state'], $_SESSION['mk_meta_flow']);
     session_write_close();
-    if (isset($_GET['error'])) back('annule'); // l'utilisateur a refusé ou fermé la fenêtre
+    if (isset($_GET['error'])) back('annule', $flow === 'next' ? 'migration' : 'meta'); // l'utilisateur a refusé ou fermé la fenêtre
     $code = (string) ($_GET['code'] ?? '');
     $state = (string) ($_GET['state'] ?? '');
-    if ($code === '' || $expected === '' || !hash_equals($expected, $state)) back('expire');
+    if ($code === '' || $expected === '' || !hash_equals($expected, $state)) back('expire', $flow === 'next' ? 'migration' : 'meta');
+    if ($flow === 'next') {
+        mk_meta_next_exchange($code);
+        back('connecte', 'migration');
+    }
     if ($flow === 'instagram') {
         mk_meta_ig_exchange($code);
         back('instagram-connecte');
@@ -65,10 +79,12 @@ try {
 } catch (MkMetaError $e) {
     // Le détail s'affiche dans Connexions : carte Instagram, ou étape « Connexion au compte Facebook ».
     error_log('[marketing/meta] ' . $flow . ' : ' . $e->getMessage() . ' ' . json_encode($e->err, JSON_UNESCAPED_UNICODE));
+    if ($flow === 'next') { mk_meta_next_put(['oauth_error' => $e->userMessage()]); back('erreur', 'migration'); }
     mk_meta_put([$flow === 'instagram' ? 'ig_oauth_error' : 'oauth_error' => $e->userMessage()]);
     back($flow === 'instagram' ? 'instagram-erreur' : 'erreur');
 } catch (Throwable $e) {
     error_log('[marketing/meta] ' . $flow . ' : ' . $e->getMessage());
+    if ($flow === 'next') { try { mk_meta_next_put(['oauth_error' => $e->getMessage()]); } catch (Throwable $x) {} back('erreur', 'migration'); }
     try { mk_meta_put([$flow === 'instagram' ? 'ig_oauth_error' : 'oauth_error' => $e->getMessage()]); } catch (Throwable $x) {}
     back($flow === 'instagram' ? 'instagram-erreur' : 'erreur');
 }
