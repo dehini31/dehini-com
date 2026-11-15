@@ -789,6 +789,14 @@ button.fl-el:hover{border-color:var(--primary);color:var(--primary-ink)}
 .msg-diag .crit{color:var(--crit-ink);font-weight:700}
 .sync-steps.doc li small{white-space:normal}
 .sync-steps.doc .fix{display:inline-flex;gap:4px;color:var(--ink-2);font-weight:700;margin-top:3px}
+.mig-copy{display:flex;align-items:center;gap:10px;padding:8px 10px;margin:0 0 8px;border-radius:12px}
+.mig-copy code,.mig-copy span{flex:1;min-width:0;overflow-wrap:anywhere;font-size:12.5px}
+.mig-list{padding-left:18px;display:grid;gap:6px;margin:8px 0;min-width:0}
+.mig-list li{min-width:0;overflow-wrap:anywhere}
+.mig-list code{overflow-wrap:anywhere;word-break:break-all}
+.pick-list{display:grid;gap:6px}
+.pick-list .pick{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:12px;padding:8px 10px;cursor:pointer}
+.btn.disabled{opacity:.5;pointer-events:none}
 .more-row{display:flex;justify-content:center;margin:14px 0 4px;text-align:center}
 .spin.dark{border-color:var(--line);border-top-color:var(--primary)}
 .cm-text{color:var(--ink);font-size:14px;line-height:1.5;white-space:pre-line;overflow-wrap:anywhere}

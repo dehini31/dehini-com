@@ -1132,6 +1132,41 @@ tâche cron (cPanel › Tâches Cron › « Une fois par heure ») :
 /usr/local/bin/php ~/public_html/marketing/cron.php --meta-only > /dev/null 2>&1
 ```
 
+### Changer d'app Meta sans rien perdre (Connexions › Nouvelle app Meta)
+
+Pour passer à une nouvelle app Meta (ici « chatgptapp », ID `3025910297765050`) pendant que l'ancienne continue de
+fonctionner. Le guide complet (réglages chez Meta, textes et vidéo pour l'examen, mode Live) est dans
+[`docs/meta-app-review.md`](docs/meta-app-review.md).
+
+1. **Sur le serveur**, dans `~/public_html/marketing/config.php` (jamais dans GitHub) :
+
+   ```php
+   define('MK_META_NEXT_APP_ID', '3025910297765050');
+   define('MK_META_NEXT_APP_SECRET', '… clé secrète de la nouvelle app …');
+   define('MK_META_NEXT_CONFIG_ID', '… ID de la configuration Facebook Login for Business …');
+   define('MK_META_WEBHOOK_VERIFY_TOKEN', '… texte secret au choix, 20 caractères ou plus …');
+   ```
+
+   L'ID et la clé peuvent aussi être saisis dans l'écran (clé chiffrée en base). La clé n'est jamais envoyée au
+   navigateur.
+2. **Chez Meta**, dans la nouvelle app : URI de redirection `https://dehini.com/marketing/meta.php`, politique de
+   confidentialité `https://dehini.com/marketing/confidentialite.html`, suppression des données
+   `https://dehini.com/marketing/suppression-donnees.html`, et une configuration Facebook Login for Business avec un
+   jeton d'utilisateur système qui n'expire « Jamais ».
+3. **Dans le tableau de bord**, Connexions › Nouvelle app Meta : « Se connecter avec la nouvelle app » (la même Page et le
+   même Instagram sont choisis d'office), puis « Lancer les tests » (16 vérifications : autorisations, Page,
+   statistiques, publications et commentaires, messages Messenger et Instagram, publicité, Lead Ads, webhooks). Rien
+   ne change pour le tableau de bord tant que ce n'est pas basculé.
+4. **« Basculer vers la nouvelle app »** : l'ancienne app est désabonnée des webhooks de la Page, la nouvelle y est
+   abonnée, les synchronisations passent par la nouvelle app. Aucune donnée n'est touchée : messages, commentaires,
+   publications, campagnes et leads sont reconnus par leur numéro chez Meta (le même quelle que soit l'app), donc pas de
+   doublon, et ce que l'équipe a complété à la main reste tel quel. **« Revenir à l'ancienne app »** remet tout comme
+   avant en un clic.
+
+Pendant la migration, `webhook.php` accepte les messages signés par l'ancienne et par la nouvelle app ; la vérification
+de l'adresse utilise `MK_META_WEBHOOK_VERIFY_TOKEN` s'il est défini (sinon le jeton affiché dans Connexions › Temps
+réel).
+
 ### Rapports automatiques par email
 
 1. Dans le tableau de bord → **Réglages** : saisir les destinataires et cocher les rapports voulus (quotidien,

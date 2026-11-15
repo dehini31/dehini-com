@@ -31,6 +31,12 @@ $mkMetaDefaults = [
     'MK_META_IG_GRAPH_URL'  => 'https://graph.instagram.com/',
     'MK_META_IG_OAUTH_URL'  => 'https://api.instagram.com/',
     'MK_META_IG_AUTH_URL'   => 'https://www.instagram.com/oauth/authorize',
+    // Nouvelle app Meta à préparer et tester avant de basculer (Connexions › Nouvelle app Meta).
+    'MK_META_NEXT_APP_ID'     => '',
+    'MK_META_NEXT_APP_SECRET' => '',
+    'MK_META_NEXT_CONFIG_ID'  => '', // ID de configuration Facebook Login for Business de la nouvelle app
+    // Jeton de vérification des webhooks (le même que dans l'app Meta › Webhooks). Vide : créé par le tableau de bord.
+    'MK_META_WEBHOOK_VERIFY_TOKEN' => '',
 ];
 foreach ($mkMetaDefaults as $k => $v) {
     if (!defined($k)) define($k, $v);
@@ -110,6 +116,8 @@ function mk_meta_state(bool $reload = false): array
         'ig_node' => '', 'ig_diag' => '',
         // Temps réel : jeton de vérification des webhooks, état de l'abonnement, dernière vérification rapide.
         'wh_token' => '', 'webhook' => [], 'last_light' => 0, 'msg_diag' => [],
+        // Migration vers une nouvelle app : « next » (préparée, testée), « previous » (pour revenir en arrière).
+        'next' => [], 'previous' => [], 'app_ref' => '',
     ], is_array($d) ? $d : []);
     return $cache;
 }
@@ -180,6 +188,7 @@ function mk_meta_ecom_env(): array
 function mk_meta_app_source(): string
 {
     $st = mk_meta_state();
+    if ($st['app_ref'] === 'next_config' && MK_META_NEXT_APP_ID !== '' && MK_META_NEXT_APP_SECRET !== '') return 'config_next';
     if ($st['app_id'] !== '' && $st['app_secret'] !== '') return 'dashboard';
     if (MK_META_APP_ID !== '' && MK_META_APP_SECRET !== '') return 'config';
     $e = mk_meta_ecom_env();
@@ -190,6 +199,7 @@ function mk_meta_app(): array
 {
     $st = mk_meta_state();
     switch (mk_meta_app_source()) {
+        case 'config_next': return [(string) MK_META_NEXT_APP_ID, (string) MK_META_NEXT_APP_SECRET];
         case 'dashboard': return [$st['app_id'], mk_unseal($st['app_secret'])];
         case 'config': return [(string) MK_META_APP_ID, (string) MK_META_APP_SECRET];
         case 'ecom': $e = mk_meta_ecom_env(); return [(string) $e['META_APP_ID'], (string) $e['META_APP_SECRET']];
@@ -277,7 +287,7 @@ function mk_graph(string $path, array $params = [], string $token = '', string $
     $params['access_token'] = $token;
     [, $secret] = mk_meta_app();
     // Preuve de la clé secrète, pour les jetons obtenus avec notre app (un jeton collé peut venir d'une autre app).
-    if ($base === '' && $secret !== '' && $st['token_kind'] === 'oauth') $params['appsecret_proof'] = hash_hmac('sha256', $token, $secret);
+    if ($base === '' && $secret !== '' && $st['token_kind'] === 'oauth' && strpos($token, '|') === false && !isset($params['appsecret_proof'])) $params['appsecret_proof'] = hash_hmac('sha256', $token, $secret);
     foreach ($params as $k => $v) if (is_array($v)) $params[$k] = json_encode($v, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     static $igNoVersion = false; // l'API d'Instagram a refusé le numéro de version : on s'en passe pour la suite
     $ver = $base === 'ig' && $igNoVersion ? '' : MK_META_GRAPH_VERSION . '/';
@@ -494,6 +504,438 @@ function mk_meta_disconnect(): void
         'page_id' => '', 'page_name' => '', 'page_token' => '', 'ig_id' => '', 'ig_username' => '', 'ad_accounts' => [],
         'ig_via' => '', 'ig_token' => '', 'ig_token_expires' => 0, 'ig_connected_at' => 0,
         'app_id' => $st['app_id'], 'app_secret' => $st['app_secret']]);
+}
+
+/* ============================================================ nouvelle app Meta : préparer, tester, basculer */
+
+/**
+ * Migration vers une nouvelle app Meta, sans couper le tableau de bord : la nouvelle app a son propre
+ * emplacement (« next ») — ID et clé secrète (dans config.php ou saisis ici, chiffrés), connexion du compte
+ * Facebook, Page et Instagram — pendant que l'app actuelle continue de tout synchroniser. Une batterie de
+ * tests vérifie chaque accès ; la bascule échange les deux en une fois et garde l'ancienne pour revenir en
+ * arrière. Les données ne bougent pas : messages, commentaires, publications, campagnes et leads sont
+ * identifiés par leur numéro chez Meta, le même quelle que soit l'app (pas de doublon, rien d'écrasé).
+ */
+function mk_meta_next_app(): array
+{
+    if (MK_META_NEXT_APP_ID !== '' && MK_META_NEXT_APP_SECRET !== '') return [(string) MK_META_NEXT_APP_ID, (string) MK_META_NEXT_APP_SECRET, 'config'];
+    $n = (array) mk_meta_state()['next'];
+    if (($n['app_id'] ?? '') !== '' && ($n['app_secret'] ?? '') !== '') return [(string) $n['app_id'], mk_unseal((string) $n['app_secret']), 'dashboard'];
+    return [(string) (MK_META_NEXT_APP_ID !== '' ? MK_META_NEXT_APP_ID : ($n['app_id'] ?? '')), '', ''];
+}
+function mk_meta_next_config_id(): string
+{
+    return MK_META_NEXT_CONFIG_ID !== '' ? (string) MK_META_NEXT_CONFIG_ID : (string) (((array) mk_meta_state()['next'])['config_id'] ?? '');
+}
+function mk_meta_next_put(array $patch): array
+{
+    $n = array_merge((array) mk_meta_state(true)['next'], $patch);
+    mk_meta_put(['next' => $n]);
+    return $n;
+}
+/** Appel de l'API Graph avec un jeton de la nouvelle app (preuve calculée avec la clé secrète de la nouvelle app). */
+function mk_graph_next(string $path, array $params, string $token, int $max = 0): array
+{
+    [, $secret] = mk_meta_next_app();
+    if ($secret !== '' && strpos($token, '|') === false) $params['appsecret_proof'] = hash_hmac('sha256', $token, $secret);
+    return $max > 0 ? mk_graph_all($path, $params, $token, $max) : mk_graph($path, $params, $token);
+}
+/** DELETE de l'API Graph (désabonner l'ancienne app de la Page). */
+function mk_graph_delete(string $path, array $params, string $token): array
+{
+    $params['access_token'] = $token;
+    $url = rtrim(MK_META_GRAPH_URL, '/') . '/' . MK_META_GRAPH_VERSION . '/' . ltrim($path, '/') . '?' . http_build_query($params);
+    if (function_exists('curl_init')) {
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [CURLOPT_CUSTOMREQUEST => 'DELETE', CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 30, CURLOPT_CONNECTTIMEOUT => 10]);
+        $body = curl_exec($ch);
+    } else {
+        $body = @file_get_contents($url, false, stream_context_create(['http' => ['method' => 'DELETE', 'ignore_errors' => true, 'timeout' => 30]]));
+    }
+    $d = json_decode((string) $body, true);
+    if (!is_array($d)) throw new MkMetaError('Réponse illisible de Meta.');
+    if (isset($d['error']) && is_array($d['error'])) throw new MkMetaError((string) ($d['error']['message'] ?? 'Erreur Meta'), $d['error']);
+    return $d;
+}
+
+/** Ce que l'interface montre de la migration (jamais de jeton ni de clé secrète). */
+function mk_meta_next_public(): array
+{
+    $st = mk_meta_state();
+    $n = (array) $st['next'];
+    [$id, $sec, $src] = mk_meta_next_app();
+    $exp = (int) ($n['token_expires'] ?? 0);
+    $prev = (array) $st['previous'];
+    return [
+        'app_id' => $id, 'app_source' => $src, 'app_ready' => $id !== '' && $sec !== '', 'app_name' => (string) ($n['app_name'] ?? ''),
+        'app_in_file' => MK_META_NEXT_APP_ID !== '' || MK_META_NEXT_APP_SECRET !== '', 'secret_in_file' => MK_META_NEXT_APP_SECRET !== '',
+        'config_id' => mk_meta_next_config_id(), 'config_in_file' => MK_META_NEXT_CONFIG_ID !== '',
+        'connected' => ($n['user_token'] ?? '') !== '', 'user_name' => (string) ($n['user_name'] ?? ''), 'connected_at' => (int) ($n['connected_at'] ?? 0),
+        'token_expires' => $exp, 'days_left' => $exp ? (int) floor(($exp - time()) / 86400) : null,
+        'page' => ($n['page_id'] ?? '') !== '' ? ['id' => (string) $n['page_id'], 'name' => (string) ($n['page_name'] ?? '')] : null,
+        'instagram' => ($n['ig_id'] ?? '') !== '' ? ['id' => (string) $n['ig_id'], 'username' => (string) ($n['ig_username'] ?? '')] : null,
+        'test' => $n['test'] ?? null, 'oauth_error' => (string) ($n['oauth_error'] ?? ''), 'switched_at' => (int) ($n['switched_at'] ?? 0),
+        'current' => ['app_id' => mk_meta_app()[0], 'app_source' => mk_meta_app_source(), 'user_name' => $st['user_name'],
+            'page' => $st['page_id'] !== '' ? ['id' => $st['page_id'], 'name' => $st['page_name']] : null,
+            'instagram' => $st['ig_id'] !== '' ? ['id' => $st['ig_id'], 'username' => $st['ig_username'], 'via' => $st['ig_via']] : null],
+        'previous' => $prev ? ['app_id' => (string) ($prev['app_shown'] ?? ''), 'at' => (int) ($prev['at'] ?? 0)] : null,
+        'redirect_uri' => mk_meta_redirect_uri(), 'webhook_url' => mk_meta_webhook_url(), 'verify_token_file' => MK_META_WEBHOOK_VERIFY_TOKEN !== '',
+        'scopes' => MK_META_SCOPES,
+    ];
+}
+
+/** ID, clé secrète (chiffrée) et ID de configuration de la nouvelle app saisis dans le tableau de bord. */
+function mk_meta_next_save(array $in): array
+{
+    $n = (array) mk_meta_state()['next'];
+    $patch = [];
+    [$curId] = mk_meta_app();
+    if (MK_META_NEXT_APP_ID === '' || MK_META_NEXT_APP_SECRET === '') {
+        $id = (string) preg_replace('/\D/', '', (string) ($in['app_id'] ?? ($n['app_id'] ?? '')));
+        $sec = trim((string) ($in['app_secret'] ?? ''));
+        if (strlen($id) < 8) throw new MkInputError("Collez l'ID de la nouvelle app (developers.facebook.com › votre app › Paramètres › Général › ID de l'app).");
+        if ($id === $curId) throw new MkInputError("C'est l'ID de l'app actuelle : collez celui de la nouvelle app.");
+        if ($sec === '' && ($n['app_secret'] ?? '') === '') throw new MkInputError('Ajoutez aussi la clé secrète de la nouvelle app (Paramètres › Général › Clé secrète › Afficher).');
+        if ($sec !== '' && !preg_match('/^[0-9a-f]{32}$/i', $sec)) throw new MkInputError('La clé secrète fait 32 caractères (chiffres et lettres de a à f) : cliquez sur « Afficher » puis copiez-la en entier.');
+        $secret = $sec !== '' ? $sec : mk_unseal((string) $n['app_secret']);
+        try {
+            $info = mk_graph($id, ['fields' => 'id,name'], "$id|$secret");
+        } catch (MkMetaError $e) {
+            throw new MkInputError("Meta refuse cet ID ou cette clé secrète (« " . rtrim($e->getMessage(), '.') . " »). Vérifiez-les dans Paramètres › Général de la nouvelle app.");
+        }
+        $patch += ['app_id' => $id, 'app_name' => (string) ($info['name'] ?? '')];
+        if ($sec !== '') $patch['app_secret'] = mk_seal($sec);
+        if (($n['app_id'] ?? '') !== '' && $n['app_id'] !== $id) $patch += ['user_token' => '', 'page_id' => '', 'page_name' => '', 'page_token' => '', 'ig_id' => '', 'ig_username' => '', 'test' => null];
+    }
+    if (array_key_exists('config_id', $in) && MK_META_NEXT_CONFIG_ID === '') {
+        $cfg = (string) preg_replace('/\D/', '', (string) $in['config_id']);
+        [$nid] = mk_meta_next_app();
+        if ($cfg !== '' && $cfg === ($patch['app_id'] ?? $nid)) throw new MkInputError("C'est l'ID de l'app, pas celui de la configuration : Facebook Login for Business › Configurations › votre configuration › ID.");
+        $patch['config_id'] = $cfg;
+    }
+    if ($patch) mk_meta_next_put($patch);
+    return mk_meta_next_public();
+}
+
+function mk_meta_next_login_url(string $state): string
+{
+    [$id, $sec] = mk_meta_next_app();
+    if ($id === '' || $sec === '') throw new MkInputError("Renseignez d'abord l'ID et la clé secrète de la nouvelle app (config.php ou Connexions › Nouvelle app Meta).");
+    $q = ['client_id' => $id, 'redirect_uri' => mk_meta_redirect_uri(), 'state' => $state, 'response_type' => 'code'];
+    $cfg = mk_meta_next_config_id();
+    if ($cfg !== '') {
+        $q['config_id'] = $cfg;
+        $q['override_default_response_type'] = 'true';
+    } else {
+        $q['scope'] = implode(',', MK_META_SCOPES);
+    }
+    return 'https://www.facebook.com/' . MK_META_GRAPH_VERSION . '/dialog/oauth?' . http_build_query($q);
+}
+
+/** Retour de Facebook pour la nouvelle app : jeton longue durée (chiffré), puis même Page que l'app actuelle. */
+function mk_meta_next_exchange(string $code): array
+{
+    [$id, $sec] = mk_meta_next_app();
+    $base = rtrim(MK_META_GRAPH_URL, '/') . '/' . MK_META_GRAPH_VERSION . '/oauth/access_token';
+    [, $body] = mk_meta_http($base, ['client_id' => $id, 'redirect_uri' => mk_meta_redirect_uri(), 'client_secret' => $sec, 'code' => $code]);
+    $d = json_decode($body, true);
+    if (empty($d['access_token'])) throw new MkMetaError('Facebook a refusé la connexion à la nouvelle app.', is_array($d['error'] ?? null) ? $d['error'] : []);
+    [, $body] = mk_meta_http($base, ['grant_type' => 'fb_exchange_token', 'client_id' => $id, 'client_secret' => $sec, 'fb_exchange_token' => $d['access_token']]);
+    $l = json_decode($body, true);
+    $tok = !empty($l['access_token']) ? (string) $l['access_token'] : (string) $d['access_token'];
+    $exp = !empty($l['expires_in']) ? time() + (int) $l['expires_in'] : (!empty($d['expires_in']) ? time() + (int) $d['expires_in'] : 0);
+    $me = mk_graph_next('me', ['fields' => 'id,name'], $tok);
+    mk_meta_next_put(['user_token' => mk_seal($tok), 'token_expires' => $exp, 'user_id' => (string) ($me['id'] ?? ''), 'user_name' => (string) ($me['name'] ?? ''),
+        'connected_at' => time(), 'oauth_error' => '', 'test' => null]);
+    $pages = mk_meta_next_pages();
+    $cur = mk_meta_state()['page_id'];
+    $pick = '';
+    foreach ($pages as $p) if ($p['id'] === $cur) $pick = $p['id'];
+    if ($pick === '' && count($pages) === 1) $pick = $pages[0]['id'];
+    if ($pick !== '') mk_meta_next_page($pick);
+    return mk_meta_next_public();
+}
+
+/** Pages accessibles avec la nouvelle app. */
+function mk_meta_next_pages(): array
+{
+    $tok = mk_unseal((string) (((array) mk_meta_state()['next'])['user_token'] ?? ''));
+    if ($tok === '') throw new MkInputError("Connectez d'abord votre compte Facebook à la nouvelle app.");
+    $out = [];
+    foreach (mk_graph_next('me/accounts', ['fields' => 'id,name,instagram_business_account{id,username}'], $tok, 200) as $p) {
+        $ig = $p['instagram_business_account'] ?? null;
+        $out[] = ['id' => (string) $p['id'], 'name' => (string) ($p['name'] ?? ''), 'instagram' => $ig ? ['id' => (string) $ig['id'], 'username' => (string) ($ig['username'] ?? '')] : null];
+    }
+    return $out;
+}
+/** Choisit la Page (et son compte Instagram) de la nouvelle app ; son jeton de Page est gardé chiffré. */
+function mk_meta_next_page(string $pid): array
+{
+    $tok = mk_unseal((string) (((array) mk_meta_state()['next'])['user_token'] ?? ''));
+    foreach (mk_graph_next('me/accounts', ['fields' => 'id,name,access_token,instagram_business_account{id,username}'], $tok, 200) as $p) {
+        if ((string) $p['id'] !== $pid) continue;
+        $ig = $p['instagram_business_account'] ?? null;
+        mk_meta_next_put(['page_id' => $pid, 'page_name' => (string) ($p['name'] ?? ''), 'page_token' => mk_seal((string) ($p['access_token'] ?? '')),
+            'ig_id' => $ig ? (string) $ig['id'] : '', 'ig_username' => $ig ? (string) ($ig['username'] ?? '') : '', 'test' => null]);
+        return mk_meta_next_public();
+    }
+    throw new MkInputError("Cette Page n'est pas accessible avec la nouvelle app : à la connexion, cochez-la dans la fenêtre de Facebook (« Modifier les accès »).");
+}
+
+/** Autorisations nécessaires : messages, commentaires, statistiques, publicité, leads. */
+const MK_META_NEED_CORE = [
+    'pages_show_list' => 'lister vos Pages', 'pages_read_engagement' => 'publications et statistiques de la Page', 'pages_read_user_content' => 'commentaires et noms de leurs auteurs',
+    'pages_manage_metadata' => 'conversations et webhooks de la Page', 'pages_messaging' => 'messages Messenger', 'read_insights' => 'statistiques',
+    'instagram_basic' => 'compte et publications Instagram', 'instagram_manage_comments' => 'commentaires Instagram', 'instagram_manage_insights' => 'statistiques Instagram',
+    'instagram_manage_messages' => 'messages Instagram',
+];
+const MK_META_NEED_OPTIONAL = ['ads_read' => 'campagnes Meta Ads', 'leads_retrieval' => 'leads des formulaires', 'business_management' => 'comptes du Business Manager', 'pages_manage_ads' => 'formulaires Lead Ads'];
+
+/**
+ * Teste la nouvelle app, accès par accès, avec ses propres jetons : app, connexion, autorisations, Page,
+ * statistiques, publications et commentaires, messages, Instagram, publicité, leads, webhooks.
+ * « essential » : à réussir avant de basculer.
+ */
+function mk_meta_next_test(): array
+{
+    $st = mk_meta_state(true);
+    $n = (array) $st['next'];
+    [$id, $sec] = mk_meta_next_app();
+    $checks = [];
+    $add = function (string $label, ?bool $ok, string $detail, string $fix = '', bool $essential = false) use (&$checks): void {
+        $checks[] = ['label' => $label, 'ok' => $ok, 'detail' => $detail, 'fix' => $fix, 'essential' => $essential];
+    };
+    $msg = fn (MkMetaError $e) => '« ' . rtrim($e->getMessage(), '.') . ' »';
+    $finish = function () use (&$checks): array {
+        $block = array_values(array_filter($checks, fn ($c) => $c['essential'] && $c['ok'] === false));
+        $res = ['at' => time(), 'checks' => $checks, 'ok' => !$block, 'blocking' => array_column($block, 'label')];
+        mk_meta_next_put(['test' => $res]);
+        return $res;
+    };
+    $app = "$id|$sec";
+    if ($id === '' || $sec === '') { $add('Nouvelle app', false, "ID ou clé secrète manquants.", "Ajoutez MK_META_NEXT_APP_ID et MK_META_NEXT_APP_SECRET dans marketing/config.php (ou remplissez l'étape 1).", true); return $finish(); }
+    try {
+        $a = mk_graph($id, ['fields' => 'id,name'], $app);
+        mk_meta_next_put(['app_name' => (string) ($a['name'] ?? '')]);
+        $add('Nouvelle app', true, '« ' . ($a['name'] ?? '') . " » ($id) : ID et clé secrète acceptés par Meta.", '', true);
+    } catch (MkMetaError $e) {
+        $add('Nouvelle app', false, "Meta refuse l'ID ou la clé secrète : " . $msg($e) . '.', "Vérifiez l'ID et la clé secrète (Paramètres › Général de la nouvelle app).", true);
+        return $finish();
+    }
+    $ut = mk_unseal((string) ($n['user_token'] ?? ''));
+    if ($ut === '') { $add('Compte Facebook connecté à la nouvelle app', false, 'Pas encore.', 'Étape 2 : « Se connecter avec la nouvelle app ».', true); return $finish(); }
+    $scopes = [];
+    try {
+        $dbg = mk_graph('debug_token', ['input_token' => $ut], $app)['data'] ?? [];
+        $scopes = array_map('strval', (array) ($dbg['scopes'] ?? []));
+        if (empty($dbg['is_valid'])) {
+            $add('Compte Facebook connecté à la nouvelle app', false, 'Connexion refusée ou expirée.', 'Étape 2 : reconnectez-vous.', true);
+            return $finish();
+        }
+        $expAt = (int) ($dbg['expires_at'] ?? 0);
+        $add('Compte Facebook connecté à la nouvelle app', true, ($n['user_name'] ?? '') . ' · ' . ($expAt ? 'connexion valable jusqu\'au ' . date('d/m/Y', $expAt) . ' (à renouveler : la Page continue de fonctionner, la publicité et les leads non)' : "connexion sans date d'expiration") . '.',
+            $expAt ? "Pour ne jamais avoir à renouveler : dans Facebook Login for Business › Configurations, choisissez « Jeton d'accès d'utilisateur système » avec l'expiration « Jamais », puis reconnectez-vous." : '', true);
+    } catch (MkMetaError $e) {
+        $add('Compte Facebook connecté à la nouvelle app', null, 'Vérification impossible : ' . $msg($e) . '.');
+    }
+    if ($scopes) {
+        $miss = array_diff(array_keys(MK_META_NEED_CORE), $scopes);
+        $add('Autorisations : messages, commentaires, statistiques', !$miss, $miss ? 'Manquantes : ' . implode(', ', array_map(fn ($k) => $k . ' (' . MK_META_NEED_CORE[$k] . ')', $miss)) . '.' : 'Toutes accordées.',
+            $miss ? "Ajoutez-les aux cas d'utilisation de l'app (Messenger, API Instagram, Pages), cochez-les dans la configuration Facebook Login for Business, puis reconnectez-vous (étape 2) en acceptant tout." : '', true);
+        $missO = array_diff(array_keys(MK_META_NEED_OPTIONAL), $scopes);
+        $add('Autorisations : publicité et leads', $missO ? null : true, $missO ? 'Non accordées : ' . implode(', ', array_map(fn ($k) => $k . ' (' . MK_META_NEED_OPTIONAL[$k] . ')', $missO)) . '. Sans elles, Meta Ads et Lead Ads ne sont pas importés.' : 'Toutes accordées.');
+    }
+    $pid = (string) ($n['page_id'] ?? '');
+    $pt = mk_unseal((string) ($n['page_token'] ?? ''));
+    if ($pid === '' || $pt === '') { $add('Page Facebook', false, 'Aucune Page choisie pour la nouvelle app.', "Étape 3 : choisissez la Page (si elle n'apparaît pas, reconnectez-vous et cochez-la dans la fenêtre de Facebook).", true); return $finish(); }
+    $ig = null;
+    try {
+        $pg = mk_graph_next($pid, ['fields' => 'id,name,followers_count,instagram_business_account{id,username}'], $pt);
+        $ig = $pg['instagram_business_account'] ?? null;
+        $same = $st['page_id'] === '' || $st['page_id'] === $pid;
+        $add('Page Facebook', $same ? true : null, '« ' . ($pg['name'] ?? '') . ' » · ' . number_format((int) ($pg['followers_count'] ?? 0), 0, ',', ' ') . ' abonnés' . ($same ? '' : ' — attention : ce n\'est pas la même Page que l\'app actuelle (« ' . $st['page_name'] . ' »)') . '.', '', true);
+    } catch (MkMetaError $e) {
+        $add('Page Facebook', false, 'Meta refuse : ' . $msg($e) . '.', 'Reconnectez-vous (étape 2) et cochez la Page dans la fenêtre de Facebook.', true);
+        return $finish();
+    }
+    // Statistiques de la Page
+    $since = mk_add_days(mk_today(), -3);
+    $ok = false;
+    $last = null;
+    foreach (['page_post_engagements', 'page_total_media_view_unique', 'page_daily_follows_unique'] as $metric) {
+        try {
+            mk_graph_next("$pid/insights", ['metric' => $metric, 'period' => 'day', 'since' => $since, 'until' => mk_today()], $pt);
+            $ok = true;
+            break;
+        } catch (MkMetaError $e) { $last = $e; }
+    }
+    $add('Statistiques de la Page', $ok, $ok ? 'Lisibles.' : 'Refusées : ' . $msg($last) . '.', $ok ? '' : 'Autorisations read_insights et pages_read_engagement.');
+    // Publications et commentaires
+    try {
+        $posts = mk_graph_next("$pid/published_posts", ['fields' => 'id,created_time,comments.filter(stream).limit(0).summary(total_count)', 'limit' => 5], $pt)['data'] ?? [];
+        $withC = null;
+        foreach ($posts as $p) if ((int) ($p['comments']['summary']['total_count'] ?? 0) > 0) { $withC = $p; break; }
+        $detail = count($posts) . ' publication(s) récente(s)';
+        if ($withC) {
+            $cm = mk_graph_next($withC['id'] . '/comments', ['fields' => 'id,message,from{id,name}', 'limit' => 5], $pt)['data'] ?? [];
+            $named = count(array_filter($cm, fn ($c) => !empty($c['from']['name'])));
+            $detail .= ', commentaires lisibles' . ($cm ? ($named ? ' avec le nom de leurs auteurs' : ' mais noms masqués par Meta (pages_read_user_content en accès avancé + app en mode Live)') : '');
+        }
+        $add('Publications et commentaires Facebook', true, $detail . '.', '', true);
+    } catch (MkMetaError $e) {
+        $add('Publications et commentaires Facebook', false, 'Refusés : ' . $msg($e) . '.', 'Autorisations pages_read_engagement et pages_read_user_content.', true);
+    }
+    // Messages Messenger
+    try {
+        $cv = mk_graph_next("$pid/conversations", ['platform' => 'messenger', 'fields' => 'id,updated_time', 'limit' => 10], $pt)['data'] ?? [];
+        $add('Messages Messenger', true, count($cv) . ' conversation(s) récente(s)' . ($cv ? ', la plus récente : ' . mk_meta_local((string) $cv[0]['updated_time']) : '') . '.', '', true);
+    } catch (MkMetaError $e) {
+        $add('Messages Messenger', false, 'Refusés : ' . $msg($e) . '.', "Cas d'utilisation Messenger avec pages_messaging et pages_manage_metadata, cochés dans la configuration Facebook Login for Business, puis reconnexion.", true);
+    }
+    // Instagram
+    $igNeeded = $st['ig_id'] !== '';
+    if (!$ig) {
+        $add('Compte Instagram', $igNeeded ? false : null, "Aucun compte Instagram professionnel relié à cette Page.", "Meta Business Suite › Paramètres › Comptes Instagram : reliez @yinvesti_ à la Page, puis reconnectez-vous.", $igNeeded);
+    } else {
+        $iid = (string) $ig['id'];
+        mk_meta_next_put(['ig_id' => $iid, 'ig_username' => (string) ($ig['username'] ?? '')]);
+        $add('Compte Instagram', true, '@' . ($ig['username'] ?? '') . ' relié à la Page.', '', $igNeeded);
+        try {
+            mk_graph_next("$iid/insights", ['metric' => 'reach', 'period' => 'day', 'since' => $since, 'until' => mk_today()], $pt);
+            $add('Statistiques Instagram', true, 'Lisibles.');
+        } catch (MkMetaError $e) {
+            $add('Statistiques Instagram', false, 'Refusées : ' . $msg($e) . '.', 'Autorisation instagram_manage_insights.');
+        }
+        try {
+            $media = mk_graph_next("$iid/media", ['fields' => 'id,comments_count', 'limit' => 5], $pt)['data'] ?? [];
+            $withC = null;
+            foreach ($media as $m) if ((int) ($m['comments_count'] ?? 0) > 0) { $withC = $m; break; }
+            if ($withC) mk_graph_next($withC['id'] . '/comments', ['fields' => 'id,text,username', 'limit' => 3], $pt);
+            $add('Publications et commentaires Instagram', true, count($media) . ' publication(s) récente(s)' . ($withC ? ', commentaires lisibles' : '') . '.', '', true);
+        } catch (MkMetaError $e) {
+            $add('Publications et commentaires Instagram', false, 'Refusés : ' . $msg($e) . '.', 'Autorisations instagram_basic et instagram_manage_comments.', true);
+        }
+        try {
+            $cv = mk_graph_next("$pid/conversations", ['platform' => 'instagram', 'fields' => 'id,updated_time', 'limit' => 10], $pt)['data'] ?? [];
+            $add('Messages Instagram', true, count($cv) . ' conversation(s) récente(s)' . ($cv ? ', la plus récente : ' . mk_meta_local((string) $cv[0]['updated_time']) : '') . '.', '', true);
+        } catch (MkMetaError $e) {
+            $add('Messages Instagram', false, 'Refusés : ' . $msg($e) . '.', mk_meta_msg_hint('instagram', $e), true);
+        }
+    }
+    // Publicité et leads (avec le jeton du compte : comptes publicitaires déjà choisis)
+    foreach (array_slice((array) $st['ad_accounts'], 0, 1) as $acc) {
+        try {
+            mk_graph_next('act_' . $acc['id'], ['fields' => 'id,name,account_status'], $ut);
+            $add('Compte publicitaire', true, '« ' . $acc['name'] . ' » lisible avec la nouvelle app.');
+        } catch (MkMetaError $e) {
+            $add('Compte publicitaire', false, '« ' . $acc['name'] . ' » refusé : ' . $msg($e) . '.', "Autorisation ads_read, et le compte publicitaire coché à la connexion (ou ajouté à l'app dans le Business Manager).");
+        }
+    }
+    try {
+        $forms = mk_graph_next("$pid/leadgen_forms", ['fields' => 'id,name', 'limit' => 5], $pt)['data'] ?? [];
+        $add('Formulaires Lead Ads', true, count($forms) . ' formulaire(s) lisible(s).');
+    } catch (MkMetaError $e) {
+        $add('Formulaires Lead Ads', null, 'Refusés : ' . $msg($e) . ' (leads_retrieval et pages_manage_ads).');
+    }
+    // Webhooks : adresse de réception qui répond, et abonnement de la nouvelle app
+    $url = mk_meta_webhook_url();
+    try {
+        [$code, $body] = mk_meta_http($url, ['hub.mode' => 'subscribe', 'hub.verify_token' => mk_meta_wh_token(), 'hub.challenge' => '4815162342'], null, 15);
+        $add('Adresse de réception des webhooks', trim($body) === '4815162342', trim($body) === '4815162342' ? "$url répond correctement à la vérification de Meta." : "$url ne répond pas comme attendu (HTTP $code).",
+            trim($body) === '4815162342' ? '' : 'Déployez la dernière version (webhook.php) sur le serveur.');
+    } catch (MkMetaError $e) {
+        $add('Adresse de réception des webhooks', null, "Le serveur n'a pas pu s'appeler lui-même pour vérifier $url (normal chez certains hébergeurs).");
+    }
+    try {
+        $subs = mk_graph("$id/subscriptions", [], $app)['data'] ?? [];
+        $byObj = [];
+        foreach ($subs as $sb) $byObj[(string) ($sb['object'] ?? '')] = $sb;
+        $fields = fn (string $o) => array_map(fn ($f) => is_array($f) ? (string) ($f['name'] ?? '') : (string) $f, (array) ($byObj[$o]['fields'] ?? []));
+        $pageOk = isset($byObj['page']) && ($byObj['page']['callback_url'] ?? '') === $url && !array_diff(['messages', 'feed'], $fields('page'));
+        $igOk = isset($byObj['instagram']) && ($byObj['instagram']['callback_url'] ?? '') === $url && !array_diff(['comments', 'messages'], $fields('instagram'));
+        $add('Webhooks de la nouvelle app', $pageOk && $igOk ? true : null, ($pageOk ? 'Page : prêt' : 'Page : pas encore abonnée') . ' · ' . ($igOk ? 'Instagram : prêt' : 'Instagram : pas encore abonné') . '.',
+            $pageOk && $igOk ? '' : 'Fait automatiquement au moment de la bascule (ou à la main : app Meta › Webhooks, URL de rappel ' . $url . ').');
+    } catch (MkMetaError $e) {
+        $add('Webhooks de la nouvelle app', null, 'Lecture impossible : ' . $msg($e) . '.');
+    }
+    return $finish();
+}
+
+/**
+ * Bascule : la nouvelle app devient l'app du tableau de bord, en une fois (pendant ce temps aucune
+ * synchronisation ne tourne). L'ancienne connexion est gardée pour revenir en arrière ; l'ancienne app est
+ * désabonnée des webhooks de la Page, la nouvelle y est abonnée. Aucune donnée n'est touchée.
+ */
+function mk_meta_next_switch(bool $force = false): array
+{
+    $st = mk_meta_state(true);
+    $n = (array) $st['next'];
+    [$id, $sec, $src] = mk_meta_next_app();
+    if ($id === '' || $sec === '' || ($n['user_token'] ?? '') === '' || ($n['page_token'] ?? '') === '') throw new MkInputError("La nouvelle app n'est pas prête : faites les étapes 1 à 3, puis les tests.");
+    $test = (array) ($n['test'] ?? []);
+    if (!$force && (empty($test['at']) || !empty($test['blocking']))) throw new MkInputError(empty($test['at']) ? "Lancez d'abord les tests (étape 4)." : 'Des tests essentiels ne passent pas : ' . implode(', ', $test['blocking']) . '.');
+    $lock = @fopen(dirname(MK_DB_PATH) . '/meta-sync.lock', 'c');
+    if ($lock && !flock($lock, LOCK_EX | LOCK_NB)) throw new MkInputError('Une synchronisation est en cours : réessayez dans une minute.');
+    [$oldId, $oldSecret] = mk_meta_app();
+    $keys = ['app_id', 'app_secret', 'app_ref', 'config_id', 'user_token', 'token_kind', 'token_expires', 'user_id', 'user_name', 'connected_at',
+        'page_id', 'page_name', 'page_token', 'ig_id', 'ig_username', 'ig_via', 'ig_token', 'ig_token_expires', 'ig_connected_at', 'ig_app_id', 'ig_app_secret', 'ig_node', 'webhook'];
+    $prev = ['at' => time(), 'app_shown' => $oldId];
+    foreach ($keys as $k) $prev[$k] = $st[$k];
+    $notes = [];
+    // L'ancienne app ne reçoit plus les webhooks de la Page (sinon elle enverrait tout en double, avec son ancienne signature).
+    if ($st['page_id'] !== '' && $st['page_token'] !== '') {
+        try {
+            $pt = mk_unseal($st['page_token']);
+            mk_graph_delete($st['page_id'] . '/subscribed_apps', $oldSecret !== '' ? ['appsecret_proof' => hash_hmac('sha256', $pt, $oldSecret)] : [], $pt);
+            $notes[] = 'Ancienne app désabonnée des webhooks de la Page.';
+        } catch (Throwable $e) {
+            $notes[] = "Ancienne app pas désabonnée des webhooks (« " . $e->getMessage() . " ») : sans conséquence, ses envois sont refusés.";
+        }
+    }
+    $patch = [
+        'app_ref' => $src === 'config' ? 'next_config' : '',
+        'app_id' => $src === 'config' ? '' : $id, 'app_secret' => $src === 'config' ? '' : (string) $n['app_secret'],
+        'config_id' => mk_meta_next_config_id(), 'user_token' => (string) $n['user_token'], 'token_kind' => 'oauth', 'token_expires' => (int) ($n['token_expires'] ?? 0),
+        'user_id' => (string) ($n['user_id'] ?? ''), 'user_name' => (string) ($n['user_name'] ?? ''), 'connected_at' => time(),
+        'page_id' => (string) $n['page_id'], 'page_name' => (string) ($n['page_name'] ?? ''), 'page_token' => (string) $n['page_token'],
+        'token_invalid' => false, 'oauth_error' => '', 'webhook' => [], 'previous' => $prev,
+        'next' => ['switched_at' => time(), 'app_name' => (string) ($n['app_name'] ?? '')],
+    ];
+    if (($n['ig_id'] ?? '') !== '') {
+        // Instagram par la Page de la nouvelle app (l'ancienne connexion « Se connecter avec Instagram » appartient à l'ancienne app).
+        $patch += ['ig_id' => (string) $n['ig_id'], 'ig_username' => (string) ($n['ig_username'] ?? ''), 'ig_via' => 'page', 'ig_token' => '', 'ig_token_expires' => 0, 'ig_node' => '', 'ig_app_id' => '', 'ig_app_secret' => ''];
+    }
+    // Les champs de secours retenus pour l'ancienne app sont réévalués avec la nouvelle.
+    $patch['metrics'] = array_filter((array) $st['metrics'], fn ($k) => strpos((string) $k, 'conv_fields_') !== 0, ARRAY_FILTER_USE_KEY);
+    mk_meta_put($patch);
+    if ($lock) { flock($lock, LOCK_UN); fclose($lock); }
+    // Temps réel avec la nouvelle app.
+    $wh = null;
+    try { $wh = mk_meta_webhook_setup(); } catch (Throwable $e) { $notes[] = 'Temps réel à activer : ' . $e->getMessage(); }
+    return ['notes' => $notes, 'webhook' => $wh, 'meta' => mk_meta_public(), 'migration' => mk_meta_next_public()];
+}
+
+/** Revenir à l'app d'avant la bascule (ses jetons sont gardés). */
+function mk_meta_next_rollback(): array
+{
+    $st = mk_meta_state(true);
+    $prev = (array) $st['previous'];
+    if (!$prev) throw new MkInputError("Il n'y a pas d'ancienne app à rétablir.");
+    $patch = [];
+    foreach ($prev as $k => $v) if (!in_array($k, ['at', 'app_shown'], true)) $patch[$k] = $v;
+    $patch += ['previous' => [], 'next' => [], 'token_invalid' => false, 'webhook' => []];
+    $patch['metrics'] = array_filter((array) $st['metrics'], fn ($k) => strpos((string) $k, 'conv_fields_') !== 0, ARRAY_FILTER_USE_KEY);
+    mk_meta_put($patch);
+    $wh = null;
+    try { $wh = mk_meta_webhook_setup(); } catch (Throwable $e) {}
+    return ['webhook' => $wh, 'meta' => mk_meta_public(), 'migration' => mk_meta_next_public()];
+}
+
+/** Abandonner la préparation (la nouvelle app n'est pas touchée chez Meta). */
+function mk_meta_next_reset(): array
+{
+    mk_meta_put(['next' => []]);
+    return mk_meta_next_public();
 }
 
 /* ============================================================ « Se connecter avec Instagram » */
@@ -1521,6 +1963,7 @@ function mk_meta_webhook_url(): string
 /** Jeton que Meta renvoie pour vérifier l'adresse (créé une fois). */
 function mk_meta_wh_token(): string
 {
+    if (MK_META_WEBHOOK_VERIFY_TOKEN !== '') return (string) MK_META_WEBHOOK_VERIFY_TOKEN;
     $t = (string) mk_meta_state()['wh_token'];
     if ($t === '') {
         $t = bin2hex(random_bytes(16));
@@ -1533,7 +1976,9 @@ function mk_meta_webhook_public(): array
     $st = mk_meta_state();
     $w = (array) $st['webhook'];
     return ['on' => !empty($w['on']), 'at' => (int) ($w['at'] ?? 0), 'last_event' => (int) ($w['last_event'] ?? 0), 'events' => (int) ($w['events'] ?? 0),
-        'steps' => array_values((array) ($w['steps'] ?? [])), 'url' => mk_meta_webhook_url(), 'verify_token' => (string) $st['wh_token']];
+        'steps' => array_values((array) ($w['steps'] ?? [])), 'url' => mk_meta_webhook_url(),
+        // Jeton gardé dans config.php : jamais affiché.
+        'verify_token' => MK_META_WEBHOOK_VERIFY_TOKEN !== '' ? '' : (string) $st['wh_token'], 'verify_token_file' => MK_META_WEBHOOK_VERIFY_TOKEN !== ''];
 }
 
 /** POST de l'API Graph (abonnements aux webhooks). */
@@ -1596,7 +2041,8 @@ function mk_meta_wh_signed(string $raw, string $sig): bool
 {
     if (!preg_match('/^sha256=([0-9a-f]{64})$/', $sig, $m)) return false;
     $st = mk_meta_state();
-    $secrets = array_filter([mk_meta_app()[1], $st['ig_app_secret'] !== '' ? mk_unseal($st['ig_app_secret']) : '']);
+    // App active, app Instagram, et nouvelle app en préparation (ses webhooks peuvent arriver avant la bascule).
+    $secrets = array_unique(array_filter([mk_meta_app()[1], $st['ig_app_secret'] !== '' ? mk_unseal($st['ig_app_secret']) : '', mk_meta_next_app()[1]]));
     foreach ($secrets as $sec) if (hash_equals(hash_hmac('sha256', $raw, $sec), $m[1])) return true;
     return false;
 }
