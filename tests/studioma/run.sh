@@ -9,7 +9,8 @@ DIR=${1:-$(mktemp -d)}
 PORT=${2:-8097}
 if curl -s -o /dev/null "http://127.0.0.1:$PORT/"; then echo "Le port $PORT est déjà utilisé : choisir un autre port (2e argument)."; exit 1; fi
 # Le serveur et ses processus de travail sont arrêtés ensemble, et on attend leur fin (port libéré).
-cleanup() { pkill -P "${P1:-0}" 2>/dev/null || true; kill "${P1:-0}" 2>/dev/null || true; wait "${P1:-0}" 2>/dev/null || true; }
+P1=""
+cleanup() { [ -n "$P1" ] || return 0; pkill -P "$P1" 2>/dev/null || true; kill "$P1" 2>/dev/null || true; wait "$P1" 2>/dev/null || true; P1=""; }
 trap cleanup EXIT
 fresh() {
   cleanup
