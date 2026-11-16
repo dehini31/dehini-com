@@ -43,10 +43,11 @@
     if (!silent && B.id) SM.go('/studio/' + B.id + (B.view === 'board' ? '' : '/' + B.view));
   };
   /** Après une synchronisation du tableau : la carte a-t-elle changé (ou disparu) ? */
-  P.sync = async () => {
+  P.sync = async (team) => {
     if (!P.card) return;
     const lite = B.card(P.id);
     if (!lite) { SM.toast('This card was archived or deleted.'); P.close(); return; }
+    if (team && !typing()) { drawProps(); drawApproval(); }
     if (lite.updated === P.card.updated && lite.col_id === P.card.col_id && lite.n_comments === P.card.comments.length && lite.n_files === P.card.files.length && lite.n_checks === P.card.checks.length && lite.n_done === P.card.checks.filter((k) => k.done).length && lite.approval === P.card.approval) return;
     if (typing()) return;   // on ne redessine pas sous les doigts : la prochaine synchronisation s'en chargera
     await refresh();

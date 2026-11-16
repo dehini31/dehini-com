@@ -125,7 +125,7 @@
       const r = await SM.get('opps', { q: OF.q, mode: OF.mode, contract: OF.contract, mine: OF.scope === 'mine', applied: OF.scope === 'applied' });
       if (!ctx.alive()) return;
       SM.set(SM.$('#opps'), r.opps.length ? html`<div class="grid grid-2">${r.opps.map((o) => SM.oppCard(o))}</div>`
-        : SM.empty('briefcase', OF.q || OF.mode || OF.contract || OF.scope ? 'No opportunity matches' : 'No open opportunity yet', OF.scope === 'applied' ? 'Opportunities you apply to are listed here with their status.' : admin ? 'Publish the first one: describe the mission, the skills you need and how to apply.' : 'Companies publish their positions and projects here. Complete your profile to be found in the meantime.', admin ? html`<button class="btn btn-primary" data-act="opp-new">${icon('plus')}Post an opportunity</button>` : '')}`);
+        : SM.empty('briefcase', OF.q || OF.mode || OF.contract || OF.scope ? 'No opportunity matches' : 'No open opportunity yet', OF.scope === 'applied' ? 'Opportunities you apply to are listed here with their status.' : admin ? 'Publish the first one: describe the mission, the skills you need and how to apply.' : 'Companies publish their positions and projects here. Complete your profile to be found in the meantime.', admin ? html`<button class="btn btn-primary" data-act="opp-new">${icon('plus')}Post an opportunity</button>` : ''));
     };
     SM.inputs['opp-q'] = SM.debounce((el) => { OF.q = el.value.trim(); load(); }, 250);
     SM.changes['opp-filter'] = (el) => { OF[el.dataset.name] = el.value; load(); };
@@ -156,7 +156,7 @@
         ${applyBox ? html`<hr>${applyBox}` : ''}
       </article>
       ${r.applications ? html`<section><h2 class="section-title">${icon('inbox')}Applications <span class="count">${r.applications.length}</span></h2>
-        ${r.applications.length ? html`<div class="stack">${r.applications.map((a) => html`<article class="panel pad app">
+        ${r.applications.length ? html`<div class="stack">${r.applications.map((a) => html`<article class="panel pad applic">
           <header class="row"><a class="row grow" href="#/u/${a.user ? a.user.handle : ''}">${SM.avatar(a.user, 'av-m')}<span><b>${a.user ? a.user.name : 'Former member'}</b><small class="muted">${a.user ? a.user.title || '@' + a.user.handle : ''} · ${fmt.ago(a.created)}</small></span></a>
             <select class="input input-sm" data-change="app-status" data-id="${a.id}" aria-label="Application status">${Object.entries(SM.ref.app_statuses).map(([k, l]) => html`<option value="${k}" ${a.status === k ? 'selected' : ''}>${l}</option>`)}</select></header>
           <p class="pre">${a.message}</p>

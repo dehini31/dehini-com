@@ -489,7 +489,8 @@
     const input = e.target.closest && e.target.closest('.chips-in');
     if (!input) return;
     const el = input.closest('.chips');
-    if (e.key === 'Enter' || e.key === ',') { if (input.value.trim()) { e.preventDefault(); SM.chips.add(el, input); } else if (e.key === ',') e.preventDefault(); }
+    // Entrée n'envoie jamais le formulaire depuis ce champ : elle ajoute le mot en cours.
+    if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); if (input.value.trim()) SM.chips.add(el, input); }
     if (e.key === 'Backspace' && !input.value) { const last = SM.$$('.chip-x', el).pop(); if (last) { last.remove(); el.dispatchEvent(new Event('change', { bubbles: true })); } }
   });
   // Choix d'une proposition de la liste, ou sortie du champ : le mot est ajouté.

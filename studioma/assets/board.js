@@ -45,21 +45,27 @@
     const head = B.data ? JSON.stringify([B.data.studio, B.data.members]) : '';
     B.data = r;
     B.selected.forEach((id) => { if (!B.card(id)) B.selected.delete(id); });
-    if (JSON.stringify([r.studio, r.members]) !== head) drawHead();
+    const changed = JSON.stringify([r.studio, r.members]) !== head;
+    if (changed) drawHead();
     drawBody();
-    if (SM.cardPanel.id) SM.cardPanel.sync();
+    if (r.counts) SM.refreshCounts(r.counts);
+    // Le panneau d'une carte suit : la carte a changé, ou l'équipe (responsables et validateurs possibles).
+    if (SM.cardPanel.id) SM.cardPanel.sync(changed);
   }
   B.reload = async () => {
     try { const r = await SM.get('board', { studio: B.id }); if (alive()) apply(r); } catch (e) { if (alive()) gone(e); }
   };
-  /** Exécute une écriture puis recharge le tableau. Retourne la réponse, ou null en cas d'échec. */
+  /** Exécute une écriture puis recharge le tableau. Retourne la réponse, ou null en cas d'échec ($silent : l'erreur est relancée). */
   B.run = async (action, body, silent) => {
     B.writing++;
     let r = null;
-    try { r = await SM.post(action, body); } catch (e) { if (!silent) SM.toast(e.message, 'error'); r = null; if (silent) { B.writing--; await B.reload(); throw e; } }
-    B.writing--;
-    await B.reload();
-    return r;
+    let err = null;
+    try { r = await SM.post(action, body); } catch (e) { err = e; }
+    try { await B.reload(); } finally { B.writing--; }
+    if (!err) return r;
+    if (silent) throw err;
+    SM.toast(err.message, 'error');
+    return null;
   };
   function gone(e) {
     if (e.status === 404) { SM.toast('This Studio is no longer available.', 'error'); SM.dropWorkspace(); SM.go('/projects'); }
@@ -68,7 +74,9 @@
     if (document.hidden || B.writing || B.adding || B.editing || document.body.classList.contains('is-dragging')) return;
     try {
       const r = await SM.get('board', { studio: B.id, rev: B.data.rev });
-      if (!alive() || r.same || B.writing || B.adding || B.editing || document.body.classList.contains('is-dragging')) return;
+      if (!alive()) return;
+      if (r.same) { SM.refreshCounts(r.counts); return; }
+      if (B.writing || B.adding || B.editing || document.body.classList.contains('is-dragging')) return;
       apply(r);
     } catch (e) { if (alive()) gone(e); }
   }
@@ -152,14 +160,14 @@
     const done = col.kind !== '';
     const assignee = c.assignee ? B.member(c.assignee) : null;
     const manual = level.handoff === 'manual' && level.handoff_col === col.id && targetOf(level) && B.canEditCard(c);
-    return html`<article class="kcard${c.priority ? ' prio-' + c.priority : ''}${B.selected.has(c.id) ? ' is-selected' : ''}${col.kind === 'cancelled' ? ' is-cancelled' : ''}" data-card="${c.id}" data-act="card-open" data-id="${c.id}" tabindex="0" aria-label="${c.title}">
+    return html`<article class="kcard${c.priority ? ' kprio-' + c.priority : ''}${B.selected.has(c.id) ? ' is-selected' : ''}${col.kind === 'cancelled' ? ' is-cancelled' : ''}" data-card="${c.id}" data-act="card-open" data-id="${c.id}" tabindex="0" aria-label="${c.title}">
       ${can('edit') ? html`<button class="kcard-check" data-act="card-select" data-id="${c.id}" aria-label="Select card" aria-pressed="${B.selected.has(c.id)}">${icon('check')}</button>` : ''}
       ${c.cover ? html`<img class="kcard-cover" src="${SM.fileUrl(c.cover, true)}" alt="" loading="lazy" draggable="false">` : ''}
       ${c.ctype || c.platforms.length ? html`<div class="kcard-top">${c.ctype ? html`<span class="chip chip-type">${SM.ref.content_types[c.ctype]}</span>` : ''}${c.platforms.slice(0, 3).map((p) => html`<span class="chip chip-pf pf-${p}">${SM.ref.platforms[p]}</span>`)}${c.platforms.length > 3 ? html`<span class="chip">+${c.platforms.length - 3}</span>` : ''}</div>` : ''}
       <h3>${c.title}</h3>
       ${c.tags.length ? html`<div class="kcard-tags">${c.tags.slice(0, 4).map((t) => html`<span class="tag">#${t}</span>`)}</div>` : ''}
       ${manual ? html`<button class="btn btn-soft btn-sm kcard-send" data-act="card-handoff" data-id="${c.id}">Send to ${targetOf(level).name}${icon('arrow-right')}</button>` : ''}
-      <footer class="kcard-meta">
+      ${c.priority || c.due || c.publish_at || c.approval || c.n_checks || c.n_comments || c.n_files || assignee ? html`<footer class="kcard-meta">
         ${c.priority ? html`<span class="prio prio-${c.priority}" title="${PRIO[c.priority]} priority">${icon('flag')}</span>` : ''}
         ${dueChip(c, done)}
         ${c.publish_at ? html`<span class="due due-pub" title="Publication date">${icon('send')}${fmt.day(c.publish_at)}</span>` : ''}
@@ -168,7 +176,7 @@
         ${c.n_comments ? html`<span class="meta" title="Comments">${icon('comment')}${c.n_comments}</span>` : ''}
         ${c.n_files ? html`<span class="meta" title="Attachments">${icon('paperclip')}${c.n_files}</span>` : ''}
         <span class="grow"></span>${assignee ? SM.avatar(assignee, 'av-s') : ''}
-      </footer>
+      </footer>` : ''}
     </article>`;
   }
   function colView(col, level) {
@@ -255,7 +263,7 @@
         <button class="btn-icon" data-act="bulk-clear" aria-label="Clear selection">${icon('x')}</button>
       </div>` : '';
     SM.set(el, html`${pipeline}
-      <div class="levels${B.focus ? ' is-focus' : ''}">${shown.map(levelView)}</div>
+      <div class="levels${B.focus ? ' is-focus' : ''}${B.selected.size ? ' has-selection' : ''}">${shown.map(levelView)}</div>
       ${!levels.length ? SM.empty('layers', 'Design your workflow', can('manage') ? 'Levels are the big stages of your work — for example Creation, Production and Publication. Each level holds its own columns.' : 'This Studio has no level yet.', can('manage') ? html`<button class="btn btn-primary" data-act="level-add">${icon('plus')}Add the first level</button>` : '') : ''}
       ${bulk}`);
     SM.$$('.level-cols, .bcol-cards', el).forEach((n) => { const s = scroll[n.dataset.levelCols ? 'l' + n.dataset.levelCols : 'c' + n.dataset.cards]; if (s) { n.scrollLeft = s[0]; n.scrollTop = s[1]; } });
@@ -421,6 +429,7 @@
       items.push({ label: 'Priority…', icon: 'flag', act: () => pickPriority(anchor, c.priority, (p) => B.run('card_save', { id, priority: p })) });
       items.push({ label: 'Duplicate', icon: 'copy', act: async () => { if (await B.run('card_duplicate', { id })) SM.toast('Card duplicated'); } });
     }
+    if (can('edit') && B.view === 'board') items.push({ label: B.selected.has(id) ? 'Deselect' : 'Select', hint: 'Then act on several cards at once', icon: 'checklist', act: () => toggleSelect(id) });
     items.push({ label: 'Copy link', icon: 'link', act: () => SM.copy(location.origin + location.pathname + '#/studio/' + B.id + '/card/' + id) });
     if (editable) {
       items.push({ sep: true }, { label: 'Archive', icon: 'archive', act: async () => { if (await B.run('card_archive', { id, archived: true })) { SM.toast('Card archived. Restore it from the Studio menu › Archive.'); if (SM.cardPanel.id === id) SM.go(base()); } } });

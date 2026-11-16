@@ -376,9 +376,10 @@ function board_data(array $s, array $u): array
 function api_board(array $b, array $u): array
 {
     $s = load_studio(int_in($b, 'studio'), $u);
-    // Synchronisation : si le navigateur a déjà cette version, on ne renvoie rien d'autre.
-    if (isset($b['rev']) && (int) $b['rev'] === (int) $s['rev']) return ['rev' => (int) $s['rev'], 'same' => true];
-    return ['rev' => (int) $s['rev']] + board_data($s, $u);
+    // Synchronisation : si le navigateur a déjà cette version, on ne renvoie que les pastilles du menu.
+    $counts = me_counts((int) $u['id']);
+    if (isset($b['rev']) && (int) $b['rev'] === (int) $s['rev']) return ['rev' => (int) $s['rev'], 'same' => true, 'counts' => $counts];
+    return ['rev' => (int) $s['rev'], 'counts' => $counts] + board_data($s, $u);
 }
 
 /* ---------------------------------------------------------------- niveaux */
