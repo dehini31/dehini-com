@@ -1,0 +1,27 @@
+<?php
+/**
+ * Modèle de configuration de Studioma — facultatif, NE PAS committer config.php.
+ *
+ * Tout fonctionne sans ce fichier. Il ne sert que pour des cas particuliers : copie-le en
+ * studioma/config.php (exclu de Git, bloqué par .htaccess) et décommente ce dont tu as besoin.
+ */
+
+// Adresse publique de la plateforme (sert aux liens des emails et des invitations).
+// define('STM_SITE_URL', 'https://dehini.com/studioma/');
+
+// Dossier des données : la base et les fichiers envoyés (par défaut ~/studioma-data, hors public_html).
+// define('STM_DATA_DIR', '/home/dehini91/studioma-data');
+
+// Taille maximale d'une vidéo ou d'une pièce jointe, en Mo (à accorder avec studioma/.user.ini).
+// define('STM_MAX_UPLOAD_MB', 64);
+
+// Durée de validité d'une invitation, en jours.
+// define('STM_INVITE_DAYS', 14);
+
+// Emails : par défaut, le compte SMTP du défi Impact (impact/config.php) est réutilisé.
+// define('STM_SMTP_HOST', 'mail.dehini.com');
+// define('STM_SMTP_PORT', 465);
+// define('STM_SMTP_SECURE', 'ssl');
+// define('STM_SMTP_USER', 'studioma@dehini.com');
+// define('STM_SMTP_PASS', 'mot-de-passe-du-compte-email');
+// define('STM_MAIL_FROM', 'studioma@dehini.com');
