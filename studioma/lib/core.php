@@ -180,7 +180,7 @@ function marks(array $a): string
 /** Schéma compatible avec les vieilles versions de SQLite des hébergeurs mutualisés. */
 function migrate(PDO $pdo): void
 {
-    if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= 3) return;
+    if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= 4) return;
     // Deux premières visites simultanées : la seconde attend la fin de la création, puis ne fait rien.
     $pdo->exec('BEGIN IMMEDIATE');
     try {
@@ -649,6 +649,59 @@ function migrate(PDO $pdo): void
             if (!in_array('chash', $cols, true)) $pdo->exec('ALTER TABLE users ADD COLUMN chash TEXT');
             if (!in_array('cexp', $cols, true)) $pdo->exec('ALTER TABLE users ADD COLUMN cexp INTEGER NOT NULL DEFAULT 0');
             $pdo->exec('PRAGMA user_version = 3');
+        }
+        if ($v < 4) {
+            // Assistants IA (serveur MCP) : applications enregistrées (OAuth), autorisations en cours,
+            // accès accordés à un compte (une application ou un jeton personnel) et leurs jetons.
+            $pdo->exec(<<<SQL
+        -- Application qui s'est enregistrée elle-même (RFC 7591). secret = hash du secret ('' = client
+        -- public, protégé par PKCE seulement).
+        CREATE TABLE IF NOT EXISTS oauth_clients (
+            id TEXT PRIMARY KEY,
+            secret TEXT NOT NULL DEFAULT '',
+            name TEXT NOT NULL DEFAULT '',
+            uri TEXT NOT NULL DEFAULT '',
+            redirects TEXT NOT NULL DEFAULT '[]',
+            created INTEGER NOT NULL,
+            used INTEGER NOT NULL DEFAULT 0
+        );
+        -- Demande d'autorisation en attente (écran « Allow ») ; après l'accord, code = hash du code
+        -- remis à l'application, à échanger contre des jetons dans les 10 minutes.
+        CREATE TABLE IF NOT EXISTS oauth_requests (
+            id TEXT PRIMARY KEY,
+            client_id TEXT NOT NULL,
+            redirect TEXT NOT NULL,
+            challenge TEXT NOT NULL,
+            state TEXT NOT NULL DEFAULT '',
+            scope TEXT NOT NULL DEFAULT '',
+            resource TEXT NOT NULL DEFAULT '',
+            uid INTEGER NOT NULL DEFAULT 0,
+            code TEXT,
+            expires INTEGER NOT NULL
+        );
+        CREATE UNIQUE INDEX IF NOT EXISTS oauth_requests_code ON oauth_requests(code);
+        -- Accès accordé : une application (client_id) ou un jeton personnel (client_id = '').
+        CREATE TABLE IF NOT EXISTS ai_grants (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            uid INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            client_id TEXT NOT NULL DEFAULT '',
+            name TEXT NOT NULL,
+            created INTEGER NOT NULL,
+            used INTEGER NOT NULL DEFAULT 0
+        );
+        CREATE INDEX IF NOT EXISTS ai_grants_u ON ai_grants(uid);
+        -- Jetons (seul leur hash est gardé). kind : access | refresh | personal ; expires = 0 : sans fin.
+        CREATE TABLE IF NOT EXISTS ai_tokens (
+            hash TEXT PRIMARY KEY,
+            grant_id INTEGER NOT NULL REFERENCES ai_grants(id) ON DELETE CASCADE,
+            kind TEXT NOT NULL,
+            hint TEXT NOT NULL DEFAULT '',
+            created INTEGER NOT NULL,
+            expires INTEGER NOT NULL DEFAULT 0
+        );
+        CREATE INDEX IF NOT EXISTS ai_tokens_g ON ai_tokens(grant_id);
+        PRAGMA user_version = 4;
+        SQL);
         }
         $pdo->exec('COMMIT');
     } catch (Throwable $e) {

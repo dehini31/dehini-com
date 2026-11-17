@@ -7,6 +7,27 @@
  */
 $uri = rawurldecode((string) parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
 $root = rtrim($_SERVER['DOCUMENT_ROOT'], '/');
+// Réécritures de studioma/.htaccess et de .well-known/.htaccess (serveur MCP, OAuth, découverte).
+$target = null;
+if (preg_match('~^/studioma/mcp/?$~', $uri)) {
+    $target = 'mcp.php';
+} elseif (preg_match('~^/studioma/oauth/(register|authorize|token|revoke)/?$~', $uri, $m)) {
+    $target = 'oauth.php';
+    $_GET['op'] = $m[1];
+} elseif (preg_match('~^/studioma/\.well-known/(oauth-protected-resource|oauth-authorization-server|openid-configuration)(/.*)?$~', $uri, $m)
+    || preg_match('~^/\.well-known/(oauth-authorization-server)(/studioma)?/?$~', $uri, $m)
+    || preg_match('~^/\.well-known/(openid-configuration)/studioma/?$~', $uri, $m)
+    || preg_match('~^/\.well-known/(oauth-protected-resource)(/studioma(/mcp)?)?/?$~', $uri, $m)) {
+    $target = 'oauth.php';
+    $_GET['wk'] = $m[1];
+}
+if ($target !== null) {
+    $_SERVER['SCRIPT_NAME'] = '/studioma/' . $target;
+    $_SERVER['SCRIPT_FILENAME'] = $root . '/studioma/' . $target;
+    chdir($root . '/studioma');
+    require $root . '/studioma/' . $target;
+    return true;
+}
 if (strpos($uri, '/studioma') !== 0) return false;
 $deny = preg_match('~^/studioma/lib(/|$)~', $uri)
     || preg_match('~/(config\.php|config\.example\.php|\.user\.ini|\.htaccess|[^/]*\.sqlite[^/]*)$~', $uri);

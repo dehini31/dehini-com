@@ -14,6 +14,7 @@
 const { chromium, devices } = require('playwright');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 const [ORIGIN, DIR] = process.argv.slice(2);
 const A = ORIGIN + '/studioma/app/';
@@ -728,6 +729,67 @@ const cardIn = (page, col, title) => page.locator(`${colSel(col)} .kcard:has(h3:
   await gp.waitForSelector('.welcome-card');
   ok(await gp.evaluate(() => SM.me.kind === 'company' && SM.companies.length === 1 && SM.companies[0].name === 'Brand Co'), 'entreprise créée avec Google, avec sa page');
   await gCtx.close();
+
+  /* --------------------------------------------------- assistants IA (MCP) */
+  step('AI assistants : serveur MCP, jeton personnel, écran d\'accord');
+  const MCP = ORIGIN + '/studioma/mcp';
+  const rpc = (tok, method, params) => fetch(MCP, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + tok }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params: params || {} }) })
+    .then(async (x) => ({ status: x.status, data: x.status === 200 ? await x.json() : null }));
+  await ap.goto(A + '#/settings');
+  await ap.click('a.ai-link');
+  await ap.waitForSelector('.ai-page');
+  ok(/\/studioma\/mcp$/.test(await ap.locator('.ai-page .code pre').first().innerText()) && await ap.locator('.guide[open]').count() === 1 && await ap.locator('.guide').count() === 5, 'page AI assistants : adresse du serveur et guides de connexion');
+  await ap.fill('form[data-form="ai-token"] input[name=name]', 'Script on my laptop');
+  await ap.click('form[data-form="ai-token"] button');
+  await ap.waitForSelector('.token-once');
+  const pat = (await ap.locator('.token-once pre').innerText()).trim();
+  ok(/^stm_pat_[a-f0-9]{48}$/.test(pat), 'jeton personnel montré une fois');
+  await shot(ap, '20-ai-settings');
+  let mres = await rpc(pat, 'tools/call', { name: 'list_projects', arguments: {} });
+  ok(mres.status === 200 && mres.data.result.structuredContent.projects.some((p) => p.name === 'Vélora'), 'le jeton ouvre le serveur MCP au nom d\'Amel');
+  await ap.reload({ waitUntil: 'load' });
+  await ap.waitForSelector('.ai-page');
+  ok(await ap.locator('.token-once').count() === 0 && /Script on my laptop/.test(await ap.locator('.ai-page').innerText()), 'après rechargement : jeton listé, jamais réaffiché');
+  // Une application s'enregistre et demande l'accès (comme claude.ai).
+  const regRes = await fetch(ORIGIN + '/studioma/oauth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ client_name: 'Claude (test)', redirect_uris: ['https://claude.ai/api/mcp/auth_callback'], token_endpoint_auth_method: 'none' }) }).then((x) => x.json());
+  const verifier = crypto.randomBytes(32).toString('base64url');
+  const challenge = crypto.createHash('sha256').update(verifier).digest('base64url');
+  const authUrl = ORIGIN + '/studioma/oauth/authorize?' + new URLSearchParams({ response_type: 'code', client_id: regRes.client_id, redirect_uri: 'https://claude.ai/api/mcp/auth_callback', code_challenge: challenge, code_challenge_method: 'S256', state: 's1', resource: MCP });
+  const oCtx = await browser.newContext(desk);
+  let landed = '';
+  await oCtx.route('https://claude.ai/**', (route) => { landed = route.request().url(); route.fulfill({ status: 200, contentType: 'text/plain', body: 'Back in Claude' }); });
+  const op = await oCtx.newPage();
+  watch(op, 'oauth');
+  await op.goto(authUrl, { waitUntil: 'load' });
+  await op.waitForSelector('form[data-form="login"]');
+  ok(true, 'écran d\'accord sans session : connexion demandée d\'abord');
+  await op.fill('input[name=email]', 'amel@test.example');
+  await op.fill('input[name=password]', 'a-solid-password');
+  await op.click('form[data-form="login"] button.btn-primary');
+  await op.waitForSelector('.consent');
+  const ctext = (await op.locator('.consent').innerText()).replace(/\s+/g, ' ');
+  ok(/Connect Claude \(test\) to your Studioma account/.test(ctext) && /act as Amel Haddad/.test(ctext) && /sent back to claude\.ai/.test(ctext), 'écran d\'accord : application, compte et site de retour');
+  await shot(op, '21-ai-consent');
+  await op.click('[data-act="oauth-decide"][data-allow="1"]');
+  await op.waitForFunction(() => /Back in Claude/.test(document.body.innerText), null, { timeout: 8000 });
+  const backUrl = new URL(landed);
+  ok(backUrl.searchParams.get('code') && backUrl.searchParams.get('state') === 's1', 'Allow : retour vers l\'application avec le code');
+  const tok = await fetch(ORIGIN + '/studioma/oauth/token', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ grant_type: 'authorization_code', code: backUrl.searchParams.get('code'), redirect_uri: 'https://claude.ai/api/mcp/auth_callback', client_id: regRes.client_id, code_verifier: verifier }) }).then((x) => x.json());
+  mres = await rpc(tok.access_token, 'tools/list');
+  ok(mres.status === 200 && mres.data.result.tools.length >= 20, 'jeton de l\'application : outils accessibles');
+  await oCtx.close();
+  await ap.reload({ waitUntil: 'load' });
+  await ap.waitForSelector('.ai-page');
+  ok(/Claude \(test\)/.test(await ap.locator('.ai-page').innerText()), 'application connectée listée');
+  await ap.click('.list-row:has-text("Claude (test)") [data-act="ai-revoke"]');
+  await ap.click('.modal button.btn-danger');
+  ok(await toast(ap, /Access removed/), 'application déconnectée');
+  ok((await rpc(tok.access_token, 'tools/list')).status === 401, '… et ses jetons refusés aussitôt');
+  await ap.click('.list-row:has-text("Script on my laptop") [data-act="ai-revoke"]');
+  await ap.click('.modal button.btn-danger');
+  await toast(ap, /Access removed/);
+  ok((await rpc(pat, 'tools/list')).status === 401, 'jeton personnel supprimé : refusé');
 
   /* ------------------------------------------------- mobile, thème sombre */
   step('Mobile et thème sombre');

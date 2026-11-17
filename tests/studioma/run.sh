@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Lance toute la batterie de tests de Studioma sur un faux hébergement neuf :
 #   tests/studioma/run.sh [dossier] [port]   (par défaut : un dossier temporaire, port 8097)
-# D'abord l'API seule (api.js), puis l'application dans un navigateur (e2e.js, Playwright / Chromium).
+# D'abord l'API seule (api.js), puis le serveur MCP et son OAuth (mcp.js), puis l'application dans un
+# navigateur (e2e.js, Playwright / Chromium).
 set -euo pipefail
 HERE=$(cd "$(dirname "$0")" && pwd)
 REPO=$(cd "$HERE/../.." && pwd)
@@ -24,5 +25,7 @@ fresh() {
 cd "$REPO"
 fresh
 node "$HERE/api.js" "http://127.0.0.1:$PORT" "$DIR"
+fresh
+node "$HERE/mcp.js" "http://127.0.0.1:$PORT" "$DIR"
 fresh
 node "$HERE/e2e.js" "http://127.0.0.1:$PORT" "$DIR"

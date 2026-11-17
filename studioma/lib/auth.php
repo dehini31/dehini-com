@@ -8,8 +8,27 @@ declare(strict_types=1);
 const SID_COOKIE = 'stm_sid';
 const SESSION_DAYS = 30;
 
+/**
+ * Erreur d'une action appelée depuis le serveur MCP : au lieu d'envoyer la réponse et de s'arrêter,
+ * fail() (et out() pour une erreur) lève cette exception, que le serveur MCP rend à l'assistant.
+ */
+class ApiFail extends RuntimeException
+{
+    /** @var array */
+    public $data;
+    /** @var int */
+    public $status;
+    public function __construct(array $data, int $status)
+    {
+        parent::__construct((string) ($data['message'] ?? 'Error'));
+        $this->data = $data;
+        $this->status = $status;
+    }
+}
+
 function out(array $d, int $code = 200): void
 {
+    if (!empty($GLOBALS['stm_throw']) && ($code >= 400 || isset($d['error']))) throw new ApiFail($d, $code);
     http_response_code($code);
     echo json_encode($d, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PARTIAL_OUTPUT_ON_ERROR);
     exit;

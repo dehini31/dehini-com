@@ -1,5 +1,16 @@
 Options -Indexes
 
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  # Certains hébergeurs retirent l'en-tête Authorization avant PHP : on le transmet (serveur MCP, OAuth).
+  RewriteCond %{HTTP:Authorization} .
+  RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+  # Assistants IA : serveur MCP, OAuth et documents de découverte (voir mcp.php et oauth.php).
+  RewriteRule ^mcp/?$ mcp.php [L,QSA]
+  RewriteRule ^oauth/(register|authorize|token|revoke)/?$ oauth.php?op=$1 [L,QSA]
+  RewriteRule ^\.well-known/(oauth-protected-resource|oauth-authorization-server|openid-configuration)(/.*)?$ oauth.php?wk=$1 [L,QSA]
+</IfModule>
+
 # Seuls les pages, l'API et les fichiers statiques sont accessibles.
 <FilesMatch "^(config\.php|config\.example\.php|\.user\.ini)$">
   Require all denied

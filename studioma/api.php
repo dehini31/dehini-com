@@ -23,6 +23,7 @@ require __DIR__ . '/lib/collab.php';
 require __DIR__ . '/lib/social.php';
 require __DIR__ . '/lib/talent.php';
 require __DIR__ . '/lib/google.php';
+require __DIR__ . '/lib/oauth.php';
 
 /** action => [méthode, accès] — accès : public (compte facultatif) | user (compte obligatoire). */
 const ROUTES = [
@@ -31,6 +32,9 @@ const ROUTES = [
     'forgot' => ['POST', 'public'], 'reset' => ['POST', 'public'], 'password' => ['POST', 'user'], 'account_save' => ['POST', 'user'],
     'account_delete' => ['POST', 'user'], 'counts' => ['GET', 'user'], 'email_confirm_send' => ['POST', 'user'], 'email_confirm' => ['POST', 'user'],
     'google' => ['POST', 'public'], 'google_link' => ['POST', 'user'], 'google_unlink' => ['POST', 'user'],
+    // Assistants IA (serveur MCP) : écran d'accord OAuth, applications connectées, jetons personnels
+    'oauth_request' => ['GET', 'user'], 'oauth_decide' => ['POST', 'user'], 'ai_access' => ['GET', 'user'],
+    'ai_token_create' => ['POST', 'user'], 'ai_revoke' => ['POST', 'user'],
     // Projets et Studios
     'workspace' => ['GET', 'user'], 'project_get' => ['GET', 'user'], 'project_save' => ['POST', 'user'], 'project_archive' => ['POST', 'user'],
     'project_delete' => ['POST', 'user'], 'studio_create' => ['POST', 'user'], 'studio_save' => ['POST', 'user'], 'studio_archive' => ['POST', 'user'],

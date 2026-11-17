@@ -131,6 +131,10 @@
     const assignee = c.assignee ? B.member(c.assignee) : null;
     const members = c.members.map((id) => B.member(id)).filter(Boolean);
     const due = fmt.due(c.due);
+    // Un tag en cours de saisie survit au redessin (un autre champ vient d'être enregistré).
+    const typed = P.modal && SM.$('#cp-props .chips-in', P.modal.el);
+    const typedValue = typed ? typed.value : '';
+    const typedFocus = !!typed && document.activeElement === typed;
     part('cp-props', html`
       <div class="prop"><span class="prop-k">${icon('user')}Assignee</span>
         <button class="prop-v prop-btn" ${c.can.reassign ? raw('data-act="cp-assignee"') : 'disabled'}>${assignee ? html`${SM.avatar(assignee, 'av-s')}<span>${assignee.name}</span>` : html`<span class="muted">Nobody yet</span>`}</button></div>
@@ -152,6 +156,8 @@
       <div class="prop prop-wide"><span class="prop-k">${icon('tag')}Tags</span>
         <span class="prop-v">${e ? SM.chips.render('tags', c.tags, { change: 'card-tags', max: 12, len: 30, placeholder: 'Add a tag…' }) : (c.tags.length ? c.tags.map((t) => html`<span class="tag">#${t}</span>`) : html`<span class="muted">None</span>`)}</span></div>
       <p class="cp-by muted small">Created by ${c.creator ? c.creator.name : 'a former member'} · ${fmt.date(c.created)}</p>`);
+    const again = (typedValue || typedFocus) && SM.$('#cp-props .chips-in', P.modal.el);
+    if (again) { again.value = typedValue; if (typedFocus) again.focus(); }
   }
   function drawChecks() {
     const c = P.card;
