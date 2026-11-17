@@ -286,6 +286,31 @@
   }, { public: true });
   SM.forms.reset = async (form, data) => afterAuth(await SM.post('reset', data));
 
+  /* ------------------------------------------------ confirmation de l'adresse */
+  /**
+   * Lien reçu par email : il faut être connecté au compte qui l'a demandé (sinon la personne dont on
+   * aurait pris l'adresse confirmerait le compte d'un autre en cliquant).
+   */
+  SM.route(/^\/confirm\/([a-f0-9]{48})$/, async (m, ctx) => {
+    if (!SM.me) {
+      sessionStorage.setItem('stm.next', '/confirm/' + m[1]);
+      SM.set(ctx.view, authCard('Confirm your email', 'Sign in to the account that uses this address to confirm it.', html`
+        <a class="btn btn-primary btn-block" href="#/login">Sign in to confirm</a>
+        <p class="auth-alt">Didn't create a Studioma account? Ignore the email: the address stays unconfirmed. If someone created one with your address, take it back with <a href="#/forgot">Forgot your password?</a></p>`));
+      return;
+    }
+    let r = null;
+    let error = '';
+    try { r = await SM.post('email_confirm', { token: m[1] }); } catch (e) { error = e.message; }
+    if (!ctx.alive()) return;
+    if (r) { SM.setMe(r); SM.refreshCounts(); }
+    SM.set(ctx.view, authCard(r ? 'Email confirmed' : 'Link not valid', r ? 'You\'re all set.' : 'This confirmation link can\'t be used.', r
+      ? html`<div class="notice notice-ok" data-email-confirmed>${icon('check')}<span><b>${SM.me.email}</b> is confirmed. Invitations to projects and Studios sent to this address now appear in your workspace.</span></div>
+        <a class="btn btn-primary btn-block" href="#/projects">Open my projects</a>`
+      : html`<div class="notice notice-warn">${icon('alert')}<span>${error}</span></div>
+        <a class="btn btn-primary btn-block" href="#/settings">Go to Settings</a>`));
+  }, { public: true });
+
   /* ------------------------------------------------------------ invitation */
   SM.route(/^\/join\/([a-f0-9]{32})$/, async (m, ctx) => {
     const token = m[1];
@@ -302,7 +327,7 @@
       body = html`<div class="notice notice-ok">${icon('check')}<span>You are already a member.</span></div><a class="btn btn-primary btn-block" href="#${inv.studio ? '/studio/' + inv.studio.id : '/project/' + inv.project.id}">Open it</a>`;
     } else {
       body = html`<button class="btn btn-primary btn-block" data-act="invite-accept" data-token="${token}">Accept and join</button>
-        ${inv.email ? html`<button class="btn btn-ghost btn-block" data-act="invite-decline" data-token="${token}">Decline</button>` : ''}`;
+        ${inv.mine ? html`<button class="btn btn-ghost btn-block" data-act="invite-decline" data-token="${token}">Decline</button>` : ''}`;
     }
     SM.set(ctx.view, html`<div class="auth"><div class="auth-card panel">
       <div class="invite-who">${SM.avatar(inv.by, 'av-l')}</div>
@@ -457,7 +482,11 @@
           <p class="form-error" data-error hidden></p><div><button class="btn btn-soft">${SM.me.has_password ? 'Change password' : 'Save password'}</button></div>
         </form>
       </section>
-      <section class="panel pad"><h2>Email</h2>
+      <section class="panel pad" id="account-email"><h2>Email</h2>
+        ${SM.me.email_ok
+          ? html`<p class="email-state">${icon('check')}<span><b>${SM.me.email}</b> is confirmed.</span></p>`
+          : html`<div class="notice notice-warn" data-email-unconfirmed>${icon('mail')}<span><b>Your email address isn't confirmed yet.</b> Invitations to projects and Studios sent to ${SM.me.email} will appear in your workspace once you confirm it. Until then, open them with the link in the invitation email.</span></div>
+            <div data-confirm-box><button class="btn btn-soft btn-sm" data-act="email-confirm-send">${icon('send')}Send me a confirmation link</button></div>`}
         <form data-form="account-email" class="stack">
           <div class="field-row">${field('Email', 'email', 'email', `value="${SM.esc(SM.me.email)}" required`)}${SM.me.has_password ? field('Current password', 'current', 'password', 'autocomplete="current-password" placeholder="Required to change your email"') : ''}</div>
           ${SM.me.has_password ? '' : html`<p class="muted small">Choose a password first to change your email: it confirms changes to your account.</p>`}
@@ -496,7 +525,23 @@
     const r = await SM.try(SM.post('account_save', { settings: { [el.dataset.name]: el.checked } }));
     if (r) { SM.me.settings = r.user.settings; SM.toast('Saved'); } else el.checked = !el.checked;
   };
-  SM.forms['account-email'] = async (form, data) => { const r = await SM.post('account_save', data); SM.me.email = r.user.email; form.current.value = ''; SM.toast('Email updated'); };
+  SM.forms['account-email'] = async (form, data) => {
+    const before = SM.me.email;
+    const r = await SM.post('account_save', data);
+    SM.setMe(r);
+    if (form.current) form.current.value = '';
+    if (r.user.email === before) { SM.toast('Your email is unchanged'); return; }
+    SM.toast('Email updated — check ' + r.user.email + ' to confirm it');
+    SM.navigate();
+  };
+  SM.actions['email-confirm-send'] = async (el) => {
+    SM.busy(el, true);
+    const r = await SM.try(SM.post('email_confirm_send', {}));
+    SM.busy(el, false);
+    if (!r) return;
+    SM.toast('Confirmation link sent');
+    SM.set(el.closest('[data-confirm-box]'), html`<p class="muted small" data-confirm-sent>Link sent to <b>${r.email}</b>. Open it while signed in to this account — it is valid for 2 days.</p>`);
+  };
   SM.forms['account-password'] = async (form, data) => {
     const first = !SM.me.has_password;
     await SM.post('password', data);

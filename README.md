@@ -1477,6 +1477,27 @@ compte un** (page *Publication requests*). L'activité dans les Studios (« piè
 profil que si la personne l'active dans ses réglages, et seulement sous forme de totaux, sans nom de projet. La
 charge de travail par personne (*Insights*) n'est visible que des managers du Studio.
 
+**Invitations envoyées par email et adresse confirmée.** L'adresse d'un compte créé avec un mot de passe n'est
+pas vérifiée à l'inscription : quelqu'un pourrait donc créer un compte avec l'adresse d'une autre personne avant
+qu'elle ne rejoigne Studioma. Pour qu'il ne voie pas les invitations qui lui sont destinées (projet, auteur, rôle,
+lien) et ne puisse pas les accepter, **une invitation n'est rattachée à un compte par son adresse que si cette
+adresse est confirmée** — par Google, par le lien de « Forgot your password? » ou par le lien de confirmation :
+
+- tant que l'adresse n'est pas confirmée, l'invitation n'apparaît ni dans l'espace de travail du compte, ni dans
+  ses pastilles, ni dans ses notifications ; le compte ne peut ni l'accepter ni la refuser par son adresse. Une
+  invitation envoyée à cette adresse n'est pas non plus reliée au compte au moment de l'envoi ;
+- **le lien de l'email d'invitation fonctionne toujours** : le recevoir prouve l'accès à la boîte. La personne
+  invitée l'ouvre et accepte, avec ou sans adresse confirmée, comme avant ;
+- dès que l'adresse est confirmée, les invitations qui lui ont été envoyées apparaissent dans l'espace de travail.
+
+Confirmer son adresse : le lien de l'email de bienvenue, ou **Settings › Email › Send me a confirmation link**
+(un avertissement y explique pourquoi). Le lien est valable 2 jours et ne sert qu'à cela (ni connexion, ni
+changement de mot de passe) ; **il faut l'ouvrir en étant connecté au compte qui l'a demandé** — sinon la
+personne dont l'adresse a été prise, ou un logiciel qui ouvre les liens de ses emails, confirmerait sans le savoir
+le compte de quelqu'un d'autre. Changer d'adresse la rend « non confirmée », envoie un lien à la nouvelle et
+annule ceux envoyés à l'ancienne (mot de passe oublié compris). Se connecter avec Google ne confirme que l'adresse
+du compte Google.
+
 ### Organisation
 
 - `studioma/index.html` + `assets/landing.{css,js}` — la landing (statique).
@@ -1506,8 +1527,9 @@ plateforme démarre vide.
 
 ### 2. Emails
 
-Invitations, mot de passe oublié, bienvenue et notifications importantes (carte confiée, mention, demande de
-validation, autorisation de publication) partent du compte email du défi Impact s'il est configuré
+Invitations, mot de passe oublié, bienvenue (avec le lien de confirmation de l'adresse), confirmation d'une
+nouvelle adresse et notifications importantes (carte confiée, mention, demande de validation, autorisation de
+publication) partent du compte email du défi Impact s'il est configuré
 (`impact/config.php`), sinon de la fonction `mail()` du serveur. Pour un autre compte, voir
 `studioma/config.example.php`. Chacun peut couper les emails de notification dans ses réglages.
 
@@ -1530,7 +1552,9 @@ bouton n'apparaît pas.
   comptes créés par email ne sont pas vérifiées, **si ce compte avait un mot de passe posé sans que l'adresse ait
   jamais été confirmée, ce mot de passe est retiré et ses sessions sont fermées** : quelqu'un qui aurait créé le
   compte avec l'adresse d'une autre personne en perd l'accès, et son vrai propriétaire peut choisir un nouveau
-  mot de passe. Une adresse est confirmée par Google, ou par le lien de « Forgot your password? ».
+  mot de passe. Une adresse est confirmée par Google, par le lien de « Forgot your password? » ou par le lien de
+  confirmation (voir « Confidentialité » : les invitations envoyées par email n'apparaissent qu'aux adresses
+  confirmées).
 - **Settings › Sign-in methods** : relier ou retirer Google (retrait possible seulement avec un mot de passe),
   choisir un mot de passe pour un compte créé avec Google. Un compte sans mot de passe confirme sa suppression en
   retapant son adresse ; il doit choisir un mot de passe avant de changer d'adresse.
@@ -1551,7 +1575,8 @@ tests/studioma/run.sh /tmp/stm-test
 ```
 
 Faux hébergement neuf, puis deux batteries : `api.js` (l'API seule : comptes, modèle par défaut, relais avec
-conservation de l'identité de la carte, rôles et refus côté serveur, pièces jointes privées, validations,
+conservation de l'identité de la carte, rôles et refus côté serveur, invitations par email réservées aux adresses
+confirmées, pièces jointes privées, validations,
 archivage, portfolio et autorisations, entreprises, talents, messages) et `e2e.js` (Chromium / Playwright : le
 parcours complet dans le navigateur, sur ordinateur et sur mobile, avec deux comptes synchronisés). Voir
 `tests/studioma/README.md`.
@@ -1564,8 +1589,9 @@ parcours complet dans le navigateur, sur ordinateur et sur mobile, avec deux com
 - **Pas d'assistance par IA** (idées, scripts, légendes).
 - La synchronisation entre navigateurs se fait par interrogation toutes les 4 secondes, pas en continu : deux
   personnes qui écrivent le même champ au même moment, la dernière enregistrée l'emporte.
-- L'adresse email d'un compte créé avec un mot de passe n'est pas vérifiée à l'inscription (elle l'est par
-  Google, ou par le lien de mot de passe oublié).
+- L'adresse email d'un compte créé avec un mot de passe n'est pas vérifiée à l'inscription : on peut utiliser
+  Studioma sans la confirmer. Elle l'est par le lien de confirmation (email de bienvenue, Settings › Email), par
+  Google ou par le lien de mot de passe oublié ; seules les invitations envoyées par email en dépendent.
 - Pas de modération ni d'administration centrale (signalement d'une publication, suspension d'un compte), pas
   de blocage entre membres.
 - Une seule langue (anglais) ; les conditions d'utilisation se résument à la case à cocher de l'inscription.
@@ -1708,6 +1734,9 @@ pas mis à jour automatiquement après coup.
   masquer ce que le rôle n'autorise pas. Fichiers hors de `public_html`, servis par l'API après vérification de
   l'accès, jamais exécutés ; images ré-encodées (métadonnées et position GPS retirées). Connexion Google : jeton
   d'identité vérifié côté serveur (signature, émetteur, destinataire, expiration, adresse confirmée) ; un mot de
-  passe posé sur une adresse jamais confirmée est retiré quand son propriétaire arrive avec Google. Texte mis en forme
+  passe posé sur une adresse jamais confirmée est retiré quand son propriétaire arrive avec Google. Invitations
+  envoyées par email : rattachées à un compte par son adresse seulement si elle est confirmée (le lien reçu par
+  email suffit toujours) ; lien de confirmation à usage unique, valable 2 jours, ouvert depuis le compte connecté,
+  annulé par un changement d'adresse. Texte mis en forme
   réduit à une liste de balises sans attribut, tout le reste échappé à l'affichage, et politique de sécurité du
   contenu sans script en ligne (`studioma/.htaccess`). `config.php` et `lib/` bloqués en accès direct.

@@ -180,7 +180,7 @@ function marks(array $a): string
 /** Schéma compatible avec les vieilles versions de SQLite des hébergeurs mutualisés. */
 function migrate(PDO $pdo): void
 {
-    if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= 2) return;
+    if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= 3) return;
     // Deux premières visites simultanées : la seconde attend la fin de la création, puis ne fait rien.
     $pdo->exec('BEGIN IMMEDIATE');
     try {
@@ -641,6 +641,14 @@ function migrate(PDO $pdo): void
             if (!in_array('email_ok', $cols, true)) $pdo->exec('ALTER TABLE users ADD COLUMN email_ok INTEGER NOT NULL DEFAULT 0');
             $pdo->exec('CREATE UNIQUE INDEX IF NOT EXISTS users_google ON users(google_sub)');
             $pdo->exec('PRAGMA user_version = 2');
+        }
+        if ($v < 3) {
+            // Lien de confirmation de l'adresse (hash du jeton, expiration) : distinct de celui de « mot de
+            // passe oublié », il confirme l'adresse sans jamais permettre de changer le mot de passe.
+            $cols = array_column($pdo->query('PRAGMA table_info(users)')->fetchAll(), 'name');
+            if (!in_array('chash', $cols, true)) $pdo->exec('ALTER TABLE users ADD COLUMN chash TEXT');
+            if (!in_array('cexp', $cols, true)) $pdo->exec('ALTER TABLE users ADD COLUMN cexp INTEGER NOT NULL DEFAULT 0');
+            $pdo->exec('PRAGMA user_version = 3');
         }
         $pdo->exec('COMMIT');
     } catch (Throwable $e) {

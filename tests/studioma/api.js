@@ -76,6 +76,7 @@ class Client {
   r = await lina.signup('Lina Mansouri', 'lina@test.example', { kind: 'company', company: 'Dar Lina' });
   ok(r.ok && r.companies.length === 1 && r.companies[0].role === 'owner', 'inscription d\'une entreprise : page créée', r.companies);
   ok(mails().some((m) => m.to === 'amel@test.example' && /Welcome/.test(m.subject)), 'email de bienvenue');
+  ok(mails().some((m) => m.to === 'amel@test.example' && /Welcome/.test(m.subject) && /\/confirm\/[a-f0-9]{48}/.test(m.text)), 'email de bienvenue : lien de confirmation de l\'adresse');
   r = await anon.get('workspace');
   ok(r.status === 401, 'espace privé refusé sans connexion');
   const noCsrf = new Client('nocsrf'); noCsrf.cookie = amel.cookie;
@@ -228,10 +229,46 @@ class Client {
   r = await sami.post('card_move', { id: cardId, col_id: ideas.id, index: 0 });
   ok(r.status === 404, 'déplacement refusé pour un compte non invité');
 
+  // Adresse jamais confirmée (inscription par mot de passe) : quelqu'un a pu créer ce compte avec
+  // l'adresse d'une autre personne. Une invitation envoyée à cette adresse ne lui est pas rattachée et
+  // reste invisible pour lui ; seul le lien de l'email d'invitation permet de l'ouvrir.
+  const confirmLink = (to) => { const m = mails().reverse().find((x) => x.to === to && /Confirm your email/.test(x.subject)); return m && (m.text.match(/\/confirm\/([a-f0-9]{48})/) || [])[1]; };
+  r = await karim.get('me');
+  ok(r.user.email_ok === false, 'compte créé avec un mot de passe : adresse non confirmée');
   r = await amel.post('invite_create', { studio_id: studioId, email: 'karim@test.example', role: 'collaborator', message: 'Bienvenue !' });
-  ok(r.ok && r.invite.kind === 'person', 'invitation par email créée', r);
+  ok(r.ok && r.invite.kind === 'person' && r.invite.user === null, 'invitation par email créée — adresse non confirmée : rattachée à aucun compte', r.invite);
+  const tokenE = r.invite.token;
+  ok(mails().some((m) => m.to === 'karim@test.example' && m.text.includes('join/' + tokenE)), 'email d\'invitation avec le lien');
+  ok((await karim.get('me')).counts.invites === 0, 'adresse non confirmée : invitation non comptée');
+  ok((await karim.get('workspace')).invites.length === 0, '… ni listée (son lien n\'est pas donné)');
+  ok(!(await karim.get('notifications')).notifications.some((n) => n.link.includes(tokenE)), '… ni notifiée');
+  ok((await karim.get('invite_info', { token: tokenE })).mine === false, 'page de l\'invitation : pas adressée à ce compte (pas de « Decline »)');
+  await karim.post('invite_decline', { token: tokenE });
+  ok((await anon.get('invite_info', { token: tokenE })).state === 'pending', 'refus sans adresse confirmée : sans effet');
+  // Confirmation par le lien reçu, ouvert depuis le compte connecté.
+  r = await karim.post('email_confirm_send', {});
+  ok(r.ok && r.email === 'karim@test.example', 'lien de confirmation envoyé à l\'adresse du compte');
+  const ctoken = confirmLink('karim@test.example');
+  ok(!!ctoken, 'email de confirmation avec son lien');
+  ok((await anon.post('email_confirm', { token: ctoken })).status === 401, 'confirmation : il faut être connecté');
+  r = await sami.post('email_confirm', { token: ctoken });
+  ok(r.status === 410 && (await sami.get('me')).user.email_ok === false, 'confirmation : lien refusé depuis un autre compte');
+  r = await karim.post('email_confirm', { token: ctoken });
+  ok(r.ok && r.user.email_ok === true && r.counts.invites === 1, 'adresse confirmée : l\'invitation apparaît', r.counts);
+  r = await karim.get('workspace');
+  ok(r.invites.length === 1 && r.invites[0].token === tokenE, '… dans l\'espace de travail, avec son lien');
+  ok((await karim.post('email_confirm', { token: ctoken })).already === true, 'lien de confirmation rouvert : sans effet');
+  ok((await karim.post('email_confirm_send', {})).status === 400, 'adresse déjà confirmée : pas de nouveau lien');
+  ok((await karim.get('invite_info', { token: tokenE })).mine === true, 'page de l\'invitation : adressée à ce compte');
+  r = await karim.post('invite_decline', { token: tokenE });
+  ok(r.ok && (await anon.get('invite_info', { token: tokenE })).state === 'declined' && (await karim.get('me')).counts.invites === 0, 'adresse confirmée : invitation refusée');
+
+  // Adresse confirmée : l'invitation est rattachée au compte (nominative).
+  r = await amel.post('invite_create', { studio_id: studioId, email: 'karim@test.example', role: 'collaborator', message: 'Bienvenue !' });
+  ok(r.ok && r.invite.kind === 'person' && r.invite.user && r.invite.user.handle === 'karim-benali', 'adresse confirmée : invitation par email rattachée au compte', r.invite);
   const tokenK = r.invite.token;
   ok(mails().some((m) => m.to === 'karim@test.example' && m.text.includes('join/' + tokenK)), 'email d\'invitation avec le lien');
+  ok((await karim.get('notifications')).notifications.some((n) => n.link === 'join/' + tokenK), 'invitation notifiée dans l\'application');
   r = await karim.get('me');
   ok(r.counts.invites === 1, 'invitation visible dans le compte invité');
   r = await anon.get('invite_info', { token: tokenK });
@@ -292,6 +329,23 @@ class Client {
   ok(r.status === 403, 'un membre ne s\'élève pas lui-même');
   r = await amel.post('member_remove', { project_id: projectId, uid: (await amel.get('me')).user.id });
   ok(r.status === 400, 'le dernier propriétaire ne peut pas partir');
+
+  // Invitation adressée à un compte (Sami), dont l'adresse passe ensuite à un autre compte (Karim) sans
+  // y être confirmée : même avec son lien, cet autre compte ne peut pas l'accepter ; confirmée, si.
+  const samiId = (await sami.get('me')).user.id;
+  r = await amel.post('invite_create', { studio_id: studioId, uid: samiId, role: 'viewer' });
+  const tokenS = r.invite.token;
+  ok(r.ok && r.invite.user.id === samiId && r.invite.email === 'sami@test.example', 'invitation adressée à un compte (et à son adresse)');
+  await sami.post('account_save', { email: 'sami.new@test.example', current: 'a-solid-password' });
+  r = await karim.post('account_save', { email: 'sami@test.example', current: 'a-solid-password' });
+  ok(r.ok && r.user.email === 'sami@test.example' && r.user.email_ok === false && r.counts.invites === 0, 'nouvelle adresse : non confirmée, l\'invitation qui lui est envoyée n\'apparaît pas');
+  ok((await karim.post('invite_accept', { token: tokenS })).status === 403, 'adresse non confirmée : invitation refusée, même avec son lien');
+  r = await karim.post('email_confirm', { token: confirmLink('sami@test.example') });
+  ok(r.ok && r.user.email_ok === true && r.counts.invites === 1, 'lien de confirmation envoyé à la nouvelle adresse : confirmée, l\'invitation apparaît');
+  r = await karim.post('invite_accept', { token: tokenS });
+  ok(r.ok && r.studio_id === studioId, 'adresse confirmée : invitation acceptée');
+  r = await karim.post('account_save', { email: 'karim@test.example', current: 'a-solid-password' });
+  ok(r.ok && r.user.email_ok === false, 'retour à l\'ancienne adresse : à confirmer de nouveau');
 
   /* ------------------------------------------------------------ validations */
   step('Validations');
@@ -541,6 +595,18 @@ class Client {
   ok(r.status === 409, 'une identité Google déjà reliée à un autre compte est refusée');
   r = await anon.post('google_link', { credential: gtok({ sub: 'g-x', email: 'x@test.example' }) });
   ok(r.status === 401, 'relier Google exige d\'être connecté');
+  ok((await pia.get('me')).user.email_ok === true, 'Google relié avec la même adresse : adresse confirmée');
+  // Changement d'adresse : la nouvelle n'est confirmée ni par un lien envoyé à l'ancienne, ni par Google.
+  await anon.post('forgot', { email: 'pia@test.example' });
+  const pmail = mails().reverse().find((m) => m.to === 'pia@test.example' && /Reset/.test(m.subject));
+  const ptoken = pmail && (pmail.text.match(/reset\/([a-f0-9]{48})/) || [])[1];
+  r = await pia.post('account_save', { email: 'pia.other@test.example', current: 'a-solid-password' });
+  ok(r.ok && r.user.email === 'pia.other@test.example' && r.user.email_ok === false, 'nouvelle adresse : non confirmée');
+  ok(mails().some((m) => m.to === 'pia.other@test.example' && /Confirm your email/.test(m.subject)), 'lien de confirmation envoyé à la nouvelle adresse');
+  r = await new Client('pia-reset').post('reset', { token: ptoken, password: 'pia-new-password' });
+  ok(!!ptoken && r.status === 410, 'lien de mot de passe oublié envoyé à l\'ancienne adresse : annulé');
+  r = await new Client('pia2').post('google', { credential: gtok({ sub: 'g-pia', email: 'pia@test.example' }) });
+  ok(r.ok && r.user.email === 'pia.other@test.example' && r.user.email_ok === false, 'connexion avec Google : une adresse qui n\'est pas celle de Google reste non confirmée');
 
   // Inscription d'une entreprise avec Google.
   const co = new Client('co');

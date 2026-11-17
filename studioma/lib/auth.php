@@ -221,7 +221,7 @@ function me_view(array $u, string $csrf): array
 {
     return [
         'user' => user_card($u) + [
-            'email' => (string) $u['email'], 'kind' => (string) $u['kind'], 'pro' => (bool) $u['pro'],
+            'email' => (string) $u['email'], 'email_ok' => (int) ($u['email_ok'] ?? 0) === 1, 'kind' => (string) $u['kind'], 'pro' => (bool) $u['pro'],
             'google' => (string) ($u['google_sub'] ?? '') !== '', 'has_password' => (string) $u['pass'] !== '',
             'settings' => user_settings($u),
             'onboarded' => $u['title'] !== '' || jarr($u['skills']) !== [],
@@ -234,7 +234,8 @@ function me_view(array $u, string $csrf): array
 /** Pastilles du menu : notifications et messages non lus, invitations en attente. */
 function me_counts(int $uid): array
 {
-    $email = (string) val('SELECT email FROM users WHERE id = ?', [$uid]);
+    // Invitations envoyées par email : comptées seulement si l'adresse est confirmée (voir invite_email()).
+    $email = invite_email(row('SELECT email, email_ok FROM users WHERE id = ?', [$uid]) ?? []);
     return [
         'notifs' => (int) val('SELECT COUNT(*) FROM notifications WHERE uid = ? AND seen = 0', [$uid]),
         'messages' => (int) val('SELECT COUNT(*) FROM threads WHERE (a = ? AND last_id > a_read) OR (b = ? AND last_id > b_read)', [$uid, $uid]),

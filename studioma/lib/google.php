@@ -226,7 +226,12 @@ function api_google(array $b, ?array $u): array
         }
         $t = user_by_id((int) $t['id']);
     }
-    if (!(int) $t['email_ok']) q('UPDATE users SET email_ok = 1 WHERE id = ?', [$t['id']]);
+    // Google ne confirme l'adresse du compte que si c'est la sienne : le compte a pu changer d'adresse
+    // depuis qu'il a été relié à Google, et cette nouvelle adresse, Google ne l'a pas vérifiée.
+    if (!(int) $t['email_ok'] && (string) $t['email'] === $c['email']) {
+        q('UPDATE users SET email_ok = 1 WHERE id = ?', [$t['id']]);
+        $t['email_ok'] = 1;
+    }
     return me_view($t, start_session((int) $t['id'])) + $extra;
 }
 /** Relie Google au compte connecté (depuis les réglages). */

@@ -651,6 +651,21 @@ const cardIn = (page, col, title) => page.locator(`${colSel(col)} .kcard:has(h3:
   await ap.waitForSelector('.switch');
   await ap.click('.switch[data-name="show_activity"]');
   ok(await toast(ap, /Saved/) && (await call(ap, 'me')).user.settings.show_activity === true, 'réglage enregistré (activité des Studios sur le profil)');
+  // Adresse non confirmée : Settings › Email l'explique et envoie le lien de confirmation.
+  ok(/Invitations to projects and Studios sent to amel@test\.example will appear in your workspace once you confirm it/.test((await ap.locator('[data-email-unconfirmed]').innerText()).replace(/\s+/g, ' ')), 'réglages : adresse non confirmée, invitations par email expliquées');
+  await ap.locator('#account-email').scrollIntoViewIfNeeded();
+  await shot(ap, '14b-settings-email');
+  await ap.click('[data-act="email-confirm-send"]');
+  await ap.waitForSelector('[data-confirm-sent]');
+  const confirmMail = mails().reverse().find((m) => m.to === 'amel@test.example' && /Confirm your email/.test(m.subject));
+  const confirmUrl = confirmMail && (confirmMail.text.match(/https?:\/\/\S+confirm\/[a-f0-9]{48}/) || [])[0];
+  ok(!!confirmUrl, 'lien de confirmation envoyé');
+  await ap.goto(confirmUrl.replace(/^https?:\/\/[^/]+/, ORIGIN));
+  await ap.waitForSelector('[data-email-confirmed]');
+  ok(await ap.evaluate(() => SM.me.email_ok) === true, 'lien ouvert depuis le compte connecté : adresse confirmée');
+  await ap.goto(A + '#/settings');
+  await ap.waitForSelector('#account-email .email-state');
+  ok(await ap.locator('[data-email-unconfirmed]').count() === 0, 'réglages : adresse confirmée, plus d\'avertissement');
   await ap.goto(A + '#/discover?q=scriptwriting');
   await ap.waitForSelector('.person');
   ok(/Amel Haddad/.test(await ap.locator('.person').first().innerText()), 'recherche : personnes par compétence');
