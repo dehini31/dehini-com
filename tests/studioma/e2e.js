@@ -7,7 +7,8 @@
  *   par lien, second compte, synchronisation entre deux navigateurs, droits du collaborateur →
  *   validation par une cliente → profil, publication, réseau, étude de cas → entreprise,
  *   opportunité, candidature, annuaire des talents, messages → mobile, thème sombre →
- *   contenu saisi non exécuté, aucune erreur JavaScript, aucune violation de la CSP.
+ *   connexion avec Google (faux Google signé par le test) → contenu saisi non exécuté, aucune
+ *   erreur JavaScript, aucune violation de la CSP.
  *   node tests/studioma/e2e.js <adresse> <dossier>
  */
 const { chromium, devices } = require('playwright');
@@ -81,6 +82,16 @@ const cardIn = (page, col, title) => page.locator(`${colSel(col)} .kcard:has(h3:
 (async () => {
   const browser = await chromium.launch();
   const desk = { viewport: { width: 1440, height: 900 } };
+  // Le vrai script de Google n'est jamais chargé pendant les tests : chaque navigateur le voit
+  // échouer (le bouton doit alors disparaître), sauf celui qui reçoit le faux Google (google.js).
+  const G = require('./google.js');
+  const google = G.setup(DIR);
+  const newContext = browser.newContext.bind(browser);
+  browser.newContext = async (opts) => {
+    const ctx = await newContext(opts);
+    await ctx.route('https://accounts.google.com/**', (route) => route.abort());
+    return ctx;
+  };
 
   /* ------------------------------------------------- inscription, premiers pas */
   step('Page d\'accueil, inscription et premiers pas');
@@ -640,6 +651,21 @@ const cardIn = (page, col, title) => page.locator(`${colSel(col)} .kcard:has(h3:
   await ap.waitForSelector('.switch');
   await ap.click('.switch[data-name="show_activity"]');
   ok(await toast(ap, /Saved/) && (await call(ap, 'me')).user.settings.show_activity === true, 'réglage enregistré (activité des Studios sur le profil)');
+  // Adresse non confirmée : Settings › Email l'explique et envoie le lien de confirmation.
+  ok(/Invitations to projects and Studios sent to amel@test\.example will appear in your workspace once you confirm it/.test((await ap.locator('[data-email-unconfirmed]').innerText()).replace(/\s+/g, ' ')), 'réglages : adresse non confirmée, invitations par email expliquées');
+  await ap.locator('#account-email').scrollIntoViewIfNeeded();
+  await shot(ap, '14b-settings-email');
+  await ap.click('[data-act="email-confirm-send"]');
+  await ap.waitForSelector('[data-confirm-sent]');
+  const confirmMail = mails().reverse().find((m) => m.to === 'amel@test.example' && /Confirm your email/.test(m.subject));
+  const confirmUrl = confirmMail && (confirmMail.text.match(/https?:\/\/\S+confirm\/[a-f0-9]{48}/) || [])[0];
+  ok(!!confirmUrl, 'lien de confirmation envoyé');
+  await ap.goto(confirmUrl.replace(/^https?:\/\/[^/]+/, ORIGIN));
+  await ap.waitForSelector('[data-email-confirmed]');
+  ok(await ap.evaluate(() => SM.me.email_ok) === true, 'lien ouvert depuis le compte connecté : adresse confirmée');
+  await ap.goto(A + '#/settings');
+  await ap.waitForSelector('#account-email .email-state');
+  ok(await ap.locator('[data-email-unconfirmed]').count() === 0, 'réglages : adresse confirmée, plus d\'avertissement');
   await ap.goto(A + '#/discover?q=scriptwriting');
   await ap.waitForSelector('.person');
   ok(/Amel Haddad/.test(await ap.locator('.person').first().innerText()), 'recherche : personnes par compétence');
@@ -647,6 +673,61 @@ const cardIn = (page, col, title) => page.locator(`${colSel(col)} .kcard:has(h3:
   await ap.waitForSelector('.scard');
   ok(await ap.locator('.member').count() === 1 && await ap.locator('.scard').count() === 1, 'page du projet : Studios et membres du projet');
   await shot(ap, '14d-project');
+
+  /* --------------------------------------------- continuer avec Google */
+  step('Continue with Google');
+  await np.goto(A + '#/login', { waitUntil: 'load' });
+  await np.waitForSelector('form[data-form="login"]');
+  await np.waitForFunction(() => document.querySelector('[data-google]').hidden, null, { timeout: 8000 });
+  ok(true, 'Google injoignable : le bouton disparaît, le formulaire reste utilisable');
+  const gCtx = await browser.newContext(desk);
+  await gCtx.addInitScript(G.STUB);
+  const gp = await gCtx.newPage();
+  watch(gp, 'google');
+  await gp.goto(A + '#/login', { waitUntil: 'load' });
+  await gp.waitForSelector('.fake-google');
+  ok(await gp.evaluate(() => window.__gcfg.client_id) === G.CLIENT_ID && await gp.locator('.fake-google').getAttribute('data-text') === 'continue_with', 'page de connexion : bouton Google avec l\'ID client');
+  await shot(gp, '18-google-login');
+  await gp.evaluate((t) => { window.__gcred = t; }, google.token({ sub: 'g-sofia', email: 'sofia@test.example', name: 'Sofia Rahmani' }, {}));
+  await gp.click('.fake-google');
+  await gp.waitForSelector('.welcome-card');
+  ok(/Welcome, Sofia/.test(await gp.locator('.welcome-card h1').innerText()), 'nouvelle identité Google : compte créé, premiers pas');
+  await gp.goto(A + '#/settings');
+  await gp.waitForSelector('#signin-methods');
+  ok(/Connected/.test(await gp.locator('#signin-methods .method').innerText()) && await gp.locator('[data-act="google-unlink"]').isDisabled(), 'réglages : Google connecté, retrait impossible sans mot de passe');
+  ok(/Choose a password/.test(await gp.locator('form[data-form="account-password"]').innerText()) && await gp.locator('form[data-form="account-password"] input[name=current]').count() === 0, 'réglages : choisir un mot de passe, sans « ancien »');
+  await gp.fill('form[data-form="account-password"] input[name=password]', 'sofia-solid-password');
+  await gp.click('form[data-form="account-password"] button');
+  ok(await toast(gp, /Password saved/), 'mot de passe choisi');
+  await gp.waitForSelector('[data-act="google-unlink"]:not([disabled])');
+  ok(await gp.locator('form[data-form="account-password"] input[name=current]').count() === 1, 'le formulaire devient « changer le mot de passe »');
+  await shot(gp, '19-google-settings');
+  // Déconnexion, puis retour avec Google : même compte.
+  await gp.click('.top-avatar');
+  await gp.click('.menu-item:has-text("Sign out")');
+  await gp.waitForSelector('.fake-google');
+  await gp.click('.fake-google');
+  await gp.waitForSelector('.composer');
+  ok(await gp.evaluate(() => SM.me.name) === 'Sofia Rahmani' && await toast(gp, /Signed in with Google/), 'reconnexion avec Google : même compte');
+  // Inscription d'une entreprise : nom et conditions exigés avant Google.
+  await gp.click('.top-avatar');
+  await gp.click('.menu-item:has-text("Sign out")');
+  await gp.waitForSelector('.auth-card:has(form[data-form="login"]) .fake-google');
+  await gp.goto(A + '#/signup?as=company');
+  await gp.waitForSelector('form[data-form="signup"] .fake-google');
+  ok(await gp.locator('.fake-google').getAttribute('data-text') === 'signup_with', 'page d\'inscription : bouton « Sign up with Google »');
+  await gp.evaluate((t) => { window.__gcred = t; }, google.token({ sub: 'g-brand', email: 'team@brand.example', name: 'Brand Team' }, {}));
+  await gp.click('.fake-google');
+  await gp.waitForSelector('form[data-form="signup"] [data-error]:not([hidden])');
+  ok(/name of your company/.test(await gp.locator('form[data-form="signup"] [data-error]').innerText()), 'entreprise : nom demandé avant Google');
+  await gp.fill('input[name=company]', 'Brand Co');
+  await gp.click('.fake-google');
+  ok(/accept the terms/.test(await gp.locator('form[data-form="signup"] [data-error]').innerText()), 'conditions à accepter avant Google');
+  await gp.check('input[name=accept]');
+  await gp.click('.fake-google');
+  await gp.waitForSelector('.welcome-card');
+  ok(await gp.evaluate(() => SM.me.kind === 'company' && SM.companies.length === 1 && SM.companies[0].name === 'Brand Co'), 'entreprise créée avec Google, avec sa page');
+  await gCtx.close();
 
   /* ------------------------------------------------- mobile, thème sombre */
   step('Mobile et thème sombre');

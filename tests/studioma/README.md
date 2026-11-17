@@ -25,12 +25,24 @@ base vide :
   collaborateur limité à ses cartes ; cliente en lecture, commentaire et validation ; un membre ne s'élève pas
   lui-même ; le dernier propriétaire ne peut pas partir ;
 - invitations par email et par lien (nominative refusée à un autre compte, révoquée, déjà utilisée) ;
+- **invitations et adresse confirmée** : un compte à l'adresse non confirmée ne voit pas l'invitation envoyée à
+  son adresse (ni comptée, ni listée avec son lien, ni notifiée, ni rattachée à l'envoi) et ne peut ni la refuser
+  ni l'accepter par son adresse, même avec le lien d'une invitation adressée à un autre compte ; lien de
+  confirmation (connexion exigée, refusé depuis un autre compte, rouvert sans effet) ; une fois l'adresse
+  confirmée, l'invitation apparaît, se refuse ou s'accepte, et les suivantes sont rattachées au compte ;
 - validations (demande, modifications demandées, approbation → la carte avance et passe au niveau suivant) ;
 - archivage, restauration, suppression groupée, synchronisation par numéro de version, tableau de bord ;
 - réseau : profil public sans email, publications, j'aime, partage, relations, recherche ;
 - portfolio : étude de cas déclarée, brouillon tiré d'un Studio (privé, image privée), accord de la cliente exigé,
   preuves de travail distinguées, recommandation, activité affichée seulement sur choix et sans nom de projet ;
 - entreprises, opportunités, candidatures privées, annuaire des talents, invitation à collaborer, messages ;
+- **Continue with Google** (`google.js` crée une clé de test et signe les jetons comme Google) : jetons
+  illisibles, falsifiés, expirés, destinés à une autre application, d'un autre émetteur ou à l'adresse non
+  confirmée refusés ; création du compte, reconnexion sans doublon, mot de passe à choisir, retrait de Google
+  seulement avec un mot de passe ; compte créé par un tiers avec l'adresse de quelqu'un d'autre : mot de passe du
+  tiers retiré et sa session fermée ; liaison depuis les réglages ; changement d'adresse : la nouvelle n'est
+  confirmée ni par un lien de mot de passe oublié envoyé à l'ancienne, ni par une connexion Google dont l'adresse
+  diffère ; entreprise créée avec Google ; suppression d'un compte sans mot de passe ;
 - mot de passe oublié (anciennes sessions fermées), suppression d'un projet, fichiers internes interdits.
 
 **`e2e.js` — l'application dans Chromium** (Playwright), avec trois comptes dans trois navigateurs :
@@ -48,7 +60,11 @@ base vide :
 - profil (photo, bio), publication avec image, j'aime, commentaire, abonnement, mise en relation, étude de cas ;
 - profil public sans compte ; entreprise : talents, opportunité, candidature, messages ;
 - étude de cas tirée du Studio : en attente, invisible du public, autorisée par la cliente, puis publique avec
-  ses badges ; historique du Studio ; équipe de l'entreprise ; réglages ; recherche ; page du projet ;
+  ses badges ; historique du Studio ; équipe de l'entreprise ; réglages (dont Settings › Email : avertissement
+  d'adresse non confirmée, lien de confirmation envoyé puis ouvert) ; recherche ; page du projet ;
+- Continue with Google : bouton masqué quand Google est injoignable ; avec un faux Google (même jeton signé),
+  création du compte depuis la connexion, réglages (mot de passe à choisir, retrait), reconnexion, inscription
+  d'une entreprise (nom et conditions exigés avant Google) ;
 - mobile (iPhone 13) : tableau, glisser-déposer au doigt (appui long ; un balayage rapide fait défiler sans
   saisir la carte), carte en plein écran, menu ; thème sombre conservé ;
 - contenu saisi jamais interprété, aucune erreur JavaScript, aucune violation de la CSP, aucun défilement

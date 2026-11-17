@@ -194,6 +194,28 @@ function file_ingest(array $up, int $uid, string $scope, int $studioId, array $a
     return $f;
 }
 
+/**
+ * Image publique à partir d'un fichier déjà sur le serveur (ex. photo de profil Google téléchargée) :
+ * vérifiée et ré-encodée comme un envoi. Lève une exception si ce n'est pas une image utilisable.
+ */
+function image_ingest_path(string $path, int $uid, string $name): array
+{
+    $info = @getimagesize($path);
+    if (!$info || !in_array($info[2], [IMAGETYPE_JPEG, IMAGETYPE_PNG, IMAGETYPE_WEBP], true) || $info[0] * $info[1] > 40000000) {
+        throw new InvalidArgumentException('Image inutilisable');
+    }
+    if (!function_exists('imagewebp') || !function_exists('imagecreatefromjpeg')) throw new RuntimeException('Extension GD absente');
+    $f = ['token' => token(16), 'uid' => $uid, 'scope' => 'public', 'studio_id' => 0, 'kind' => 'image', 'name' => $name,
+        'mime' => 'image/webp', 'ext' => 'webp', 'size' => 0, 'w' => 0, 'h' => 0, 'created' => time()];
+    $src = image_open($path, $info[2]);
+    [$f['w'], $f['h']] = image_save($src, IMAGE_WIDTH, file_path($f));
+    image_save($src, IMAGE_SMALL, file_path($f, true));
+    imagedestroy($src);
+    $f['size'] = (int) filesize(file_path($f));
+    $f['id'] = insert('files', $f);
+    return $f;
+}
+
 function file_delete(array $f): void
 {
     foreach ([false, true] as $small) {

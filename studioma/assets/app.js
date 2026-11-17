@@ -161,6 +161,60 @@
   };
   SM.actions.boot = () => SM.boot();
 
+  /* --------------------------------------------- Continuer avec Google */
+  /**
+   * Bouton « Continue with Google » (Google Identity Services). Google affiche son bouton dans une
+   * petite fenêtre et nous rend un jeton d'identité signé, vérifié ensuite par le serveur.
+   * Sans ID client configuré, ou si Google ne répond pas, le bouton n'apparaît pas.
+   */
+  const G = SM.google = { loading: null, ready: false, cb: null };
+  G.enabled = () => !!(SM.ref && SM.ref.google_client_id);
+  G.load = () => {
+    if (window.google && google.accounts && google.accounts.id) return Promise.resolve();
+    if (!G.loading) {
+      G.loading = new Promise((ok, ko) => {
+        const sc = document.createElement('script');
+        sc.src = 'https://accounts.google.com/gsi/client';
+        sc.async = true;
+        sc.onload = ok;
+        sc.onerror = () => { G.loading = null; ko(new Error('gsi')); };
+        document.head.appendChild(sc);
+      });
+    }
+    return G.loading;
+  };
+  /** Dessine le bouton dans le bloc [data-google] de la page ; onCredential(jeton) après le choix du compte. */
+  G.mount = async (text, onCredential) => {
+    const block = SM.$('[data-google]');
+    if (!block || !G.enabled()) return;
+    block.hidden = false;
+    try { await G.load(); } catch (e) { block.hidden = true; return; }
+    const box = SM.$('.google-btn', block);
+    if (!box || !document.contains(box)) return;
+    G.cb = onCredential;
+    if (!G.ready) {
+      google.accounts.id.initialize({ client_id: SM.ref.google_client_id, callback: (r) => { if (G.cb) G.cb(r.credential); }, ux_mode: 'popup', auto_select: false, cancel_on_tap_outside: true });
+      G.ready = true;
+    }
+    box.replaceChildren();
+    google.accounts.id.renderButton(box, { type: 'standard', theme: document.documentElement.dataset.theme === 'dark' ? 'filled_black' : 'outline', size: 'large', shape: 'pill',
+      text, logo_alignment: 'center', locale: 'en', width: Math.min(400, Math.max(220, Math.round(box.getBoundingClientRect().width || 320))) });
+  };
+  const googleBlock = (note) => html`<div class="google-block" data-google hidden><div class="google-btn"></div>${note ? html`<p class="muted small center">${note}</p>` : ''}<div class="or"><span>or with your email</span></div></div>`;
+  /** Connexion ou inscription avec le jeton reçu de Google. */
+  const googleSignIn = async (credential, extra, form) => {
+    const err = form && SM.$('[data-error]', form);
+    if (err) err.hidden = true;
+    try {
+      const r = await SM.post('google', Object.assign({ credential }, extra || {}));
+      afterAuth(r, r.created ? '/welcome' : '/');
+      if (r.password_reset) SM.toast('Your account is now linked to Google. For your security, its old password was removed — choose a new one in Settings if you want one.');
+      else if (!r.created) SM.toast('Signed in with Google');
+    } catch (e) {
+      if (err) { err.textContent = e.message; err.hidden = false; } else SM.toast(e.message, 'error');
+    }
+  };
+
   /* ------------------------------------------------- connexion, inscription */
   const authCard = (title, sub, body) => html`<div class="auth"><div class="auth-card panel">
       <a href="${SM.base}" class="logo-link">${SM.logo('logo-l')}</a>
@@ -170,6 +224,7 @@
 
   SM.route(/^\/login$/, (m, ctx) => {
     SM.set(ctx.view, authCard('Welcome back', 'Sign in to your workspace.', html`
+      ${googleBlock('New here? Continuing with Google creates your account.')}
       <form data-form="login" class="stack">
         ${field('Email', 'email', 'email', 'autocomplete="email" required autofocus')}
         ${field('Password', 'password', 'password', 'autocomplete="current-password" required')}
@@ -178,6 +233,7 @@
       </form>
       <p class="auth-alt"><a href="#/forgot">Forgot your password?</a></p>
       <p class="auth-alt">New to Studioma? <a href="#/signup">Create your account</a></p>`));
+    G.mount('continue_with', (credential) => googleSignIn(credential, {}, SM.$('form[data-form="login"]')));
   }, { public: true });
   SM.forms.login = async (form, data) => afterAuth(await SM.post('login', data));
 
@@ -190,14 +246,24 @@
           <label><input type="radio" name="kind" value="company" ${kind === 'company' ? 'checked' : ''} data-change="signup-kind"><span>${icon('building')}<b>Company</b><small>Brand, agency, organization</small></span></label>
         </div>
         <div data-company ${kind === 'company' ? '' : 'hidden'}>${field('Company name', 'company', 'text', 'maxlength="80" autocomplete="organization"')}</div>
+        <label class="check"><input type="checkbox" name="accept"><span>I agree to use Studioma respectfully and to share only content I am allowed to share.</span></label>
+        ${googleBlock('')}
         ${field('Your name', 'name', 'text', 'maxlength="60" autocomplete="name" required')}
         ${field('Email', 'email', 'email', 'autocomplete="email" required')}
         ${field('Password', 'password', 'password', 'autocomplete="new-password" minlength="8" required placeholder="At least 8 characters"')}
-        <label class="check"><input type="checkbox" name="accept"><span>I agree to use Studioma respectfully and to share only content I am allowed to share.</span></label>
         <p class="form-error" data-error hidden></p>
         <button class="btn btn-primary btn-block">Create my account</button>
       </form>
       <p class="auth-alt">Already have an account? <a href="#/login">Sign in</a></p>`));
+    G.mount('signup_with', (credential) => {
+      const form = SM.$('form[data-form="signup"]');
+      const d = SM.formData(form);
+      const err = SM.$('[data-error]', form);
+      const stop = (msg) => { err.textContent = msg; err.hidden = false; };
+      if (d.kind === 'company' && d.company.trim().length < 2) return stop('Enter the name of your company first.');
+      if (!d.accept) return stop('Please accept the terms to create your account.');
+      return googleSignIn(credential, { kind: d.kind, company: d.company }, form);
+    });
   }, { public: true });
   SM.changes['signup-kind'] = (el) => { SM.$('[data-company]', el.form).hidden = el.value !== 'company'; };
   SM.forms.signup = async (form, data) => afterAuth(await SM.post('signup', data), '/welcome');
@@ -220,6 +286,31 @@
   }, { public: true });
   SM.forms.reset = async (form, data) => afterAuth(await SM.post('reset', data));
 
+  /* ------------------------------------------------ confirmation de l'adresse */
+  /**
+   * Lien reçu par email : il faut être connecté au compte qui l'a demandé (sinon la personne dont on
+   * aurait pris l'adresse confirmerait le compte d'un autre en cliquant).
+   */
+  SM.route(/^\/confirm\/([a-f0-9]{48})$/, async (m, ctx) => {
+    if (!SM.me) {
+      sessionStorage.setItem('stm.next', '/confirm/' + m[1]);
+      SM.set(ctx.view, authCard('Confirm your email', 'Sign in to the account that uses this address to confirm it.', html`
+        <a class="btn btn-primary btn-block" href="#/login">Sign in to confirm</a>
+        <p class="auth-alt">Didn't create a Studioma account? Ignore the email: the address stays unconfirmed. If someone created one with your address, take it back with <a href="#/forgot">Forgot your password?</a></p>`));
+      return;
+    }
+    let r = null;
+    let error = '';
+    try { r = await SM.post('email_confirm', { token: m[1] }); } catch (e) { error = e.message; }
+    if (!ctx.alive()) return;
+    if (r) { SM.setMe(r); SM.refreshCounts(); }
+    SM.set(ctx.view, authCard(r ? 'Email confirmed' : 'Link not valid', r ? 'You\'re all set.' : 'This confirmation link can\'t be used.', r
+      ? html`<div class="notice notice-ok" data-email-confirmed>${icon('check')}<span><b>${SM.me.email}</b> is confirmed. Invitations to projects and Studios sent to this address now appear in your workspace.</span></div>
+        <a class="btn btn-primary btn-block" href="#/projects">Open my projects</a>`
+      : html`<div class="notice notice-warn">${icon('alert')}<span>${error}</span></div>
+        <a class="btn btn-primary btn-block" href="#/settings">Go to Settings</a>`));
+  }, { public: true });
+
   /* ------------------------------------------------------------ invitation */
   SM.route(/^\/join\/([a-f0-9]{32})$/, async (m, ctx) => {
     const token = m[1];
@@ -236,7 +327,7 @@
       body = html`<div class="notice notice-ok">${icon('check')}<span>You are already a member.</span></div><a class="btn btn-primary btn-block" href="#${inv.studio ? '/studio/' + inv.studio.id : '/project/' + inv.project.id}">Open it</a>`;
     } else {
       body = html`<button class="btn btn-primary btn-block" data-act="invite-accept" data-token="${token}">Accept and join</button>
-        ${inv.email ? html`<button class="btn btn-ghost btn-block" data-act="invite-decline" data-token="${token}">Decline</button>` : ''}`;
+        ${inv.mine ? html`<button class="btn btn-ghost btn-block" data-act="invite-decline" data-token="${token}">Decline</button>` : ''}`;
     }
     SM.set(ctx.view, html`<div class="auth"><div class="auth-card panel">
       <div class="invite-who">${SM.avatar(inv.by, 'av-l')}</div>
@@ -376,14 +467,30 @@
         ${sw('show_activity', 'Show my Studio activity on my profile', 'Only totals (delivered pieces, number of projects). Never a project name, a client or a card.', s.show_activity)}
         <p class="muted small">Your listing in the talent directory is managed from your <a href="#/profile">profile</a>.</p>
       </section>
-      <section class="panel pad"><h2>Account</h2>
-        <form data-form="account-email" class="stack">
-          <div class="field-row">${field('Email', 'email', 'email', `value="${SM.esc(SM.me.email)}" required`)}${field('Current password', 'current', 'password', 'autocomplete="current-password" placeholder="Required to change your email"')}</div>
-          <p class="form-error" data-error hidden></p><div><button class="btn btn-soft">Update email</button></div>
-        </form><hr>
+      <section class="panel pad" id="signin-methods"><h2>Sign-in methods</h2>
+        <div class="method">
+          <span class="method-ico">${raw(GOOGLE_G)}</span>
+          <div class="grow"><b>Google</b><small class="muted">${SM.me.google ? 'Connected — sign in with one click.' : 'Sign in with one click, without a password.'}</small></div>
+          ${SM.me.google ? html`<button class="btn btn-ghost btn-sm" data-act="google-unlink" ${SM.me.has_password ? '' : raw('disabled title="Choose a password first: it would be your only way to sign in."')}>Disconnect</button>` : ''}
+        </div>
+        ${!SM.me.google && G.enabled() ? html`<div class="google-block" data-google hidden><div class="google-btn"></div></div><p class="form-error" data-google-error hidden></p>` : ''}
+        ${SM.me.google && !SM.me.has_password ? html`<p class="muted small">Your account has no password yet. Choose one below if you also want to sign in with your email.</p>` : ''}
+        <hr>
         <form data-form="account-password" class="stack">
-          <div class="field-row">${field('Current password', 'current', 'password', 'autocomplete="current-password" required')}${field('New password', 'password', 'password', 'autocomplete="new-password" minlength="8" required')}</div>
-          <p class="form-error" data-error hidden></p><div><button class="btn btn-soft">Change password</button></div>
+          <b>${SM.me.has_password ? 'Change your password' : 'Choose a password'}</b>
+          <div class="field-row">${SM.me.has_password ? field('Current password', 'current', 'password', 'autocomplete="current-password" required') : ''}${field(SM.me.has_password ? 'New password' : 'Password', 'password', 'password', 'autocomplete="new-password" minlength="8" required placeholder="At least 8 characters"')}</div>
+          <p class="form-error" data-error hidden></p><div><button class="btn btn-soft">${SM.me.has_password ? 'Change password' : 'Save password'}</button></div>
+        </form>
+      </section>
+      <section class="panel pad" id="account-email"><h2>Email</h2>
+        ${SM.me.email_ok
+          ? html`<p class="email-state">${icon('check')}<span><b>${SM.me.email}</b> is confirmed.</span></p>`
+          : html`<div class="notice notice-warn" data-email-unconfirmed>${icon('mail')}<span><b>Your email address isn't confirmed yet.</b> Invitations to projects and Studios sent to ${SM.me.email} will appear in your workspace once you confirm it. Until then, open them with the link in the invitation email.</span></div>
+            <div data-confirm-box><button class="btn btn-soft btn-sm" data-act="email-confirm-send">${icon('send')}Send me a confirmation link</button></div>`}
+        <form data-form="account-email" class="stack">
+          <div class="field-row">${field('Email', 'email', 'email', `value="${SM.esc(SM.me.email)}" required`)}${SM.me.has_password ? field('Current password', 'current', 'password', 'autocomplete="current-password" placeholder="Required to change your email"') : ''}</div>
+          ${SM.me.has_password ? '' : html`<p class="muted small">Choose a password first to change your email: it confirms changes to your account.</p>`}
+          <p class="form-error" data-error hidden></p><div><button class="btn btn-soft">Update email</button></div>
         </form>
       </section>
       <section class="panel pad"><h2>Company pages</h2>
@@ -395,19 +502,61 @@
         <div><button class="btn btn-danger" data-act="account-delete">Delete my account</button></div>
       </section>
     </div>`);
+    if (!SM.me.google) {
+      G.mount('continue_with', async (credential) => {
+        const err = SM.$('[data-google-error]');
+        try {
+          SM.setMe(await SM.post('google_link', { credential }));
+          SM.toast('Google account connected');
+          SM.navigate();
+        } catch (e) { if (err) { err.textContent = e.message; err.hidden = false; } }
+      });
+    }
   });
+  /** Logo « G » de Google (couleurs officielles), pour la ligne « Google » des réglages. */
+  const GOOGLE_G = '<svg viewBox="0 0 48 48" width="20" height="20" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg>';
+  SM.actions['google-unlink'] = async () => {
+    if (!await SM.confirm({ title: 'Disconnect Google?', text: 'You will sign in with your email and password from now on. You can connect Google again at any time.', ok: 'Disconnect' })) return;
+    const r = await SM.try(SM.post('google_unlink', {}));
+    if (r) { SM.setMe(r); SM.toast('Google disconnected'); SM.navigate(); }
+  };
   SM.changes.theme = (el) => { SM.applyTheme(el.value); SM.post('account_save', { settings: { theme: el.value } }).then((r) => { SM.me.settings = r.user.settings; }).catch(() => {}); };
   SM.changes.setting = async (el) => {
     const r = await SM.try(SM.post('account_save', { settings: { [el.dataset.name]: el.checked } }));
     if (r) { SM.me.settings = r.user.settings; SM.toast('Saved'); } else el.checked = !el.checked;
   };
-  SM.forms['account-email'] = async (form, data) => { const r = await SM.post('account_save', data); SM.me.email = r.user.email; form.current.value = ''; SM.toast('Email updated'); };
-  SM.forms['account-password'] = async (form, data) => { await SM.post('password', data); form.reset(); SM.toast('Password changed'); };
+  SM.forms['account-email'] = async (form, data) => {
+    const before = SM.me.email;
+    const r = await SM.post('account_save', data);
+    SM.setMe(r);
+    if (form.current) form.current.value = '';
+    if (r.user.email === before) { SM.toast('Your email is unchanged'); return; }
+    SM.toast('Email updated — check ' + r.user.email + ' to confirm it');
+    SM.navigate();
+  };
+  SM.actions['email-confirm-send'] = async (el) => {
+    SM.busy(el, true);
+    const r = await SM.try(SM.post('email_confirm_send', {}));
+    SM.busy(el, false);
+    if (!r) return;
+    SM.toast('Confirmation link sent');
+    SM.set(el.closest('[data-confirm-box]'), html`<p class="muted small" data-confirm-sent>Link sent to <b>${r.email}</b>. Open it while signed in to this account — it is valid for 2 days.</p>`);
+  };
+  SM.forms['account-password'] = async (form, data) => {
+    const first = !SM.me.has_password;
+    await SM.post('password', data);
+    form.reset();
+    SM.me.has_password = true;
+    SM.toast(first ? 'Password saved' : 'Password changed');
+    if (first) SM.navigate();
+  };
   SM.actions['account-delete'] = async () => {
     const data = await SM.confirm({ title: 'Delete your account?', text: 'This cannot be undone.', ok: 'Delete my account', danger: true, values: true,
-      body: html`<label class="field"><span>Your password</span><input class="input" type="password" name="password" autocomplete="current-password" autofocus></label>` });
+      body: SM.me.has_password
+        ? html`<label class="field"><span>Your password</span><input class="input" type="password" name="password" autocomplete="current-password" autofocus></label>`
+        : html`<label class="field"><span>Type your email address (${SM.me.email}) to confirm</span><input class="input" type="email" name="confirm" autocomplete="off" autofocus></label>` });
     if (!data) return;
-    const r = await SM.try(SM.post('account_delete', { password: data.password }));
+    const r = await SM.try(SM.post('account_delete', SM.me.has_password ? { password: data.password } : { confirm: data.confirm }));
     if (r) { SM.me = null; SM.csrf = ''; shell(); SM.go('/signup'); SM.toast('Your account has been deleted'); }
   };
 

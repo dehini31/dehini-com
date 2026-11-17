@@ -28,12 +28,30 @@ function invites_view(int $projectId, int $studioId): array
     $users = user_cards(array_merge(array_column($list, 'uid'), array_column($list, 'by_uid')));
     return array_map(function (array $i) use ($users): array { return invite_view($i, $users); }, $list);
 }
-/** Invitations adressées au compte (à son id ou à son email), encore valables. */
+/**
+ * Adresse par laquelle un compte retrouve les invitations envoyées par email : seulement si elle est
+ * confirmée (par Google ou par un lien reçu à cette adresse), '' sinon. Les adresses ne sont pas
+ * vérifiées à l'inscription : sans cela, quelqu'un pourrait créer un compte avec l'adresse d'une autre
+ * personne et voir, puis accepter, les invitations qui lui sont envoyées. Le lien de l'email
+ * d'invitation, lui, suffit toujours : le recevoir prouve l'accès à la boîte.
+ */
+function invite_email(array $u): string
+{
+    return (int) ($u['email_ok'] ?? 0) === 1 ? (string) $u['email'] : '';
+}
+/** L'invitation est-elle adressée à ce compte : à son id, ou à son adresse confirmée ? */
+function invite_for(array $i, array $u): bool
+{
+    if ((int) $i['uid'] > 0 && (int) $i['uid'] === (int) $u['id']) return true;
+    $email = invite_email($u);
+    return $email !== '' && (string) $i['email'] === $email;
+}
+/** Invitations adressées au compte (à son id ou à son adresse confirmée), encore valables. */
 function my_invites(array $u): array
 {
     $list = rows("SELECT i.*, s.name AS studio_name, p.name AS project_name, p.color AS project_color FROM invites i JOIN projects p ON p.id = i.project_id
         LEFT JOIN studios s ON s.id = i.studio_id WHERE i.status = 'pending' AND i.expires > ? AND (i.uid = ? OR (i.email <> '' AND i.email = ?)) ORDER BY i.id DESC",
-        [time(), $u['id'], $u['email']]);
+        [time(), $u['id'], invite_email($u)]);
     $users = user_cards(array_column($list, 'by_uid'));
     return array_map(function (array $i) use ($users): array {
         return ['token' => (string) $i['token'], 'project_name' => (string) $i['project_name'], 'project_color' => (string) $i['project_color'],
@@ -71,7 +89,10 @@ function api_invite_create(array $b, array $u): array
     $target = int_in($b, 'uid');
     if ($email !== '') {
         if (!valid_email($email)) fail('Enter a valid email address.');
-        $target = (int) (val('SELECT id FROM users WHERE email = ?', [$email]) ?? 0);
+        // Rattachée au compte de cette adresse seulement si elle est confirmée : sinon ce compte a pu être
+        // créé par quelqu'un d'autre. L'invitation reste alors adressée à l'email (son lien suffit) et
+        // apparaît au compte une fois l'adresse confirmée.
+        $target = (int) (val('SELECT id FROM users WHERE email = ? AND email_ok = 1', [$email]) ?? 0);
     } elseif ($target) {
         $t = user_by_id($target);
         if (!$t) fail('This person no longer exists.');
@@ -134,6 +155,8 @@ function api_invite_info(array $b, ?array $u): array
         'studio' => $s ? ['id' => (int) $s['id'], 'name' => (string) $s['name']] : null,
         'role' => (string) $i['role'], 'role_label' => ROLE_LABELS[$i['role']] ?? '', 'message' => (string) $i['message'],
         'by' => user_cards([(int) $i['by_uid']])[(int) $i['by_uid']] ?? null, 'email' => (string) $i['email'], 'member' => $member,
+        // Adressée au compte connecté (il peut alors aussi la refuser).
+        'mine' => $u ? invite_for($i, $u) : false,
     ];
 }
 function api_invite_accept(array $b, array $u): array
@@ -141,8 +164,9 @@ function api_invite_accept(array $b, array $u): array
     $i = invite_by_token((string) ($b['token'] ?? ''));
     if (!$i || $i['status'] !== 'pending' || (int) $i['expires'] <= time()) fail('This invitation is no longer valid. Ask for a new one.', 410, 'gone');
     $uid = (int) $u['id'];
-    // Une invitation adressée à un compte précis ne peut être acceptée que par lui.
-    if ((int) $i['uid'] && (int) $i['uid'] !== $uid && $i['email'] !== $u['email']) forbidden('This invitation was sent to someone else.');
+    // Une invitation adressée à un compte précis ne peut être acceptée que par lui (ou par le compte dont
+    // l'adresse, confirmée, est celle de l'invitation). Envoyée à un email sans compte : son lien suffit.
+    if ((int) $i['uid'] && !invite_for($i, $u)) forbidden('This invitation was sent to someone else.');
     $p = row('SELECT * FROM projects WHERE id = ?', [$i['project_id']]);
     $s = (int) $i['studio_id'] ? row('SELECT * FROM studios WHERE id = ?', [$i['studio_id']]) : null;
     if (!$p || ((int) $i['studio_id'] && !$s)) fail('This project no longer exists.', 410, 'gone');
@@ -171,7 +195,7 @@ function api_invite_decline(array $b, array $u): array
 {
     $i = invite_by_token((string) ($b['token'] ?? ''));
     if (!$i || $i['status'] !== 'pending') return [];
-    if ((int) $i['uid'] !== (int) $u['id'] && ($i['email'] === '' || $i['email'] !== $u['email'])) return [];
+    if (!invite_for($i, $u)) return [];
     q("UPDATE invites SET status = 'declined' WHERE id = ?", [$i['id']]);
     notify((int) $i['by_uid'], (int) $u['id'], 'invite', 'declined your invitation', '');
     return [];

@@ -23,6 +23,10 @@ $defaults = [
     'STM_TIMEZONE'       => 'Africa/Algiers',
     'STM_MAX_UPLOAD_MB'  => 64,          // vidéos et pièces jointes (les images sont limitées à 12 Mo)
     'STM_INVITE_DAYS'    => 14,          // durée de validité d'une invitation
+    // « Continue with Google » : ID client OAuth. Vide : celui du défi Impact est repris (même origine).
+    'STM_GOOGLE_CLIENT_ID'  => '',
+    'STM_GOOGLE_FROM_IMPACT' => true,
+    'STM_GOOGLE_CERTS'   => 'https://www.googleapis.com/oauth2/v1/certs', // clés publiques de Google
     'STM_MAIL_FROM'      => defined('IMPACT_MAIL_FROM') ? IMPACT_MAIL_FROM : '',
     'STM_MAIL_FROM_NAME' => 'Studioma',
     'STM_SMTP_HOST'      => defined('IMPACT_SMTP_HOST') ? IMPACT_SMTP_HOST : '',
@@ -176,7 +180,7 @@ function marks(array $a): string
 /** Schéma compatible avec les vieilles versions de SQLite des hébergeurs mutualisés. */
 function migrate(PDO $pdo): void
 {
-    if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= 1) return;
+    if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= 3) return;
     // Deux premières visites simultanées : la seconde attend la fin de la création, puis ne fait rien.
     $pdo->exec('BEGIN IMMEDIATE');
     try {
@@ -628,6 +632,23 @@ function migrate(PDO $pdo): void
         );
         PRAGMA user_version = 1;
         SQL);
+        }
+        if ($v < 2) {
+            // Connexion avec Google : identité Google du compte, et adresse confirmée (par Google ou
+            // par un lien reçu à cette adresse). Les comptes existants restent « non confirmés ».
+            $cols = array_column($pdo->query('PRAGMA table_info(users)')->fetchAll(), 'name');
+            if (!in_array('google_sub', $cols, true)) $pdo->exec('ALTER TABLE users ADD COLUMN google_sub TEXT');
+            if (!in_array('email_ok', $cols, true)) $pdo->exec('ALTER TABLE users ADD COLUMN email_ok INTEGER NOT NULL DEFAULT 0');
+            $pdo->exec('CREATE UNIQUE INDEX IF NOT EXISTS users_google ON users(google_sub)');
+            $pdo->exec('PRAGMA user_version = 2');
+        }
+        if ($v < 3) {
+            // Lien de confirmation de l'adresse (hash du jeton, expiration) : distinct de celui de « mot de
+            // passe oublié », il confirme l'adresse sans jamais permettre de changer le mot de passe.
+            $cols = array_column($pdo->query('PRAGMA table_info(users)')->fetchAll(), 'name');
+            if (!in_array('chash', $cols, true)) $pdo->exec('ALTER TABLE users ADD COLUMN chash TEXT');
+            if (!in_array('cexp', $cols, true)) $pdo->exec('ALTER TABLE users ADD COLUMN cexp INTEGER NOT NULL DEFAULT 0');
+            $pdo->exec('PRAGMA user_version = 3');
         }
         $pdo->exec('COMMIT');
     } catch (Throwable $e) {
