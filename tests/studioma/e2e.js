@@ -658,6 +658,30 @@ const cardIn = (page, col, title) => page.locator(`${colSel(col)} .kcard:has(h3:
   ok(await mp.locator('.tabbar').isVisible() && !(await mp.locator('.side').isVisible().catch(() => false) && await mp.evaluate(() => document.querySelector('.side').getBoundingClientRect().right > 0)), 'mobile : barre d\'onglets en bas, menu replié');
   await noOverflow(mp, 'tableau sur mobile');
   await shot(mp, '15-mobile-board');
+  // Glisser-déposer au doigt : appui long sur la dernière carte d'Ideas, puis glissement en tête de colonne.
+  const cdp = await mobCtx.newCDPSession(mp);
+  const touch = (type, x, y) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x, y, id: 1 }] });
+  const ideasCards = mp.locator(`${colSel('💡 Ideas')} .kcard`);
+  const lastTitle = await ideasCards.last().locator('h3').innerText();
+  const from = await ideasCards.last().boundingBox();
+  const to = await ideasCards.first().boundingBox();
+  await touch('touchStart', from.x + 60, from.y + 18);
+  await mp.waitForTimeout(400);
+  ok(await mp.evaluate(() => document.body.classList.contains('is-dragging')), 'mobile : un appui long saisit la carte');
+  for (let i = 1; i <= 10; i++) { await touch('touchMove', from.x + 60, from.y + 18 + ((to.y + 5) - (from.y + 18)) * (i / 10)); await mp.waitForTimeout(30); }
+  await mp.waitForTimeout(150);
+  await touch('touchEnd');
+  await mp.waitForFunction((t) => document.querySelector('.bcol .kcard h3').textContent === t, lastTitle);
+  await mp.waitForFunction(() => !SM.board.writing);
+  const afterTouch = await call(mp, 'board', undefined, { studio: studioId });
+  const ideasCol = afterTouch.cols.find((c) => c.name === '💡 Ideas');
+  ok(afterTouch.cards.filter((c) => c.col_id === ideasCol.id).sort((a, b) => a.pos - b.pos)[0].title === lastTitle, 'mobile : carte déplacée au doigt (enregistré)');
+  const quick = await ideasCards.first().boundingBox();
+  await touch('touchStart', quick.x + 60, quick.y + 18);
+  for (let i = 1; i <= 5; i++) { await touch('touchMove', quick.x + 60, quick.y + 18 - i * 22); await mp.waitForTimeout(16); }
+  ok(!(await mp.evaluate(() => document.body.classList.contains('is-dragging'))), 'mobile : un balayage rapide fait défiler, sans saisir la carte');
+  await touch('touchEnd');
+  await mp.evaluate(() => window.scrollTo(0, 0));
   await mp.locator(`.kcard[data-card="${firstId}"]`).scrollIntoViewIfNeeded();
   await mp.locator(`.kcard[data-card="${firstId}"] h3`).click();
   await mp.waitForSelector('.cp-title');

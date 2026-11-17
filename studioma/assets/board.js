@@ -263,7 +263,7 @@
         <button class="btn-icon" data-act="bulk-clear" aria-label="Clear selection">${icon('x')}</button>
       </div>` : '';
     SM.set(el, html`${pipeline}
-      <div class="levels${B.focus ? ' is-focus' : ''}${B.selected.size ? ' has-selection' : ''}">${shown.map(levelView)}</div>
+      <div class="levels${B.focus ? ' is-focus' : ''}${B.selected.size ? ' has-selection' : ''}${can('manage') ? ' can-manage' : ''}">${shown.map(levelView)}</div>
       ${!levels.length ? SM.empty('layers', 'Design your workflow', can('manage') ? 'Levels are the big stages of your work — for example Creation, Production and Publication. Each level holds its own columns.' : 'This Studio has no level yet.', can('manage') ? html`<button class="btn btn-primary" data-act="level-add">${icon('plus')}Add the first level</button>` : '') : ''}
       ${bulk}`);
     SM.$$('.level-cols, .bcol-cards', el).forEach((n) => { const s = scroll[n.dataset.levelCols ? 'l' + n.dataset.levelCols : 'c' + n.dataset.cards]; if (s) { n.scrollLeft = s[0]; n.scrollTop = s[1]; } });
@@ -444,7 +444,8 @@
   };
   document.addEventListener('contextmenu', (e) => {
     const el = e.target.closest('.kcard');
-    if (!el || !B.data || B.view !== 'board' || e.target.closest('a, input, textarea')) return;
+    // Pas de menu pendant un déplacement (au doigt, l'appui long déclenche aussi cet événement).
+    if (!el || !B.data || B.view !== 'board' || e.defaultPrevented || document.body.classList.contains('is-dragging') || e.target.closest('a, input, textarea')) return;
     e.preventDefault();
     B.cardMenu(el, +el.dataset.card);
   });

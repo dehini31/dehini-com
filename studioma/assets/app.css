@@ -331,7 +331,7 @@ body.has-modal { overflow: hidden; }
 .bcol { flex: 0 0 284px; display: flex; flex-direction: column; background: var(--sunken); border-radius: 14px; max-height: min(66vh, 640px); min-width: 0; border: 1px solid transparent; }
 .levels.is-focus .bcol { max-height: calc(100dvh - 252px); }
 .bcol.is-principal { border-color: color-mix(in srgb, var(--c) 30%, transparent); } .bcol.is-done { background: color-mix(in srgb, var(--green) 8%, var(--sunken)); } .bcol.is-cancelled { opacity: .85; }
-.bcol-head { display: flex; align-items: center; gap: 4px; padding: 9px 8px 7px 12px; cursor: grab; touch-action: none; }
+.bcol-head { display: flex; align-items: center; gap: 4px; padding: 9px 8px 7px 12px; } .can-manage .bcol-head { cursor: grab; }
 .bcol-name { font-weight: 700; font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 1px 4px; margin-left: -4px; border-radius: 6px; }
 .cbadge { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 6px; color: var(--muted); } .cbadge .ico { width: 13px; height: 13px; }
 .cbadge-final { color: var(--primary-text); background: var(--primary-soft); } .cbadge-final .ico { fill: currentColor; } .cbadge-done { color: var(--ok); }
@@ -344,7 +344,7 @@ body.has-modal { overflow: hidden; }
 .bcol-new { flex: 0 0 200px; display: flex; align-items: center; justify-content: center; gap: 7px; height: 46px; border: 1.5px dashed var(--border-strong); border-radius: 14px; color: var(--muted); font-weight: 600; font-size: 13px; } .bcol-new:hover { border-color: var(--primary); color: var(--primary-text); background: var(--primary-soft); }
 .card-new { margin: 0 8px 8px; display: flex; flex-direction: column; gap: 7px; } .card-new textarea { background: var(--surface); box-shadow: var(--shadow-s); resize: none; }
 
-.kcard { position: relative; display: flex; flex-direction: column; gap: 7px; padding: 10px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-s); cursor: grab; flex: none;
+.kcard { position: relative; display: flex; flex-direction: column; gap: 7px; padding: 10px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-s); cursor: pointer; flex: none;
   transition: box-shadow .15s, border-color .15s, transform .15s; -webkit-touch-callout: none; user-select: none; }
 .kcard:hover { border-color: var(--border-strong); box-shadow: var(--shadow-m); transform: translateY(-1px); }
 .kcard h3 { font-size: 14px; font-weight: 600; line-height: 1.4; overflow-wrap: anywhere; }

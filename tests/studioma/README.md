@@ -49,7 +49,8 @@ base vide :
 - profil public sans compte ; entreprise : talents, opportunité, candidature, messages ;
 - étude de cas tirée du Studio : en attente, invisible du public, autorisée par la cliente, puis publique avec
   ses badges ; historique du Studio ; équipe de l'entreprise ; réglages ; recherche ; page du projet ;
-- mobile (iPhone 13) : tableau, carte en plein écran, menu ; thème sombre conservé ;
+- mobile (iPhone 13) : tableau, glisser-déposer au doigt (appui long ; un balayage rapide fait défiler sans
+  saisir la carte), carte en plein écran, menu ; thème sombre conservé ;
 - contenu saisi jamais interprété, aucune erreur JavaScript, aucune violation de la CSP, aucun défilement
   horizontal de la page ; captures dans `<dossier>/shots`.
 
