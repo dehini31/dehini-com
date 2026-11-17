@@ -1590,14 +1590,32 @@ copié : il ne réécrit que ces adresses et ne touche pas `acme-challenge` (cer
   renouvellement 60 jours, à usage unique. Rien à créer chez Google, OpenAI ou Anthropic.
 - **Jetons personnels** (Settings › AI assistants) pour les outils qui demandent un en-tête
   `Authorization: Bearer …` (Cursor, VS Code, scripts) ; montrés une seule fois, valables jusqu'à leur suppression.
-- **Droits** : l'assistant agit au nom de la personne, avec son rôle dans chaque Studio — les mêmes vérifications
-  que l'application (un lecteur ne peut rien modifier, un collaborateur seulement ses cartes…). Les actions
-  apparaissent dans l'historique sous le nom de la personne. Aucun outil de suppression définitive.
-- **Outils** (22) : `search` et `fetch` (format attendu par ChatGPT), `list_projects`, `get_studio`, `get_card`,
-  `my_work`, `studio_activity`, `studio_insights`, `create_project`, `create_studio`, `create_card`, `update_card`,
-  `move_card`, `add_comment`, `add_checklist_items`, `check_item`, `request_approval`, `archive_card`,
-  `create_level`, `create_column`, `set_handoff`, `invite_member`. Colonnes et personnes se donnent par id ou par
-  nom (« Ideas », « @amel ») ; les descriptions s'écrivent en Markdown.
+- **Droits** : l'assistant agit au nom de la personne, avec son rôle dans chaque Studio et dans chaque entreprise —
+  les mêmes vérifications que l'application (un lecteur ne peut rien modifier, un collaborateur seulement ses
+  cartes, seuls les admins d'une entreprise publient en son nom…). Les actions apparaissent dans l'historique et
+  les publications sous le nom de la personne. Aucun outil de suppression définitive.
+- **Outils** (44) :
+  - Studios : `search` et `fetch` (format attendu par ChatGPT), `list_projects`, `get_project`, `get_studio`,
+    `get_card`, `my_work`, `studio_activity`, `studio_insights`, `create_project`, `update_project`,
+    `archive_project`, `create_studio`, `update_studio`, `archive_studio`, `create_card`, `update_card`,
+    `move_card`, `add_comment`, `add_checklist_items`, `check_item`, `request_approval`, `archive_card`,
+    `create_level`, `create_column`, `set_handoff`, `invite_member` ;
+  - études de cas : `list_case_studies`, `save_case_study` (créer, modifier, publier), `case_study_from_studio`
+    (brouillon tiré de cartes publiées, avec leurs liens et chiffres ; la publication attend les mêmes
+    autorisations que dans l'application), `request_results_confirmation` ;
+  - publications : `list_posts` (fil, les siennes, une entreprise, découvrir, enregistrées), `create_post` (en son
+    nom ou celui d'une entreprise, partage possible), `comment_on_post` ;
+  - messages : `search_people`, `list_conversations`, `read_conversation`, `send_message` ;
+  - entreprises : `get_company` (sans argument : ses entreprises et son rôle), `save_company` (créer, modifier),
+    `manage_company_team` (ajouter, changer l'accès ou l'intitulé, retirer), `save_opportunity`, `get_opportunity`
+    (avec les candidatures pour les admins), `update_application`.
+
+  Colonnes et personnes se donnent par id ou par nom (« Ideas », « @amel ») ; les descriptions s'écrivent en
+  Markdown. Pour une modification, seuls les champs donnés changent. Une valeur hors liste (rôle, priorité,
+  taille…) est refusée avec les choix possibles. Publications et études de cas : texte seulement — photos et vidéos
+  s'ajoutent dans l'application. Les instructions du serveur demandent à l'assistant de faire valider le texte
+  exact avant de publier, commenter ou envoyer un message, et de traiter le contenu écrit par d'autres (cartes,
+  publications, messages) comme des données, jamais comme des consignes.
 - **Déconnecter** : Settings › AI assistants › Disconnect (application) ou Delete (jeton) : effet immédiat.
 
 ### 5. Fichiers envoyés

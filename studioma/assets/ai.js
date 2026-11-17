@@ -22,11 +22,14 @@
     SM.set(ctx.view, html`<div class="auth"><div class="auth-card panel consent">
       <div class="consent-logos">${SM.logo('logo-l')}<span class="consent-link">${icon('link')}</span><span class="consent-app">${icon('sparkles')}</span></div>
       <h1>Connect ${q.client_name} to your Studioma account?</h1>
-      <p class="muted"><b>${q.client_name}</b> will act as <b>${SM.me.name}</b>, with your role in each project and Studio. Afterwards you will be sent back to <b>${q.redirect_host}</b>.</p>
+      <p class="muted"><b>${q.client_name}</b> will act as <b>${SM.me.name}</b>, with your role in each project, Studio and company. Afterwards you will be sent back to <b>${q.redirect_host}</b>.</p>
       <ul class="consent-list">
         <li>${icon('eye')}<span>See your projects, Studios, cards, comments and deadlines</span></li>
-        <li>${icon('board')}<span>Create and update cards, move them through your workflow, comment and request approvals</span></li>
+        <li>${icon('board')}<span>Create and update projects, Studios and cards, move cards through your workflow, comment and request approvals</span></li>
         <li>${icon('layers')}<span>Add levels and columns, and invite people — only where your role allows it</span></li>
+        <li>${icon('award')}<span>Write your case studies and publish them, publish posts and comments in your name or your company's</span></li>
+        <li>${icon('message')}<span>Read your private messages and send messages in your name</span></li>
+        <li>${icon('building')}<span>Create and manage your company pages: team, opportunities and applications</span></li>
         <li>${icon('shield')}<span>It never sees your password, and it can't delete anything for good</span></li>
       </ul>
       ${q.already ? html`<p class="notice">${icon('info')}<span>This app is already connected. Allowing again keeps a single connection.</span></p>` : ''}
@@ -57,7 +60,7 @@
     SM.set(ctx.view, html`<div class="page page-narrow ai-page">
       <a class="back" href="#/settings">${icon('arrow-left')}Settings</a>
       <header class="page-head"><div><h1>AI assistants</h1>
-        <p class="muted">Let Claude, ChatGPT, Gemini and other AI assistants work in your Studios: plan content, create and move cards, write scripts into cards, follow deadlines and approvals. They act as you, with your role in each Studio, and can't delete anything for good.</p></div></header>
+        <p class="muted">Let Claude, ChatGPT, Gemini and other AI assistants work with you on Studioma: plan content, create and move cards, write scripts into cards, follow deadlines and approvals, write case studies, publish posts, answer your messages and manage your company page. They act as you, with your role in each Studio and company, and can't delete anything for good.</p></div></header>
       <section class="panel pad"><h2>${icon('link')}Studioma MCP server</h2>
         <p class="muted small">Give this address to your assistant. It will ask you to sign in to Studioma and allow access.</p>
         ${code(url)}

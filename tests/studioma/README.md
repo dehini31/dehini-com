@@ -60,6 +60,19 @@ base vide :
   archivage ;
 - droits : un autre compte ne voit rien ; invité en lecteur, il lit mais ne peut ni créer, ni déplacer, ni changer
   la structure ;
+- projets et Studios : lecture, modification partielle, archivage et restauration ; refusés au lecteur ;
+- études de cas : brouillon privé, publication (le reste conservé), plateforme hors liste refusée, demande de
+  confirmation à une cliente, étude d'une autre personne introuvable, brouillon tiré d'une carte publiée (refusé
+  sans lien de publication, puis avec le lien et les chiffres de la carte) ;
+- publications : en son nom, vide refusée, fil « découvrir » d'un autre compte, commentaire (autrice prévenue),
+  partage ;
+- messages : recherche de personnes sans adresse email, envoi, conversation non lue puis lue, réponse reçue dans
+  l'application, destinataire inconnu expliqué, pas de message à soi-même ;
+- entreprises : création (propriétaire), modification partielle, valeur hors liste refusée avec les choix (pour
+  tous les outils), page d'une autre entreprise non modifiable, publication au nom de l'entreprise (admins
+  seulement), opportunité publiée puis fermée, candidatures visibles des seuls admins, candidat prévenu, équipe
+  (ajout, accès changé avec l'intitulé conservé, un admin ne se nomme pas propriétaire, retrait, dernière
+  propriétaire) ; actions vues par d'autres signalées (`openWorldHint`) ;
 - jetons : renouvellement (à usage unique, lié à l'application), application déconnectée et jeton personnel
   supprimé refusés aussitôt, client confidentiel (secret exigé), retour vers la machine locale sur un autre port,
   révocation (RFC 7009).
