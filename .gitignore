@@ -10,6 +10,7 @@
 /marketing/config.php
 /swanbida/config.php
 /maillage/config.php
+/studioma/config.php
 
 # Images envoyées depuis /admin.
 /uploads/*

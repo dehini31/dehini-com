@@ -35,6 +35,11 @@ Site personnel de Mohammed Dehini.
   réseaux de distribution : landing page d'inscription, carte interactive des points de vente (OpenStreetMap),
   pages des marques et catalogue, disponibilité d'un produit par magasin, commandes et réservations, espace
   entreprise (marques et distributeurs) et analyses commerciales. Voir la section « Maillage » plus bas.
+- `studioma/` — **Studioma** (`https://dehini.com/studioma/`), réseau social et studio collaboratif des community
+  managers, en anglais : landing, comptes individuels et entreprises, espace de travail privé (projets → Studios →
+  niveaux → colonnes → cartes, glisser-déposer, passage de relais entre niveaux, calendrier, « My work »),
+  invitations et rôles, profils publics, fil d'actualité, portfolio et preuves de travail, opportunités, annuaire
+  des talents et messagerie. Voir la section « Studioma » plus bas.
 - `robots.txt` — robots du domaine (déclare les plans du site ; Google ne lit que celui de la racine).
 - `sitemap.xml` — plan des pages principales de dehini.com (les questions du défi Impact ont le leur :
   `/impact/sitemap.xml`). Voir « Référencement (SEO) » plus bas.
@@ -58,6 +63,7 @@ cp -rf dehini-com/metakpis ~/public_html/
 cp -rf dehini-com/swanbida ~/public_html/
 cp -rf dehini-com/marketing ~/public_html/
 cp -rf dehini-com/maillage ~/public_html/
+cp -rf dehini-com/studioma ~/public_html/
 cp -f dehini-com/robots.txt dehini-com/sitemap.xml ~/public_html/
 ```
 
@@ -88,14 +94,15 @@ depuis `/admin`, jamais depuis ce dépôt.
 Dans **cPanel → Tâches Cron**, toutes les 5 minutes :
 
 ```bash
-cd ~/dehini-com && git pull -q && cp -f index.html ~/public_html/index.html && cp -f admin/index.html admin/api.php admin/.htaccess admin/.user.ini ~/public_html/admin/ && cp -f uploads/.htaccess ~/public_html/uploads/.htaccess && cp -rf img ~/public_html/ && cp -rf elbahiferti ~/public_html/ && cp -rf impact ~/public_html/ && cp -rf metakpis ~/public_html/ && cp -rf swanbida ~/public_html/ && cp -rf marketing ~/public_html/ && cp -rf maillage ~/public_html/ && cp -f robots.txt sitemap.xml ~/public_html/
+cd ~/dehini-com && git pull -q && cp -f index.html ~/public_html/index.html && cp -f admin/index.html admin/api.php admin/.htaccess admin/.user.ini ~/public_html/admin/ && cp -f uploads/.htaccess ~/public_html/uploads/.htaccess && cp -rf img ~/public_html/ && cp -rf elbahiferti ~/public_html/ && cp -rf impact ~/public_html/ && cp -rf metakpis ~/public_html/ && cp -rf swanbida ~/public_html/ && cp -rf marketing ~/public_html/ && cp -rf maillage ~/public_html/ && cp -rf studioma ~/public_html/ && cp -f robots.txt sitemap.xml ~/public_html/
 ```
 
 Cette commande ne touche jamais `data.json`, `admin/config.php`, `impact/config.php`,
-`metakpis/config.php`, `swanbida/config.php`, `marketing/config.php`, `maillage/config.php`, les bases du défi
-Impact, de Stats Meta KPIs, de SWANBIDA, du Marketing Dashboard et de Maillage, ni les images envoyées dans
-`uploads/`, `swanbida/media/` et `maillage/media/` : seul le code (`index.html`, `admin/*.php`, `elbahiferti/`,
-`impact/`, `metakpis/`, `swanbida/`, `marketing/`, `maillage/`) est mis à jour.
+`metakpis/config.php`, `swanbida/config.php`, `marketing/config.php`, `maillage/config.php`, `studioma/config.php`,
+les bases du défi Impact, de Stats Meta KPIs, de SWANBIDA, du Marketing Dashboard, de Maillage et de Studioma
+(`~/studioma-data/`, fichiers envoyés compris), ni les images envoyées dans `uploads/`, `swanbida/media/` et
+`maillage/media/` : seul le code (`index.html`, `admin/*.php`, `elbahiferti/`, `impact/`, `metakpis/`, `swanbida/`,
+`marketing/`, `maillage/`, `studioma/`) est mis à jour.
 
 ## Défi Impact (`/impact/`)
 
@@ -1402,6 +1409,143 @@ Voir `tests/maillage/README.md`.
   commande porte sur un seul article.
 - Les conditions d'utilisation affichées à l'inscription sont un texte de départ, à relire et adapter.
 
+## Studioma (`/studioma/`)
+
+Réseau social professionnel et studio collaboratif pour les community managers, les créateurs de contenu, les
+agences et les entreprises. Trois expériences dans une seule plateforme, sur une seule base : *Create together.
+Grow professionally. Get discovered.* L'interface est en anglais.
+
+| Adresse | Pour qui | Ce qu'on y fait |
+|---|---|---|
+| `https://dehini.com/studioma/` | tout le monde | **Landing** : présentation, boutons d'inscription (particulier ou entreprise) |
+| `https://dehini.com/studioma/app/` | membres | **L'application** : fil, découverte, réseau, projets, Studios, opportunités, messages, notifications, profil, réglages — et, pour les entreprises, talents et équipe |
+| `…/app/#/u/<identifiant>`, `#/c/<entreprise>`, `#/opportunity/<n>`, `#/post/<n>` | visiteurs | **Pages publiques** lisibles sans compte : profil et portfolio, page d'une entreprise, opportunité, publication |
+| `…/app/#/join/<jeton>` | invités | **Invitation** à un projet ou à un Studio (lien ou email) |
+
+### Ce que fait la plateforme
+
+1. **Comptes** — particulier (community manager, créateur, freelance…) ou entreprise (marque, agence). Un compte
+   est une personne : elle peut créer plusieurs pages d'entreprise, rejoindre plusieurs équipes, projets et
+   Studios sans jamais changer d'identifiants. Premiers pas guidés : profil, puis premier Studio.
+2. **Espace de travail privé** — `Projet → Studios → Niveaux → Colonnes → Cartes`. Un projet est une marque, un
+   client ou une campagne ; un Studio est un tableau privé. Niveaux et colonnes se créent, se renomment (clic sur
+   le nom), se réordonnent au glisser-déposer, se dupliquent, s'archivent et se suppriment ; une colonne se
+   déplace d'un niveau à l'autre avec ses cartes. Chaque niveau a une **colonne principale** (arrivée des cartes)
+   et peut avoir une **colonne finale**.
+3. **Modèle par défaut** — le premier Studio propose *Creation* (💡 Ideas, ✍️ Script in Progress, ✅ Script
+   Approved), *Production* (✅ Script Approved, 🎬 Video in Progress, 🎨 Design in Progress, 🚀 Ready to Publish)
+   et *Publication* (🚀 Ready to Publish, 📅 Scheduled, ✔️ Published, 🚫 Cancelled). Deux autres modèles : un
+   tableau simple et un Studio vide.
+4. **Passage de relais** — une carte qui arrive dans la colonne finale d'un niveau est transmise à la colonne
+   principale du niveau suivant : automatiquement, à la demande (bouton « Send to… ») ou jamais, au choix pour
+   chaque niveau (menu du niveau › *Icon, color and handoff*). **C'est la même carte qui change de colonne**
+   (même identifiant) : commentaires, pièces jointes, check-list, responsables, dates et historique la suivent ;
+   aucune copie n'est créée. La colonne finale garde le compte des cartes transmises.
+5. **Cartes** — titre, script mis en forme, responsable et collaborateurs, échéance, priorité, étape, tags,
+   plateformes, type de contenu, pièces jointes (images, vidéos, documents), check-list, commentaires avec
+   mentions `@`, demande de validation, historique, date et lien de publication, indicateurs facultatifs.
+   Création d'un geste (on enchaîne les idées avec Entrée), déplacement, duplication, sélection multiple
+   (Ctrl + clic), archivage et suppression.
+6. **Trois vues** — *Board* (le tableau, vue de tous les niveaux ou d'un seul), *Calendar* (échéances et dates
+   de publication, à déplacer d'un jour à l'autre) et *My work* (les cartes confiées au compte dans tous ses
+   projets, filtrées par échéance, projet, priorité et statut). *Insights* ajoute un tableau de bord privé du
+   Studio (avancement, rythme, respect des échéances, répartition).
+7. **Équipe** — invitation par email ou par lien, à tout un projet ou à un seul Studio, avec six rôles :
+   *Owner*, *Manager*, *Creator*, *Collaborator*, *Client / Approver*, *Viewer*. Validation : la personne
+   sollicitée approuve ou demande des modifications ; une carte approuvée avance dans la colonne finale de son
+   niveau (et passe au suivant si le relais est automatique). Notifications dans l'application et par email.
+   Le tableau se resynchronise tout seul (toutes les 4 secondes) quand un coéquipier le modifie.
+8. **Réseau** — profil public (photo, couverture, titre, bio, compétences, plateformes, langues, disponibilité),
+   mur de publications (texte, images, vidéos), j'aime, commentaires, partages, enregistrements, abonnements et
+   mises en relation, recommandations (affichées seulement si leur destinataire le décide).
+9. **Portfolio et preuves de travail** — études de cas (marque, rôle, objectifs, résultats, liens, médias). Trois
+   origines sont toujours distinguées : **vérifié par un Studio** (cartes publiées avec leur lien), **confirmé
+   par un client**, **déclaré**. Pas de note, pas de classement général.
+10. **Entreprises** — page publique, équipe (propriétaire, administrateurs, membres), opportunités (titre,
+    description, compétences, à distance ou sur place, lieu, contrat, mode de candidature) et candidatures,
+    **annuaire des talents** (recherche, compétence, plateforme, secteur, langue, lieu, expérience,
+    disponibilité, portfolio), professionnels enregistrés, invitation à collaborer, messagerie privée.
+
+### Confidentialité
+
+Le contenu d'un Studio est privé : seuls ses membres le voient, pièces jointes comprises (elles sont servies par
+l'API, qui vérifie l'accès à chaque demande). **Rien n'arrive sur un profil public sans publication explicite.**
+Une étude de cas tirée d'un Studio (menu du Studio › *Create a case study*) reste un brouillon privé ; sa
+publication exige l'accord du propriétaire du projet si l'auteur ne l'est pas, **et d'un client si le projet en
+compte un** (page *Publication requests*). L'activité dans les Studios (« pièces livrées ») n'apparaît sur un
+profil que si la personne l'active dans ses réglages, et seulement sous forme de totaux, sans nom de projet. La
+charge de travail par personne (*Insights*) n'est visible que des managers du Studio.
+
+### Organisation
+
+- `studioma/index.html` + `assets/landing.{css,js}` — la landing (statique).
+- `studioma/app/index.html` — l'application (une seule page, routes après le `#`).
+- `studioma/assets/` — `core.js` (appels à l'API, gabarits HTML échappés, routeur, fenêtres, menus,
+  glisser-déposer souris et tactile, texte mis en forme), `app.js` (cadre, connexion, premiers pas,
+  notifications, réglages), `studio.js` (projets, Studios, partage), `board.js` (tableau, calendrier, My work,
+  Insights), `card.js` (panneau d'une carte), `social.js` (fil, profils, portfolio, réseau), `talent.js`
+  (entreprises, opportunités, talents, messages), `icons.js` (icônes Lucide utilisées), `app.css` (système de
+  design, thèmes clair et sombre).
+- `studioma/api.php` — l'API : la table `ROUTES` liste toutes les actions (méthode, compte obligatoire ou non).
+- `studioma/lib/` — `core.php` (configuration, base, listes de référence, emails), `auth.php` (comptes,
+  sessions, notifications), `access.php` (**rôles et droits**), `files.php` (fichiers envoyés), `studio.php`
+  (projets, Studios, niveaux, colonnes, cartes, passage de relais), `cards.php` (check-lists, commentaires,
+  pièces jointes, validations), `collab.php` (invitations, membres), `social.php` (profils, fil, relations,
+  portfolio, recommandations, recherche), `talent.php` (entreprises, opportunités, talents, messages).
+- Les données sont créées toutes seules au premier passage dans `~/studioma-data/` (hors `public_html`) :
+  `studioma.sqlite` et `files/` (images ré-encodées en WebP, vidéos, documents).
+
+### 1. Mise en route
+
+Il suffit que le dossier soit copié dans `public_html` (les commandes d'installation et le cron ci-dessus le font).
+**Si le cron est déjà en place sur le serveur, il faut lui ajouter `cp -rf studioma ~/public_html/`** (cPanel →
+Tâches Cron → modifier la commande, voir « 4. Mise à jour automatique du code »). Puis ouvrir
+`https://dehini.com/studioma/` et créer le premier compte : il n'y a ni démonstration ni donnée fictive, la
+plateforme démarre vide.
+
+### 2. Emails
+
+Invitations, mot de passe oublié, bienvenue et notifications importantes (carte confiée, mention, demande de
+validation, autorisation de publication) partent du compte email du défi Impact s'il est configuré
+(`impact/config.php`), sinon de la fonction `mail()` du serveur. Pour un autre compte, voir
+`studioma/config.example.php`. Chacun peut couper les emails de notification dans ses réglages.
+
+### 3. Fichiers envoyés
+
+64 Mo par fichier (`studioma/.user.ini` et `STM_MAX_UPLOAD_MB`), 12 Mo par image. Si l'hébergeur plafonne plus
+bas, baisser les deux valeurs ensemble. Le type est vérifié sur le contenu réel du fichier.
+
+### 4. Sauvegarde
+
+Tout tient dans `~/studioma-data/` : copier ce dossier sauvegarde la base et les fichiers.
+
+### 5. Tests
+
+```bash
+tests/studioma/run.sh /tmp/stm-test
+```
+
+Faux hébergement neuf, puis deux batteries : `api.js` (l'API seule : comptes, modèle par défaut, relais avec
+conservation de l'identité de la carte, rôles et refus côté serveur, pièces jointes privées, validations,
+archivage, portfolio et autorisations, entreprises, talents, messages) et `e2e.js` (Chromium / Playwright : le
+parcours complet dans le navigateur, sur ordinateur et sur mobile, avec deux comptes synchronisés). Voir
+`tests/studioma/README.md`.
+
+### Ce qui n'est pas fait
+
+- **Aucune connexion aux réseaux sociaux** : pas de publication automatique sur Instagram, TikTok, etc., ni de
+  récupération automatique des statistiques. La date, le lien de publication et les indicateurs d'une carte sont
+  saisis à la main.
+- **Pas d'assistance par IA** (idées, scripts, légendes).
+- La synchronisation entre navigateurs se fait par interrogation toutes les 4 secondes, pas en continu : deux
+  personnes qui écrivent le même champ au même moment, la dernière enregistrée l'emporte.
+- L'adresse email d'un compte n'est pas vérifiée à l'inscription, et il n'y a pas de connexion avec Google.
+- Pas de modération ni d'administration centrale (signalement d'une publication, suspension d'un compte), pas
+  de blocage entre membres.
+- Une seule langue (anglais) ; les conditions d'utilisation se résument à la case à cocher de l'inscription.
+- Les pages publiques sont rendues par JavaScript : elles se partagent par lien mais ne sont pas optimisées pour
+  les moteurs de recherche (seule la landing l'est).
+
 ## Référencement (SEO)
 
 Ce que fait le code :
@@ -1531,3 +1675,11 @@ pas mis à jour automatiquement après coup.
   aucun script ne s'exécute ; `config.php` et `lib/` bloqués en accès direct ; base hors de `public_html`. Le
   suivi d'une commande demande le numéro **et** le téléphone ; les recherches sont comptées sans identité, avec une
   position arrondie à environ 1 km.
+- Studioma : mots de passe hachés, sessions à jeton aléatoire (seul leur hash est en base), jeton anti-CSRF et
+  en-tête `X-Requested-With` sur chaque écriture, limites d'essais (inscription, connexion, invitations,
+  publications, messages). **Les droits sont vérifiés par le serveur à chaque action** (`lib/access.php`) : un
+  compte sans accès à un Studio reçoit « introuvable », un rôle insuffisant « refusé » — l'interface ne fait que
+  masquer ce que le rôle n'autorise pas. Fichiers hors de `public_html`, servis par l'API après vérification de
+  l'accès, jamais exécutés ; images ré-encodées (métadonnées et position GPS retirées). Texte mis en forme
+  réduit à une liste de balises sans attribut, tout le reste échappé à l'affichage, et politique de sécurité du
+  contenu sans script en ligne (`studioma/.htaccess`). `config.php` et `lib/` bloqués en accès direct.
