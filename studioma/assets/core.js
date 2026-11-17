@@ -35,6 +35,9 @@
     constructor(code, message, status, data) { super(message); this.code = code; this.status = status || 0; this.data = data || {}; }
   }
   SM.ApiError = ApiError;
+  /** Erreur de saisie attendue : affichée dans le formulaire, sans trace dans la console. */
+  class UserError extends Error {}
+  SM.UserError = UserError;
   SM.api = async (action, opts) => {
     opts = opts || {};
     const url = new URL('api.php', BASE);
@@ -286,7 +289,7 @@
     SM.busy(btn, true);
     Promise.resolve(fn(form, SM.formData(form), e)).catch((ex) => {
       if (err) { err.textContent = ex.message; err.hidden = false; } else SM.toast(ex.message, 'error');
-      if (!(ex instanceof ApiError)) console.error(ex);
+      if (!(ex instanceof ApiError) && !(ex instanceof UserError)) console.error(ex);
     }).finally(() => SM.busy(btn, false));
   });
   document.addEventListener('change', (e) => {
@@ -356,6 +359,18 @@
   SM.topModal = () => modals[modals.length - 1] || null;
   SM.closeModals = () => { modals.slice().forEach((m) => m.close(true)); };
   SM.actions['modal-close'] = (el) => { const m = modals.find((x) => x.wrap.contains(el)); if (m) m.close(); };
+  // Tabulation : le focus reste dans la fenêtre ouverte.
+  document.addEventListener('keydown', (e) => {
+    const m = SM.topModal();
+    if (e.key !== 'Tab' || !m) return;
+    const items = SM.$$('a[href], button:not([disabled]), input:not([disabled]):not([type=hidden]), select:not([disabled]), textarea:not([disabled]), [contenteditable="true"], [tabindex="0"]', m.el).filter((el) => el.offsetParent !== null);
+    if (!items.length) { e.preventDefault(); return; }
+    const first = items[0];
+    const last = items[items.length - 1];
+    if (!m.el.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
+    else if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  });
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
     if (SM.closeMenus()) return;
@@ -375,7 +390,7 @@
         <footer class="modal-foot"><button type="button" class="btn btn-ghost" data-act="modal-close">${opts.cancel || 'Cancel'}</button><button type="submit" class="btn ${opts.danger ? 'btn-danger' : 'btn-primary'}" ${opts.type ? '' : 'autofocus'}>${opts.ok || 'Confirm'}</button></footer>
       </form>`, { size: 's', onClose: () => { if (!done) resolve(false); } });
     m.submit = async (data) => {
-      if (opts.type && data.typed.trim() !== opts.type) throw new Error('The text doesn\'t match.');
+      if (opts.type && data.typed.trim() !== opts.type) throw new UserError('The text doesn\'t match.');
       done = true;
       m.close(true);
       resolve(opts.values ? data : true);
@@ -392,7 +407,7 @@
         <footer class="modal-foot"><button type="button" class="btn btn-ghost" data-act="modal-close">Cancel</button><button type="submit" class="btn btn-primary">${opts.ok || 'Save'}</button></footer>
       </form>`, { size: 's', onClose: () => { if (!done) resolve(null); } });
     m.submit = async (data) => {
-      if (!data.value.trim()) throw new Error('This field is required.');
+      if (!data.value.trim()) throw new UserError('This field is required.');
       done = true;
       m.close(true);
       resolve(data.value.trim());

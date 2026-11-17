@@ -113,7 +113,7 @@
   SM.changes['compose-upload'] = (el) => { const files = Array.from(el.files); el.value = ''; SM.mediaUpload('post', files, draft.media, drawDraft, 6); };
   SM.actions['compose-remove'] = (el) => { draft.media.splice(+el.dataset.i, 1); drawDraft(); };
   SM.forms['post-create'] = async (form, data) => {
-    if (draft.media.some((f) => f.uploading)) throw new Error('Wait for the upload to finish.');
+    if (draft.media.some((f) => f.uploading)) throw new SM.UserError('Wait for the upload to finish.');
     const r = await SM.post('post_create', { body: data.body, media: draft.media.map((f) => f.token), company_id: +data.company_id || 0, share_id: draft.share });
     SM.closeModals();
     SM.toast('Posted');
@@ -389,7 +389,7 @@
   SM.changes['case-upload'] = (el) => { const files = Array.from(el.files); el.value = ''; SM.mediaUpload('portfolio', files, cdraft.media, drawCaseMedia, 8); };
   SM.actions['case-media-x'] = (el) => { cdraft.media.splice(+el.dataset.i, 1); drawCaseMedia(); };
   SM.forms['case-save'] = async (form, data, e) => {
-    if (cdraft.media.some((f) => f.uploading)) throw new Error('Wait for the upload to finish.');
+    if (cdraft.media.some((f) => f.uploading)) throw new SM.UserError('Wait for the upload to finish.');
     const publish = !!(e.submitter && e.submitter.dataset.publish === '1');
     const metrics = (data.m_label || []).map((label, i) => ({ label, value: (data.m_value || [])[i] || '' })).filter((x) => x.label.trim() && x.value.trim());
     const r = await SM.post('portfolio_save', { id: cdraft.id, title: data.title, brand: data.brand, role: data.role, period: data.period, objectives: data.objectives, body: data.body, results: data.results,

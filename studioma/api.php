@@ -88,7 +88,7 @@ function reference(): array
         'languages' => STM_LANGUAGES, 'contracts' => STM_CONTRACTS, 'modes' => STM_WORK_MODES, 'availability' => STM_AVAILABILITY,
         'colors' => STM_COLORS, 'priorities' => STM_PRIORITIES, 'roles' => ROLE_LABELS, 'relations' => RELATIONS,
         'sizes' => COMPANY_SIZES, 'app_statuses' => APP_STATUSES, 'metrics' => METRIC_KEYS, 'templates' => templates_view(),
-        'max_upload_mb' => (int) STM_MAX_UPLOAD_MB, 'name' => STM_NAME,
+        'max_upload_mb' => upload_limit_mb(), 'name' => STM_NAME,
     ];
 }
 function api_me(array $b, ?array $u): array

@@ -13,6 +13,31 @@ const IMAGE_SMALL = 480;
 const DOC_EXTS = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'csv', 'rtf', 'md', 'zip', 'psd', 'ai', 'eps', 'srt', 'vtt', 'mp3', 'wav', 'm4a'];
 const VIDEO_MIMES = ['video/mp4' => 'mp4', 'video/webm' => 'webm', 'video/quicktime' => 'mov', 'video/x-m4v' => 'mp4'];
 
+/** Taille maximale réellement acceptée, en Mo : le réglage de Studioma, borné par ceux de PHP. */
+function upload_limit_mb(): int
+{
+    $toMb = function (string $v): float {
+        $v = trim($v);
+        if ($v === '' || (float) $v <= 0) return INF;   // 0 ou vide : pas de limite côté PHP
+        $n = (float) $v;
+        switch (strtolower(substr($v, -1))) {
+            case 'g': return $n * 1024;
+            case 'm': return $n;
+            case 'k': return $n / 1024;
+        }
+        return $n / 1048576;
+    };
+    // Le formulaire ajoute quelques octets au fichier : on garde une marge sous post_max_size.
+    $limit = min((float) STM_MAX_UPLOAD_MB, $toMb((string) ini_get('upload_max_filesize')), $toMb((string) ini_get('post_max_size')) - 1);
+    return max(1, (int) floor($limit));
+}
+/** Type du contenu d'un fichier ('' si le serveur ne sait pas le dire). */
+function file_mime(string $path): string
+{
+    if (class_exists('finfo')) return (string) (new finfo(FILEINFO_MIME_TYPE))->file($path);
+    return function_exists('mime_content_type') ? (string) @mime_content_type($path) : '';
+}
+
 function files_dir(): string
 {
     $d = STM_DATA_DIR . '/files';
@@ -115,14 +140,14 @@ function file_ingest(array $up, int $uid, string $scope, int $studioId, array $a
 {
     if (($up['error'] ?? 1) !== UPLOAD_ERR_OK || !is_uploaded_file((string) ($up['tmp_name'] ?? ''))) {
         $tooBig = in_array($up['error'] ?? 0, [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true);
-        throw new InvalidArgumentException($tooBig ? 'This file is too large.' : 'The upload failed. Please try again.');
+        throw new InvalidArgumentException($tooBig ? 'This file is too large (' . upload_limit_mb() . ' MB maximum).' : 'The upload failed. Please try again.');
     }
     $tmp = (string) $up['tmp_name'];
     $size = (int) filesize($tmp);
     $name = line_clean(basename((string) ($up['name'] ?? 'file')), 120);
     if ($size <= 0) throw new InvalidArgumentException('This file is empty.');
-    if ($size > STM_MAX_UPLOAD_MB * 1048576) throw new InvalidArgumentException('This file is too large (' . STM_MAX_UPLOAD_MB . ' MB maximum).');
-    $mime = (string) (new finfo(FILEINFO_MIME_TYPE))->file($tmp);
+    if ($size > upload_limit_mb() * 1048576) throw new InvalidArgumentException('This file is too large (' . upload_limit_mb() . ' MB maximum).');
+    $mime = file_mime($tmp);
     $extIn = strtolower(pathinfo($name, PATHINFO_EXTENSION));
     $f = ['token' => token(16), 'uid' => $uid, 'scope' => $scope, 'studio_id' => $studioId, 'name' => $name, 'size' => $size, 'w' => 0, 'h' => 0, 'created' => time()];
 

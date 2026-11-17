@@ -150,7 +150,8 @@ function api_upload(array $b, array $u): array
     rate('upload', 120, 3600, 'u' . $uid);
     $kind = (string) ($b['kind'] ?? '');
     $up = $_FILES['file'] ?? null;
-    if (!is_array($up)) fail('The upload failed. Please try again.');
+    // Au-delà de post_max_size, PHP vide la requête : ni champ ni fichier n'arrivent.
+    if (!is_array($up)) fail(!$_POST && (int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > 0 ? 'This file is too large (' . upload_limit_mb() . ' MB maximum).' : 'The upload failed. Please try again.');
     try {
         if ($kind === 'card') {
             $card = load_card(int_in($b, 'card_id'), $u, 'cardedit');
