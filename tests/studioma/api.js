@@ -478,6 +478,81 @@ class Client {
   ok(r.messages.length === 0, 'conversation invisible pour un tiers');
 
   /* ------------------------------------------------ mot de passe, départ */
+  /* ------------------------------------------------- connexion avec Google */
+  step('Continue with Google');
+  const G = require('./google.js');
+  const google = G.setup(DIR);
+  const gtok = google.token;
+  r = await anon.get('me', { ref: 1 });
+  ok(r.ref.google_client_id === G.CLIENT_ID, 'ID client Google transmis à l\'application');
+  const bad = async (cred, label) => { const c = new Client('g-bad'); const x = await c.post('google', { credential: cred }); ok(x.status === 401 && x.error === 'google_bad' && !c.cookie, label); };
+  await bad('not.a.token', 'jeton illisible refusé');
+  await bad(gtok({ sub: 'g-1', email: 'nora@test.example' }, { key: google.otherKey() }), 'signature falsifiée refusée');
+  await bad(gtok({ sub: 'g-1', email: 'nora@test.example', aud: 'other.apps.googleusercontent.com' }), 'jeton destiné à une autre application refusé');
+  await bad(gtok({ sub: 'g-1', email: 'nora@test.example', exp: Math.floor(Date.now() / 1000) - 3600 }), 'jeton expiré refusé');
+  await bad(gtok({ sub: 'g-1', email: 'nora@test.example', iss: 'https://evil.example' }), 'jeton d\'un autre émetteur refusé');
+  await bad(gtok({ sub: 'g-1', email: 'nora@test.example', email_verified: false }), 'adresse non confirmée par Google refusée');
+
+  const nora = new Client('nora');
+  r = await nora.post('google', { credential: gtok({ sub: 'g-nora', email: 'Nora@Test.example', name: 'Nora Belkacem' }) });
+  ok(r.ok && r.created && r.user.name === 'Nora Belkacem' && r.user.email === 'nora@test.example' && r.user.google && !r.user.has_password && r.csrf, 'nouvelle identité Google : compte créé, connecté, sans mot de passe', r.user);
+  const noraId = r.user.id;
+  ok((await nora.get('workspace')).ok, 'session ouverte par Google utilisable');
+  ok(mails().some((m) => m.to === 'nora@test.example' && /Welcome/.test(m.subject)), 'email de bienvenue (inscription avec Google)');
+  const nora2 = new Client('nora2');
+  r = await nora2.post('google', { credential: gtok({ sub: 'g-nora', email: 'nora@test.example' }) });
+  ok(r.ok && !r.created && r.user.id === noraId, 'même identité Google : même compte, pas de doublon');
+  r = await anon.post('login', { email: 'nora@test.example', password: 'whatever-password' });
+  ok(r.status === 401 && r.error === 'use_google', 'connexion par mot de passe : invite à utiliser Google');
+  r = await nora.post('google_unlink', {});
+  ok(r.status === 400, 'Google ne peut pas être retiré tant qu\'il n\'y a pas de mot de passe');
+  r = await nora.post('account_save', { email: 'nora2@test.example' });
+  ok(r.status === 400, 'changement d\'adresse : mot de passe à choisir d\'abord');
+  r = await nora.post('password', { password: 'nora-solid-password' });
+  ok(r.ok, 'mot de passe choisi sans « ancien » mot de passe');
+  r = await new Client('nora3').post('login', { email: 'nora@test.example', password: 'nora-solid-password' });
+  ok(r.ok && r.user.google && r.user.has_password, 'connexion par mot de passe désormais possible aussi');
+  r = await nora.post('password', { password: 'another-solid-password' });
+  ok(r.status === 400, 'changer ensuite le mot de passe demande l\'ancien');
+  r = await nora.post('google_unlink', {});
+  ok(r.ok && !r.user.google, 'Google retiré du compte');
+  r = await new Client('nora4').post('google', { credential: gtok({ sub: 'g-nora', email: 'nora@test.example' }) });
+  ok(r.ok && !r.created && r.user.id === noraId && !r.password_reset && r.user.has_password, 'Google à nouveau : relié par l\'adresse (confirmée), mot de passe gardé');
+
+  // Compte créé avec l'adresse de quelqu'un d'autre, avant que cette personne n'arrive.
+  const squatter = new Client('squatter');
+  r = await squatter.signup('Victim Name', 'victim@test.example');
+  ok(r.ok, 'compte créé par un tiers avec l\'adresse d\'une autre personne (adresse non confirmée)');
+  const victim = new Client('victim');
+  r = await victim.post('google', { credential: gtok({ sub: 'g-victim', email: 'victim@test.example', name: 'Real Victim' }) });
+  ok(r.ok && !r.created && r.password_reset && !r.user.has_password, 'Google prouve l\'adresse : compte relié, mot de passe posé par le tiers retiré');
+  ok((await squatter.get('workspace')).status === 401, 'la session du tiers est fermée');
+  r = await new Client('squatter2').post('login', { email: 'victim@test.example', password: 'a-solid-password' });
+  ok(r.status === 401, 'le tiers ne peut plus se connecter avec son mot de passe');
+  r = await new Client('other').post('google', { credential: gtok({ sub: 'g-impostor', email: 'victim@test.example' }) });
+  ok(r.status === 409 && r.error === 'google_other', 'une autre identité Google avec la même adresse est refusée');
+
+  // Relier Google depuis les réglages d'un compte créé par email.
+  const pia = new Client('pia');
+  await pia.signup('Pia Ferhat', 'pia@test.example');
+  r = await pia.post('google_link', { credential: gtok({ sub: 'g-pia', email: 'pia@test.example' }) });
+  ok(r.ok && r.user.google && r.user.has_password, 'Google relié depuis les réglages');
+  r = await nora.post('google_link', { credential: gtok({ sub: 'g-pia', email: 'pia@test.example' }) });
+  ok(r.status === 409, 'une identité Google déjà reliée à un autre compte est refusée');
+  r = await anon.post('google_link', { credential: gtok({ sub: 'g-x', email: 'x@test.example' }) });
+  ok(r.status === 401, 'relier Google exige d\'être connecté');
+
+  // Inscription d'une entreprise avec Google.
+  const co = new Client('co');
+  r = await co.post('google', { credential: gtok({ sub: 'g-co', email: 'hello@brand.example', name: 'Brand Owner' }), kind: 'company' });
+  ok(r.status === 400 && !co.cookie, 'entreprise avec Google : nom de l\'entreprise exigé');
+  r = await co.post('google', { credential: gtok({ sub: 'g-co', email: 'hello@brand.example', name: 'Brand Owner' }), kind: 'company', company: 'Brand Co' });
+  ok(r.ok && r.created && r.user.kind === 'company' && r.companies.length === 1 && r.companies[0].name === 'Brand Co', 'entreprise créée avec Google, avec sa page');
+  r = await co.post('account_delete', { confirm: 'wrong@test.example' });
+  ok(r.status === 400, 'suppression d\'un compte sans mot de passe : adresse à retaper');
+  r = await co.post('account_delete', { confirm: 'hello@brand.example' });
+  ok(r.ok && (await co.get('workspace')).status === 401, 'compte sans mot de passe supprimé');
+
   step('Mot de passe oublié, suppression');
   await anon.post('forgot', { email: 'karim@test.example' });
   const link = mails().reverse().find((m) => m.to === 'karim@test.example' && /Reset/.test(m.subject));

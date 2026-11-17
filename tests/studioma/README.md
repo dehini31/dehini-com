@@ -31,6 +31,12 @@ base vide :
 - portfolio : étude de cas déclarée, brouillon tiré d'un Studio (privé, image privée), accord de la cliente exigé,
   preuves de travail distinguées, recommandation, activité affichée seulement sur choix et sans nom de projet ;
 - entreprises, opportunités, candidatures privées, annuaire des talents, invitation à collaborer, messages ;
+- **Continue with Google** (`google.js` crée une clé de test et signe les jetons comme Google) : jetons
+  illisibles, falsifiés, expirés, destinés à une autre application, d'un autre émetteur ou à l'adresse non
+  confirmée refusés ; création du compte, reconnexion sans doublon, mot de passe à choisir, retrait de Google
+  seulement avec un mot de passe ; compte créé par un tiers avec l'adresse de quelqu'un d'autre : mot de passe du
+  tiers retiré et sa session fermée ; liaison depuis les réglages ; entreprise créée avec Google ; suppression
+  d'un compte sans mot de passe ;
 - mot de passe oublié (anciennes sessions fermées), suppression d'un projet, fichiers internes interdits.
 
 **`e2e.js` — l'application dans Chromium** (Playwright), avec trois comptes dans trois navigateurs :
@@ -49,6 +55,9 @@ base vide :
 - profil public sans compte ; entreprise : talents, opportunité, candidature, messages ;
 - étude de cas tirée du Studio : en attente, invisible du public, autorisée par la cliente, puis publique avec
   ses badges ; historique du Studio ; équipe de l'entreprise ; réglages ; recherche ; page du projet ;
+- Continue with Google : bouton masqué quand Google est injoignable ; avec un faux Google (même jeton signé),
+  création du compte depuis la connexion, réglages (mot de passe à choisir, retrait), reconnexion, inscription
+  d'une entreprise (nom et conditions exigés avant Google) ;
 - mobile (iPhone 13) : tableau, glisser-déposer au doigt (appui long ; un balayage rapide fait défiler sans
   saisir la carte), carte en plein écran, menu ; thème sombre conservé ;
 - contenu saisi jamais interprété, aucune erreur JavaScript, aucune violation de la CSP, aucun défilement

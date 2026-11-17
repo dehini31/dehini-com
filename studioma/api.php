@@ -22,6 +22,7 @@ require __DIR__ . '/lib/cards.php';
 require __DIR__ . '/lib/collab.php';
 require __DIR__ . '/lib/social.php';
 require __DIR__ . '/lib/talent.php';
+require __DIR__ . '/lib/google.php';
 
 /** action => [méthode, accès] — accès : public (compte facultatif) | user (compte obligatoire). */
 const ROUTES = [
@@ -29,6 +30,7 @@ const ROUTES = [
     'me' => ['GET', 'public'], 'signup' => ['POST', 'public'], 'login' => ['POST', 'public'], 'logout' => ['POST', 'public'],
     'forgot' => ['POST', 'public'], 'reset' => ['POST', 'public'], 'password' => ['POST', 'user'], 'account_save' => ['POST', 'user'],
     'account_delete' => ['POST', 'user'], 'counts' => ['GET', 'user'],
+    'google' => ['POST', 'public'], 'google_link' => ['POST', 'user'], 'google_unlink' => ['POST', 'user'],
     // Projets et Studios
     'workspace' => ['GET', 'user'], 'project_get' => ['GET', 'user'], 'project_save' => ['POST', 'user'], 'project_archive' => ['POST', 'user'],
     'project_delete' => ['POST', 'user'], 'studio_create' => ['POST', 'user'], 'studio_save' => ['POST', 'user'], 'studio_archive' => ['POST', 'user'],
@@ -88,7 +90,7 @@ function reference(): array
         'languages' => STM_LANGUAGES, 'contracts' => STM_CONTRACTS, 'modes' => STM_WORK_MODES, 'availability' => STM_AVAILABILITY,
         'colors' => STM_COLORS, 'priorities' => STM_PRIORITIES, 'roles' => ROLE_LABELS, 'relations' => RELATIONS,
         'sizes' => COMPANY_SIZES, 'app_statuses' => APP_STATUSES, 'metrics' => METRIC_KEYS, 'templates' => templates_view(),
-        'max_upload_mb' => upload_limit_mb(), 'name' => STM_NAME,
+        'max_upload_mb' => upload_limit_mb(), 'name' => STM_NAME, 'google_client_id' => google_client_id(),
     ];
 }
 function api_me(array $b, ?array $u): array
@@ -128,6 +130,7 @@ function api_login(array $b, ?array $u): array
     $email = strtolower(line_clean($b['email'] ?? '', 190));
     $t = row('SELECT * FROM users WHERE email = ?', [$email]);
     $pass = is_string($b['password'] ?? null) ? $b['password'] : '';
+    if ($t && $t['pass'] === '' && (string) $t['google_sub'] !== '') fail('This account signs in with Google. Use “Continue with Google”, or “Forgot your password?” to choose a password.', 401, 'use_google');
     if (!$t || $t['pass'] === '' || !password_verify($pass, (string) $t['pass'])) fail('Wrong email or password.', 401, 'credentials');
     if (password_needs_rehash((string) $t['pass'], PASSWORD_DEFAULT)) q('UPDATE users SET pass = ? WHERE id = ?', [password_hash($pass, PASSWORD_DEFAULT), $t['id']]);
     return me_view($t, start_session((int) $t['id']));
@@ -160,14 +163,16 @@ function api_reset(array $b, ?array $u): array
     $t = preg_match('/^[a-f0-9]{48}$/', $raw) ? row('SELECT * FROM users WHERE rhash = ? AND rexp > ?', [hash('sha256', $raw), time()]) : null;
     if (!$t) fail('This link has expired. Ask for a new one.', 410, 'gone');
     $password = password_in($b['password'] ?? '');
-    q('UPDATE users SET pass = ?, rhash = NULL, rexp = 0 WHERE id = ?', [password_hash($password, PASSWORD_DEFAULT), $t['id']]);
+    // Le lien a été reçu à cette adresse : elle est confirmée.
+    q('UPDATE users SET pass = ?, rhash = NULL, rexp = 0, email_ok = 1 WHERE id = ?', [password_hash($password, PASSWORD_DEFAULT), $t['id']]);
     q('DELETE FROM sessions WHERE uid = ?', [$t['id']]);   // les anciennes sessions sont fermées
     return me_view($t, start_session((int) $t['id']));
 }
 function api_password(array $b, array $u): array
 {
     rate('password', 8, 900, 'u' . $u['id']);
-    if (!password_verify(is_string($b['current'] ?? null) ? $b['current'] : '', (string) $u['pass'])) fail('Your current password is not correct.');
+    // Un compte créé avec Google n'a pas encore de mot de passe : il en choisit un sans « ancien ».
+    if ((string) $u['pass'] !== '' && !password_verify(is_string($b['current'] ?? null) ? $b['current'] : '', (string) $u['pass'])) fail('Your current password is not correct.');
     $password = password_in($b['password'] ?? '');
     q('UPDATE users SET pass = ? WHERE id = ?', [password_hash($password, PASSWORD_DEFAULT), $u['id']]);
     q('DELETE FROM sessions WHERE uid = ? AND hash <> ?', [$u['id'], hash('sha256', (string) ($_COOKIE[SID_COOKIE] ?? ''))]);
@@ -180,9 +185,11 @@ function api_account_save(array $b, array $u): array
         $email = strtolower(line_clean($b['email'], 190));
         if (!valid_email($email)) fail('Enter a valid email address.');
         if ($email !== $u['email']) {
+            if ((string) $u['pass'] === '') fail('Choose a password first (below): it confirms changes to your account.');
             if (!password_verify(is_string($b['current'] ?? null) ? $b['current'] : '', (string) $u['pass'])) fail('Enter your current password to change your email.');
             if (val('SELECT 1 FROM users WHERE email = ? AND id <> ?', [$email, $uid])) fail('Another account already uses this email.');
-            q('UPDATE users SET email = ? WHERE id = ?', [$email, $uid]);
+            // Nouvelle adresse : pas encore confirmée.
+            q('UPDATE users SET email = ?, email_ok = 0 WHERE id = ?', [$email, $uid]);
         }
     }
     if (isset($b['settings']) && is_array($b['settings'])) {
@@ -202,7 +209,12 @@ function api_account_save(array $b, array $u): array
 function api_account_delete(array $b, array $u): array
 {
     $uid = (int) $u['id'];
-    if (!password_verify(is_string($b['password'] ?? null) ? $b['password'] : '', (string) $u['pass'])) fail('Your password is not correct.');
+    if ((string) $u['pass'] === '') {
+        // Compte Google sans mot de passe : la personne retape son adresse email.
+        if (strtolower(trim(is_string($b['confirm'] ?? null) ? $b['confirm'] : '')) !== $u['email']) fail('Type your email address to confirm.');
+    } elseif (!password_verify(is_string($b['password'] ?? null) ? $b['password'] : '', (string) $u['pass'])) {
+        fail('Your password is not correct.');
+    }
     $solo = [];
     foreach (rows("SELECT p.* FROM projects p JOIN project_members m ON m.project_id = p.id WHERE m.uid = ? AND m.role = 'owner'", [$uid]) as $p) {
         if (owners_count((int) $p['id']) > 1) continue;

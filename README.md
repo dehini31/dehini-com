@@ -1424,7 +1424,8 @@ Grow professionally. Get discovered.* L'interface est en anglais.
 
 ### Ce que fait la plateforme
 
-1. **Comptes** — particulier (community manager, créateur, freelance…) ou entreprise (marque, agence). Un compte
+1. **Comptes** — particulier (community manager, créateur, freelance…) ou entreprise (marque, agence), avec un
+   email et un mot de passe ou **« Continue with Google »** (voir « 3. Connexion avec Google »). Un compte
    est une personne : elle peut créer plusieurs pages d'entreprise, rejoindre plusieurs équipes, projets et
    Studios sans jamais changer d'identifiants. Premiers pas guidés : profil, puis premier Studio.
 2. **Espace de travail privé** — `Projet → Studios → Niveaux → Colonnes → Cartes`. Un projet est une marque, un
@@ -1488,7 +1489,7 @@ charge de travail par personne (*Insights*) n'est visible que des managers du St
   design, thèmes clair et sombre).
 - `studioma/api.php` — l'API : la table `ROUTES` liste toutes les actions (méthode, compte obligatoire ou non).
 - `studioma/lib/` — `core.php` (configuration, base, listes de référence, emails), `auth.php` (comptes,
-  sessions, notifications), `access.php` (**rôles et droits**), `files.php` (fichiers envoyés), `studio.php`
+  sessions, notifications), `google.php` (connexion avec Google), `access.php` (**rôles et droits**), `files.php` (fichiers envoyés), `studio.php`
   (projets, Studios, niveaux, colonnes, cartes, passage de relais), `cards.php` (check-lists, commentaires,
   pièces jointes, validations), `collab.php` (invitations, membres), `social.php` (profils, fil, relations,
   portfolio, recommandations, recherche), `talent.php` (entreprises, opportunités, talents, messages).
@@ -1510,16 +1511,40 @@ validation, autorisation de publication) partent du compte email du défi Impact
 (`impact/config.php`), sinon de la fonction `mail()` du serveur. Pour un autre compte, voir
 `studioma/config.example.php`. Chacun peut couper les emails de notification dans ses réglages.
 
-### 3. Fichiers envoyés
+### 3. Connexion avec Google
+
+**Rien à faire si le bouton Google fonctionne déjà sur le défi Impact** : Studioma reprend le même ID client
+(réglage de l'administration du défi, sinon `IMPACT_GOOGLE_CLIENT_ID`), puisque c'est la même origine
+`https://dehini.com`, déjà autorisée dans Google Cloud. Sinon : créer un ID client OAuth « Application Web » dans
+[Google Cloud Console → Identifiants](https://console.cloud.google.com/apis/credentials) avec l'origine
+JavaScript autorisée `https://dehini.com` (aucune URI de redirection n'est nécessaire), puis le mettre dans
+`studioma/config.php` : `define('STM_GOOGLE_CLIENT_ID', '….apps.googleusercontent.com');`. Sans ID client, le
+bouton n'apparaît pas.
+
+- Le bouton « Continue with Google » est sur les pages de connexion et d'inscription : une nouvelle identité
+  Google crée un compte (particulier, ou entreprise depuis l'inscription « Company », nom de l'entreprise
+  demandé), avec la photo du compte Google reprise comme photo de profil.
+- Le jeton d'identité est vérifié par le serveur : signature (clés publiques de Google), émetteur, destinataire
+  (notre ID client), expiration et adresse confirmée par Google. Aucun secret n'est stocké.
+- Une identité Google dont l'adresse correspond à un compte existant y est reliée. Comme les adresses des
+  comptes créés par email ne sont pas vérifiées, **si ce compte avait un mot de passe posé sans que l'adresse ait
+  jamais été confirmée, ce mot de passe est retiré et ses sessions sont fermées** : quelqu'un qui aurait créé le
+  compte avec l'adresse d'une autre personne en perd l'accès, et son vrai propriétaire peut choisir un nouveau
+  mot de passe. Une adresse est confirmée par Google, ou par le lien de « Forgot your password? ».
+- **Settings › Sign-in methods** : relier ou retirer Google (retrait possible seulement avec un mot de passe),
+  choisir un mot de passe pour un compte créé avec Google. Un compte sans mot de passe confirme sa suppression en
+  retapant son adresse ; il doit choisir un mot de passe avant de changer d'adresse.
+
+### 4. Fichiers envoyés
 
 64 Mo par fichier (`studioma/.user.ini` et `STM_MAX_UPLOAD_MB`), 12 Mo par image. Si l'hébergeur plafonne plus
 bas, baisser les deux valeurs ensemble. Le type est vérifié sur le contenu réel du fichier.
 
-### 4. Sauvegarde
+### 5. Sauvegarde
 
 Tout tient dans `~/studioma-data/` : copier ce dossier sauvegarde la base et les fichiers.
 
-### 5. Tests
+### 6. Tests
 
 ```bash
 tests/studioma/run.sh /tmp/stm-test
@@ -1539,7 +1564,8 @@ parcours complet dans le navigateur, sur ordinateur et sur mobile, avec deux com
 - **Pas d'assistance par IA** (idées, scripts, légendes).
 - La synchronisation entre navigateurs se fait par interrogation toutes les 4 secondes, pas en continu : deux
   personnes qui écrivent le même champ au même moment, la dernière enregistrée l'emporte.
-- L'adresse email d'un compte n'est pas vérifiée à l'inscription, et il n'y a pas de connexion avec Google.
+- L'adresse email d'un compte créé avec un mot de passe n'est pas vérifiée à l'inscription (elle l'est par
+  Google, ou par le lien de mot de passe oublié).
 - Pas de modération ni d'administration centrale (signalement d'une publication, suspension d'un compte), pas
   de blocage entre membres.
 - Une seule langue (anglais) ; les conditions d'utilisation se résument à la case à cocher de l'inscription.
@@ -1680,6 +1706,8 @@ pas mis à jour automatiquement après coup.
   publications, messages). **Les droits sont vérifiés par le serveur à chaque action** (`lib/access.php`) : un
   compte sans accès à un Studio reçoit « introuvable », un rôle insuffisant « refusé » — l'interface ne fait que
   masquer ce que le rôle n'autorise pas. Fichiers hors de `public_html`, servis par l'API après vérification de
-  l'accès, jamais exécutés ; images ré-encodées (métadonnées et position GPS retirées). Texte mis en forme
+  l'accès, jamais exécutés ; images ré-encodées (métadonnées et position GPS retirées). Connexion Google : jeton
+  d'identité vérifié côté serveur (signature, émetteur, destinataire, expiration, adresse confirmée) ; un mot de
+  passe posé sur une adresse jamais confirmée est retiré quand son propriétaire arrive avec Google. Texte mis en forme
   réduit à une liste de balises sans attribut, tout le reste échappé à l'affichage, et politique de sécurité du
   contenu sans script en ligne (`studioma/.htaccess`). `config.php` et `lib/` bloqués en accès direct.
