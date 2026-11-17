@@ -9,7 +9,7 @@ politique de sécurité (CSP).
 tests/studioma/run.sh /tmp/stm-test
 ```
 
-`run.sh` prépare un hébergement neuf, lance le serveur PHP (port 8097) et exécute deux batteries, chacune sur une
+`run.sh` prépare un hébergement neuf, lance le serveur PHP (port 8097) et exécute trois batteries, chacune sur une
 base vide :
 
 **`api.js` — l'API seule** (Node, sans navigateur) :
@@ -45,6 +45,25 @@ base vide :
   diffère ; entreprise créée avec Google ; suppression d'un compte sans mot de passe ;
 - mot de passe oublié (anciennes sessions fermées), suppression d'un projet, fichiers internes interdits.
 
+**`mcp.js` — le serveur MCP et son OAuth**, comme un assistant IA (claude.ai, ChatGPT, Gemini CLI…) :
+
+- découverte : 401 avec `WWW-Authenticate` et `resource_metadata`, métadonnées de la ressource et du serveur
+  d'autorisation à toutes les adresses que cherchent les clients (dans `studioma/` et à la racine du domaine) ;
+- enregistrement des applications (adresses de retour refusées : http hors machine locale, `javascript:`) ;
+- autorisation : application inconnue ou adresse de retour non enregistrée arrêtées sans redirection, PKCE
+  « plain » et ressource étrangère refusés, écran d'accord (connexion exigée), refus, code à usage unique même
+  après un `code_verifier` faux ;
+- protocole : initialize (version négociée), notifications (202), tools/list, ping, erreurs JSON-RPC, lots, GET 405 ;
+- les outils sur un vrai Studio : lecture, création de carte en Markdown, colonne donnée par son nom, nom ambigu
+  expliqué, déplacement avec passage de relais (même carte), commentaire, check-list, mise à jour, recherche
+  et `fetch` (format ChatGPT), my_work, historique, tableau de bord, niveaux, colonnes, relais, projet, Studio,
+  archivage ;
+- droits : un autre compte ne voit rien ; invité en lecteur, il lit mais ne peut ni créer, ni déplacer, ni changer
+  la structure ;
+- jetons : renouvellement (à usage unique, lié à l'application), application déconnectée et jeton personnel
+  supprimé refusés aussitôt, client confidentiel (secret exigé), retour vers la machine locale sur un autre port,
+  révocation (RFC 7009).
+
 **`e2e.js` — l'application dans Chromium** (Playwright), avec trois comptes dans trois navigateurs :
 
 - landing ; inscription ; premiers pas (profil, premier Studio avec le modèle par défaut) ;
@@ -65,6 +84,9 @@ base vide :
 - Continue with Google : bouton masqué quand Google est injoignable ; avec un faux Google (même jeton signé),
   création du compte depuis la connexion, réglages (mot de passe à choisir, retrait), reconnexion, inscription
   d'une entreprise (nom et conditions exigés avant Google) ;
+- AI assistants : adresse du serveur et guides, jeton personnel montré une fois et utilisable, écran d'accord
+  (connexion d'abord, application et site de retour affichés, retour avec le code), application connectée listée
+  puis déconnectée (jetons refusés aussitôt) ;
 - mobile (iPhone 13) : tableau, glisser-déposer au doigt (appui long ; un balayage rapide fait défiler sans
   saisir la carte), carte en plein écran, menu ; thème sombre conservé ;
 - contenu saisi jamais interprété, aucune erreur JavaScript, aucune violation de la CSP, aucun défilement

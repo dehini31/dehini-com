@@ -64,6 +64,7 @@ cp -rf dehini-com/swanbida ~/public_html/
 cp -rf dehini-com/marketing ~/public_html/
 cp -rf dehini-com/maillage ~/public_html/
 cp -rf dehini-com/studioma ~/public_html/
+cp -rf dehini-com/.well-known ~/public_html/
 cp -f dehini-com/robots.txt dehini-com/sitemap.xml ~/public_html/
 ```
 
@@ -94,7 +95,7 @@ depuis `/admin`, jamais depuis ce dépôt.
 Dans **cPanel → Tâches Cron**, toutes les 5 minutes :
 
 ```bash
-cd ~/dehini-com && git pull -q && cp -f index.html ~/public_html/index.html && cp -f admin/index.html admin/api.php admin/.htaccess admin/.user.ini ~/public_html/admin/ && cp -f uploads/.htaccess ~/public_html/uploads/.htaccess && cp -rf img ~/public_html/ && cp -rf elbahiferti ~/public_html/ && cp -rf impact ~/public_html/ && cp -rf metakpis ~/public_html/ && cp -rf swanbida ~/public_html/ && cp -rf marketing ~/public_html/ && cp -rf maillage ~/public_html/ && cp -rf studioma ~/public_html/ && cp -f robots.txt sitemap.xml ~/public_html/
+cd ~/dehini-com && git pull -q && cp -f index.html ~/public_html/index.html && cp -f admin/index.html admin/api.php admin/.htaccess admin/.user.ini ~/public_html/admin/ && cp -f uploads/.htaccess ~/public_html/uploads/.htaccess && cp -rf img ~/public_html/ && cp -rf elbahiferti ~/public_html/ && cp -rf impact ~/public_html/ && cp -rf metakpis ~/public_html/ && cp -rf swanbida ~/public_html/ && cp -rf marketing ~/public_html/ && cp -rf maillage ~/public_html/ && cp -rf studioma ~/public_html/ && cp -rf .well-known ~/public_html/ && cp -f robots.txt sitemap.xml ~/public_html/
 ```
 
 Cette commande ne touche jamais `data.json`, `admin/config.php`, `impact/config.php`,
@@ -1466,6 +1467,10 @@ Grow professionally. Get discovered.* L'interface est en anglais.
     description, compétences, à distance ou sur place, lieu, contrat, mode de candidature) et candidatures,
     **annuaire des talents** (recherche, compétence, plateforme, secteur, langue, lieu, expérience,
     disponibilité, portfolio), professionnels enregistrés, invitation à collaborer, messagerie privée.
+11. **Assistants IA (serveur MCP)** — Claude, ChatGPT, Gemini CLI et les autres assistants compatibles MCP se
+    connectent à `https://dehini.com/studioma/mcp` et gèrent les Studios au nom de la personne : lire les projets,
+    les tableaux et les cartes, créer, modifier, déplacer (avec passage de relais), commenter, demander une
+    validation, archiver, ajouter niveaux et colonnes, régler les relais, inviter. Voir « 4. Assistants IA ».
 
 ### Confidentialité
 
@@ -1506,14 +1511,18 @@ du compte Google.
   glisser-déposer souris et tactile, texte mis en forme), `app.js` (cadre, connexion, premiers pas,
   notifications, réglages), `studio.js` (projets, Studios, partage), `board.js` (tableau, calendrier, My work,
   Insights), `card.js` (panneau d'une carte), `social.js` (fil, profils, portfolio, réseau), `talent.js`
-  (entreprises, opportunités, talents, messages), `icons.js` (icônes Lucide utilisées), `app.css` (système de
-  design, thèmes clair et sombre).
+  (entreprises, opportunités, talents, messages), `ai.js` (écran d'accord des assistants IA, Settings › AI
+  assistants), `icons.js` (icônes Lucide utilisées), `app.css` (système de design, thèmes clair et sombre).
+- `studioma/mcp.php` — le serveur MCP ; `studioma/oauth.php` — son OAuth (adresses `oauth/…` et `.well-known/…`
+  réécrites par `studioma/.htaccess`) ; `.well-known/.htaccess` (à la racine du dépôt) — les documents de
+  découverte que les assistants cherchent à la racine du domaine.
 - `studioma/api.php` — l'API : la table `ROUTES` liste toutes les actions (méthode, compte obligatoire ou non).
 - `studioma/lib/` — `core.php` (configuration, base, listes de référence, emails), `auth.php` (comptes,
   sessions, notifications), `google.php` (connexion avec Google), `access.php` (**rôles et droits**), `files.php` (fichiers envoyés), `studio.php`
   (projets, Studios, niveaux, colonnes, cartes, passage de relais), `cards.php` (check-lists, commentaires,
   pièces jointes, validations), `collab.php` (invitations, membres), `social.php` (profils, fil, relations,
-  portfolio, recommandations, recherche), `talent.php` (entreprises, opportunités, talents, messages).
+  portfolio, recommandations, recherche), `talent.php` (entreprises, opportunités, talents, messages),
+  `oauth.php` (OAuth et jetons des assistants IA), `mcp.php` (outils du serveur MCP).
 - Les données sont créées toutes seules au premier passage dans `~/studioma-data/` (hors `public_html`) :
   `studioma.sqlite` et `files/` (images ré-encodées en WebP, vidéos, documents).
 
@@ -1559,22 +1568,50 @@ bouton n'apparaît pas.
   choisir un mot de passe pour un compte créé avec Google. Un compte sans mot de passe confirme sa suppression en
   retapant son adresse ; il doit choisir un mot de passe avant de changer d'adresse.
 
-### 4. Fichiers envoyés
+### 4. Assistants IA (serveur MCP)
+
+Adresse du serveur : **`https://dehini.com/studioma/mcp`** (aussi affichée dans Settings › AI assistants, avec les
+guides de connexion). Transport MCP « Streamable HTTP » sans état (un POST JSON par message, ni flux ni
+session), qui fonctionne sur l'hébergement mutualisé.
+
+**Mise en route** : le cron doit aussi copier le dossier `.well-known` (ligne de « 4. Mise à jour automatique du
+code », en haut de ce fichier) — les assistants y cherchent les documents de découverte OAuth, à la racine du
+domaine (`https://dehini.com/.well-known/oauth-authorization-server/studioma`). Seul `.well-known/.htaccess` est
+copié : il ne réécrit que ces adresses et ne touche pas `acme-challenge` (certificat SSL de cPanel).
+
+- **Connexion** : l'assistant découvre le serveur d'autorisation (RFC 9728, RFC 8414), s'enregistre lui-même
+  (RFC 7591), envoie la personne sur l'écran **« Allow access »** de Studioma (connexion d'abord si besoin, Google
+  compris), puis échange le code contre un jeton (PKCE S256 obligatoire). Jeton d'accès valable 1 heure, jeton de
+  renouvellement 60 jours, à usage unique. Rien à créer chez Google, OpenAI ou Anthropic.
+- **Jetons personnels** (Settings › AI assistants) pour les outils qui demandent un en-tête
+  `Authorization: Bearer …` (Cursor, VS Code, scripts) ; montrés une seule fois, valables jusqu'à leur suppression.
+- **Droits** : l'assistant agit au nom de la personne, avec son rôle dans chaque Studio — les mêmes vérifications
+  que l'application (un lecteur ne peut rien modifier, un collaborateur seulement ses cartes…). Les actions
+  apparaissent dans l'historique sous le nom de la personne. Aucun outil de suppression définitive.
+- **Outils** (22) : `search` et `fetch` (format attendu par ChatGPT), `list_projects`, `get_studio`, `get_card`,
+  `my_work`, `studio_activity`, `studio_insights`, `create_project`, `create_studio`, `create_card`, `update_card`,
+  `move_card`, `add_comment`, `add_checklist_items`, `check_item`, `request_approval`, `archive_card`,
+  `create_level`, `create_column`, `set_handoff`, `invite_member`. Colonnes et personnes se donnent par id ou par
+  nom (« Ideas », « @amel ») ; les descriptions s'écrivent en Markdown.
+- **Déconnecter** : Settings › AI assistants › Disconnect (application) ou Delete (jeton) : effet immédiat.
+
+### 5. Fichiers envoyés
 
 64 Mo par fichier (`studioma/.user.ini` et `STM_MAX_UPLOAD_MB`), 12 Mo par image. Si l'hébergeur plafonne plus
 bas, baisser les deux valeurs ensemble. Le type est vérifié sur le contenu réel du fichier.
 
-### 5. Sauvegarde
+### 6. Sauvegarde
 
 Tout tient dans `~/studioma-data/` : copier ce dossier sauvegarde la base et les fichiers.
 
-### 6. Tests
+### 7. Tests
 
 ```bash
 tests/studioma/run.sh /tmp/stm-test
 ```
 
-Faux hébergement neuf, puis deux batteries : `api.js` (l'API seule : comptes, modèle par défaut, relais avec
+Faux hébergement neuf, puis trois batteries : `mcp.js` (le serveur MCP et son OAuth, comme un assistant :
+découverte, enregistrement, PKCE, jetons, tous les outils, droits, renouvellement, révocation), `api.js` (l'API seule : comptes, modèle par défaut, relais avec
 conservation de l'identité de la carte, rôles et refus côté serveur, invitations par email réservées aux adresses
 confirmées, pièces jointes privées, validations,
 archivage, portfolio et autorisations, entreprises, talents, messages) et `e2e.js` (Chromium / Playwright : le
@@ -1586,7 +1623,9 @@ parcours complet dans le navigateur, sur ordinateur et sur mobile, avec deux com
 - **Aucune connexion aux réseaux sociaux** : pas de publication automatique sur Instagram, TikTok, etc., ni de
   récupération automatique des statistiques. La date, le lien de publication et les indicateurs d'une carte sont
   saisis à la main.
-- **Pas d'assistance par IA** (idées, scripts, légendes).
+- Pas d'IA intégrée à l'application : l'assistance passe par les assistants externes connectés au serveur MCP.
+- Serveur MCP : pas de flux d'événements ni de notifications envoyées par le serveur (chaque appel reçoit sa
+  réponse) ; pas encore de jeton « lecture seule ».
 - La synchronisation entre navigateurs se fait par interrogation toutes les 4 secondes, pas en continu : deux
   personnes qui écrivent le même champ au même moment, la dernière enregistrée l'emporte.
 - L'adresse email d'un compte créé avec un mot de passe n'est pas vérifiée à l'inscription : on peut utiliser
@@ -1740,3 +1779,7 @@ pas mis à jour automatiquement après coup.
   annulé par un changement d'adresse. Texte mis en forme
   réduit à une liste de balises sans attribut, tout le reste échappé à l'affichage, et politique de sécurité du
   contenu sans script en ligne (`studioma/.htaccess`). `config.php` et `lib/` bloqués en accès direct.
+  Serveur MCP : jeton exigé à chaque appel (OAuth avec PKCE S256, ou jeton personnel), seuls les hashs des jetons
+  sont gardés, code d'autorisation à usage unique (retiré même après un essai raté) et lié à l'adresse de retour
+  enregistrée, jeton de renouvellement à usage unique, accès retirable à tout moment ; les outils appellent les
+  mêmes actions que l'application, donc les mêmes droits ; limites d'appels par compte.

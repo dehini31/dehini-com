@@ -107,6 +107,7 @@
     SM.menu(el, [
       { label: 'View my profile', icon: 'user', href: '#/profile' },
       { label: 'Settings', icon: 'settings', href: '#/settings' },
+      { label: 'AI assistants', icon: 'sparkles', href: '#/settings/ai' },
       { label: 'Publication requests', icon: 'shield', href: '#/requests' },
       { sep: true }, { head: 'Appearance' },
       { label: 'Light', icon: 'sun', checked: theme === 'light', act: setTheme('light') },
@@ -462,6 +463,7 @@
         <div class="seg seg-3">${[['light', 'sun', 'Light'], ['dark', 'moon', 'Dark'], ['auto', 'monitor', 'Match device']].map(([k, ic, l]) => html`
           <label><input type="radio" name="theme" value="${k}" data-change="theme" ${SM.ls.get('theme', 'auto') === k ? 'checked' : ''}><span>${icon(ic)}<b>${l}</b></span></label>`)}</div>
       </section>
+      <a class="panel pad ai-link" href="#/settings/ai">${icon('sparkles')}<span class="grow"><b>AI assistants</b><small class="muted">Let Claude, ChatGPT or Gemini manage your Studios for you.</small></span>${icon('chevron-right')}</a>
       <section class="panel pad"><h2>Notifications & privacy</h2>
         ${sw('email_notifs', 'Email me about important updates', 'Assignments, mentions, approval requests and invitations.', s.email_notifs)}
         ${sw('show_activity', 'Show my Studio activity on my profile', 'Only totals (delivered pieces, number of projects). Never a project name, a client or a card.', s.show_activity)}

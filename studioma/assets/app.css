@@ -532,3 +532,19 @@ textarea.cp-title:hover { background: var(--hover); } textarea.cp-title:focus { 
   .page-head .btn span { display: inline; } .post-act em { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+
+/* Assistants IA : écran d'accord et page Settings › AI assistants */
+.ai-link { flex-direction: row; align-items: center; color: inherit; } .ai-link:hover { text-decoration: none; border-color: color-mix(in srgb, var(--primary) 40%, var(--border)); } .ai-link > .ico:first-child { color: var(--primary-text); width: 22px; height: 22px; }
+.ai-link .grow { display: flex; flex-direction: column; line-height: 1.35; }
+.consent h1 { font-size: 21px; } .consent-logos { display: flex; align-items: center; gap: 12px; } .consent-link { color: var(--muted); display: grid; }
+.consent-app { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 11px; background: var(--primary-soft); color: var(--primary-text); }
+.consent-list { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; border-radius: var(--r-m); background: var(--sunken); }
+.consent-list li { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; } .consent-list .ico { color: var(--primary-text); margin-top: 2px; width: 17px; height: 17px; }
+.code { position: relative; background: var(--sunken); border: 1px solid var(--border); border-radius: 10px; }
+.code pre { margin: 0; padding: 10px 44px 10px 12px; font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: pre-wrap; word-break: break-all; }
+.code .btn-icon { position: absolute; top: 6px; right: 6px; }
+.guide { border: 1px solid var(--border); border-radius: var(--r-m); } .guide summary { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 14px; cursor: pointer; list-style: none; }
+.guide summary::-webkit-details-marker { display: none; } .guide[open] summary .ico { transform: rotate(180deg); } .guide summary .ico { transition: transform .2s; color: var(--muted); }
+.guide-body { padding: 0 14px 14px; display: flex; flex-direction: column; gap: 10px; font-size: 14px; } .guide-body ol { list-style: decimal; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+.guide-body code, .ai-page p code { font: 12.5px ui-monospace, Menlo, Consolas, monospace; background: var(--sunken); padding: 1px 5px; border-radius: 5px; }
+.token-once { flex-direction: row; } .token-once .grow { display: flex; flex-direction: column; gap: 8px; min-width: 0; }

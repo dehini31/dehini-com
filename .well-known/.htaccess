@@ -1,0 +1,10 @@
+# Découverte OAuth du serveur MCP de Studioma (https://dehini.com/studioma/mcp).
+# Les assistants IA (Claude, ChatGPT, Gemini…) cherchent ces documents à la racine du domaine
+# (RFC 8414 et RFC 9728) : ils sont servis par studioma/oauth.php. Le reste de .well-known
+# (acme-challenge du certificat SSL de cPanel, etc.) n'est pas touché.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteRule ^oauth-authorization-server(/studioma)?/?$ /studioma/oauth.php?wk=oauth-authorization-server [L,QSA]
+  RewriteRule ^openid-configuration/studioma/?$ /studioma/oauth.php?wk=openid-configuration [L,QSA]
+  RewriteRule ^oauth-protected-resource(/studioma(/mcp)?)?/?$ /studioma/oauth.php?wk=oauth-protected-resource [L,QSA]
+</IfModule>
