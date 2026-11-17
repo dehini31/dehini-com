@@ -40,7 +40,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
     exit;
 }
 $raw = (string) file_get_contents('php://input', false, null, 0, 2000000);
-if (!mk_meta_wh_signed($raw, (string) ($_SERVER['HTTP_X_HUB_SIGNATURE_256'] ?? ''))) {
+$src = mk_meta_wh_source($raw, (string) ($_SERVER['HTTP_X_HUB_SIGNATURE_256'] ?? ''));
+if ($src === null) {
     http_response_code(403);
     exit('Signature invalide');
 }
@@ -52,7 +53,7 @@ if (!is_array($d)) {
 ignore_user_abort(true);
 @set_time_limit(60);
 try {
-    mk_meta_webhook_handle($d);
+    mk_meta_webhook_handle($d, $src);
 } catch (Throwable $e) {
     error_log('[marketing/webhook] ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine());
 }
