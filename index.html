@@ -284,6 +284,142 @@
   .proj:hover h3 svg{transform:translate(3px,-3px);color:var(--cobalt-500)}
   .proj p{color:var(--fg-2);font-size:.93rem;margin:8px 0 16px;flex:1}
 
+  /* ============ Vitrine : plateformes en ligne (onglets + écrans qui défilent) ============ */
+  @property --sc{syntax:"<color>";inherits:true;initial-value:#2f5bff}
+  @property --sc2{syntax:"<color>";inherits:true;initial-value:#17b26a}
+  .showcase{--sc:#2f5bff;--sc2:#17b26a;margin-bottom:64px;transition:--sc .9s,--sc2 .9s,opacity .8s cubic-bezier(.2,.7,.2,1),transform .8s cubic-bezier(.2,.7,.2,1)}
+  .sc-head,.more-label{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  .sc-label{display:inline-flex;align-items:center;gap:10px;font-weight:700;font-size:.95rem;flex-wrap:wrap}
+  .sc-label small{font-weight:500;color:var(--fg-2);font-size:.88rem}
+  .more-label .sc-label svg{color:var(--cobalt-500)}
+  .sc-play{display:inline-flex;align-items:center;gap:8px;font:inherit;font-size:.8rem;font-weight:600;color:var(--fg-2);background:var(--paper-0);border:1px solid var(--paper-200);border-radius:999px;padding:6px 12px;cursor:pointer;transition:color .2s,border-color .2s}
+  .sc-play:hover{color:var(--fg);border-color:var(--cobalt-300)}
+  .sc-play svg{width:15px;height:15px}
+  .sc-play .i-play,.showcase:not(.auto) .sc-play .i-pause{display:none}
+  .showcase:not(.auto) .sc-play .i-play{display:inline-flex}
+  .sc-play span{display:inline-flex}
+
+  .sc-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+  .sc-tab{position:relative;display:flex;align-items:center;gap:12px;text-align:left;font:inherit;color:var(--fg);background:rgba(255,255,255,.55);border:1px solid var(--paper-200);border-radius:18px;padding:12px 14px 17px;cursor:pointer;overflow:hidden;transition:background .3s,box-shadow .3s,border-color .3s,transform .3s}
+  .sc-tab:hover{background:var(--paper-0);transform:translateY(-2px)}
+  .sc-tab:focus-visible{outline:2px solid var(--c);outline-offset:2px}
+  .sc-tab.on{background:var(--paper-0);box-shadow:var(--shadow);border-color:color-mix(in srgb,var(--c) 40%,var(--paper-200))}
+  .sc-ic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;flex:none;background:color-mix(in srgb,var(--c) 12%,#fff);color:var(--c);transition:background .3s,color .3s,transform .4s}
+  .sc-tab.on .sc-ic{background:var(--c);color:#fff;transform:rotate(-6deg)}
+  .sc-tab b{display:block;font-size:.95rem;line-height:1.2}
+  .sc-tab small{display:block;font-size:.76rem;color:var(--fg-2);line-height:1.3;margin-top:2px}
+  .sc-tab .sc-n{position:absolute;top:8px;right:12px;font-size:.68rem;font-weight:700;color:var(--paper-500);letter-spacing:.08em}
+  .sc-prog{position:absolute;left:14px;right:14px;bottom:7px;height:3px;border-radius:3px;background:var(--paper-100);overflow:hidden;opacity:0;transition:opacity .3s}
+  .sc-tab.on .sc-prog{opacity:1}
+  .sc-prog i{display:block;height:100%;background:var(--c);transform-origin:left}
+  .showcase.auto .sc-tab.on .sc-prog i{animation:scProg 9s linear forwards}
+  .showcase.auto.hold .sc-tab.on .sc-prog i{animation-play-state:paused}
+  @keyframes scProg{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+
+  .sc-stage{position:relative;display:grid;border-radius:32px;overflow:hidden;border:1px solid var(--paper-200);box-shadow:var(--shadow);touch-action:pan-y;
+    background:radial-gradient(720px 440px at 92% 0%,color-mix(in srgb,var(--sc) 22%,transparent),transparent 70%),radial-gradient(640px 440px at 0% 100%,color-mix(in srgb,var(--sc2) 16%,transparent),transparent 70%),var(--paper-0)}
+  .sc-slide{grid-area:1/1;position:relative;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.22fr);gap:44px;align-items:center;padding:52px 48px;visibility:hidden;opacity:0;transition:opacity .45s,visibility 0s .45s}
+  .sc-slide.on{visibility:visible;opacity:1;transition:opacity .45s}
+  .sc-big{position:absolute;top:-.2em;right:.06em;font-size:clamp(7rem,15vw,12.5rem);font-weight:800;line-height:1;letter-spacing:-.06em;color:transparent;-webkit-text-stroke:1.5px color-mix(in srgb,var(--c) 30%,transparent);pointer-events:none;user-select:none}
+  .sc-info,.sc-devices{position:relative;z-index:1}
+  .sc-info>*{opacity:0;transform:translateY(16px);transition:opacity .5s,transform .7s cubic-bezier(.2,.7,.2,1)}
+  .sc-slide.on .sc-info>*{opacity:1;transform:none}
+  .sc-slide.on .sc-info>:nth-child(2){transition-delay:.05s}.sc-slide.on .sc-info>:nth-child(3){transition-delay:.1s}
+  .sc-slide.on .sc-info>:nth-child(4){transition-delay:.15s}.sc-slide.on .sc-info>:nth-child(5){transition-delay:.2s}
+  .sc-slide.on .sc-info>:nth-child(6){transition-delay:.25s}.sc-slide.on .sc-info>:nth-child(7){transition-delay:.3s}
+  .sc-cat{display:inline-flex;align-items:center;gap:8px;font-size:.76rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:color-mix(in srgb,var(--c) 72%,#0b1020)}
+  .sc-cat .pulse{background:var(--c);animation:scPulse 2s infinite}
+  @keyframes scPulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--c) 55%,transparent)}70%,100%{box-shadow:0 0 0 10px transparent}}
+  .sc-info h3{font-size:clamp(1.9rem,3.3vw,2.7rem);letter-spacing:-.04em;line-height:1.04;margin:12px 0 6px}
+  .sc-info h3 small{font-size:.38em;font-weight:700;letter-spacing:.32em;color:var(--c);vertical-align:middle;white-space:nowrap}
+  .sc-tagline{font-weight:700;color:color-mix(in srgb,var(--c) 78%,#0b1020);margin-bottom:12px}
+  .sc-info p{color:var(--fg-2);margin-bottom:18px}
+  .sc-feat{list-style:none;display:grid;gap:8px;margin-bottom:22px}
+  .sc-feat li{display:flex;gap:10px;align-items:flex-start;font-size:.93rem;color:var(--ink-700);line-height:1.45}
+  .sc-feat svg{width:18px;height:18px;color:var(--c);margin-top:1px}
+  .sc-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:24px}
+  .sc-kpis div{background:rgba(255,255,255,.75);backdrop-filter:blur(6px);border:1px solid var(--paper-200);border-radius:14px;padding:12px 12px 10px;min-width:0}
+  .sc-kpis b{display:block;font-size:1.55rem;letter-spacing:-.04em;line-height:1.1;font-variant-numeric:tabular-nums}
+  .sc-kpis span{display:block;font-size:.76rem;color:var(--fg-2);line-height:1.3;margin-top:2px}
+  .sc-actions{display:flex;flex-wrap:wrap;gap:10px}
+  .sc-actions .btn svg{color:var(--c)}
+  .sc-actions .btn-ink svg{color:#fff}
+
+  /* Écrans : navigateur + téléphone, la page défile au survol (ou au toucher) */
+  .sc-devices{padding-bottom:46px;transform:translateX(36px) scale(.97);opacity:0;transition:transform .8s cubic-bezier(.2,.7,.2,1),opacity .6s}
+  .sc-slide.on .sc-devices{transform:none;opacity:1}
+  .sc-browser{position:relative;width:88%;border-radius:16px;background:#fff;overflow:hidden;box-shadow:0 34px 70px -34px rgba(11,16,32,.5),0 0 0 1px rgba(11,16,32,.07);transform:translate(calc(var(--mx,0) * 10px),calc(var(--my,0) * 8px));transition:transform .4s ease-out}
+  .sc-bar{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--paper-50);border-bottom:1px solid var(--paper-200)}
+  .sc-dots{display:flex;gap:6px;flex:none}.sc-dots i{width:10px;height:10px;border-radius:50%;background:#ff5f57}.sc-dots i:nth-child(2){background:#febc2e}.sc-dots i:nth-child(3){background:#28c840}
+  .sc-url{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:6px;background:#fff;border:1px solid var(--paper-200);border-radius:8px;padding:3px 10px;font-size:.74rem;color:var(--fg-2);white-space:nowrap;overflow:hidden}
+  .sc-url svg{width:12px;height:12px;color:var(--gain-600)}
+  .sc-url span{overflow:hidden;text-overflow:ellipsis}
+  .sc-screen{position:relative;display:block;overflow:hidden;background:var(--paper-100);cursor:zoom-in}
+  .sc-browser .sc-screen{aspect-ratio:16/10}
+  .sc-screen img{width:100%;height:100%;object-fit:cover;object-position:50% 0;transition:object-position 1.4s cubic-bezier(.2,.7,.2,1)}
+  .sc-browser:hover .sc-screen img,.sc-phone:hover .sc-screen img,.sc-scroll .sc-screen img{object-position:50% 100%;transition:object-position 9s cubic-bezier(.45,.05,.55,.95)}
+  .sc-phone{position:absolute;right:0;bottom:0;width:27%;aspect-ratio:9/19.5;border-radius:26px;background:#0b1020;padding:6px;box-shadow:0 30px 60px -22px rgba(11,16,32,.6);transform:translate(calc(var(--mx,0) * -22px),calc(var(--my,0) * -16px)) rotate(calc(var(--mx,0) * 3deg));transition:transform .4s ease-out}
+  .sc-phone::before{content:"";position:absolute;top:11px;left:50%;width:32%;height:12px;border-radius:10px;background:#0b1020;transform:translateX(-50%);z-index:2}
+  .sc-phone .sc-screen{height:100%;border-radius:20px}
+  .sc-slide.on .sc-phone{animation:phoneIn .9s .15s cubic-bezier(.2,.7,.2,1) backwards}
+  @keyframes phoneIn{from{opacity:0;transform:translateY(40px) rotate(6deg)}}
+  .sc-hint{position:absolute;left:0;bottom:6px;display:flex;align-items:center;gap:6px;font-size:.78rem;color:var(--fg-2);max-width:68%}
+  .sc-hint svg{width:15px;height:15px;color:var(--c)}
+  .sc-hint .touch{display:none}
+  @media(hover:none){.sc-hint .mouse{display:none}.sc-hint .touch{display:inline}.sc-screen{cursor:pointer}}
+  .sc-swipe{display:none}
+  @media(prefers-reduced-motion:reduce){.sc-play{display:none}}
+
+  @media(max-width:900px){
+    .sc-tabs{grid-template-columns:repeat(2,1fr)}
+    .sc-slide{grid-template-columns:1fr;gap:26px;padding:26px 20px 28px}
+    .sc-devices{order:-1;transform:translateY(24px)}
+    .sc-big{font-size:7.5rem;top:auto;bottom:-.25em;right:.04em}
+    .sc-swipe{display:flex;justify-content:center;gap:6px;margin-top:14px}
+    .sc-swipe i{width:7px;height:7px;border-radius:99px;background:var(--paper-200);transition:width .3s,background .3s}
+    .sc-swipe i.on{width:22px;background:var(--sc)}
+  }
+  @media(max-width:560px){
+    .sc-tab{padding:10px 10px 15px;gap:9px;border-radius:14px}
+    .sc-tab small,.sc-tab .sc-n{display:none}
+    .sc-tab>span:nth-child(2){min-width:0}
+    .sc-tab b{font-size:.86rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .sc-ic{width:32px;height:32px;border-radius:10px}
+    .sc-ic svg{width:17px;height:17px}
+    .sc-stage{border-radius:24px}
+    .sc-slide{padding:20px 16px 24px}
+    .sc-browser{width:86%;border-radius:12px}
+    .sc-bar{padding:7px 9px}.sc-dots i{width:8px;height:8px}
+    .sc-phone{width:30%;border-radius:18px;padding:4px}.sc-phone .sc-screen{border-radius:14px}.sc-phone::before{top:7px;height:8px}
+    .sc-kpis{gap:8px}.sc-kpis div{padding:10px 9px 8px}.sc-kpis b{font-size:1.2rem}.sc-kpis span{font-size:.7rem}
+    .sc-actions .btn{flex:1 1 auto;justify-content:center;padding:11px 16px}
+    .sc-label small{display:none}
+    .sc-big{display:none}
+    .sc-info p{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;font-size:.95rem}
+    .sc-feat li{font-size:.9rem}
+  }
+
+  /* Aperçu en direct : le vrai site dans une fenêtre, en taille ordinateur, tablette ou téléphone */
+  dialog.live{max-width:none;max-height:none;width:100%;height:100%;border-radius:0;background:var(--ink-900);color:#fff;box-shadow:none}
+  .lv-shell{display:grid;grid-template-rows:auto 1fr;height:100%}
+  .lv-bar{display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.08)}
+  .lv-title{display:flex;align-items:center;gap:10px;min-width:0;flex:1}
+  .lv-title .pulse{background:var(--sc)}
+  .lv-title b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lv-url{font-size:.78rem;color:#b8bfd6;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);padding:4px 10px;border-radius:999px;white-space:nowrap}
+  .lv-dev{display:flex;gap:4px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);padding:3px;border-radius:12px}
+  .lv-dev button{width:38px;height:32px;border-radius:9px;border:0;background:transparent;color:#b8bfd6;cursor:pointer;display:grid;place-items:center;transition:background .2s,color .2s}
+  .lv-dev button:hover{color:#fff}
+  .lv-dev button.on{background:#fff;color:var(--ink-900)}
+  .lv-stage{position:relative;overflow:hidden;display:flex;justify-content:center;padding:18px;background:radial-gradient(900px 500px at 50% 30%,color-mix(in srgb,var(--sc) 30%,var(--ink-700)),var(--ink-900))}
+  .lv-frame{position:relative;width:100%;max-width:var(--w,100%);height:100%;border-radius:14px;overflow:hidden;background:#fff;box-shadow:0 40px 100px -30px rgba(0,0,0,.75);transition:max-width .55s cubic-bezier(.2,.7,.2,1),border-radius .3s}
+  .lv-frame[data-dev="mobile"]{border-radius:30px;border:8px solid #000;max-height:880px;align-self:center}
+  .lv-frame iframe{display:block;width:100%;height:100%;border:0;background:#fff}
+  .lv-wait{position:absolute;inset:0;display:grid;place-items:center;align-content:center;gap:10px;background:var(--ink-800);color:#b8bfd6;font-size:.9rem;transition:opacity .4s}
+  .lv-wait svg{width:28px;height:28px;color:var(--sc);animation:spin 1s linear infinite}
+  .lv-frame.ok .lv-wait{opacity:0;pointer-events:none}
+  @media(max-width:720px){.lv-dev,.lv-url{display:none}.lv-stage{padding:0}.lv-frame{border-radius:0}.lv-bar{padding:8px 10px}}
+
   /* Fenêtre projet */
   dialog{border:0;border-radius:28px;padding:0;max-width:640px;width:calc(100% - 32px);margin:auto;box-shadow:0 40px 100px -20px rgba(11,16,32,.5);color:var(--fg);font-family:var(--font);overflow:hidden}
   dialog::backdrop{background:rgba(11,16,32,.55);backdrop-filter:blur(4px)}
@@ -465,6 +601,21 @@
       <h2 id="projetsTitle"></h2>
       <p id="projetsText"></p>
     </div>
+
+    <!-- Vitrine des plateformes en ligne (contenu : constante SHOWCASE plus bas) -->
+    <div class="showcase reveal auto" id="showcase" hidden>
+      <div class="sc-head">
+        <span class="sc-label"><span class="pulse"></span><span id="scCount"></span> <small>— conçues, développées et lancées sur dehini.com</small></span>
+        <button type="button" class="sc-play" id="scPlay" aria-label="Mettre en pause le défilement automatique">
+          <span class="i-pause"><i data-lucide="pause"></i></span><span class="i-play"><i data-lucide="play"></i></span><em style="font-style:normal" id="scPlayTxt">Pause</em>
+        </button>
+      </div>
+      <div class="sc-tabs" id="scTabs" role="tablist" aria-label="Plateformes en ligne"></div>
+      <div class="sc-stage" id="scStage"></div>
+      <div class="sc-swipe" id="scDots" aria-hidden="true"></div>
+    </div>
+
+    <div class="more-label" id="moreLabel" hidden><span class="sc-label"><i data-lucide="layers"></i>Autres réalisations</span></div>
     <div class="filters" id="filters"></div>
     <div class="grid" id="grid"></div>
   </div>
@@ -479,6 +630,31 @@
     <p id="dlgText"></p>
     <div class="tags" id="dlgTags" style="margin:0 0 22px"></div>
     <div class="dlg-actions" id="dlgLink"></div>
+  </div>
+</dialog>
+
+<!-- Aperçu en direct d'une plateforme de la vitrine -->
+<dialog id="live" class="live" aria-label="Aperçu en direct">
+  <div class="lv-shell">
+    <div class="lv-bar">
+      <div class="lv-title"><span class="pulse"></span><b id="lvTitle"></b><span class="lv-url" id="lvUrl"></span></div>
+      <div class="lv-dev" id="lvDev" role="group" aria-label="Taille d'écran">
+        <button type="button" data-dev="desktop" class="on" title="Ordinateur" aria-label="Ordinateur"><i data-lucide="monitor"></i></button>
+        <button type="button" data-dev="tablet" title="Tablette" aria-label="Tablette"><i data-lucide="tablet"></i></button>
+        <button type="button" data-dev="mobile" title="Téléphone" aria-label="Téléphone"><i data-lucide="smartphone"></i></button>
+      </div>
+      <div class="rd-tools">
+        <button type="button" id="lvReload" title="Recharger" aria-label="Recharger"><i data-lucide="rotate-cw"></i></button>
+        <a id="lvOpen" href="#" target="_blank" rel="noopener" title="Ouvrir dans un nouvel onglet" aria-label="Ouvrir dans un nouvel onglet"><i data-lucide="external-link"></i></a>
+        <button type="button" id="lvClose" title="Fermer" aria-label="Fermer"><i data-lucide="x"></i></button>
+      </div>
+    </div>
+    <div class="lv-stage">
+      <div class="lv-frame" id="lvFrame">
+        <iframe id="lvIframe" title="Aperçu en direct du site"></iframe>
+        <div class="lv-wait"><i data-lucide="loader-circle"></i>Chargement du site…</div>
+      </div>
+    </div>
   </div>
 </dialog>
 
@@ -687,6 +863,204 @@ dlg.addEventListener("click", e => {
   if (r) openReader(PROJECTS[+r.dataset.read]);
   else if (e.target === dlg) dlg.close();
 });
+
+/* ======================================================================
+   Vitrine : les plateformes en ligne sur dehini.com
+   Ces sites sont développés dans ce dépôt (impact/, studioma/,
+   elbahiferti/, maillage/) : leur présentation vit donc ici, dans le code,
+   et se met à jour avec lui. Captures : img/projets/<slug>-desktop.webp
+   (1200 px de large) et img/projets/<slug>-mobile.webp (480 px).
+   sub : petit sous-titre facultatif à côté du nom.
+   kpis : [nombre animé ou texte, légende].
+   pdf : si un projet de data.json (admin) a un titre qui correspond et un
+   PDF, la fiche propose aussi de le feuilleter.
+   ====================================================================== */
+const SHOWCASE = [
+  { slug: "impact", url: "/impact/", title: "Défi Impact", type: "Plateforme communautaire", icon: "sprout", c: "#17b26a", c2: "#f5b83d",
+    tagline: "Votre vie en 1000 impacts.",
+    text: "Un défi de 1000 questions sur la vie personnelle, sociale et professionnelle. Pour chacune : impact négatif, aucun ou positif ? Chacun découvre son empreinte et raconte ses expériences positives pour inspirer ceux qui ont vécu l'inverse.",
+    features: ["Arabe, français et anglais, une page par question pour Google", "Récits, « j'aime » et messages privés avec leurs auteurs", "Impact mondial : la carte des 1000 questions et les pays", "Espace pro, soutiens par carte CIB / Edahabia, emails automatiques"],
+    kpis: [[1000, "questions"], [3, "langues"], [3, "univers de vie"]],
+    stack: ["PHP", "SQLite", "Connexion Google", "SofizPay", "SEO"] },
+  { slug: "studioma", url: "/studioma/", title: "Studioma", type: "Réseau social & SaaS", icon: "kanban", c: "#5b4bff", c2: "#ff6b5b",
+    tagline: "Create together. Grow professionally. Get discovered.",
+    text: "Le réseau social et le studio collaboratif des community managers : l'idée devient script, le script devient contenu, le contenu est publié — et le profil pro met en avant un travail vérifié.",
+    features: ["Studios privés : niveaux, colonnes et cartes en glisser-déposer", "Passage de relais Création → Production → Publication", "Équipe, rôles, validations client, calendrier et « My work »", "Portfolio vérifié, opportunités, annuaire des talents, serveur MCP pour les IA"],
+    kpis: [[6, "rôles d'équipe"], [3, "vues de travail"], ["MCP", "piloté par les IA"]],
+    stack: ["PHP", "SQLite", "Kanban", "MCP", "Google OAuth"] },
+  { slug: "elbahiferti", url: "/elbahiferti/", title: "ELBAHI FERTI", sub: "DIAG PMA", type: "Site vitrine santé", icon: "baby", c: "#e72f78", c2: "#4f7bd9",
+    tagline: "Votre fertilité, notre expertise.",
+    text: "Site bilingue d'un laboratoire d'exploration de la fertilité du couple à Sidi Bel Abbès : identité animée, analyses expliquées pour l'homme, la femme et le couple, parcours patient et demande d'analyses en quelques clics.",
+    features: ["Français et arabe (lecture de droite à gauche)", "Logo animé et interactif : « Touchez le bébé »", "Analyses expliquées : spermogramme, TMS, bilan hormonal…", "Parcours en 4 étapes et campagne de 9 visuels"],
+    kpis: [[2, "langues"], [4, "étapes du parcours"], [9, "visuels de campagne"]],
+    stack: ["HTML / CSS", "Bilingue RTL", "Identité visuelle", "Campagne"], pdf: /elbahi/i },
+  { slug: "maillage", url: "/maillage/", title: "Maillage", type: "Plateforme de distribution", icon: "map-pinned", c: "#ff5a2b", c2: "#ffb547",
+    tagline: "Vos points de vente, connectés et mesurables.",
+    text: "La plateforme des marques, des distributeurs et des points de vente : carte des magasins, catalogue, disponibilité d'un produit magasin par magasin, commandes, réservations et analyses de la demande.",
+    features: ["Carte interactive OpenStreetMap et « autour de moi »", "Stock par taille et couleur, magasin par magasin", "Radar : la commande va au point de vente le plus proche qui a le stock", "Analyses : recherches sans réponse et wilayas où ouvrir"],
+    kpis: [[1541, "communes référencées"], [6, "modules métier"], [3, "espaces : public, marque, magasin"]],
+    stack: ["PHP", "Leaflet", "OpenStreetMap", "Paiement à la livraison", "Analytics"] },
+];
+
+const showcase = document.getElementById("showcase"), scTabs = document.getElementById("scTabs"), scStage = document.getElementById("scStage");
+const scDots = document.getElementById("scDots"), scPlay = document.getElementById("scPlay");
+const scHold = new Set(); // raisons de pause : survol, focus clavier, hors écran, onglet caché, aperçu ouvert
+let scI = 0, scSeen = false;
+const canHover = () => matchMedia("(hover:hover)").matches;
+const nf = new Intl.NumberFormat("fr-FR");
+
+function renderShowcase() {
+  showcase.hidden = !SHOWCASE.length;
+  if (!SHOWCASE.length) return;
+  document.getElementById("scCount").textContent = `${SHOWCASE.length} plateformes en ligne`;
+  scTabs.innerHTML = SHOWCASE.map((p, i) => `
+    <button type="button" class="sc-tab" role="tab" id="sc-tab-${i}" aria-controls="sc-slide-${i}" data-i="${i}" style="--c:${esc(p.c)}">
+      <span class="sc-ic">${ico(p.icon)}</span><span><b>${esc(p.title)}</b><small>${esc(p.type)}</small></span>
+      <span class="sc-n">${String(i + 1).padStart(2, "0")}</span><span class="sc-prog"><i></i></span>
+    </button>`).join("");
+  scStage.innerHTML = SHOWCASE.map((p, i) => {
+    const doc = p.pdf ? PROJECTS.findIndex(q => q.pdf && p.pdf.test(q.title || "")) : -1;
+    return `
+    <article class="sc-slide" role="tabpanel" id="sc-slide-${i}" aria-labelledby="sc-tab-${i}" style="--c:${esc(p.c)}">
+      <span class="sc-big" aria-hidden="true">${String(i + 1).padStart(2, "0")}</span>
+      <div class="sc-info">
+        <span class="sc-cat"><span class="pulse"></span>En ligne · ${esc(p.type)}</span>
+        <h3>${esc(p.title)}${p.sub ? ` <small>${esc(p.sub)}</small>` : ""}</h3>
+        <div class="sc-tagline">${esc(p.tagline)}</div>
+        <p>${esc(p.text)}</p>
+        <ul class="sc-feat">${p.features.map(f => `<li>${ico("circle-check")}<span>${esc(f)}</span></li>`).join("")}</ul>
+        <div class="sc-kpis">${p.kpis.map(([v, l]) => `<div><b${typeof v === "number" ? ` data-n="${v}"` : ""}>${esc(typeof v === "number" ? nf.format(v) : v)}</b><span>${esc(l)}</span></div>`).join("")}</div>
+        <div class="sc-actions">
+          <a class="btn btn-ink" href="${esc(p.url)}" target="_blank" rel="noopener">Visiter le site ${ico("arrow-up-right")}</a>
+          <button type="button" class="btn btn-line" data-live="${i}">${ico("play")} Aperçu en direct</button>
+          ${doc >= 0 ? `<button type="button" class="btn btn-line" data-read="${doc}">${ico("book-open")} Feuilleter le PDF</button>` : ""}
+        </div>
+      </div>
+      <div class="sc-devices">
+        <div class="sc-browser">
+          <div class="sc-bar"><span class="sc-dots"><i></i><i></i><i></i></span><span class="sc-url">${ico("lock")}<span>dehini.com${esc(p.url)}</span></span></div>
+          <div class="sc-screen" data-shot="${i}"><img src="img/projets/${esc(p.slug)}-desktop.webp" width="1200" height="3000" alt="Page d'accueil de ${esc(p.title)} sur ordinateur" loading="lazy" decoding="async"></div>
+        </div>
+        <div class="sc-phone"><div class="sc-screen" data-shot="${i}"><img src="img/projets/${esc(p.slug)}-mobile.webp" width="480" height="3100" alt="${esc(p.title)} sur téléphone" loading="lazy" decoding="async"></div></div>
+        <span class="sc-hint">${ico("mouse-pointer-2")}<span class="mouse">Survolez pour parcourir · cliquez pour l'aperçu en direct</span><span class="touch">Touchez un écran pour le parcourir</span></span>
+      </div>
+    </article>`;
+  }).join("");
+  scDots.innerHTML = SHOWCASE.map(() => "<i></i>").join("");
+  if (matchMedia("(prefers-reduced-motion:reduce)").matches) showcase.classList.remove("auto");
+  scSync();
+  scShow(0);
+}
+
+// Compteur des chiffres clés (1 541 au format français)
+function scCount(el) {
+  const to = +el.dataset.n, t0 = performance.now(), d = 1100;
+  (function f(t) { const k = Math.min(1, (t - t0) / d); el.textContent = nf.format(Math.round(to * (1 - Math.pow(1 - k, 3)))); if (k < 1) requestAnimationFrame(f); })(t0);
+}
+
+function scShow(i) {
+  scI = (i + SHOWCASE.length) % SHOWCASE.length;
+  const p = SHOWCASE[scI];
+  showcase.style.setProperty("--sc", p.c);
+  showcase.style.setProperty("--sc2", p.c2);
+  scTabs.querySelectorAll(".sc-tab").forEach((t, k) => { t.classList.toggle("on", k === scI); t.setAttribute("aria-selected", k === scI); t.tabIndex = k === scI ? 0 : -1; });
+  scStage.querySelectorAll(".sc-slide").forEach((s, k) => s.classList.toggle("on", k === scI));
+  scStage.querySelectorAll(".sc-scroll").forEach(el => el.classList.remove("sc-scroll"));
+  scDots.querySelectorAll("i").forEach((d, k) => d.classList.toggle("on", k === scI));
+  if (scSeen) scStage.querySelectorAll(`#sc-slide-${scI} [data-n]`).forEach(scCount);
+}
+
+function scSync() {
+  const auto = showcase.classList.contains("auto");
+  showcase.classList.toggle("hold", scHold.size > 0);
+  scPlay.setAttribute("aria-label", auto ? "Mettre en pause le défilement automatique" : "Reprendre le défilement automatique");
+  document.getElementById("scPlayTxt").textContent = auto ? "Pause" : "Lecture auto";
+}
+
+// Choix de l'utilisateur : on s'arrête sur le projet choisi (lecture auto coupée).
+function scPick(i) { showcase.classList.remove("auto"); scSync(); scShow(i); }
+
+scTabs.addEventListener("click", e => { const t = e.target.closest(".sc-tab"); if (t) scPick(+t.dataset.i); });
+scTabs.addEventListener("keydown", e => {
+  const k = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+  if (k == null && e.key !== "Home" && e.key !== "End") return;
+  e.preventDefault();
+  scPick(e.key === "Home" ? 0 : e.key === "End" ? SHOWCASE.length - 1 : scI + k);
+  scTabs.children[scI].focus();
+});
+scPlay.addEventListener("click", () => { showcase.classList.toggle("auto"); scSync(); });
+// La barre de progression de l'onglet actif donne le tempo : à la fin, projet suivant.
+scTabs.addEventListener("animationend", e => { if (e.animationName === "scProg") scShow(scI + 1); });
+
+scStage.addEventListener("click", e => {
+  const lv = e.target.closest("[data-live]"), read = e.target.closest("[data-read]"), shot = e.target.closest("[data-shot]");
+  if (lv) openLive(+lv.dataset.live);
+  else if (read) openReader(PROJECTS[+read.dataset.read]);
+  else if (shot) {
+    if (canHover()) openLive(+shot.dataset.shot);
+    else { showcase.classList.remove("auto"); scSync(); shot.parentElement.classList.toggle("sc-scroll"); }
+  }
+});
+
+// Pauses : survol à la souris, focus clavier, section hors écran, onglet du navigateur caché
+const hold = (why, on) => { scHold[on ? "add" : "delete"](why); scSync(); };
+showcase.addEventListener("pointerenter", e => { if (e.pointerType === "mouse") hold("hover", true); });
+showcase.addEventListener("pointerleave", () => hold("hover", false));
+showcase.addEventListener("focusin", () => hold("focus", true));
+showcase.addEventListener("focusout", e => { if (!showcase.contains(e.relatedTarget)) hold("focus", false); });
+document.addEventListener("visibilitychange", () => hold("tab", document.hidden));
+new IntersectionObserver(([e]) => {
+  hold("view", !e.isIntersecting);
+  if (e.isIntersecting && !scSeen) { scSeen = true; scStage.querySelectorAll(`#sc-slide-${scI} [data-n]`).forEach(scCount); }
+}, { threshold: .25 }).observe(showcase);
+
+// Balayage gauche / droite sur mobile
+let swipe = null;
+scStage.addEventListener("pointerdown", e => { if (e.pointerType !== "mouse") swipe = { x: e.clientX, y: e.clientY }; });
+scStage.addEventListener("pointerup", e => {
+  if (!swipe) return;
+  const dx = e.clientX - swipe.x, dy = e.clientY - swipe.y;
+  swipe = null;
+  if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) scPick(scI + (dx < 0 ? 1 : -1));
+});
+scStage.addEventListener("pointercancel", () => swipe = null);
+
+// Léger relief : les écrans suivent la souris (navigateur et téléphone en sens opposés)
+if (matchMedia("(hover:hover) and (prefers-reduced-motion:no-preference)").matches) {
+  scStage.addEventListener("pointermove", e => {
+    const r = scStage.getBoundingClientRect();
+    scStage.style.setProperty("--mx", ((e.clientX - r.left) / r.width - .5).toFixed(3));
+    scStage.style.setProperty("--my", ((e.clientY - r.top) / r.height - .5).toFixed(3));
+  });
+  scStage.addEventListener("pointerleave", () => { scStage.style.setProperty("--mx", 0); scStage.style.setProperty("--my", 0); });
+}
+
+/* Aperçu en direct : le site s'ouvre dans une fenêtre (même domaine), en taille
+   ordinateur, tablette ou téléphone. */
+const live = document.getElementById("live"), lvFrame = document.getElementById("lvFrame"), lvIframe = document.getElementById("lvIframe");
+const LV_WIDTHS = { desktop: "100%", tablet: "820px", mobile: "390px" };
+function setDevice(dev) {
+  lvFrame.dataset.dev = dev;
+  lvFrame.style.setProperty("--w", LV_WIDTHS[dev]);
+  document.querySelectorAll("#lvDev button").forEach(b => b.classList.toggle("on", b.dataset.dev === dev));
+}
+function openLive(i) {
+  const p = SHOWCASE[i];
+  live.style.setProperty("--sc", p.c);
+  document.getElementById("lvTitle").textContent = p.title;
+  document.getElementById("lvUrl").textContent = "dehini.com" + p.url;
+  document.getElementById("lvOpen").href = p.url;
+  lvFrame.classList.remove("ok");
+  lvIframe.src = p.url;
+  setDevice(innerWidth > 720 ? (lvFrame.dataset.dev || "desktop") : "desktop");
+  hold("live", true);
+  live.showModal();
+}
+lvIframe.addEventListener("load", () => { if (lvIframe.getAttribute("src") !== "about:blank") lvFrame.classList.add("ok"); });
+document.getElementById("lvDev").addEventListener("click", e => { const b = e.target.closest("button"); if (b) setDevice(b.dataset.dev); });
+document.getElementById("lvReload").onclick = () => { lvFrame.classList.remove("ok"); lvIframe.src = lvIframe.getAttribute("src"); };
+document.getElementById("lvClose").onclick = () => live.close();
+live.addEventListener("close", () => { lvIframe.src = "about:blank"; hold("live", false); });
 
 /* ======================================================================
    Lecteur PDF interactif : PDF.js dessine les pages, StPageFlip les fait
@@ -975,7 +1349,7 @@ function render(data) {
     ${(data.hero.badges || []).map((b, i) => `<div class="float f${(i % 3) + 1}"><span class="ic">${ico(b.icon)}</span><div>${esc(b.title)}<small>${esc(b.subtitle)}</small></div></div>`).join("")}`;
 
   document.getElementById("heroStats").innerHTML = (data.hero.stats || []).map(s => {
-    const to = s.auto === "projects" ? data.projects.length : (s.to || 0);
+    const to = s.auto === "projects" ? data.projects.length + SHOWCASE.length : (s.to || 0);
     return `<div class="stat"><b data-to="${to}" data-suffix="${esc(s.suffix || "")}">0</b><span>${esc(s.label)}</span></div>`;
   }).join("");
 
@@ -1021,7 +1395,10 @@ function render(data) {
   document.getElementById("projetsTitle").innerHTML = mdAccent(pj.title);
   document.getElementById("projetsText").textContent = pj.text || "";
   PROJECTS = data.projects || [];
-  document.getElementById("projets").hidden = !PROJECTS.length;
+  document.getElementById("projets").hidden = !PROJECTS.length && !SHOWCASE.length;
+  renderShowcase();
+  grid.hidden = !PROJECTS.length;
+  document.getElementById("moreLabel").hidden = !PROJECTS.length || !SHOWCASE.length;
   const cats = ["Tous", ...new Set(PROJECTS.map(p => p.cat).filter(Boolean))];
   filters.hidden = cats.length < 3;
   filters.innerHTML = cats.map(c => `<button data-cat="${esc(c)}">${ico(catIcons[c] || "tag")}${esc(c)} <span class="n">${c === "Tous" ? PROJECTS.length : PROJECTS.filter(p => p.cat === c).length}</span></button>`).join("");
@@ -1089,6 +1466,10 @@ onScroll();
 // Halo qui suit la souris
 const glow = document.getElementById("glow");
 addEventListener("pointermove", e => { glow.style.left = e.clientX + "px"; glow.style.top = e.clientY + "px"; }, { passive: true });
+
+// Les icônes (script « defer ») peuvent arriver après le rendu si data.json répond plus vite :
+// les scripts différés ont toujours tourné au DOMContentLoaded, on redessine alors.
+document.addEventListener("DOMContentLoaded", drawIcons);
 
 // Chargement des données puis rendu
 (async function init() {
