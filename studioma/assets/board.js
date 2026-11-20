@@ -21,7 +21,9 @@
   B.col = (id) => B.data.cols.find((c) => c.id === id);
   B.card = (id) => B.data.cards.find((c) => c.id === id);
   B.member = (id) => B.data.members.find((u) => u.id === id) || null;
-  B.canEditCard = (c) => can('edit') || (can('work') && (c.assignee === SM.me.id || c.created_by === SM.me.id || c.members.includes(SM.me.id)));
+  // Invité d'un lien de partage : le serveur dit, carte par carte et colonne par colonne, ce qu'il peut modifier.
+  B.canEditCard = (c) => (SM.guest ? !!(c && c.editable) : can('edit') || (can('work') && (c.assignee === SM.me.id || c.created_by === SM.me.id || c.members.includes(SM.me.id))));
+  const canAdd = (col) => (SM.guest ? !!col.writable : can('work'));
   /** Niveau qui reçoit les cartes d'un niveau (celui choisi, sinon le suivant). */
   const targetOf = (level) => {
     const chosen = level.handoff_level && level.handoff_level !== level.id ? B.level(level.handoff_level) : null;
@@ -29,14 +31,15 @@
   };
   const visible = (c) => {
     const f = B.filter;
-    if (f.mine && c.assignee !== SM.me.id && !c.members.includes(SM.me.id)) return false;
+    if (f.mine && SM.me && c.assignee !== SM.me.id && !c.members.includes(SM.me.id)) return false;
     if (f.assignee && c.assignee !== f.assignee) return false;
     if (f.platform && !c.platforms.includes(f.platform)) return false;
     if (f.q) { const q = f.q.toLowerCase(); if (!c.title.toLowerCase().includes(q) && !c.tags.some((t) => t.toLowerCase().includes(q))) return false; }
     return true;
   };
   const filtering = () => B.filter.q || B.filter.mine || B.filter.assignee || B.filter.platform;
-  const base = () => '/studio/' + B.id + (B.view === 'board' ? '' : '/' + B.view);
+  const base = () => (SM.guest ? '/s/' + SM.guest : '/studio/' + B.id + (B.view === 'board' ? '' : '/' + B.view));
+  B.home = base;
   B.cardPath = (id) => base() + '/card/' + id;
 
   /* ------------------------------------------------------- synchronisation */
@@ -68,6 +71,7 @@
     return null;
   };
   function gone(e) {
+    if (SM.guest) { if ([401, 404, 410].includes(e.status)) SM.guestGone(e); return; }
     if (e.status === 404) { SM.toast('This Studio is no longer available.', 'error'); SM.dropWorkspace(); SM.go('/projects'); }
   }
   async function poll() {
@@ -83,9 +87,26 @@
 
   /* ---------------------------------------------------------------- écran */
   SM.route(/^\/studio\/(\d+)(?:\/(calendar|work|insights))?(?:\/card\/(\d+))?$/, async (m, ctx) => {
-    const id = +m[1];
+    await B.open(+m[1], m[2] || 'board', +m[3] || 0, ctx);
+    if (ctx.alive()) guestsFromQuery();
+  }, { wide: true, update: (m, prev) => {
+    if (m[1] !== prev[1] || (m[2] || '') !== (prev[2] || '') || !B.data) return false;
+    if (m[3]) SM.cardPanel.open(+m[3]); else SM.cardPanel.close(true);
+    guestsFromQuery();
+    return true;
+  } });
+  /** Lien reçu par email (« Gérer les invités », demande d'un invité) : la fenêtre de partage s'ouvre sur les invités. */
+  function guestsFromQuery() {
+    const q = SM.query();
+    if (!q.get('guests') || !B.data || !can('manage')) return;
+    history.replaceState(null, '', '#' + base());
+    SM.closeModals();
+    SM.shareDialog({ studio_id: B.id }, { tab: 'guests', req: +q.get('req') || 0, do: q.get('do') || '' });
+  }
+  /** Ouvre le tableau d'un Studio (membre, ou invité quand SM.guest est défini). */
+  B.open = async (id, view, cardId, ctx) => {
     if (B.id !== id) Object.assign(B, { focus: SM.ls.get('focus.' + id, 0), filter: { q: '', mine: false, assignee: 0, platform: '' }, collapsed: SM.ls.get('collapsed.' + id, {}), cal: null });
-    Object.assign(B, { id, view: m[2] || 'board', data: null, adding: null, editing: null, writing: 0 });
+    Object.assign(B, { id, view, data: null, adding: null, editing: null, writing: 0 });
     B.selected.clear();
     alive = ctx.alive;
     SM.set(ctx.view, html`<div class="studio"><div class="studio-loading">${SM.loading(3)}</div></div>`);
@@ -107,15 +128,12 @@
       SM.cardPanel.close(true);
       alive = () => false;
     });
-    if (m[3]) SM.cardPanel.open(+m[3]);
-  }, { wide: true, update: (m, prev) => {
-    if (m[1] !== prev[1] || (m[2] || '') !== (prev[2] || '') || !B.data) return false;
-    if (m[3]) SM.cardPanel.open(+m[3]); else SM.cardPanel.close(true);
-    return true;
-  } });
+    if (cardId) SM.cardPanel.open(cardId);
+  };
 
   function drawHead() {
     const s = B.data.studio;
+    if (SM.guest) { SM.set(SM.$('#studio-head'), SM.guestHead(B.data)); return; }
     const tab = (view, ic, label) => html`<a class="tab${B.view === view ? ' is-active' : ''}" href="#/studio/${B.id}${view === 'board' ? '' : '/' + view}">${icon(ic)}${label}</a>`;
     SM.set(SM.$('#studio-head'), html`
       <header class="studio-head">
@@ -159,8 +177,8 @@
   function cardView(c, col, level) {
     const done = col.kind !== '';
     const assignee = c.assignee ? B.member(c.assignee) : null;
-    const manual = level.handoff === 'manual' && level.handoff_col === col.id && targetOf(level) && B.canEditCard(c);
-    return html`<article class="kcard${c.priority ? ' kprio-' + c.priority : ''}${B.selected.has(c.id) ? ' is-selected' : ''}${col.kind === 'cancelled' ? ' is-cancelled' : ''}" data-card="${c.id}" data-act="card-open" data-id="${c.id}" tabindex="0" aria-label="${c.title}">
+    const manual = !SM.guest && level.handoff === 'manual' && level.handoff_col === col.id && targetOf(level) && B.canEditCard(c);
+    return html`<article class="kcard${c.priority ? ' kprio-' + c.priority : ''}${B.selected.has(c.id) ? ' is-selected' : ''}${col.kind === 'cancelled' ? ' is-cancelled' : ''}${SM.guest && c.editable ? ' is-editable' : ''}" data-card="${c.id}" data-act="card-open" data-id="${c.id}" tabindex="0" aria-label="${c.title}">
       ${can('edit') ? html`<button class="kcard-check" data-act="card-select" data-id="${c.id}" aria-label="Select card" aria-pressed="${B.selected.has(c.id)}">${icon('check')}</button>` : ''}
       ${c.cover ? html`<img class="kcard-cover" src="${SM.fileUrl(c.cover, true)}" alt="" loading="lazy" draggable="false">` : ''}
       ${c.ctype || c.platforms.length ? html`<div class="kcard-top">${c.ctype ? html`<span class="chip chip-type">${SM.ref.content_types[c.ctype]}</span>` : ''}${c.platforms.slice(0, 3).map((p) => html`<span class="chip chip-pf pf-${p}">${SM.ref.platforms[p]}</span>`)}${c.platforms.length > 3 ? html`<span class="chip">+${c.platforms.length - 3}</span>` : ''}</div>` : ''}
@@ -198,13 +216,13 @@
         ${isFinal ? html`<span class="cbadge cbadge-final" title="Final column: cards here are handed off to ${target.name}${level.handoff === 'auto' ? ' automatically' : ' when you send them'}">${icon('zap')}</span>` : ''}
         ${col.kind === 'done' ? html`<span class="cbadge cbadge-done" title="Cards here are done">${icon('check-circle')}</span>` : ''}
         <span class="grow"></span>
-        ${can('work') ? html`<button class="btn-icon btn-xs" data-act="card-new" data-col="${col.id}" data-top="1" title="Add a card on top" aria-label="Add a card to ${col.name}">${icon('plus')}</button>` : ''}
+        ${canAdd(col) ? html`<button class="btn-icon btn-xs" data-act="card-new" data-col="${col.id}" data-top="1" title="Add a card on top" aria-label="Add a card to ${col.name}">${icon('plus')}</button>` : ''}
         ${can('manage') ? html`<button class="btn-icon btn-xs" data-act="col-menu" data-id="${col.id}" aria-label="Column options">${icon('more')}</button>` : ''}
       </header>
       ${adding && B.adding.top ? form(true) : ''}
-      <div class="bcol-cards" data-cards="${col.id}">${cards.map((c) => cardView(c, col, level))}${!cards.length && !adding ? html`<div class="bcol-empty">${filtering() && all.length ? 'No card matches the filter' : can('work') ? 'Drop a card here' : 'No card'}</div>` : ''}</div>
+      <div class="bcol-cards" data-cards="${col.id}">${cards.map((c) => cardView(c, col, level))}${!cards.length && !adding ? html`<div class="bcol-empty">${filtering() && all.length ? 'No card matches the filter' : canAdd(col) ? 'Drop a card here' : 'No card'}</div>` : ''}</div>
       ${isFinal && col.passed ? html`<div class="bcol-passed" title="Cards that went through this column">${icon('zap')}${fmt.plural(col.passed, 'card')} handed off to ${target.name}</div>` : ''}
-      ${adding && !B.adding.top ? form(false) : can('work') ? html`<button class="bcol-add" data-act="card-new" data-col="${col.id}">${icon('plus')}Add card</button>` : ''}
+      ${adding && !B.adding.top ? form(false) : canAdd(col) ? html`<button class="bcol-add" data-act="card-new" data-col="${col.id}">${icon('plus')}Add card</button>` : ''}
     </div>`;
   }
   function levelView(level) {
@@ -215,7 +233,8 @@
     const collapsed = !!B.collapsed[level.id] && !B.focus;
     const editing = B.editing && B.editing.type === 'level' && B.editing.id === level.id;
     let pill = '';
-    if (target) {
+    // Un invité ne voit qu'une partie des niveaux : la flèche de relais pourrait désigner un niveau caché.
+    if (target && !SM.guest) {
       const [ic, label] = HANDOFF[final ? level.handoff : 'off'];
       const text = !final ? 'No final column' : level.handoff === 'off' ? 'Handoff off' : `${label} handoff`;
       pill = html`<button class="handoff h-${final ? level.handoff : 'off'}" ${can('manage') ? raw('data-act="level-settings"') : 'disabled'} data-id="${level.id}" title="${final && level.handoff !== 'off' ? `Cards reaching “${final.name}” are handed off to ${target.name}` : 'Cards stay in this level'}">${icon(ic)}<span>${text}</span>${icon('arrow-right')}<b>${target.name}</b></button>`;
@@ -276,7 +295,11 @@
     const root = SM.$('#studio-body');
     B.undrag.push(SM.drag({ root, item: '.kcard', container: '.bcol-cards', axis: 'y', phClass: 'ph-card',
       enabled: (el) => B.view === 'board' && B.canEditCard(B.card(+el.dataset.card)),
-      over: (el) => { const col = el.closest('.bcol'); return col ? col.querySelector('.bcol-cards') : null; },
+      over: (el) => {
+        const col = el.closest('.bcol');
+        if (!col || (SM.guest && !(B.col(+col.dataset.col) || {}).writable)) return null;   // invité : seulement ses colonnes
+        return col.querySelector('.bcol-cards');
+      },
       onDrop: (item, cont, index) => {
         const id = +item.dataset.card;
         const colId = +cont.dataset.cards;
@@ -332,8 +355,10 @@
   B.pickColumn = (anchor, current, onPick) => {
     const items = [];
     B.data.levels.forEach((l) => {
+      const cols = colsOf(l.id).filter((c) => !SM.guest || c.writable || c.id === current);
+      if (!cols.length) return;
       items.push({ head: `${l.icon} ${l.name}` });
-      colsOf(l.id).forEach((c) => items.push({ label: c.name, checked: c.id === current, act: () => onPick(c) }));
+      cols.forEach((c) => items.push({ label: c.name, checked: c.id === current, act: () => { if (c.id !== current) onPick(c); } }));
     });
     SM.menu(anchor, items, { search: B.data.cols.length > 8, width: 250 });
   };
@@ -423,6 +448,14 @@
     if (!c) return;
     const editable = B.canEditCard(c);
     const items = [{ label: 'Open', icon: 'external', act: () => SM.go(B.cardPath(id)) }];
+    if (SM.guest) {
+      // Invité : déplacer (vers ses colonnes) et la priorité, rien d'autre.
+      if (editable && B.data.cols.some((x) => x.writable && x.id !== c.col_id)) items.push({ label: 'Move to…', icon: 'arrow-right', act: () => B.pickColumn(anchor, c.col_id, (col) => moveCard(id, col.id, cardsOf(col.id).length)) });
+      if (editable) items.push({ label: 'Priority…', icon: 'flag', act: () => pickPriority(anchor, c.priority, (p) => B.run('card_save', { id, priority: p })) });
+      items.push({ label: 'Copy link', icon: 'link', act: () => SM.copy(location.origin + location.pathname + '#' + B.cardPath(id)) });
+      SM.menu(anchor, items, { width: 210, align: opts && opts.align });
+      return;
+    }
     if (editable) {
       items.push({ label: 'Move to…', icon: 'arrow-right', act: () => B.pickColumn(anchor, c.col_id, (col) => moveCard(id, col.id, cardsOf(col.id).length)) });
       if (can('edit')) items.push({ label: 'Assign to…', icon: 'user', act: () => B.pickMember(anchor, { current: c.assignee, none: 'Nobody' }, (uid) => B.run('card_save', { id, assignee: uid })) });

@@ -24,6 +24,7 @@ require __DIR__ . '/lib/social.php';
 require __DIR__ . '/lib/talent.php';
 require __DIR__ . '/lib/google.php';
 require __DIR__ . '/lib/oauth.php';
+require __DIR__ . '/lib/share.php';
 
 /** action => [méthode, accès] — accès : public (compte facultatif) | user (compte obligatoire). */
 const ROUTES = [
@@ -50,6 +51,8 @@ const ROUTES = [
     'cards_bulk' => ['POST', 'user'], 'check_save' => ['POST', 'user'], 'check_delete' => ['POST', 'user'], 'comment_add' => ['POST', 'user'],
     'comment_delete' => ['POST', 'user'], 'upload' => ['POST', 'user'], 'attach_delete' => ['POST', 'user'], 'file' => ['GET', 'public'],
     'approval_request' => ['POST', 'user'], 'approval_decide' => ['POST', 'user'], 'approval_cancel' => ['POST', 'user'],
+    // Partage avec des invités sans compte (lib/share.php) : liens, invités, demandes, journal
+    'share_list' => ['GET', 'user'], 'share_save' => ['POST', 'user'], 'share_regen' => ['POST', 'user'], 'share_guest' => ['POST', 'user'],
     // Équipe
     'members' => ['GET', 'user'], 'member_role' => ['POST', 'user'], 'member_remove' => ['POST', 'user'], 'invite_create' => ['POST', 'user'],
     'invite_revoke' => ['POST', 'user'], 'invite_info' => ['GET', 'public'], 'invite_accept' => ['POST', 'user'], 'invite_decline' => ['POST', 'user'],
@@ -67,6 +70,17 @@ const ROUTES = [
     'opps' => ['GET', 'public'], 'opp_get' => ['GET', 'public'], 'opp_save' => ['POST', 'user'], 'opp_delete' => ['POST', 'user'],
     'opp_apply' => ['POST', 'user'], 'opp_application' => ['POST', 'user'], 'talent' => ['GET', 'user'], 'talent_save' => ['POST', 'user'],
     'threads' => ['GET', 'user'], 'thread' => ['GET', 'user'], 'message_send' => ['POST', 'user'],
+];
+
+/**
+ * Requêtes faites avec un lien de partage (en-tête X-Share, ou paramètre « share » pour un fichier) :
+ * l'invité n'a accès qu'à ces actions, sur le seul Studio du lien et dans les limites de ses droits
+ * (lib/share.php). Aucune autre action n'est atteignable, même avec un compte connecté.
+ */
+const GUEST_ROUTES = [
+    'share_open' => 'GET', 'share_code' => 'POST', 'share_verify' => 'POST', 'share_request' => 'POST', 'share_leave' => 'POST',
+    'board' => 'GET', 'card_get' => 'GET', 'card_save' => 'POST', 'card_create' => 'POST', 'card_move' => 'POST',
+    'check_save' => 'POST', 'check_delete' => 'POST', 'comment_add' => 'POST', 'comment_delete' => 'POST', 'approval_decide' => 'POST', 'file' => 'GET',
 ];
 
 header('X-Content-Type-Options: nosniff');
@@ -302,6 +316,32 @@ function api_account_delete(array $b, array $u): array
 
 /* ---------------------------------------------------------------- routeur */
 
+$shareToken = (string) ($_SERVER['HTTP_X_SHARE'] ?? '');
+if ($shareToken === '' && $action === 'file') $shareToken = (string) ($_GET['share'] ?? '');
+if ($shareToken !== '') {
+    $method = GUEST_ROUTES[$action] ?? null;
+    if (!$method) fail('This action isn\'t available from a shared link.', 403, 'forbidden');
+    if ($method === 'POST' && !$isPost) fail('Method not allowed.', 405, 'method');
+    if ($isPost && ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') !== 'studioma') fail('Request refused.', 403, 'forbidden');
+    try {
+        $guest = guest_principal($shareToken);
+        if ($isPost) rate('guest_write', 300, 600, $guest['guest']['gid'] ? 'g' . $guest['guest']['gid'] : ip_hash());
+        $fn = 'api_' . $action;
+        $res = $fn(!$isPost ? $_GET : input_json(), $guest);
+        share_digests();
+        ok($res);
+    } catch (PDOException $e) {
+        tx_rollback();
+        error_log('studioma guest ' . $action . ': ' . $e->getMessage());
+        $busy = stripos($e->getMessage(), 'locked') !== false || stripos($e->getMessage(), 'busy') !== false;
+        out(['error' => $busy ? 'busy' : 'server', 'message' => $busy ? 'The service is busy. Please try again.' : 'Something went wrong. Please try again.'], $busy ? 503 : 500);
+    } catch (Throwable $e) {
+        tx_rollback();
+        error_log('studioma guest ' . $action . ': ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine());
+        out(['error' => 'server', 'message' => 'Something went wrong. Please try again.'], 500);
+    }
+}
+
 $route = ROUTES[$action] ?? null;
 if (!$route) fail('Unknown action.', 404, 'notfound');
 if ($route[0] === 'POST' && !$isPost) fail('Method not allowed.', 405, 'method');
@@ -312,7 +352,10 @@ try {
     // Les envois de fichier arrivent en multipart : leurs champs sont dans $_POST.
     $data = !$isPost ? $_GET : ($action === 'upload' ? $_POST : input_json());
     $fn = 'api_' . $action;
-    ok($fn($data, $user));
+    $res = $fn($data, $user);
+    // Modifications d'invités en attente d'email : envoyées dès que leur fenêtre de regroupement est passée.
+    share_digests();
+    ok($res);
 } catch (PDOException $e) {
     tx_rollback();
     error_log('studioma ' . $action . ': ' . $e->getMessage());

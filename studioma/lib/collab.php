@@ -282,7 +282,7 @@ function api_notifications(array $b, array $u): array
     $users = user_cards(array_column($list, 'actor'));
     return ['notifications' => array_map(function (array $n) use ($users): array {
         return ['id' => (int) $n['id'], 'kind' => (string) $n['kind'], 'text' => (string) $n['text'], 'link' => (string) $n['link'],
-            'seen' => (bool) $n['seen'], 'created' => (int) $n['created'], 'actor' => $users[(int) $n['actor']] ?? null];
+            'seen' => (bool) $n['seen'], 'created' => (int) $n['created'], 'actor' => $users[(int) $n['actor']] ?? null, 'guest' => (string) ($n['guest'] ?? '')];
     }, $list), 'counts' => me_counts($uid)];
 }
 function api_notifs_read(array $b, array $u): array

@@ -79,8 +79,12 @@ function site_url(): string
 {
     if (STM_SITE_URL !== '') return rtrim(STM_SITE_URL, '/') . '/';
     if (PHP_SAPI === 'cli') return 'https://dehini.com/studioma/';
-    $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['SERVER_PORT'] ?? '') === '443');
     $host  = $_SERVER['HTTP_HOST'] ?? 'dehini.com';
+    // Les liens (partage, emails, OAuth) sont toujours en https sur un vrai domaine, même si la page a été
+    // ouverte en http ; http seulement sur la machine locale (tests).
+    $local = (bool) preg_match('/^(localhost|127\.\d+\.\d+\.\d+|\[::1\])(:\d+)?$/i', $host);
+    $https = !$local || (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['SERVER_PORT'] ?? '') === '443')
+        || strtolower((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https';
     $dir   = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/studioma/api.php')), '/');
     return ($https ? 'https' : 'http') . '://' . $host . $dir . '/';
 }
@@ -180,7 +184,7 @@ function marks(array $a): string
 /** Schéma compatible avec les vieilles versions de SQLite des hébergeurs mutualisés. */
 function migrate(PDO $pdo): void
 {
-    if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= 4) return;
+    if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= 5) return;
     // Deux premières visites simultanées : la seconde attend la fin de la création, puis ne fait rien.
     $pdo->exec('BEGIN IMMEDIATE');
     try {
@@ -703,6 +707,100 @@ function migrate(PDO $pdo): void
         PRAGMA user_version = 4;
         SQL);
         }
+        if ($v < 5) {
+            // Partage d'un Studio avec des invités sans compte : liens (public, privé), invités vérifiés par
+            // email, codes à usage unique, sessions d'invité, journal. Les actions d'un invité gardent son
+            // identité (guest_id) dans l'historique, les commentaires, les validations et les notifications.
+            foreach (['events' => 'guest_id', 'card_comments' => 'guest_id', 'card_approvals' => 'approver_guest', 'cards' => 'created_guest'] as $t => $c) {
+                if (!in_array($c, array_column($pdo->query("PRAGMA table_info($t)")->fetchAll(), 'name'), true)) $pdo->exec("ALTER TABLE $t ADD COLUMN $c INTEGER NOT NULL DEFAULT 0");
+            }
+            if (!in_array('guest', array_column($pdo->query('PRAGMA table_info(notifications)')->fetchAll(), 'name'), true)) $pdo->exec("ALTER TABLE notifications ADD COLUMN guest TEXT NOT NULL DEFAULT ''");
+            $pdo->exec(<<<SQL
+        -- Lien de partage d'un Studio : un public et un privé au plus. token : 48 caractères aléatoires
+        -- (192 bits) ; le régénérer rend l'ancien lien inutilisable. levels : niveaux montrés ([] = tous).
+        -- expires = 0 : sans fin.
+        CREATE TABLE IF NOT EXISTS shares (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            studio_id INTEGER NOT NULL REFERENCES studios(id) ON DELETE CASCADE,
+            kind TEXT NOT NULL,
+            token TEXT NOT NULL UNIQUE,
+            levels TEXT NOT NULL DEFAULT '[]',
+            active INTEGER NOT NULL DEFAULT 1,
+            expires INTEGER NOT NULL DEFAULT 0,
+            created_by INTEGER NOT NULL DEFAULT 0,
+            created INTEGER NOT NULL,
+            updated INTEGER NOT NULL
+        );
+        CREATE UNIQUE INDEX IF NOT EXISTS shares_sk ON shares(studio_id, kind);
+        -- Invité d'un lien, identifié par son adresse email vérifiée. status : invited (ajouté, pas encore
+        -- vérifié) | active | revoked | removed. role : viewer | commenter | editor. scope : ce qu'un
+        -- éditeur peut modifier {levels, cols, cards} (vide = tout ce que le lien montre). req_* : demande
+        -- de droits en attente.
+        CREATE TABLE IF NOT EXISTS share_guests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            share_id INTEGER NOT NULL REFERENCES shares(id) ON DELETE CASCADE,
+            studio_id INTEGER NOT NULL,
+            email TEXT NOT NULL,
+            role TEXT NOT NULL DEFAULT 'viewer',
+            status TEXT NOT NULL DEFAULT 'invited',
+            scope TEXT NOT NULL DEFAULT '{}',
+            req_role TEXT NOT NULL DEFAULT '',
+            req_note TEXT NOT NULL DEFAULT '',
+            req_at INTEGER NOT NULL DEFAULT 0,
+            verified INTEGER NOT NULL DEFAULT 0,
+            last_seen INTEGER NOT NULL DEFAULT 0,
+            mailed_at INTEGER NOT NULL DEFAULT 0,
+            added_by INTEGER NOT NULL DEFAULT 0,
+            created INTEGER NOT NULL
+        );
+        CREATE UNIQUE INDEX IF NOT EXISTS share_guests_se ON share_guests(share_id, email);
+        CREATE INDEX IF NOT EXISTS share_guests_s ON share_guests(studio_id);
+        -- Code à usage unique (6 chiffres) et lien magique envoyés par email : seuls leurs hash sont gardés.
+        -- req_* : demande de droits à enregistrer une fois l'adresse vérifiée.
+        CREATE TABLE IF NOT EXISTS share_codes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            share_id INTEGER NOT NULL REFERENCES shares(id) ON DELETE CASCADE,
+            email TEXT NOT NULL,
+            code TEXT NOT NULL,
+            link TEXT NOT NULL UNIQUE,
+            req_role TEXT NOT NULL DEFAULT '',
+            req_note TEXT NOT NULL DEFAULT '',
+            tries INTEGER NOT NULL DEFAULT 0,
+            used INTEGER NOT NULL DEFAULT 0,
+            expires INTEGER NOT NULL,
+            created INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS share_codes_se ON share_codes(share_id, email);
+        -- Session d'un invité vérifié, limitée à un lien (hash du cookie).
+        CREATE TABLE IF NOT EXISTS guest_sessions (
+            hash TEXT PRIMARY KEY,
+            share_id INTEGER NOT NULL REFERENCES shares(id) ON DELETE CASCADE,
+            guest_id INTEGER NOT NULL REFERENCES share_guests(id) ON DELETE CASCADE,
+            created INTEGER NOT NULL,
+            expires INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS guest_sessions_g ON guest_sessions(guest_id);
+        -- Journal du partage : accès (liens, invités, droits) et modifications faites par les invités.
+        -- uid : membre auteur de l'action, ou 0 pour un invité (guest_id, email). mailed = 0 : modification
+        -- d'un invité pas encore envoyée par email au responsable.
+        CREATE TABLE IF NOT EXISTS share_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            studio_id INTEGER NOT NULL REFERENCES studios(id) ON DELETE CASCADE,
+            share_id INTEGER NOT NULL DEFAULT 0,
+            guest_id INTEGER NOT NULL DEFAULT 0,
+            email TEXT NOT NULL DEFAULT '',
+            uid INTEGER NOT NULL DEFAULT 0,
+            card_id INTEGER NOT NULL DEFAULT 0,
+            kind TEXT NOT NULL,
+            text TEXT NOT NULL DEFAULT '',
+            created INTEGER NOT NULL,
+            mailed INTEGER NOT NULL DEFAULT 1
+        );
+        CREATE INDEX IF NOT EXISTS share_log_s ON share_log(studio_id, id);
+        CREATE INDEX IF NOT EXISTS share_log_m ON share_log(mailed, guest_id);
+        PRAGMA user_version = 5;
+        SQL);
+        }
         $pdo->exec('COMMIT');
     } catch (Throwable $e) {
         try { $pdo->exec('ROLLBACK'); } catch (Throwable $e2) { /* rien à annuler */ }
@@ -898,8 +996,8 @@ function encode_header(string $s): string
 {
     return preg_match('/[^\x20-\x7E]/', $s) ? '=?UTF-8?B?' . base64_encode($s) . '?=' : $s;
 }
-/** Gabarit commun des emails : un titre, des paragraphes, un bouton facultatif. */
-function mail_layout(string $title, array $lines, string $btnLabel = '', string $btnUrl = ''): array
+/** Gabarit commun des emails : un titre, des paragraphes, un bouton facultatif, puis des liens ([texte, adresse]). */
+function mail_layout(string $title, array $lines, string $btnLabel = '', string $btnUrl = '', array $links = []): array
 {
     $e = function (string $s): string { return htmlspecialchars($s, ENT_QUOTES, 'UTF-8'); };
     $html = '<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#1b1a22">'
@@ -909,15 +1007,21 @@ function mail_layout(string $title, array $lines, string $btnLabel = '', string 
     if ($btnUrl !== '') {
         $html .= '<p style="margin:20px 0"><a href="' . $e($btnUrl) . '" style="background:#5b4bff;color:#fff;text-decoration:none;padding:12px 20px;border-radius:10px;font-weight:bold;display:inline-block">' . $e($btnLabel) . '</a></p>';
     }
+    if ($links) {
+        $html .= '<ul style="padding-left:18px;margin:8px 0 0">';
+        foreach ($links as $l) $html .= '<li style="font-size:14px;line-height:1.5;margin:0 0 8px"><a href="' . $e($l[1]) . '" style="color:#5b4bff">' . $e($l[0]) . '</a></li>';
+        $html .= '</ul>';
+    }
     $html .= '</div>';
-    $text = $title . "\n\n" . implode("\n\n", $lines) . ($btnUrl !== '' ? "\n\n" . $btnLabel . ': ' . $btnUrl : '') . "\n";
+    $text = $title . "\n\n" . implode("\n\n", $lines) . ($btnUrl !== '' ? "\n\n" . $btnLabel . ': ' . $btnUrl : '')
+        . implode('', array_map(function (array $l): string { return "\n\n- " . $l[0] . "\n  " . $l[1]; }, $links)) . "\n";
     return [$html, $text];
 }
 /**
  * Email envoyé après la réponse (quand le serveur le permet) : une panne ou une lenteur d'email
  * ne retarde ni ne bloque jamais une action.
  */
-function mail_later(string $to, string $subject, string $title, array $lines, string $btnLabel = '', string $btnUrl = ''): void
+function mail_later(string $to, string $subject, string $title, array $lines, string $btnLabel = '', string $btnUrl = '', array $links = []): void
 {
     if (!valid_email($to)) return;
     static $queue = null;
@@ -928,7 +1032,7 @@ function mail_later(string $to, string $subject, string $title, array $lines, st
             if (function_exists('fastcgi_finish_request')) @fastcgi_finish_request();
             foreach ($queue as $m) {
                 try {
-                    [$html, $text] = mail_layout($m[2], $m[3], $m[4], $m[5]);
+                    [$html, $text] = mail_layout($m[2], $m[3], $m[4], $m[5], $m[6]);
                     send_mail($m[0], $m[1], $html, $text);
                 } catch (Throwable $e) {
                     error_log('studioma mail: ' . $e->getMessage());
@@ -936,7 +1040,7 @@ function mail_later(string $to, string $subject, string $title, array $lines, st
             }
         });
     }
-    $queue->append([$to, $subject, $title, $lines, $btnLabel, $btnUrl]);
+    $queue->append([$to, $subject, $title, $lines, $btnLabel, $btnUrl, $links]);
 }
 
 /** Envoie un email texte + HTML (SMTP si configuré, sinon mail()). Lève une exception en cas d'échec. */

@@ -7,10 +7,14 @@
  */
 $uri = rawurldecode((string) parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
 $root = rtrim($_SERVER['DOCUMENT_ROOT'], '/');
-// Réécritures de studioma/.htaccess et de .well-known/.htaccess (serveur MCP, OAuth, découverte).
+// Réécritures de studioma/.htaccess et de .well-known/.htaccess (liens de partage, serveur MCP, OAuth, découverte).
 $target = null;
 if (preg_match('~^/studioma/mcp/?$~', $uri)) {
     $target = 'mcp.php';
+} elseif (preg_match('~^/studioma/s/([A-Za-z0-9_-]{32})(/card/([0-9]+))?/?$~', $uri, $m)) {
+    $target = 's.php';
+    $_GET['t'] = $m[1];
+    $_GET['c'] = $m[3] ?? '';
 } elseif (preg_match('~^/studioma/oauth/(register|authorize|token|revoke)/?$~', $uri, $m)) {
     $target = 'oauth.php';
     $_GET['op'] = $m[1];
@@ -37,7 +41,10 @@ if (is_dir($file)) {
     if (substr($uri, -1) !== '/') { header('Location: ' . $uri . '/', true, 301); return true; }
     $file .= 'index.html';
 }
-if (is_file($file) && substr($file, -5) === '.html') {
+// Comme Apache : une adresse qui ne correspond à aucun fichier est introuvable (le serveur intégré de PHP
+// servirait sinon la page d'accueil du dossier).
+if (!is_file($file)) { http_response_code(404); echo 'Not Found'; return true; }
+if (substr($file, -5) === '.html') {
     // Les mêmes en-têtes que studioma/.htaccess : la CSP est donc vérifiée par les tests.
     header('Content-Type: text/html; charset=utf-8');
     header('X-Content-Type-Options: nosniff');

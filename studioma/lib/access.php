@@ -60,6 +60,7 @@ function studio_role(int $uid, array $studio, array $project): string
 /** Projet + rôle du compte (clé « role »). Introuvable si le compte n'y a aucun accès. */
 function load_project(int $id, array $u, string $cap = 'view'): array
 {
+    if (!empty($u['guest'])) not_found('This project');   // un invité ne voit que le Studio de son lien
     $p = row('SELECT * FROM projects WHERE id = ?', [$id]);
     if (!$p) not_found('This project');
     $p['role'] = project_role((int) $u['id'], $p);
@@ -77,6 +78,7 @@ function load_project(int $id, array $u, string $cap = 'view'): array
 /** Studio + son projet (« project ») + rôle du compte (« role »). */
 function load_studio(int $id, array $u, string $cap = 'view'): array
 {
+    if (!empty($u['guest'])) return guest_load_studio($id, $u, $cap);   // invité d'un lien : lib/share.php
     $s = row('SELECT * FROM studios WHERE id = ?', [$id]);
     if (!$s) not_found('This Studio');
     $p = row('SELECT * FROM projects WHERE id = ?', [$s['project_id']]);
@@ -89,6 +91,7 @@ function load_studio(int $id, array $u, string $cap = 'view'): array
 /** Le compte est-il responsable de la carte ou l'un de ses collaborateurs ? */
 function card_involves(array $card, int $uid): bool
 {
+    if ($uid <= 0) return false;   // invité (id 0) : jamais responsable d'une carte
     if ((int) $card['assignee'] === $uid || (int) $card['created_by'] === $uid) return true;
     return (bool) val('SELECT 1 FROM card_members WHERE card_id = ? AND uid = ?', [$card['id'], $uid]);
 }
@@ -98,6 +101,7 @@ function card_involves(array $card, int $uid): bool
  */
 function load_card(int $id, array $u, string $cap = 'view'): array
 {
+    if (!empty($u['guest'])) return guest_load_card($id, $u, $cap);
     $c = row('SELECT * FROM cards WHERE id = ?', [$id]);
     if (!$c) not_found('This card');
     $s = load_studio((int) $c['studio_id'], $u, 'view');

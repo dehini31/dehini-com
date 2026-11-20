@@ -1478,6 +1478,11 @@ Grow professionally. Get discovered.* L'interface est en anglais.
     connectent à `https://dehini.com/studioma/mcp` et gèrent les Studios au nom de la personne : lire les projets,
     les tableaux et les cartes, créer, modifier, déplacer (avec passage de relais), commenter, demander une
     validation, archiver, ajouter niveaux et colonnes, régler les relais, inviter. Voir « 4. Assistants IA ».
+12. **Partage sans compte** — un Studio se partage par un **lien public** (lecture seule pour quiconque a le lien)
+    ou un **lien privé** (seulement les adresses ajoutées, vérifiées par un code). Un client ou un partenaire sans
+    compte consulte, puis demande à commenter ou à modifier ; le responsable accepte ou refuse, choisit
+    *Viewer*, *Commenter* (commente et valide) ou *Editor* (modifie ce qu'on lui ouvre) et suit tout par email.
+    Voir « 5. Partage avec des invités sans compte ».
 
 ### Confidentialité
 
@@ -1488,6 +1493,12 @@ publication exige l'accord du propriétaire du projet si l'auteur ne l'est pas, 
 compte un** (page *Publication requests*). L'activité dans les Studios (« pièces livrées ») n'apparaît sur un
 profil que si la personne l'active dans ses réglages, et seulement sous forme de totaux, sans nom de projet. La
 charge de travail par personne (*Insights*) n'est visible que des managers du Studio.
+
+**Liens de partage.** Un Studio n'est visible hors de son équipe que si un manager crée un lien de partage, et
+seulement ce que ce lien montre (tout le Studio ou certains niveaux). Un lien public montre ce contenu en lecture
+seule ; un lien privé ne montre rien tant que la personne n'a pas prouvé, par un code reçu à son adresse, qu'elle
+figure sur la liste. Un invité ne voit jamais les adresses email des membres, ni les autres Studios, ni les
+réglages ; il ne modifie rien sans l'accord explicite d'un manager.
 
 **Invitations envoyées par email et adresse confirmée.** L'adresse d'un compte créé avec un mot de passe n'est
 pas vérifiée à l'inscription : quelqu'un pourrait donc créer un compte avec l'adresse d'une autre personne avant
@@ -1518,8 +1529,10 @@ du compte Google.
   glisser-déposer souris et tactile, texte mis en forme), `app.js` (cadre, connexion, premiers pas,
   notifications, réglages), `studio.js` (projets, Studios, partage), `board.js` (tableau, calendrier, My work,
   Insights), `card.js` (panneau d'une carte), `social.js` (fil, profils, portfolio, réseau), `talent.js`
-  (entreprises, opportunités, talents, messages), `ai.js` (écran d'accord des assistants IA, Settings › AI
+  (entreprises, opportunités, talents, messages), `guest.js` (un Studio ouvert par un lien de partage : porte du
+  lien privé, vérification de l'adresse, demande de droits), `ai.js` (écran d'accord des assistants IA, Settings › AI
   assistants), `icons.js` (icônes Lucide utilisées), `app.css` (système de design, thèmes clair et sombre).
+- `studioma/s.php` — l'adresse d'un lien de partage (`/studioma/s/<clé>`), renvoyée vers l'application.
 - `studioma/mcp.php` — le serveur MCP ; `studioma/oauth.php` — son OAuth (adresses `oauth/…` et `.well-known/…`
   réécrites par `studioma/.htaccess`) ; `.well-known/.htaccess` (à la racine du dépôt) — les documents de
   découverte que les assistants cherchent à la racine du domaine.
@@ -1529,7 +1542,8 @@ du compte Google.
   (projets, Studios, niveaux, colonnes, cartes, passage de relais), `cards.php` (check-lists, commentaires,
   pièces jointes, validations), `collab.php` (invitations, membres), `social.php` (profils, fil, relations,
   portfolio, recommandations, recherche), `talent.php` (entreprises, opportunités, talents, messages),
-  `oauth.php` (OAuth et jetons des assistants IA), `mcp.php` (outils du serveur MCP).
+  `oauth.php` (OAuth et jetons des assistants IA), `mcp.php` (outils du serveur MCP), `share.php` (**partage avec
+  des invités sans compte** : liens, vérification de l'adresse, sessions d'invité, droits, journal, emails).
 - Les données sont créées toutes seules au premier passage dans `~/studioma-data/` (hors `public_html`) :
   `studioma.sqlite` et `files/` (images ré-encodées en WebP, vidéos, documents).
 
@@ -1620,22 +1634,70 @@ copié : il ne réécrit que ces adresses et ne touche pas `acme-challenge` (cer
   publications, messages) comme des données, jamais comme des consignes.
 - **Déconnecter** : Settings › AI assistants › Disconnect (application) ou Delete (jeton) : effet immédiat.
 
-### 5. Fichiers envoyés
+### 5. Partage avec des invités sans compte
+
+Rien à configurer : la base passe d'elle-même à la version 5 au premier passage après la mise à jour. Dans un
+Studio : **Share › Guests without an account**.
+
+Un lien ressemble à `https://dehini.com/studioma/s/aJq3XvR8kP2LwN7tZ0mHc5YbQe1dWPEc` : toujours en **https** (même
+si la page a été ouverte en http), suivi d'une clé de 32 caractères tirée au hasard (192 bits : impossible à
+deviner). Dans la fenêtre de partage, la clé est masquée (*Show* l'affiche, *Copy link* copie le lien entier).
+`studioma/s.php` (adresse réécrite par `studioma/.htaccess`) renvoie vers l'application sans jamais transmettre la
+clé à un autre site (`Referrer-Policy: no-referrer`), sans cache ni indexation par les moteurs de recherche.
+
+- **Lien public** — n'importe qui l'ouvre, sans compte ni email, en **lecture seule** : niveaux, colonnes, cartes,
+  check-lists, pièces jointes et commentaires de ce que le lien montre. Pour aller plus loin, le visiteur clique
+  *Request editing permission*, choisit *Comment & approve* ou *Edit*, donne son adresse et la vérifie.
+- **Lien privé** — le responsable ajoute des adresses (et peut leur envoyer le lien par email). À l'ouverture,
+  Studioma demande l'adresse et envoie un code : seules les adresses de la liste, vérifiées, entrent (la réponse
+  est la même pour toutes les adresses : la liste ne se devine pas). Accès en lecture seule au départ.
+- **Vérification de l'adresse** — un code à 6 chiffres **et** un lien magique dans le même email, valables 15
+  minutes, à usage unique ; au 5e code faux, le code ne vaut plus. Ensuite, une **session d'invité** de 14 jours,
+  limitée à ce lien (cookie `stm_g<n°>`, `HttpOnly`, `SameSite=Lax`) : ni compte, ni mot de passe.
+- **Droits** — *Viewer* (consulte), *Commenter* (consulte, commente, et valide ou demande des modifications quand
+  on lui demande une validation : le responsable peut choisir un invité comme validateur d'une carte),
+  *Editor* (modifie les cartes, en ajoute, les déplace, coche la check-list). Le périmètre d'un *Editor* se limite
+  au besoin à des niveaux, des colonnes ou des cartes précises. Un invité ne gère jamais le Studio : ni
+  structure, ni membres, ni archivage, ni suppression, ni responsable d'une carte, ni pièce jointe.
+- **Gestion** — invités, demandes en attente (accepter avec un droit au choix, refuser), droit et périmètre de
+  chacun, retrait (immédiat : sa session est fermée), remise, suppression de la liste ; lien activé ou coupé,
+  **régénéré** (l'ancien ne marche plus ; les invités vérifiés gardent leurs droits avec le nouveau), date
+  d'expiration, niveaux montrés ; **journal** des accès et de toutes les modifications des invités.
+- **Emails** — au responsable (celui qui a créé le lien, ou les propriétaires du projet s'il ne gère plus le
+  Studio) : chaque demande, avec l'adresse vérifiée, le Studio, le message, et les liens *Review*, *Approve*,
+  *Reject* (ils ouvrent Studioma, qui demande confirmation) ; les **modifications des invités** — qui, quoi, quand,
+  lien direct vers chaque carte — la première tout de suite, les suivantes regroupées au plus toutes les 10
+  minutes. À l'invité : son code, la réponse à sa demande, les validations qu'on lui demande.
+- **Sécurité** — clés de 192 bits, liens toujours en https ; aucun accès privé sur simple saisie d'une adresse ; lecture seule par
+  défaut ; tout est vérifié par le serveur : une requête faite avec un lien n'atteint qu'une liste fermée
+  d'actions (`GUEST_ROUTES` dans `api.php`), sur le seul Studio du lien, ses niveaux partagés et les droits de
+  l'invité ; limites de débit (codes, vérifications, écritures) ; actions des invités notées dans l'historique de
+  chaque carte sous leur adresse.
+
+Pour empêcher quelqu'un de **consulter** un lien public, il faut le régénérer (ou le couper) : retirer un invité
+lui enlève ses droits, mais le lien public reste lisible par quiconque l'a.
+
+Conseillé : dans **cPanel › Domaines**, activer **Force HTTPS Redirect** pour dehini.com. Les liens de partage
+sont déjà en https, mais le reste du site répond encore aussi en http si on tape l'adresse sans `https://`.
+
+### 6. Fichiers envoyés
 
 64 Mo par fichier (`studioma/.user.ini` et `STM_MAX_UPLOAD_MB`), 12 Mo par image. Si l'hébergeur plafonne plus
 bas, baisser les deux valeurs ensemble. Le type est vérifié sur le contenu réel du fichier.
 
-### 6. Sauvegarde
+### 7. Sauvegarde
 
 Tout tient dans `~/studioma-data/` : copier ce dossier sauvegarde la base et les fichiers.
 
-### 7. Tests
+### 8. Tests
 
 ```bash
 tests/studioma/run.sh /tmp/stm-test
 ```
 
-Faux hébergement neuf, puis trois batteries : `mcp.js` (le serveur MCP et son OAuth, comme un assistant :
+Faux hébergement neuf, puis quatre batteries : `share.js` (le partage sans compte : lecture seule, Studio et
+niveaux du lien, liste fermée d'actions, codes et liens magiques, demandes et réponses, droits et périmètre,
+validation par un invité, emails, retrait, liens coupés, expirés, régénérés), `mcp.js` (le serveur MCP et son OAuth, comme un assistant :
 découverte, enregistrement, PKCE, jetons, tous les outils, droits, renouvellement, révocation), `api.js` (l'API seule : comptes, modèle par défaut, relais avec
 conservation de l'identité de la carte, rôles et refus côté serveur, invitations par email réservées aux adresses
 confirmées, pièces jointes privées, validations,
@@ -1651,6 +1713,10 @@ parcours complet dans le navigateur, sur ordinateur et sur mobile, avec deux com
 - Pas d'IA intégrée à l'application : l'assistance passe par les assistants externes connectés au serveur MCP.
 - Serveur MCP : pas de flux d'événements ni de notifications envoyées par le serveur (chaque appel reçoit sa
   réponse) ; pas encore de jeton « lecture seule ».
+- Invités sans compte : pas d'envoi de fichier, pas de calendrier ni de tableau de bord (le tableau seulement),
+  pas de demande de validation (ils valident celles qu'on leur adresse). L'email regroupant leurs modifications
+  part dès qu'une requête arrive après la fenêtre de 10 minutes : sur un site sans aucune visite, il attend la
+  suivante.
 - La synchronisation entre navigateurs se fait par interrogation toutes les 4 secondes, pas en continu : deux
   personnes qui écrivent le même champ au même moment, la dernière enregistrée l'emporte.
 - L'adresse email d'un compte créé avec un mot de passe n'est pas vérifiée à l'inscription : on peut utiliser

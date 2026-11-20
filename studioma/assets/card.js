@@ -19,16 +19,16 @@
     P.id = id;
     P.card = null;
     P.tab = 'comments';
-    const m = P.modal = SM.modal(html`<div class="cp"><div class="cp-loading">${SM.loading(4)}</div></div>`, { side: true, cls: 'drawer-card', onClose: () => { if (P.modal === m) { P.modal = null; P.id = 0; SM.go('/studio/' + B.id + (B.view === 'board' ? '' : '/' + B.view)); } } });
+    const m = P.modal = SM.modal(html`<div class="cp"><div class="cp-loading">${SM.loading(4)}</div></div>`, { side: true, cls: 'drawer-card', onClose: () => { if (P.modal === m) { P.modal = null; P.id = 0; SM.go(B.home()); } } });
     try {
       const r = await SM.get('card_get', { id });
       if (P.modal !== m) return;
       P.card = r.card;
       draw();
       // Dépôt de fichiers n'importe où sur le panneau.
-      m.el.addEventListener('dragover', (e) => { if (P.card.can.edit && e.dataTransfer && Array.from(e.dataTransfer.types).includes('Files')) { e.preventDefault(); m.el.classList.add('is-drop'); } });
+      m.el.addEventListener('dragover', (e) => { if (P.card.can.upload && e.dataTransfer && Array.from(e.dataTransfer.types).includes('Files')) { e.preventDefault(); m.el.classList.add('is-drop'); } });
       m.el.addEventListener('dragleave', (e) => { if (!m.el.contains(e.relatedTarget)) m.el.classList.remove('is-drop'); });
-      m.el.addEventListener('drop', (e) => { m.el.classList.remove('is-drop'); if (P.card.can.edit && e.dataTransfer && e.dataTransfer.files.length) { e.preventDefault(); upload(Array.from(e.dataTransfer.files)); } });
+      m.el.addEventListener('drop', (e) => { m.el.classList.remove('is-drop'); if (P.card.can.upload && e.dataTransfer && e.dataTransfer.files.length) { e.preventDefault(); upload(Array.from(e.dataTransfer.files)); } });
     } catch (e) {
       if (P.modal !== m) return;
       SM.toast(e.message, 'error');
@@ -40,7 +40,7 @@
     P.modal = null;
     P.id = 0;
     if (m) m.close(true);
-    if (!silent && B.id) SM.go('/studio/' + B.id + (B.view === 'board' ? '' : '/' + B.view));
+    if (!silent && B.id) SM.go(B.home());
   };
   /** Après une synchronisation du tableau : la carte a-t-elle changé (ou disparu) ? */
   P.sync = async (team) => {
@@ -171,12 +171,12 @@
   }
   function drawFiles() {
     const c = P.card;
-    if (!c.files.length && !c.can.edit) { part('cp-files', ''); return; }
+    if (!c.files.length && !c.can.upload) { part('cp-files', ''); return; }
     const media = c.files.filter((f) => f.kind !== 'doc');
     const docs = c.files.filter((f) => f.kind === 'doc');
-    const del = (f) => (c.can.edit && f.mine ? html`<button class="btn-icon btn-xs file-x" data-act="file-delete" data-id="${f.id}" data-name="${f.name}" aria-label="Remove ${f.name}">${icon('x')}</button>` : '');
+    const del = (f) => (c.can.upload && f.mine ? html`<button class="btn-icon btn-xs file-x" data-act="file-delete" data-id="${f.id}" data-name="${f.name}" aria-label="Remove ${f.name}">${icon('x')}</button>` : '');
     part('cp-files', html`<h3>${icon('paperclip')}Attachments${c.files.length ? html`<span class="count">${c.files.length}</span>` : ''}
-        ${c.can.edit ? html`<label class="btn btn-soft btn-sm cp-h-btn">${icon('upload')}Add files<input type="file" multiple hidden data-change="card-upload"></label>` : ''}</h3>
+        ${c.can.upload ? html`<label class="btn btn-soft btn-sm cp-h-btn">${icon('upload')}Add files<input type="file" multiple hidden data-change="card-upload"></label>` : ''}</h3>
       ${media.length ? html`<div class="files">${media.map((f) => html`<figure class="file-thumb">
           ${f.kind === 'image' ? html`<button class="file-img" data-act="lightbox" data-token="${f.token}" data-name="${f.name}"><img src="${SM.fileUrl(f.token, true)}" alt="${f.name}" loading="lazy"></button>`
             : html`<video src="${SM.fileUrl(f.token)}" controls preload="metadata"></video>`}
@@ -189,7 +189,10 @@
   function drawApproval() {
     const c = P.card;
     const last = c.approvals.find((a) => a.status !== 'cancelled');
-    const approvers = B.data.members.filter((u) => ['owner', 'manager', 'client'].includes(u.role) && u.id !== SM.me.id);
+    const me = SM.me ? SM.me.id : -1;
+    const approvers = B.data.members.filter((u) => ['owner', 'manager', 'client'].includes(u.role) && u.id !== me)
+      .map((u) => ({ id: u.id, label: `${u.name} — ${SM.ref.roles[u.role]}` }))
+      .concat((B.data.guests || []).map((g) => ({ id: g.id, label: `${g.name} — Guest (${g.role === 'editor' ? 'Editor' : 'Commenter'})` })));
     const moveHint = c.level && c.level.final && c.level.handoff !== 'off' && c.col && c.level.final.id !== c.col.id ? html`<p class="muted small">Once approved, this card moves to <b>${c.level.final.name}</b>${c.level.handoff === 'auto' && c.level.target ? html` and is handed off to <b>${c.level.target}</b>` : ''}.</p>` : '';
     let body = '';
     if (c.approval === 'pending' && last) {
@@ -197,17 +200,17 @@
         ${c.can.decide ? html`<form class="stack" data-form="approval-decide" data-id="${last.id}"><textarea class="input" name="reply" rows="2" maxlength="1000" placeholder="Feedback (required to request changes)" aria-label="Feedback"></textarea>
           <p class="form-error" data-error hidden></p>
           <div class="row end"><button class="btn btn-soft" name="decision" value="changes" data-decision="changes">${icon('alert')}Request changes</button><button class="btn btn-primary" name="decision" value="approved" data-decision="approved">${icon('check')}Approve</button></div></form>`
-          : c.can.edit ? html`<div class="row end"><button class="btn btn-ghost btn-sm" data-act="approval-cancel" data-id="${last.id}">Cancel request</button></div>` : ''}`;
+          : c.can.request ? html`<div class="row end"><button class="btn btn-ghost btn-sm" data-act="approval-cancel" data-id="${last.id}">Cancel request</button></div>` : ''}`;
     } else {
       const status = last && c.approval === last.status ? (last.status === 'approved'
         ? html`<div class="appr-box appr-approved">${icon('check-circle')}<div><b>Approved by ${last.approver ? last.approver.name : ''}</b><p class="muted small">${fmt.ago(last.decided)}${last.reply ? ' — “' + last.reply + '”' : ''}</p></div></div>`
         : html`<div class="appr-box appr-changes">${icon('alert')}<div><b>${last.approver ? last.approver.name : ''} requested changes</b><p class="appr-note">“${last.reply}”</p><p class="muted small">${fmt.ago(last.decided)}</p></div></div>`) : '';
-      const form = c.can.edit ? (approvers.length ? html`<form class="appr-form" data-form="approval-request">
-          <label class="field"><span>Approver</span><select class="input input-sm" name="approver">${approvers.map((u) => html`<option value="${u.id}">${u.name} — ${SM.ref.roles[u.role]}</option>`)}</select></label>
+      const form = c.can.request ? (approvers.length ? html`<form class="appr-form" data-form="approval-request">
+          <label class="field"><span>Approver</span><select class="input input-sm" name="approver">${approvers.map((u) => html`<option value="${u.id}">${u.label}</option>`)}</select></label>
           <label class="field grow"><span>Note <em>optional</em></span><input class="input input-sm" name="note" maxlength="1000" placeholder="What should they look at?"></label>
           <button class="btn btn-soft">${icon('shield')}${last && c.approval === 'changes' ? 'Ask again' : 'Request approval'}</button>
           <p class="form-error" data-error hidden></p></form>${moveHint}`
-        : html`<p class="muted small">Invite a client, a manager or another owner to this Studio to request their approval.</p>`) : '';
+        : html`<p class="muted small">Invite a client, a manager or another owner to this Studio — or share it with a client as a guest — to request their approval.</p>`) : '';
       body = html`${status}${form}`;
       if (!status && !form) { part('cp-approval', ''); return; }
     }
@@ -231,9 +234,9 @@
     part('cp-feed', html`<div class="tabs tabs-sm"><button class="tab${P.tab === 'comments' ? ' is-active' : ''}" data-act="cp-tab" data-tab="comments">${icon('comment')}Comments <span class="count">${c.comments.length}</span></button>
         <button class="tab${P.tab === 'history' ? ' is-active' : ''}" data-act="cp-tab" data-tab="history">${icon('history')}History</button></div>
       ${P.tab === 'comments' ? html`
-        ${c.comments.length ? html`<ul class="comments">${c.comments.map((m) => html`<li class="comment">${SM.avatar(m.user, 'av-m')}<div class="comment-body"><header><b>${m.user ? m.user.name : 'Former member'}</b><small class="muted">${fmt.ago(m.created)}</small>
+        ${c.comments.length ? html`<ul class="comments">${c.comments.map((m) => html`<li class="comment">${SM.avatar(m.user, 'av-m')}<div class="comment-body"><header><b>${m.user ? m.user.name : 'Former member'}</b>${m.user && m.user.guest ? html`<span class="chip chip-guest">Guest</span>` : ''}<small class="muted">${fmt.ago(m.created)}</small>
           ${m.mine ? html`<button class="btn-icon btn-xs" data-act="comment-delete" data-id="${m.id}" aria-label="Delete comment">${icon('trash')}</button>` : ''}</header><p>${SM.linkify(m.body)}</p></div></li>`)}</ul>` : html`<p class="muted small">No comment yet.${c.can.comment ? ' Start the conversation — type @ to mention a teammate.' : ''}</p>`}
-        ${c.can.comment ? html`<form class="comment-form" data-form="comment-add">${SM.avatar(SM.me, 'av-m')}<div class="grow"><textarea class="input" id="cp-comment" name="body" rows="2" maxlength="4000" placeholder="Write a comment… @ to mention" data-input="mention" aria-label="Comment"></textarea>
+        ${c.can.comment ? html`<form class="comment-form" data-form="comment-add">${SM.avatar(SM.me || { name: (B.data.studio.guest || {}).email || 'Guest' }, 'av-m')}<div class="grow"><textarea class="input" id="cp-comment" name="body" rows="2" maxlength="4000" placeholder="Write a comment… @ to mention" data-input="mention" aria-label="Comment"></textarea>
           <div class="row end"><span class="muted small grow">Ctrl + Enter to send</span><button class="btn btn-primary btn-sm">${icon('send')}Comment</button></div></div></form>` : ''}`
         : html`<ul class="events">${c.events.map((e) => SM.eventRow(e, false))}</ul>`}`);
     const now = SM.$('#cp-comment', P.modal.el);
@@ -325,7 +328,7 @@
   SM.actions.lightbox = (el) => SM.modal(html`<figure class="lightbox"><img src="${SM.fileUrl(el.dataset.token)}" alt="${el.dataset.name}"><figcaption><span>${el.dataset.name}</span><a class="btn btn-soft btn-sm" href="${SM.fileUrl(el.dataset.token, false, true)}">${icon('download')}Download</a><button class="btn-icon" data-act="modal-close" aria-label="Close">${icon('x')}</button></figcaption></figure>`, { size: 'xl', cls: 'modal-bare' });
 
   SM.forms['approval-request'] = async (form, data) => {
-    await SM.post('approval_request', { card_id: P.id, approver: +data.approver, note: data.note });
+    await SM.post('approval_request', { card_id: P.id, approver: /^g\d+$/.test(data.approver) ? data.approver : +data.approver, note: data.note });
     SM.toast('Approval requested');
     await refresh();
     B.reload();
@@ -359,7 +362,7 @@
     const m = before.match(/(^|\s)@([a-z0-9._-]*)$/i);
     if (!m || !B.data) { SM.closeMenus(); return; }
     const q = m[2].toLowerCase();
-    const list = B.data.members.filter((u) => u.id !== SM.me.id && (u.handle.includes(q) || u.name.toLowerCase().includes(q))).slice(0, 6);
+    const list = B.data.members.filter((u) => (!SM.me || u.id !== SM.me.id) && (u.handle.includes(q) || u.name.toLowerCase().includes(q))).slice(0, 6);
     if (!list.length) { SM.closeMenus(); return; }
     SM.closeMenus();
     SM.menu(el, list.map((u) => ({ label: u.name, hint: '@' + u.handle, html: SM.avatar(u, 'av-s'), act: () => {
