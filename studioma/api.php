@@ -25,11 +25,12 @@ require __DIR__ . '/lib/talent.php';
 require __DIR__ . '/lib/google.php';
 require __DIR__ . '/lib/oauth.php';
 require __DIR__ . '/lib/share.php';
+require __DIR__ . '/lib/meta.php';
 
 /** action => [méthode, accès] — accès : public (compte facultatif) | user (compte obligatoire). */
 const ROUTES = [
     // Comptes
-    'me' => ['GET', 'public'], 'signup' => ['POST', 'public'], 'login' => ['POST', 'public'], 'logout' => ['POST', 'public'],
+    'me' => ['GET', 'public'], 'pixel' => ['GET', 'public'], 'signup' => ['POST', 'public'], 'login' => ['POST', 'public'], 'logout' => ['POST', 'public'],
     'forgot' => ['POST', 'public'], 'reset' => ['POST', 'public'], 'password' => ['POST', 'user'], 'account_save' => ['POST', 'user'],
     'account_delete' => ['POST', 'user'], 'counts' => ['GET', 'user'], 'email_confirm_send' => ['POST', 'user'], 'email_confirm' => ['POST', 'user'],
     'google' => ['POST', 'public'], 'google_link' => ['POST', 'user'], 'google_unlink' => ['POST', 'user'],
@@ -108,8 +109,13 @@ function reference(): array
         'languages' => STM_LANGUAGES, 'contracts' => STM_CONTRACTS, 'modes' => STM_WORK_MODES, 'availability' => STM_AVAILABILITY,
         'colors' => STM_COLORS, 'priorities' => STM_PRIORITIES, 'roles' => ROLE_LABELS, 'relations' => RELATIONS,
         'sizes' => COMPANY_SIZES, 'app_statuses' => APP_STATUSES, 'metrics' => METRIC_KEYS, 'templates' => templates_view(),
-        'max_upload_mb' => upload_limit_mb(), 'name' => STM_NAME, 'google_client_id' => google_client_id(),
+        'max_upload_mb' => upload_limit_mb(), 'name' => STM_NAME, 'google_client_id' => google_client_id(), 'meta_pixel' => meta_pixel_id(),
     ];
+}
+/** GET pixel : l'ensemble de données Meta, pour la page d'accueil (le pixel de l'application le reçoit avec « me »). */
+function api_pixel(array $b, ?array $u): array
+{
+    return ['pixel' => meta_pixel_id()];
 }
 function api_me(array $b, ?array $u): array
 {
@@ -327,7 +333,9 @@ if ($shareToken !== '') {
         $guest = guest_principal($shareToken);
         if ($isPost) rate('guest_write', 300, 600, $guest['guest']['gid'] ? 'g' . $guest['guest']['gid'] : ip_hash());
         $fn = 'api_' . $action;
-        $res = $fn(!$isPost ? $_GET : input_json(), $guest);
+        $data = !$isPost ? $_GET : input_json();
+        $res = $fn($data, $guest);
+        meta_after($action, $data, $res, $guest);
         share_digests();
         ok($res);
     } catch (PDOException $e) {
@@ -353,6 +361,7 @@ try {
     $data = !$isPost ? $_GET : ($action === 'upload' ? $_POST : input_json());
     $fn = 'api_' . $action;
     $res = $fn($data, $user);
+    meta_after($action, $data, $res, $user);   // événement Meta de l'action (lib/meta.php)
     // Modifications d'invités en attente d'email : envoyées dès que leur fenêtre de regroupement est passée.
     share_digests();
     ok($res);

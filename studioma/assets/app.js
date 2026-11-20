@@ -14,6 +14,7 @@
     SM.counts = r.counts || {};
     if (r.csrf) SM.csrf = r.csrf;
     if (SM.me) SM.applyTheme(SM.me.settings.theme);
+    if (window.StmMeta && SM.ref) window.StmMeta.setup(SM.ref.meta_pixel, SM.me);
   };
   SM.adminCompanies = () => SM.companies.filter((c) => c.admin);
   SM.onAuthLost = () => { SM.me = null; SM.csrf = ''; SM.closeModals(); shell(); SM.go('/login'); };
@@ -95,6 +96,7 @@
     SM.$$('[data-count]').forEach((el) => SM.set(el, badge(SM.counts[el.dataset.count])));
   };
   SM.afterRoute = (path) => {
+    if (window.StmMeta) window.StmMeta.page();   // PageView (jamais sur un écran à clé secrète)
     const key = sectionOf(path);
     SM.$$('[data-nav]').forEach((a) => a.classList.toggle('is-active', a.dataset.nav === key));
     document.body.classList.remove('side-open');

@@ -36,6 +36,13 @@ $defaults = [
     'STM_SMTP_PASS'      => defined('IMPACT_SMTP_PASS') ? IMPACT_SMTP_PASS : '',
     'STM_SMTP_VERIFY'    => defined('IMPACT_SMTP_VERIFY') ? IMPACT_SMTP_VERIFY : true,
     'STM_MAIL_LOG'       => '',          // tests : les emails sont écrits dans ce fichier au lieu d'être envoyés
+    // Meta Pixel + API Conversions (lib/meta.php). Le jeton n'est jamais dans le code : config.php
+    // (STM_META_TOKEN) ou le fichier meta-token.txt dans le dossier des données.
+    'STM_META_PIXEL_ID'  => '1718566156353795',
+    'STM_META_TOKEN'     => '',
+    'STM_META_TEST_CODE' => '',          // code de l'onglet « Événements de test » (à retirer ensuite)
+    'STM_META_GRAPH'     => 'https://graph.facebook.com',
+    'STM_META_LOG'       => '',          // tests : les événements sont écrits dans ce fichier au lieu d'être envoyés
 ];
 foreach ($defaults as $k => $v) {
     if (!defined($k)) define($k, $v);
