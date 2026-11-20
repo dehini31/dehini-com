@@ -31,6 +31,11 @@ status changes; keep the history of finished items short.
 
 ## Pending — owner actions (outside the code)
 
+- [ ] **Put the server clone back on `main`**: on 2026-11-20 `~/dehini-com` on the server was switched to
+  `claude/trusting-keller-rynk1j` to try Codex there. Run `cd ~/dehini-com && git checkout main` and check that
+  `git status --short --branch` shows `## main...origin/main` *(unverified whether done)*. Nothing changed live:
+  that branch had the same code as `main`.
+
 - [ ] **Studioma Meta token on the server**: put the Conversions API token in `~/studioma-data/meta-token.txt`
   (`chmod 600`) — *(unverified whether done; without it only the browser pixel sends events)*.
 - [ ] **Regenerate that token** (Events Manager › Settings › Conversions API): it was pasted in a chat on

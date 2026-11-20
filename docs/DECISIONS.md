@@ -17,6 +17,7 @@ not rewrite old ones — mark them *superseded* and link the replacement.
 | R7 | Strict Content-Security-Policy where set (Studioma, Maillage, SWANBIDA): no inline scripts, explicit external origins; test routers mirror the same headers | User-generated content can never run as code; CSP regressions are caught by tests | `studioma/.htaccess`, `maillage/.htaccess`, `swanbida/index.php`, `tests/*/router.php` |
 | R8 | Tests run on a throw-away fake cPanel hosting (PHP built-in server + Playwright); emails and Meta events go to files, never to real services | Reproducible, safe, no production access | `tests/*/README.md` |
 | R9 | Code comments and README in French; UI language per project | Owner's working language; product audiences differ | README, code |
+| R10 | Coding agents never run on the hosting server; the server clone `~/dehini-com` stays on `main`, clean (2026-11-20) | The cron deploys the checked-out branch and its working tree: anything else there goes live unreviewed | `AGENTS.md` § 3 |
 
 ## Studioma
 

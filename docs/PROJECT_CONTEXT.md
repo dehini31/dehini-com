@@ -24,7 +24,9 @@ each published under its own path on the same domain:
 
 - One cPanel account (`dehini91`, provider documented as dzSecurity; the live server answers as `DZ-HTTP`).
 - Repository cloned in `~/dehini-com`; a **cron job every 5 minutes** runs `git pull` on `main` and copies the
-  code into `~/public_html/` (exact command: README « Installation › 4 »). So **`main` = production**.
+  code into `~/public_html/` (exact command: README « Installation › 4 »). So **`main` = production**. The cron
+  pulls the branch that is checked out in `~/dehini-com`: that clone must stay on `main` with no local edits, and
+  no coding agent (Codex, Claude) is ever run on the server.
 - Live data is never in Git: SQLite databases and uploads live **outside `public_html`** in `~/impact-data/`,
   `~/metakpis-data/`, `~/swanbida-data/`, `~/marketing-data/`, `~/maillage-data/`, `~/studioma-data/`
   (plus `~/public_html/uploads/`, `swanbida/media/`, `maillage/media/`, `impact/uploads/pros/`). The served

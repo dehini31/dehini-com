@@ -10,30 +10,40 @@ secrets here. Mark anything you could not verify as *(unverified)*.
 |---|---|
 | Last agent | Claude Code (cloud session) |
 | Branch | `claude/trusting-keller-rynk1j` (tracks `origin/claude/trusting-keller-rynk1j`) |
-| Base code | `main` @ `6aa8755` (Merge PR #72). **`main` = production** (server cron pulls it every 5 min) |
+| Base code | `main` @ `1218970` (Merge PR #73: shared agent setup). **`main` = production** (server cron, every 5 min) |
 | Checkpoint | the commit that last changed this file: `git log -1 --format='%H %s' -- HANDOFF.md` |
 | Uncommitted work at checkpoint | none |
 | In progress | nothing — no open pull request, no half-done code |
-| Last task changed application code? | **no** (agent setup and documentation only) |
+| Last task changed application code? | **no** (documentation only) |
 
 **Next recommended action**
 
-1. Owner: the actions in `docs/ROADMAP.md` › « Pending — owner actions » (Studioma Meta token on the server and
-   its regeneration, cPanel « Force HTTPS Redirect », cookie-consent decision).
-2. Agent: no coding task is pending. Ask the owner which item to take from `docs/ROADMAP.md`. Ready candidates:
+1. **Owner, urgent**: put the server clone back on `main` — `cd ~/dehini-com && git checkout main`, then
+   `git status --short --branch` must show `## main...origin/main` *(unverified whether done)*. Never run Codex
+   or Claude on the server (`AGENTS.md` § 3); use Codex cloud (chatgpt.com/codex) or a personal computer.
+2. Owner: the other actions in `docs/ROADMAP.md` › « Pending — owner actions » (Meta token on the server and its
+   regeneration, cPanel « Force HTTPS Redirect », cookie-consent decision).
+3. Agent: no coding task is pending. Ask the owner which item to take from `docs/ROADMAP.md`. Ready candidates:
    (a) review branch `claude/funny-fermi-v7vhfr` (1 commit, clearer Impact error when Brevo blocks the server IP,
    not in `main`) and propose it as a PR; (b) a Studioma gap from the roadmap.
-3. To merge this setup into `main`, the owner opens/merges a PR from this branch (docs and `.claude/` only; no
-   effect on the live site except new files in the repository, which the cron does not copy).
 
 **Blockers**: none for development. Unverified: whether the Studioma Conversions API token is installed on the
 server (only the browser pixel works without it).
 
-**Validation at this checkpoint** (2026-11-20, on the base code `6aa8755`): `tests/studioma/run.sh` 788 checks,
-`tests/swanbida/run.sh` 119, `tests/maillage/run.sh` 181 — all passed, 0 failures; `php -l` on 108 PHP files and
-`node --check` on 47 JS files: 0 errors.
+**Validation at this checkpoint** (2026-11-20, on the base code `6aa8755`, same application code as `1218970`):
+`tests/studioma/run.sh` 788 checks, `tests/swanbida/run.sh` 119, `tests/maillage/run.sh` 181 — all passed, 0
+failures; `php -l` on 108 PHP files and `node --check` on 47 JS files: 0 errors.
 
 ## Log (newest first)
+
+### 2026-11-20 — Claude Code — server clone must stay on `main`
+- The owner switched the server's deployment clone (`~/dehini-com` on `oort-shared`) to
+  `claude/trusting-keller-rynk1j` and tried to start `codex` there (not installed). Live site unaffected: that
+  branch had the same code as `main` after PR #73. Asked the owner to `git checkout main` there.
+- Added the rule « never run agents or switch branches in the server clone » to `AGENTS.md` § 3,
+  `docs/PROJECT_CONTEXT.md`, `docs/DECISIONS.md` (R10) and `docs/ROADMAP.md` (owner action).
+- PR #73 (shared agent setup) was merged by the owner: `main` @ `1218970`. This branch was fast-forwarded to it.
+- Docs only; no tests needed (no code changed).
 
 ### 2026-11-20 — Claude Code — shared Claude Code / Codex setup (this checkpoint)
 - Added `AGENTS.md` (canonical shared instructions), `CLAUDE.md` (imports `@AGENTS.md`), `HANDOFF.md`,

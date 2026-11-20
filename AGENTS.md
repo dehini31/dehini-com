@@ -44,6 +44,11 @@ vanilla HTML/CSS/JS in the browser. Full context: `docs/PROJECT_CONTEXT.md`. Hum
 - Work on a feature branch (`claude/<topic>` or `codex/<topic>`), push it, and open a pull request **only when the
   user asks**. Never force-push, never rewrite published history, never `git reset --hard`, `git clean -fd`,
   `git checkout -- <file>` on someone else's changes, or delete branches you did not create.
+- **Never run an agent, edit files or switch branches in the server's clone `~/dehini-com`** (cPanel account
+  `dehini91`, host `oort-shared`). The cron pulls whatever branch is checked out there and copies its working
+  tree into `public_html`: another branch or an uncommitted edit would go live, and merges to `main` would stop
+  deploying. That clone must stay on `main`, clean. Agents run on a developer computer, in Codex cloud
+  (chatgpt.com/codex) or in a Claude Code session — never on the hosting server.
 - Live data never comes from Git: each platform's SQLite database and uploaded files live **outside
   `public_html`** in `~/<project>-data/` on the server, and `data.json` on the server is edited through `/admin`.
   The repository's `data.json` only seeds a new install.
