@@ -36,6 +36,9 @@ $defaults = [
     'STM_SMTP_PASS'      => defined('IMPACT_SMTP_PASS') ? IMPACT_SMTP_PASS : '',
     'STM_SMTP_VERIFY'    => defined('IMPACT_SMTP_VERIFY') ? IMPACT_SMTP_VERIFY : true,
     'STM_MAIL_LOG'       => '',          // tests : les emails sont écrits dans ce fichier au lieu d'être envoyés
+    // Campagnes (administration) : au plus ce nombre d'emails par heure, tous emails confondus. Les hébergeurs
+    // mutualisés limitent souvent l'envoi (100 à 500 par heure) : rester en dessous de leur limite.
+    'STM_MAIL_PER_HOUR'  => 200,
     // Meta Pixel + API Conversions (lib/meta.php). Le jeton n'est jamais dans le code : config.php
     // (STM_META_TOKEN) ou le fichier meta-token.txt dans le dossier des données.
     'STM_META_PIXEL_ID'  => '1718566156353795',
@@ -191,7 +194,7 @@ function marks(array $a): string
 /** Schéma compatible avec les vieilles versions de SQLite des hébergeurs mutualisés. */
 function migrate(PDO $pdo): void
 {
-    if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= 5) return;
+    if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= 6) return;
     // Deux premières visites simultanées : la seconde attend la fin de la création, puis ne fait rien.
     $pdo->exec('BEGIN IMMEDIATE');
     try {
@@ -808,6 +811,80 @@ function migrate(PDO $pdo): void
         PRAGMA user_version = 5;
         SQL);
         }
+        if ($v < 6) {
+            // Administration (lib/admin.php) : compte suspendu (date, motif), jours d'activité de chaque compte
+            // (statistiques d'utilisateurs actifs), journal de tous les emails envoyés, campagnes d'emails et leur
+            // file d'envoi, journal des actions de l'administrateur.
+            $cols = array_column($pdo->query('PRAGMA table_info(users)')->fetchAll(), 'name');
+            if (!in_array('suspended', $cols, true)) $pdo->exec('ALTER TABLE users ADD COLUMN suspended INTEGER NOT NULL DEFAULT 0');
+            if (!in_array('suspend_note', $cols, true)) $pdo->exec("ALTER TABLE users ADD COLUMN suspend_note TEXT NOT NULL DEFAULT ''");
+            $pdo->exec(<<<SQL
+        -- Un jour (AAAA-MM-JJ, heure du serveur) où le compte a utilisé Studioma (application ou assistant IA).
+        CREATE TABLE IF NOT EXISTS activity_days (
+            day TEXT NOT NULL,
+            uid INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            PRIMARY KEY (day, uid)
+        );
+        CREATE INDEX IF NOT EXISTS activity_days_u ON activity_days(uid);
+        -- Chaque email envoyé (ou dont l'envoi a échoué). kind : system | campaign | admin | test.
+        -- status : sent | failed. Les codes à 6 chiffres sont masqués dans l'objet.
+        CREATE TABLE IF NOT EXISTS mail_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            created INTEGER NOT NULL,
+            email TEXT NOT NULL,
+            subject TEXT NOT NULL DEFAULT '',
+            kind TEXT NOT NULL DEFAULT 'system',
+            campaign_id INTEGER NOT NULL DEFAULT 0,
+            status TEXT NOT NULL DEFAULT 'sent',
+            error TEXT NOT NULL DEFAULT ''
+        );
+        CREATE INDEX IF NOT EXISTS mail_log_c ON mail_log(created);
+        CREATE INDEX IF NOT EXISTS mail_log_e ON mail_log(email);
+        -- Campagne d'emails (annonce, nouveautés) écrite dans l'administration. audience : clé d'une liste fixe
+        -- (ADMIN_AUDIENCES). status : draft | sending | paused | sent | cancelled.
+        CREATE TABLE IF NOT EXISTS campaigns (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            subject TEXT NOT NULL,
+            title TEXT NOT NULL DEFAULT '',
+            body TEXT NOT NULL DEFAULT '',
+            btn_label TEXT NOT NULL DEFAULT '',
+            btn_url TEXT NOT NULL DEFAULT '',
+            audience TEXT NOT NULL DEFAULT 'all',
+            status TEXT NOT NULL DEFAULT 'draft',
+            total INTEGER NOT NULL DEFAULT 0,
+            sent INTEGER NOT NULL DEFAULT 0,
+            failed INTEGER NOT NULL DEFAULT 0,
+            skipped INTEGER NOT NULL DEFAULT 0,
+            created INTEGER NOT NULL,
+            started INTEGER NOT NULL DEFAULT 0,
+            finished INTEGER NOT NULL DEFAULT 0
+        );
+        -- Destinataires d'une campagne, envoyés par petits lots. status : pending | sending | sent | failed | skipped.
+        -- claim : lot qui a pris la ligne (deux requêtes simultanées n'envoient jamais le même email).
+        CREATE TABLE IF NOT EXISTS mail_queue (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            campaign_id INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+            uid INTEGER NOT NULL,
+            email TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'pending',
+            claim TEXT NOT NULL DEFAULT '',
+            error TEXT NOT NULL DEFAULT '',
+            updated INTEGER NOT NULL DEFAULT 0
+        );
+        CREATE UNIQUE INDEX IF NOT EXISTS mail_queue_cu ON mail_queue(campaign_id, uid);
+        CREATE INDEX IF NOT EXISTS mail_queue_s ON mail_queue(status, id);
+        -- Actions de l'administrateur (suspensions, suppressions, campagnes…).
+        CREATE TABLE IF NOT EXISTS admin_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            created INTEGER NOT NULL,
+            action TEXT NOT NULL,
+            target TEXT NOT NULL DEFAULT '',
+            text TEXT NOT NULL DEFAULT ''
+        );
+        CREATE INDEX IF NOT EXISTS admin_log_c ON admin_log(created);
+        PRAGMA user_version = 6;
+        SQL);
+        }
         $pdo->exec('COMMIT');
     } catch (Throwable $e) {
         try { $pdo->exec('ROLLBACK'); } catch (Throwable $e2) { /* rien à annuler */ }
@@ -1038,36 +1115,63 @@ function mail_later(string $to, string $subject, string $title, array $lines, st
             if (!count($queue)) return;
             if (function_exists('fastcgi_finish_request')) @fastcgi_finish_request();
             foreach ($queue as $m) {
-                try {
-                    [$html, $text] = mail_layout($m[2], $m[3], $m[4], $m[5], $m[6]);
-                    send_mail($m[0], $m[1], $html, $text);
-                } catch (Throwable $e) {
-                    error_log('studioma mail: ' . $e->getMessage());
-                }
+                [$html, $text] = mail_layout($m[2], $m[3], $m[4], $m[5], $m[6]);
+                mail_send_logged($m[0], $m[1], $html, $text, $m[7]);
             }
         });
     }
-    $queue->append([$to, $subject, $title, $lines, $btnLabel, $btnUrl, $links]);
+    $queue->append([$to, $subject, $title, $lines, $btnLabel, $btnUrl, $links, $GLOBALS['stm_mail_kind'] ?? 'system']);
 }
 
-/** Envoie un email texte + HTML (SMTP si configuré, sinon mail()). Lève une exception en cas d'échec. */
-function send_mail(string $to, string $subject, string $html, string $text): void
+/**
+ * Envoie un email et l'inscrit au journal (mail_log, visible dans l'administration). Retourne '' si l'envoi a
+ * réussi, sinon le message d'erreur (jamais d'exception : un email en échec ne casse rien).
+ */
+function mail_send_logged(string $to, string $subject, string $html, string $text, string $kind = 'system', int $campaignId = 0, array $headers = []): string
 {
+    $error = '';
+    try {
+        send_mail($to, $subject, $html, $text, $headers);
+    } catch (Throwable $e) {
+        $error = mb_substr($e->getMessage(), 0, 300);
+        error_log('studioma mail: ' . $error);
+    }
+    try {
+        // Les codes de vérification (6 chiffres) ne sont jamais gardés.
+        insert('mail_log', ['created' => time(), 'email' => $to, 'subject' => mb_substr((string) preg_replace('/\b\d{6}\b/', '••••••', $subject), 0, 200),
+            'kind' => $kind, 'campaign_id' => $campaignId, 'status' => $error === '' ? 'sent' : 'failed', 'error' => $error]);
+        if ($error !== '') meta_set('mail_last_error', jenc(['at' => time(), 'error' => $error]));
+        if (random_int(1, 200) === 1) q('DELETE FROM mail_log WHERE created < ?', [time() - 180 * 86400]);
+    } catch (Throwable $e) {
+        error_log('studioma mail log: ' . $e->getMessage());
+    }
+    return $error;
+}
+
+/**
+ * Envoie un email texte + HTML (SMTP si configuré, sinon mail()). Lève une exception en cas d'échec.
+ * $extra : en-têtes supplémentaires (ex. List-Unsubscribe des campagnes).
+ */
+function send_mail(string $to, string $subject, string $html, string $text, array $extra = []): void
+{
+    $extra = array_values(array_filter(array_map(function ($h): string { return str_replace(["\r", "\n"], '', (string) $h); }, $extra)));
     if (STM_MAIL_LOG !== '') {
-        file_put_contents(STM_MAIL_LOG, json_encode(['to' => $to, 'subject' => $subject, 'text' => $text], JSON_UNESCAPED_UNICODE) . "\n", FILE_APPEND | LOCK_EX);
+        $log = ['to' => $to, 'subject' => $subject, 'text' => $text];
+        if ($extra) $log['headers'] = $extra;
+        file_put_contents(STM_MAIL_LOG, json_encode($log, JSON_UNESCAPED_UNICODE) . "\n", FILE_APPEND | LOCK_EX);
         return;
     }
     $from = mail_from();
     $domain = substr(strrchr($from, '@') ?: '@dehini.com', 1);
     $b = 'b_' . token(12);
-    $headers = implode("\r\n", [
+    $headers = implode("\r\n", array_merge([
         'From: ' . encode_header(STM_MAIL_FROM_NAME) . ' <' . $from . '>',
         'Reply-To: ' . $from,
         'Date: ' . date('r'),
         'Message-ID: <' . token(16) . '@' . $domain . '>',
         'MIME-Version: 1.0',
         'Content-Type: multipart/alternative; boundary="' . $b . '"',
-    ]);
+    ], $extra));
     $body = '--' . $b . "\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n"
         . chunk_split(base64_encode($text)) . "\r\n--" . $b . "\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n"
         . chunk_split(base64_encode($html)) . "\r\n--" . $b . "--\r\n";

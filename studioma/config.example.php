@@ -37,3 +37,6 @@
 // define('STM_SMTP_USER', 'studioma@dehini.com');
 // define('STM_SMTP_PASS', 'mot-de-passe-du-compte-email');
 // define('STM_MAIL_FROM', 'studioma@dehini.com');
+// Campagnes de l'administration : au plus tant d'emails par heure (tous emails confondus). Rester sous la
+// limite d'envoi de l'hébergeur.
+// define('STM_MAIL_PER_HOUR', 200);

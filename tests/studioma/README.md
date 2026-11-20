@@ -9,7 +9,7 @@ politique de sécurité (CSP).
 tests/studioma/run.sh /tmp/stm-test
 ```
 
-`run.sh` prépare un hébergement neuf, lance le serveur PHP (port 8097) et exécute cinq batteries, chacune sur une
+`run.sh` prépare un hébergement neuf, lance le serveur PHP (port 8097) et exécute six batteries, chacune sur une
 base vide. Les événements Meta (API Conversions) sont écrits dans `meta.jsonl` (faux ensemble de données) ; dans le
 navigateur, un faux script du pixel note les appels à `fbq` :
 
@@ -111,6 +111,28 @@ partie d'adresse après `#`.
   supprimé refusés aussitôt, client confidentiel (secret exigé), retour vers la machine locale sur un autre port,
   révocation (RFC 7009).
 
+**`admin.js` — l'administration** (`studioma/admin/`, API seule ; `setup.sh` copie aussi `admin/` avec le mot de
+passe de test `test-owner-pass`) :
+
+- accès : sans session `/admin`, avec un compte Studioma, un mauvais mot de passe, un cookie inventé ou par un lien
+  de partage → refusé ; écriture sans le jeton CSRF de `/admin` ou sans `X-Requested-With` → refusée ;
+- statistiques en direct (en ligne, actifs, inscriptions, séries sur 30 jours, fil) **sans nom de projet, de
+  Studio, titre de carte ni texte de message** ; recherche, filtres et fiche d'un compte ;
+- actions : adresse confirmée, lien de mot de passe, email direct (`{name}`), déconnexion partout, jeton d'assistant
+  IA puis déconnexion des assistants ;
+- **suspension** : session fermée, connexion refusée (`suspended`), assistants IA refusés, aucun lien de mot de
+  passe oublié, profil introuvable, absent de la recherche et de l'annuaire, publications masquées ; levée → tout
+  revient ;
+- suppression refusée pour la seule propriétaire d'un projet partagé, acceptée sinon (adresse retapée) ; export
+  CSV (formule neutralisée, refusé sans session) ;
+- modération : commentaire et publication supprimés, offre fermée, page d'entreprise supprimée ;
+- journal des emails (code de vérification masqué), email d'essai ; campagnes : publics sans désinscrits ni
+  suspendus, aperçu échappé, lien https, essai, envoi par lots, en-têtes de désinscription en un clic, pause,
+  reprise, désinscrit sauté à l'envoi, annulation, duplication, suppression ;
+- page de désinscription (GET sans effet, POST en un clic, réinscription, signature fausse refusée) ; `cron.php`
+  (404 depuis le web, exécution en ligne de commande) ; journal de l'administration ; page sans script en ligne
+  ni pixel, CSP appliquée.
+
 **`e2e.js` — l'application dans Chromium** (Playwright), avec trois comptes dans trois navigateurs :
 
 - landing ; inscription ; premiers pas (profil, premier Studio avec le modèle par défaut) ;
@@ -143,9 +165,14 @@ partie d'adresse après `#`.
   notification au nom de l'invité, invité sur mobile ;
 - mobile (iPhone 13) : tableau, glisser-déposer au doigt (appui long ; un balayage rapide fait défiler sans
   saisir la carte), carte en plein écran, menu ; thème sombre conservé ;
+- administration : mauvais mot de passe refusé, connexion avec celui de `/admin`, vue en direct (6 chiffres,
+  6 graphiques, valeur au survol, fil, comptes en ligne), recherche d'un compte et sa fiche, aperçu d'une
+  campagne (texte saisi jamais interprété, nombre de destinataires), mobile sans défilement horizontal, aucun
+  pixel Meta ;
 - contenu saisi jamais interprété, aucune erreur JavaScript, aucune violation de la CSP, aucun défilement
   horizontal de la page ; captures dans `<dossier>/shots`.
 
 Pour naviguer à la main : `setup.sh <dossier>`, puis
 `php -S 127.0.0.1:8097 -t <dossier>/public_html tests/studioma/router.php` et ouvrir
-`http://127.0.0.1:8097/studioma/`. `sync.sh <dossier>` recopie le code après une modification (la base est gardée).
+`http://127.0.0.1:8097/studioma/` (administration : `…/studioma/admin/`, mot de passe `test-owner-pass`).
+`sync.sh <dossier>` recopie le code après une modification (la base est gardée).

@@ -468,6 +468,7 @@
       <a class="panel pad ai-link" href="#/settings/ai">${icon('sparkles')}<span class="grow"><b>AI assistants</b><small class="muted">Let Claude, ChatGPT or Gemini manage your Studios for you.</small></span>${icon('chevron-right')}</a>
       <section class="panel pad"><h2>Notifications & privacy</h2>
         ${sw('email_notifs', 'Email me about important updates', 'Assignments, mentions, approval requests and invitations.', s.email_notifs)}
+        ${sw('email_news', 'Studioma news and announcements', 'New features and occasional news from the Studioma team. Every email has a one-click unsubscribe link.', s.email_news !== false)}
         ${sw('show_activity', 'Show my Studio activity on my profile', 'Only totals (delivered pieces, number of projects). Never a project name, a client or a card.', s.show_activity)}
         <p class="muted small">Your listing in the talent directory is managed from your <a href="#/profile">profile</a>.</p>
       </section>

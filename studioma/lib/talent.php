@@ -258,7 +258,7 @@ function api_opp_application(array $b, array $u): array
 function api_talent(array $b, array $u): array
 {
     $uid = (int) $u['id'];
-    $where = ['u.pro = 1'];
+    $where = ['u.pro = 1', 'u.suspended = 0'];
     $args = [];
     foreach (['q' => 60, 'skill' => 40, 'industry' => 40, 'location' => 60, 'language' => 30] as $k => $max) {
         $v = line_clean($b[$k] ?? '', $max);

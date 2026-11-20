@@ -10,31 +10,62 @@ secrets here. Mark anything you could not verify as *(unverified)*.
 |---|---|
 | Last agent | Claude Code (cloud session) |
 | Branch | `claude/trusting-keller-rynk1j` (tracks `origin/claude/trusting-keller-rynk1j`) |
-| Base code | `main` @ `1218970` (Merge PR #73: shared agent setup). **`main` = production** (server cron, every 5 min) |
+| Base code | `main` @ `1218970` (Merge PR #73). **`main` = production** (server cron, every 5 min) |
 | Checkpoint | the commit that last changed this file: `git log -1 --format='%H %s' -- HANDOFF.md` |
 | Uncommitted work at checkpoint | none |
-| In progress | nothing — no open pull request, no half-done code |
-| Last task changed application code? | **no** (documentation only) |
+| In progress | **Studioma administration — done, tested, committed and pushed on this branch; not merged, not deployed.** No pull request opened (the owner did not ask for one yet) |
+| Last task changed application code? | **yes** — Studioma (DB schema v5 → v6, additive) |
 
 **Next recommended action**
 
-1. **Owner, urgent**: put the server clone back on `main` — `cd ~/dehini-com && git checkout main`, then
-   `git status --short --branch` must show `## main...origin/main` *(unverified whether done)*. Never run Codex
-   or Claude on the server (`AGENTS.md` § 3); use Codex cloud (chatgpt.com/codex) or a personal computer.
-2. Owner: the other actions in `docs/ROADMAP.md` › « Pending — owner actions » (Meta token on the server and its
-   regeneration, cPanel « Force HTTPS Redirect », cookie-consent decision).
-3. Agent: no coding task is pending. Ask the owner which item to take from `docs/ROADMAP.md`. Ready candidates:
-   (a) review branch `claude/funny-fermi-v7vhfr` (1 commit, clearer Impact error when Brevo blocks the server IP,
-   not in `main`) and propose it as a PR; (b) a Studioma gap from the roadmap.
+1. **Owner**: review and open/merge a pull request from `claude/trusting-keller-rynk1j` into `main` to deploy the
+   Studioma admin (an agent opens the PR only when asked). After the merge, the next request to Studioma migrates
+   the database to v6 by itself.
+2. **Owner, after merge**: open `https://dehini.com/studioma/admin/` with the `/admin` password; send a test email
+   from *Emails › Sending settings*; add the cron job `/usr/local/bin/php ~/public_html/studioma/cron.php
+   >/dev/null 2>&1` every 5 minutes (PHP path *(unverified)* on this host); set `STM_MAIL_PER_HOUR` in
+   `studioma/config.php` if the host's hourly email limit is under 200 *(limit unverified)*.
+3. Owner, still open: server clone back on `main` *(unverified whether done)*, Meta token on the server and its
+   regeneration, cPanel « Force HTTPS Redirect », cookie-consent decision (`docs/ROADMAP.md`).
 
-**Blockers**: none for development. Unverified: whether the Studioma Conversions API token is installed on the
-server (only the browser pixel works without it).
+**Blockers**: none for development. Unverified: production PHP CLI path for the cron, the host's hourly email
+limit, whether `fastcgi_finish_request`/`litespeed_finish_request` exist in production (only affects how fast
+campaigns go out without the cron).
 
-**Validation at this checkpoint** (2026-11-20, on the base code `6aa8755`, same application code as `1218970`):
-`tests/studioma/run.sh` 788 checks, `tests/swanbida/run.sh` 119, `tests/maillage/run.sh` 181 — all passed, 0
-failures; `php -l` on 108 PHP files and `node --check` on 47 JS files: 0 errors.
+**Validation at this checkpoint** (2026-11-20, on this branch): `tests/studioma/run.sh` **902 checks, 6 suites**
+(api, share, meta, mcp, **admin**, e2e) — all passed, 0 failures; `tests/maillage/run.sh` 181 — passed (it copies
+`admin/`); `tests/swanbida/run.sh` 119 — passed; `php -l` on 111 PHP files and `node --check` on all Studioma JS: 0 errors.
 
 ## Log (newest first)
+
+### 2026-11-20 — Claude Code — Studioma: platform administration
+- Branch `claude/trusting-keller-rynk1j`, base `main` @ `1218970`; committed and pushed (commit after `56d6fc9`).
+- Owner's request: « adminstration for studioma … reeltime stats and gestion accounts and anythink helped me and
+  also the part of emailing ».
+- Done: `studioma/admin/` (+ `assets/admin.{js,css}`) — Live overview (online now, DAU/WAU/MAU, today's activity,
+  6 charts over 30 days, live feed, totals, email health; polls every 10 s), Accounts (search, filters, sort, CSV
+  export, record drawer: usage counts, active days, emails received, admin history; actions: email the person,
+  reset link, confirmation link / mark confirmed, sign out everywhere, disconnect AI, news opt-out, suspend /
+  lift, delete), Moderation (posts, comments, opportunities, companies, case studies), Emails (campaigns with live
+  preview, audiences, test send, batched sending with pause/resume/cancel/duplicate; email log; sending settings
+  and test; cron status), System (versions, DB, storage, integrations, admin log).
+- Backend: `studioma/lib/admin.php` (routes with access `admin` in `ROUTES`, `require_admin()` = `/admin`
+  session + CSRF); DB **v6** (`users.suspended`/`suspend_note`, `activity_days`, `mail_log`, `campaigns`,
+  `mail_queue`, `admin_log`); suspension enforced in `current_user()`, `start_session()`, `api_login`,
+  `api_forgot`, `api_reset`, `bearer_user()` (MCP), hidden in profile/search/suggestions/talent/feed;
+  `mail_send_logged()` logs every email; `send_mail()` accepts extra headers; `account_destroy()` extracted from
+  `api_account_delete` (also fixes: a solo-owned company was deleted before a later check could refuse);
+  `user_seen()` (last_seen every minute + activity_days); `studioma/unsubscribe.php`; `studioma/cron.php`; setting
+  `email_news` (+ toggle in Settings); link from `/admin`.
+- Files: `studioma/{api.php,cron.php,unsubscribe.php,config.example.php}`, `studioma/lib/{admin,core,auth,oauth,social,talent}.php`,
+  `studioma/admin/index.html`, `studioma/assets/{admin.js,admin.css,app.js}`, `admin/index.html`,
+  `tests/studioma/{admin.js,e2e.js,run.sh,setup.sh,README.md}`, `README.md` (Studioma § 7 Administration, sections
+  renumbered 8–10), `AGENTS.md`, `docs/{DECISIONS,ROADMAP,PROJECT_CONTEXT}.md`.
+- Decisions: S13–S17 in `docs/DECISIONS.md`.
+- Tests: see « Validation at this checkpoint » above. UI checked by screenshots (desktop 1360 px, mobile 390 px,
+  no horizontal scroll).
+- Uncommitted / unpushed: nothing.
+- Exact next step: owner opens/merges the PR, then the post-merge actions in « Next recommended action ».
 
 ### 2026-11-20 — Claude Code — server clone must stay on `main`
 - The owner switched the server's deployment clone (`~/dehini-com` on `oort-shared`) to

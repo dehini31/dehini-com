@@ -26,8 +26,10 @@ status changes; keep the history of finished items short.
 
 ## In progress
 
-- Nothing verified as in progress: no open pull request, working tree clean, `claude/trusting-keller-rynk1j` has no
-  commit beyond `main` except the shared-agent setup (see `HANDOFF.md`).
+- **Studioma administration** (`studioma/admin/`): live statistics, accounts (search, record, suspension,
+  deletion, CSV), moderation, email log, campaigns with one-click unsubscribe, system page; DB schema v6.
+  Done and tested on branch `claude/trusting-keller-rynk1j` (2026-11-20) — **not in `main`, not deployed** until
+  the owner opens/merges a pull request (see `HANDOFF.md`).
 
 ## Pending — owner actions (outside the code)
 
@@ -46,14 +48,20 @@ status changes; keep the history of finished items short.
   `docs/meta-real-test-checklist.md` — *(status unverified)*.
 - [ ] Terms of use: Maillage shows a starting text to review and adapt; Studioma only has the sign-up checkbox
   (no terms page yet).
+- [ ] After the Studioma admin is merged: add the cron job `/usr/local/bin/php ~/public_html/studioma/cron.php
+  >/dev/null 2>&1` every 5 minutes (cPanel › Cron Jobs; PHP path *(unverified)*), check the hourly email limit of
+  the host and set `STM_MAIL_PER_HOUR` in `studioma/config.php` if it is below 200, then send a test email from
+  *Emails › Sending settings*.
 
 ## Pending — product gaps documented in the README (« Ce qui n'est pas fait »)
 
 - **Studioma**: no connection to social networks (manual publication dates, links and metrics); no built-in AI
   (only external assistants through MCP); MCP has no server-sent events and no read-only token; guests cannot
   upload files, see the calendar or dashboards, or request approvals; sync by polling every 4 s (last write
-  wins); email not verified at sign-up; no moderation / central admin / blocking; English only; public pages
-  not server-rendered for SEO (only the landing is).
+  wins); email not verified at sign-up; no moderation / central admin / blocking (admin on branch, see « In
+  progress »); English only; public pages
+  not server-rendered for SEO (only the landing is). Since the admin (branch, not merged): no member reporting or
+  blocking, no email open/click statistics, a single admin session (no separate admin accounts).
 - **Maillage**: no online payment or delivery fees; one product per order (no cart); one account per company
   (no multi-user team yet); radar matches stores by commune then wilaya (no road distance).
 - Impact, Stats Meta KPIs, SWANBIDA, Marketing, personal site: no gap list in the README *(open items unknown —

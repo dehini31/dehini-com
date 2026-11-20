@@ -7,8 +7,8 @@
  *   par lien, second compte, synchronisation entre deux navigateurs, droits du collaborateur →
  *   validation par une cliente → profil, publication, réseau, étude de cas → entreprise,
  *   opportunité, candidature, annuaire des talents, messages → mobile, thème sombre →
- *   connexion avec Google (faux Google signé par le test) → contenu saisi non exécuté, aucune
- *   erreur JavaScript, aucune violation de la CSP.
+ *   connexion avec Google (faux Google signé par le test) → administration (vue en direct, comptes,
+ *   campagne) → contenu saisi non exécuté, aucune erreur JavaScript, aucune violation de la CSP.
  *   node tests/studioma/e2e.js <adresse> <dossier>
  */
 const { chromium, devices } = require('playwright');
@@ -987,6 +987,54 @@ const cardIn = (page, col, title) => page.locator(`${colSel(col)} .kcard:has(h3:
   await ap.reload({ waitUntil: 'load' });
   await ap.waitForSelector('.kcard');
   ok(await ap.evaluate(() => document.documentElement.dataset.theme) === 'dark', 'thème sombre conservé');
+
+  /* ------------------------------------------------------- administration */
+  step('Administration de la plateforme (studioma/admin/)');
+  const admCtx = await browser.newContext(desk);
+  const adp = await admCtx.newPage();
+  watch(adp, 'admin');
+  let admPixel = 0;
+  await admCtx.route('https://connect.facebook.net/**', (route) => { admPixel++; route.abort(); });
+  await adp.goto(ORIGIN + '/studioma/admin/');
+  await adp.waitForSelector('form[data-form="adm-login"]');
+  await adp.fill('input[name=password]', 'not-the-password');
+  await adp.click('form[data-form="adm-login"] button[type=submit]');
+  ok(await adp.waitForSelector('[data-error]:not([hidden])', { timeout: 5000 }).then((e) => e.textContent()).then((t) => /Wrong password/.test(t), () => false), 'mauvais mot de passe : message clair');
+  await adp.fill('input[name=password]', 'test-owner-pass');
+  await adp.click('form[data-form="adm-login"] button[type=submit]');
+  await adp.waitForSelector('#ov-charts .chart');
+  ok(await adp.locator('#ov-tiles .tile').count() === 6 && await adp.locator('#ov-charts .chart').count() === 6, 'vue d\'ensemble : 6 chiffres et 6 graphiques sur 30 jours');
+  ok(/Live · /.test(await adp.locator('#adm-live').textContent()), 'indicateur « en direct »');
+  ok(await adp.locator('#ov-feed .feed-row').count() > 3 && await adp.locator('#ov-online .who-btn').count() >= 1, 'fil d\'activité et comptes en ligne');
+  const bar = adp.locator('#ov-charts .chart').first().locator('.hit').last();
+  await bar.hover();
+  ok(await adp.waitForSelector('.chart-tip:not([hidden])', { timeout: 3000 }).then((t) => t.textContent()).then((t) => /today/.test(t), () => false), 'valeur d\'un jour au survol d\'une colonne');
+  await shot(adp, '30-admin-overview');
+  await adp.click('.nav-link[data-nav="#/accounts"]');
+  await adp.waitForSelector('table.table tbody tr');
+  await adp.fill('input[name=q]', 'amel');
+  await adp.press('input[name=q]', 'Enter');
+  await adp.waitForFunction(() => document.querySelectorAll('table.table tbody tr').length === 1);
+  await adp.click('table.table tbody tr button.who');
+  await adp.waitForSelector('.ud-head');
+  ok(/amel/i.test(await adp.locator('.ud-head').textContent()) && await adp.locator('[data-act="adm-uop"][data-op="suspend"]').count() === 1, 'fiche d\'un compte avec ses actions');
+  await adp.waitForTimeout(300);
+  await shot(adp, '31-admin-account');
+  await adp.keyboard.press('Escape');
+  await adp.goto(ORIGIN + '/studioma/admin/#/emails/new');
+  await adp.waitForSelector('#camp-form');
+  await adp.fill('input[name=subject]', 'Hello {name}');
+  await adp.fill('textarea[name=body]', 'Hi {name},\n\n<img src=x onerror=alert(1)> New features.');
+  ok(await adp.waitForFunction(() => /Hi Amina/.test((document.querySelector('#camp-preview') || {}).textContent || ''), null, { timeout: 5000 }).then(() => true, () => false), 'aperçu de la campagne en direct');
+  ok(await adp.locator('#camp-preview img').count() === 0, 'texte saisi affiché comme texte dans l\'aperçu');
+  ok(/Send to \d+ (person|people)/.test(await adp.locator('#camp-send').textContent()), 'nombre de destinataires sur le bouton d\'envoi');
+  await shot(adp, '32-admin-campaign');
+  await adp.setViewportSize({ width: 390, height: 844 });
+  await adp.goto(ORIGIN + '/studioma/admin/#/');
+  await adp.waitForSelector('#ov-charts .chart');
+  await noOverflow(adp, 'administration sur mobile');
+  ok(admPixel === 0, 'aucun pixel Meta dans l\'administration');
+  await admCtx.close();
 
   /* -------------------------------------------------------------- sécurité */
   step('Sécurité');
