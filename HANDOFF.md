@@ -10,17 +10,19 @@ secrets here. Mark anything you could not verify as *(unverified)*.
 |---|---|
 | Last agent | Claude Code (cloud session) |
 | Branch | `claude/trusting-keller-rynk1j` (tracks `origin/claude/trusting-keller-rynk1j`) |
-| Base code | `main` @ `1218970` (Merge PR #73). **`main` = production** (server cron, every 5 min) |
+| Base code | `main` @ `5a0b124` (Merge PR #74: Studioma administration). **`main` = production** (server cron, every 5 min) |
 | Checkpoint | the commit that last changed this file: `git log -1 --format='%H %s' -- HANDOFF.md` |
 | Uncommitted work at checkpoint | none |
-| In progress | **Studioma administration — done, tested, committed and pushed on this branch; not merged, not deployed.** No pull request opened (the owner did not ask for one yet) |
+| In progress | **Studioma administration merged into `main` (PR #74, 2026-11-20 23:15 UTC) but NOT deployed**: at 23:25 UTC `https://dehini.com/studioma/admin/` and `studioma/assets/admin.js` still answer 404 — the server's deployment cron is not copying `main` (cause unknown; asked the owner for `git status` / `crontab -l` from `~/dehini-com`) |
 | Last task changed application code? | **yes** — Studioma (DB schema v5 → v6, additive) |
 
 **Next recommended action**
 
-1. **Owner**: review and open/merge a pull request from `claude/trusting-keller-rynk1j` into `main` to deploy the
-   Studioma admin (an agent opens the PR only when asked). After the merge, the next request to Studioma migrates
-   the database to v6 by itself.
+1. **Owner, urgent**: find why the server stopped deploying `main` — in cPanel › Terminal run
+   `cd ~/dehini-com && git status --short --branch && git log --oneline -3 && crontab -l` (read-only) and share
+   the output. Likely causes *(unverified)*: the clone is not on `main` or has local changes/commits from the
+   Codex attempt (then `git pull` fails and the `&&` chain copies nothing), or the cron line was changed. Once
+   deployed, the next Studioma request migrates the database to v6 by itself.
 2. **Owner, after merge**: open `https://dehini.com/studioma/admin/` with the `/admin` password; send a test email
    from *Emails › Sending settings*; add the cron job `/usr/local/bin/php ~/public_html/studioma/cron.php
    >/dev/null 2>&1` every 5 minutes (PHP path *(unverified)* on this host); set `STM_MAIL_PER_HOUR` in
@@ -37,6 +39,12 @@ campaigns go out without the cron).
 `admin/`); `tests/swanbida/run.sh` 119 — passed; `php -l` on 111 PHP files and `node --check` on all Studioma JS: 0 errors.
 
 ## Log (newest first)
+
+### 2026-11-20 — Claude Code — admin merged but not deployed
+- Owner merged PR #74 (`5a0b124`) at 23:15 UTC and ran the `cron.php` command by hand (output hidden by
+  `>/dev/null`; the file was not on the server yet). Live check at 23:18–23:25 UTC: `/studioma/admin/`,
+  `assets/admin.js`, `unsubscribe.php` → 404, `assets/app.js` → 200: the deployment cron did not copy `main`.
+- This branch fast-forwarded to `origin/main`. No code change.
 
 ### 2026-11-20 — Claude Code — Studioma: platform administration
 - Branch `claude/trusting-keller-rynk1j`, base `main` @ `1218970`; committed and pushed (commit after `56d6fc9`).
