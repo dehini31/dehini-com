@@ -7,6 +7,10 @@ DIR=${1:?dossier de test}
 REPO=$(cd "$(dirname "$0")/../.." && pwd)
 rm -rf "$DIR"; mkdir -p "$DIR/public_html"
 cp -R "$REPO/studioma" "$DIR/public_html/studioma"
+# Administration du site (/admin) : sa session ouvre aussi l'administration de Studioma (mot de passe de test).
+cp -R "$REPO/admin" "$DIR/public_html/admin"
+rm -f "$DIR/public_html/admin/config.php"
+php -r 'file_put_contents($argv[1], "<?php\ndefine(\"ADMIN_PASSWORD_HASH\", " . var_export(password_hash("test-owner-pass", PASSWORD_DEFAULT), true) . ");\n");' "$DIR/public_html/admin/config.php"
 cat > "$DIR/public_html/studioma/config.php" <<PHP
 <?php
 define('STM_MAIL_LOG', '$DIR/mail.jsonl');

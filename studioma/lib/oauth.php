@@ -392,11 +392,11 @@ function bearer_user(): ?array
         WHERE t.hash = ? AND t.kind IN ('access', 'personal') AND (t.expires = 0 OR t.expires > ?)", [token_hash($m[1]), time()]);
     if (!$t) return null;
     $u = user_by_id((int) $t['uid']);
-    if (!$u) return null;
+    if (!$u || (int) $u['suspended'] > 0) return null;
     $u['id'] = (int) $u['id'];
     $u['s_csrf'] = '';
     if ((int) $t['used'] < time() - 300) q('UPDATE ai_grants SET used = ? WHERE id = ?', [time(), $t['grant_id']]);
-    if ((int) $u['last_seen'] < time() - 600) q('UPDATE users SET last_seen = ? WHERE id = ?', [time(), $u['id']]);
+    user_seen($u);
     return [$u, $t];
 }
 

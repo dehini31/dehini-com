@@ -18,13 +18,15 @@ each published under its own path on the same domain:
 | `/swanbida/` | **SWANBIDA**: bath-linen shop, cash on delivery, admin, Meta Pixel + Conversions API, SEO | fr / ar (RTL) |
 | `/marketing/` | **Marketing Dashboard** for YINVESTI (admin only): manual tracking + automatic reports, Meta Graph API | fr |
 | `/maillage/` | **Maillage**: points-of-sale and distribution networks, OpenStreetMap map, catalogue, orders/reservations, company space, in-browser photo search | fr / ar |
-| `/studioma/` | **Studioma**: social network + private collaborative studio for community managers, MCP server for AI assistants, guest sharing without account, Meta Pixel + CAPI | en |
+| `/studioma/` | **Studioma**: social network + private collaborative studio for community managers, MCP server for AI assistants, guest sharing without account, Meta Pixel + CAPI; platform admin at `/studioma/admin/` (owner, `/admin` password) | en |
 
 ## Hosting and deployment
 
 - One cPanel account (`dehini91`, provider documented as dzSecurity; the live server answers as `DZ-HTTP`).
 - Repository cloned in `~/dehini-com`; a **cron job every 5 minutes** runs `git pull` on `main` and copies the
-  code into `~/public_html/` (exact command: README « Installation › 4 »). So **`main` = production**.
+  code into `~/public_html/` (exact command: README « Installation › 4 »). So **`main` = production**. The cron
+  pulls the branch that is checked out in `~/dehini-com`: that clone must stay on `main` with no local edits, and
+  no coding agent (Codex, Claude) is ever run on the server.
 - Live data is never in Git: SQLite databases and uploads live **outside `public_html`** in `~/impact-data/`,
   `~/metakpis-data/`, `~/swanbida-data/`, `~/marketing-data/`, `~/maillage-data/`, `~/studioma-data/`
   (plus `~/public_html/uploads/`, `swanbida/media/`, `maillage/media/`, `impact/uploads/pros/`). The served
@@ -63,7 +65,8 @@ each published under its own path on the same domain:
 Each platform creates and migrates its own SQLite database on first request (schema and migrations in its
 `lib/`, guarded by `PRAGMA user_version`; never edit production databases by hand).
 
-Studioma (most active project) — `~/studioma-data/studioma.sqlite`, schema **version 5**
+Studioma (most active project) — `~/studioma-data/studioma.sqlite`, schema **version 6** on branch
+`claude/trusting-keller-rynk1j` (version 5 in `main` until the admin is merged)
 (`studioma/lib/core.php` › `migrate()`):
 
 - accounts & network: `users`, `sessions`, `companies`, `company_members`, `follows`, `connections`, `posts`,
@@ -74,7 +77,9 @@ Studioma (most active project) — `~/studioma-data/studioma.sqlite`, schema **v
 - AI assistants (v4): `oauth_clients`, `oauth_requests`, `ai_grants`, `ai_tokens`;
 - guest sharing (v5): `shares`, `share_guests`, `share_codes`, `guest_sessions`, `share_log`
   (+ guest columns on `events`, `card_comments`, `card_approvals`, `cards`, `notifications`);
-- technical: `rate` (rate limits), `meta` (key/value, incl. `meta_capi_error`).
+- administration (v6): `users.suspended` / `suspend_note`, `activity_days` (active accounts per day),
+  `mail_log` (every email sent), `campaigns`, `mail_queue`, `admin_log`;
+- technical: `rate` (rate limits), `meta` (key/value, incl. `meta_capi_error`, `mail_last_error`, `cron_last`).
 
 ## Code layout of a platform (Studioma as the reference)
 
@@ -82,9 +87,12 @@ Studioma (most active project) — `~/studioma-data/studioma.sqlite`, schema **v
   share links); every action is `api_<action>($data, $user)` in `lib/`.
 - `studioma/lib/` — `core.php` (config, DB, migrations, mail), `auth.php` (accounts, sessions, notifications),
   `access.php` (roles and rights), `studio.php`, `cards.php`, `collab.php`, `social.php`, `talent.php`,
-  `files.php`, `google.php`, `oauth.php`, `mcp.php`, `share.php` (guests), `meta.php` (Pixel/CAPI events).
+  `files.php`, `google.php`, `oauth.php`, `mcp.php`, `share.php` (guests), `meta.php` (Pixel/CAPI events),
+  `admin.php` (platform administration: routes with access `admin` in `ROUTES`).
 - `studioma/app/index.html` + `studioma/assets/*.js` — single-page app with hash routes (`#/studio/12`, guest
-  links `#/s/<key>`), no inline script; `studioma/index.html` — landing page.
+  links `#/s/<key>`), no inline script; `studioma/index.html` — landing page; `studioma/admin/index.html` +
+  `assets/admin.{js,css}` — administration; `studioma/unsubscribe.php` (campaign unsubscribe page),
+  `studioma/cron.php` (optional CLI scheduled task).
 
 ## Environment for development and tests
 

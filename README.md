@@ -1429,6 +1429,7 @@ Grow professionally. Get discovered.* L'interface est en anglais.
 | `https://dehini.com/studioma/app/` | membres | **L'application** : fil, découverte, réseau, projets, Studios, opportunités, messages, notifications, profil, réglages — et, pour les entreprises, talents et équipe |
 | `…/app/#/u/<identifiant>`, `#/c/<entreprise>`, `#/opportunity/<n>`, `#/post/<n>` | visiteurs | **Pages publiques** lisibles sans compte : profil et portfolio, page d'une entreprise, opportunité, publication |
 | `…/app/#/join/<jeton>` | invités | **Invitation** à un projet ou à un Studio (lien ou email) |
+| `https://dehini.com/studioma/admin/` | propriétaire du site | **Administration** : statistiques en direct, comptes, modération, emails et campagnes, système (voir « 7. Administration ») |
 
 ### Ce que fait la plateforme
 
@@ -1483,6 +1484,11 @@ Grow professionally. Get discovered.* L'interface est en anglais.
     compte consulte, puis demande à commenter ou à modifier ; le responsable accepte ou refuse, choisit
     *Viewer*, *Commenter* (commente et valide) ou *Editor* (modifie ce qu'on lui ouvre) et suit tout par email.
     Voir « 5. Partage avec des invités sans compte ».
+13. **Administration** — pour le propriétaire du site, avec le mot de passe de `/admin` : qui est en ligne et ce
+    qui se passe, en direct ; courbes sur 30 jours ; recherche et fiche de chaque compte (envoyer un lien de mot
+    de passe, confirmer l'adresse, déconnecter partout, **suspendre**, supprimer, écrire à la personne), export
+    CSV ; modération des contenus publics ; **campagnes d'emails** avec désinscription en un clic, journal de tous
+    les emails envoyés, test de l'envoi. Voir « 7. Administration ».
 
 ### Confidentialité
 
@@ -1545,7 +1551,11 @@ du compte Google.
   pièces jointes, validations), `collab.php` (invitations, membres), `social.php` (profils, fil, relations,
   portfolio, recommandations, recherche), `talent.php` (entreprises, opportunités, talents, messages),
   `oauth.php` (OAuth et jetons des assistants IA), `mcp.php` (outils du serveur MCP), `share.php` (**partage avec
-  des invités sans compte** : liens, vérification de l'adresse, sessions d'invité, droits, journal, emails).
+  des invités sans compte** : liens, vérification de l'adresse, sessions d'invité, droits, journal, emails),
+  `admin.php` (**administration** : statistiques, comptes, modération, campagnes et leur file d'envoi, système).
+- `studioma/admin/index.html` + `assets/admin.{js,css}` — la page d'administration (même système de design que
+  l'application, aucun pixel) ; `studioma/unsubscribe.php` — la page de désinscription des campagnes (lien signé,
+  sans connexion) ; `studioma/cron.php` — la tâche planifiée facultative (ligne de commande seulement).
 - Les données sont créées toutes seules au premier passage dans `~/studioma-data/` (hors `public_html`) :
   `studioma.sqlite` et `files/` (images ré-encodées en WebP, vidéos, documents).
 
@@ -1563,7 +1573,10 @@ Invitations, mot de passe oublié, bienvenue (avec le lien de confirmation de l'
 nouvelle adresse et notifications importantes (carte confiée, mention, demande de validation, autorisation de
 publication) partent du compte email du défi Impact s'il est configuré
 (`impact/config.php`), sinon de la fonction `mail()` du serveur. Pour un autre compte, voir
-`studioma/config.example.php`. Chacun peut couper les emails de notification dans ses réglages.
+`studioma/config.example.php`. Chacun peut couper les emails de notification dans ses réglages, et les
+annonces de l'équipe (campagnes) dans **Settings › Studioma news and announcements** ou par le lien de
+désinscription de chaque campagne. **Chaque email envoyé est inscrit au journal** de l'administration (destinataire,
+objet, réussite ou erreur ; les codes de vérification y sont masqués ; gardé 180 jours).
 
 ### 3. Connexion avec Google
 
@@ -1729,22 +1742,81 @@ Tester : Gestionnaire d'événements → *Événements de test* → copier le co
 (`define('STM_META_TEST_CODE', 'TEST…');`), faire une action, puis **retirer la ligne**. En cas d'échec, la
 dernière erreur de l'API est gardée dans la table `meta` de la base (`meta_capi_error`).
 
-### 7. Fichiers envoyés
+### 7. Administration
+
+`https://dehini.com/studioma/admin/` (aussi dans la liste de liens de `/admin`). **On se connecte avec le mot de
+passe de l'administration du site** (`/admin`) : c'est la même session (12 heures), aucun compte Studioma n'a de
+droit d'administration. Toute modification exige en plus le jeton de sécurité de cette session ; tout est vérifié
+par le serveur (`lib/admin.php`) et chaque action est inscrite au journal de l'administration (onglet *System*).
+
+- **Live overview** — rafraîchie toutes les 10 secondes : comptes en ligne (actifs dans les 5 dernières minutes,
+  invités et assistants IA à part), actifs du jour / de la semaine / du mois, inscriptions, cartes, publications,
+  emails du jour ; fil de l'activité de toute la plateforme ; six courbes sur 30 jours (comptes actifs, nouveaux
+  comptes, cartes, publications, messages, emails), avec la valeur au survol et le tableau des valeurs ; totaux
+  (projets, Studios, cartes livrées, offres, études de cas, fichiers et stockage, liens de partage, invités,
+  connexions IA) ; état des emails.
+- **Accounts** — recherche (nom, email, identifiant), filtres (en ligne, nouveaux, actifs, inactifs, adresse non
+  confirmée, particuliers, entreprises, Google, suspendus), tri, **export CSV** (une cellule qui commence par `=`
+  est neutralisée pour les tableurs). La fiche d'un compte : jours d'activité sur 30 jours, sessions ouvertes,
+  nombres d'usage, entreprises, assistants IA connectés, emails reçus, historique de l'administration ; actions :
+  écrire à la personne, envoyer un lien de mot de passe, renvoyer le lien de confirmation ou confirmer l'adresse,
+  déconnecter partout, déconnecter les assistants IA, couper ses emails d'annonces, **suspendre** (avec un motif)
+  ou lever la suspension, **supprimer** (en retapant son adresse ; refusé tant qu'elle est seule propriétaire d'un
+  projet ou d'une entreprise partagés, comme la suppression faite par la personne elle-même).
+- **Un compte suspendu** ne peut plus se connecter (mot de passe, Google, lien de mot de passe oublié, assistants
+  IA) et ses sessions sont fermées ; son profil, ses publications, sa présence dans la recherche, les suggestions
+  et l'annuaire des talents disparaissent. Rien n'est supprimé : lever la suspension rétablit tout.
+- **Moderation** — contenus publics seulement : publications, commentaires, offres (fermer ou supprimer), pages
+  d'entreprise (supprimer ; les comptes membres restent), études de cas publiées (repasser en brouillon).
+- **Emails** — *Campaigns* : écrire une annonce (objet, titre, texte, bouton facultatif ; `{name}` devient le
+  prénom), aperçu en direct, choisir le public (tout le monde, adresses confirmées ou non, particuliers,
+  entreprises, actifs ou inactifs depuis 30 jours, nouveaux de la semaine, sans projet), s'envoyer un essai, puis
+  envoyer. Les comptes suspendus et ceux qui ont coupé les annonces ne reçoivent jamais rien ; chaque email porte
+  un lien de désinscription signé et l'en-tête de **désinscription en un clic** des messageries (Gmail, Outlook).
+  Les emails partent **par petits lots**, sans jamais dépasser `STM_MAIL_PER_HOUR` emails par heure, tous emails
+  confondus (200 par défaut — les hébergeurs mutualisés limitent souvent l'envoi : régler cette valeur dans
+  `studioma/config.php` un peu sous leur limite) ; pause, reprise, annulation, duplication. *Email log* : tous les
+  emails envoyés, avec leurs erreurs. *Sending settings* : d'où partent les emails, test d'envoi immédiat (l'erreur
+  SMTP s'affiche), état de la tâche planifiée.
+- **System** — versions de PHP et SQLite, schéma de la base, taille de la base et des fichiers, espace libre,
+  Google, pixel et jeton Meta (dernière réussite ou erreur de l'API Conversions), tâche planifiée, journal de
+  l'administration.
+
+**Tâche planifiée (conseillée pour les campagnes)** : cPanel → Tâches Cron → « Une fois toutes les cinq
+minutes », commande
+
+```bash
+/usr/local/bin/php ~/public_html/studioma/cron.php >/dev/null 2>&1
+```
+
+Elle envoie les emails de campagne en attente (dans la limite horaire), les emails groupés des modifications
+d'invités et efface les sessions expirées. Sans elle, une campagne part quand même pendant que l'administration
+est ouverte (et après les requêtes des membres si le serveur sait terminer une réponse avant la fin du script),
+mais plus lentement. `cron.php` ne répond pas depuis le web (404). Le chemin de PHP peut différer selon
+l'hébergeur *(chemin habituel de cPanel, à vérifier)*.
+
+**Confidentialité** : l'administration voit les comptes (nom, email, dates) et les contenus publics ; du contenu
+privé des Studios et des messages, elle ne voit que des nombres — jamais un nom de projet, un titre de carte ou
+le texte d'un message. Aucun pixel ni suivi sur ses pages. Pas de suivi d'ouverture des emails.
+
+### 8. Fichiers envoyés
 
 64 Mo par fichier (`studioma/.user.ini` et `STM_MAX_UPLOAD_MB`), 12 Mo par image. Si l'hébergeur plafonne plus
 bas, baisser les deux valeurs ensemble. Le type est vérifié sur le contenu réel du fichier.
 
-### 8. Sauvegarde
+### 9. Sauvegarde
 
 Tout tient dans `~/studioma-data/` : copier ce dossier sauvegarde la base et les fichiers.
 
-### 9. Tests
+### 10. Tests
 
 ```bash
 tests/studioma/run.sh /tmp/stm-test
 ```
 
-Faux hébergement neuf, puis cinq batteries : `meta.js` (pixel et API Conversions : chaque événement, même event_id,
+Faux hébergement neuf, puis six batteries : `admin.js` (l'administration : accès réservé à la session `/admin`
+et à son jeton, statistiques sans contenu privé, actions sur les comptes, suspension appliquée partout,
+suppression, export CSV, modération, journal des emails, campagnes et désinscription, tâche planifiée), `meta.js` (pixel et API Conversions : chaque événement, même event_id,
 données hachées, rien de privé), `share.js` (le partage sans compte : lecture seule, Studio et
 niveaux du lien, liste fermée d'actions, codes et liens magiques, demandes et réponses, droits et périmètre,
 validation par un invité, emails, retrait, liens coupés, expirés, régénérés), `mcp.js` (le serveur MCP et son OAuth, comme un assistant :
@@ -1772,8 +1844,10 @@ parcours complet dans le navigateur, sur ordinateur et sur mobile, avec deux com
 - L'adresse email d'un compte créé avec un mot de passe n'est pas vérifiée à l'inscription : on peut utiliser
   Studioma sans la confirmer. Elle l'est par le lien de confirmation (email de bienvenue, Settings › Email), par
   Google ou par le lien de mot de passe oublié ; seules les invitations envoyées par email en dépendent.
-- Pas de modération ni d'administration centrale (signalement d'une publication, suspension d'un compte), pas
-  de blocage entre membres.
+- Pas de signalement d'une publication par les membres ni de blocage entre membres : la modération se fait
+  depuis l'administration. Pas de statistiques d'ouverture ou de clic des campagnes (volontairement : aucun suivi
+  dans les emails). Une seule session d'administration (le mot de passe de `/admin`), sans comptes
+  d'administrateurs distincts.
 - Une seule langue (anglais) ; les conditions d'utilisation se résument à la case à cocher de l'inscription.
 - Les pages publiques sont rendues par JavaScript : elles se partagent par lien mais ne sont pas optimisées pour
   les moteurs de recherche (seule la landing l'est).

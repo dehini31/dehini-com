@@ -101,7 +101,8 @@ function current_user(): ?array
     $raw = (string) ($_COOKIE[SID_COOKIE] ?? '');
     if (!preg_match('/^[a-f0-9]{48}$/', $raw)) return null;
     $hash = hash('sha256', $raw);
-    $u = row('SELECT u.*, s.csrf AS s_csrf, s.exp AS s_exp FROM sessions s JOIN users u ON u.id = s.uid WHERE s.hash = ? AND s.exp > ?', [$hash, time()]);
+    // Un compte suspendu par l'administration n'a plus de session valable.
+    $u = row('SELECT u.*, s.csrf AS s_csrf, s.exp AS s_exp FROM sessions s JOIN users u ON u.id = s.uid WHERE s.hash = ? AND s.exp > ? AND u.suspended = 0', [$hash, time()]);
     if (!$u) return null;
     $u['id'] = (int) $u['id'];
     $fresh = time() + SESSION_DAYS * 86400;
@@ -109,11 +110,28 @@ function current_user(): ?array
         q('UPDATE sessions SET exp = ? WHERE hash = ?', [$fresh, $hash]);
         setcookie(SID_COOKIE, $raw, cookie_opts($fresh));
     }
-    if ((int) $u['last_seen'] < time() - 600) q('UPDATE users SET last_seen = ? WHERE id = ?', [time(), $u['id']]);
+    user_seen($u);
     return $cache = $u;
+}
+/**
+ * Dernière activité du compte, à la minute près (« en ligne » dans l'administration), et jour d'activité
+ * (utilisateurs actifs par jour). Une écriture au plus par minute et par compte.
+ */
+function user_seen(array $u): void
+{
+    $now = time();
+    if ((int) $u['last_seen'] >= $now - 60) return;
+    q('UPDATE users SET last_seen = ? WHERE id = ?', [$now, $u['id']]);
+    q('INSERT OR IGNORE INTO activity_days (day, uid) VALUES (?, ?)', [date('Y-m-d', $now), $u['id']]);
+}
+/** Refuse un compte suspendu par l'administration (connexion, Google, nouveau mot de passe). */
+function refuse_suspended(array $u): void
+{
+    if ((int) ($u['suspended'] ?? 0) > 0) fail('This account is suspended. Contact ' . STM_NAME . ' if you think this is a mistake.', 403, 'suspended');
 }
 function start_session(int $uid): string
 {
+    refuse_suspended(user_by_id($uid) ?? []);
     $raw = token(24);
     $csrf = token(16);
     $exp = time() + SESSION_DAYS * 86400;
@@ -170,6 +188,7 @@ function account_create(string $email, string $name, string $password, string $k
         'pass' => $password === '' ? '' : password_hash($password, PASSWORD_DEFAULT), 'kind' => $kind, 'pro' => $kind === 'company' ? 0 : 1,
         'created' => $now, 'last_seen' => $now,
     ]);
+    q('INSERT OR IGNORE INTO activity_days (day, uid) VALUES (?, ?)', [date('Y-m-d', $now), $uid]);
     user_reindex($uid);
     return $uid;
 }
@@ -235,7 +254,8 @@ function my_companies(int $uid): array
 
 function user_settings(array $u): array
 {
-    return jarr($u['settings']) + ['theme' => 'auto', 'email_notifs' => true, 'show_activity' => false];
+    // email_news : annonces et nouveautés envoyées depuis l'administration (désinscription en un clic).
+    return jarr($u['settings']) + ['theme' => 'auto', 'email_notifs' => true, 'email_news' => true, 'show_activity' => false];
 }
 /** Tout ce que l'application doit savoir sur le compte connecté. */
 function me_view(array $u, string $csrf): array

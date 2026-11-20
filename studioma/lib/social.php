@@ -88,7 +88,8 @@ function proof_of_work(array $t): array
 function api_profile_get(array $b, ?array $u): array
 {
     $t = row('SELECT * FROM users WHERE handle = ?', [strtolower(line_clean($b['handle'] ?? '', 40))]);
-    if (!$t) not_found('This profile');
+    // Compte suspendu par l'administration : son profil n'est plus visible.
+    if (!$t || (int) $t['suspended'] > 0) not_found('This profile');
     $tid = (int) $t['id'];
     $me = $u ? (int) $u['id'] : 0;
     $self = $me === $tid;
@@ -161,6 +162,12 @@ function api_profile_save(array $b, array $u): array
 
 function post_views(array $posts, ?array $u, bool $withShared = true): array
 {
+    // Les publications des comptes suspendus par l'administration ne sont plus montrées.
+    if ($posts) {
+        $authors = array_values(array_unique(array_map('intval', array_column($posts, 'uid'))));
+        $hidden = array_map('intval', array_column(rows('SELECT id FROM users WHERE suspended > 0 AND id IN (' . marks($authors) . ')', $authors), 'id'));
+        if ($hidden) $posts = array_values(array_filter($posts, function (array $p) use ($hidden): bool { return !in_array((int) $p['uid'], $hidden, true); }));
+    }
     if (!$posts) return [];
     $me = $u ? (int) $u['id'] : 0;
     $ids = array_map('intval', array_column($posts, 'id'));
@@ -392,10 +399,10 @@ function suggestions(array $u, array $exclude, int $limit): array
     };
     $add(array_column(rows('SELECT DISTINCT m2.uid FROM project_members m1 JOIN project_members m2 ON m2.project_id = m1.project_id WHERE m1.uid = ? LIMIT 30', [$uid]), 'uid'));
     foreach (array_slice(jarr($u['skills']), 0, 4) as $skill) {
-        $add(array_column(rows("SELECT id FROM users WHERE pro = 1 AND search LIKE ? ESCAPE '\\' ORDER BY last_seen DESC LIMIT 12", [like((string) $skill)]), 'id'));
+        $add(array_column(rows("SELECT id FROM users WHERE pro = 1 AND suspended = 0 AND search LIKE ? ESCAPE '\\' ORDER BY last_seen DESC LIMIT 12", [like((string) $skill)]), 'id'));
     }
-    $add(array_column(rows("SELECT id FROM users WHERE pro = 1 AND title <> '' ORDER BY last_seen DESC LIMIT 40"), 'id'));
-    $add(array_column(rows('SELECT id FROM users ORDER BY id DESC LIMIT 30'), 'id'));
+    $add(array_column(rows("SELECT id FROM users WHERE pro = 1 AND suspended = 0 AND title <> '' ORDER BY last_seen DESC LIMIT 40"), 'id'));
+    $add(array_column(rows('SELECT id FROM users WHERE suspended = 0 ORDER BY id DESC LIMIT 30'), 'id'));
     return people_view($ids);
 }
 
@@ -667,7 +674,7 @@ function api_search(array $b, ?array $u): array
     if (mb_strlen($term) < 2) return ['people' => [], 'companies' => [], 'posts' => [], 'opps' => []];
     rate('search', 120, 600);
     $l = like($term);
-    $people = rows("SELECT * FROM users WHERE search LIKE ? ESCAPE '\\' ORDER BY pro DESC, last_seen DESC LIMIT 12", [$l]);
+    $people = rows("SELECT * FROM users WHERE suspended = 0 AND search LIKE ? ESCAPE '\\' ORDER BY pro DESC, last_seen DESC LIMIT 12", [$l]);
     $companies = rows("SELECT * FROM companies WHERE search LIKE ? ESCAPE '\\' ORDER BY name LIMIT 8", [$l]);
     $posts = rows("SELECT * FROM posts WHERE body LIKE ? ESCAPE '\\' ORDER BY id DESC LIMIT 10", ['%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $term) . '%']);
     $opps = rows("SELECT * FROM opps WHERE status = 'open' AND search LIKE ? ESCAPE '\\' ORDER BY id DESC LIMIT 8", [$l]);

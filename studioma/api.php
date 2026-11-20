@@ -26,8 +26,12 @@ require __DIR__ . '/lib/google.php';
 require __DIR__ . '/lib/oauth.php';
 require __DIR__ . '/lib/share.php';
 require __DIR__ . '/lib/meta.php';
+require __DIR__ . '/lib/admin.php';
 
-/** action => [méthode, accès] — accès : public (compte facultatif) | user (compte obligatoire). */
+/**
+ * action => [méthode, accès] — accès : public (compte facultatif) | user (compte obligatoire) | admin (session de
+ * l'administration du site /admin, voir lib/admin.php).
+ */
 const ROUTES = [
     // Comptes
     'me' => ['GET', 'public'], 'pixel' => ['GET', 'public'], 'signup' => ['POST', 'public'], 'login' => ['POST', 'public'], 'logout' => ['POST', 'public'],
@@ -71,6 +75,13 @@ const ROUTES = [
     'opps' => ['GET', 'public'], 'opp_get' => ['GET', 'public'], 'opp_save' => ['POST', 'user'], 'opp_delete' => ['POST', 'user'],
     'opp_apply' => ['POST', 'user'], 'opp_application' => ['POST', 'user'], 'talent' => ['GET', 'user'], 'talent_save' => ['POST', 'user'],
     'threads' => ['GET', 'user'], 'thread' => ['GET', 'user'], 'message_send' => ['POST', 'user'],
+    // Administration de la plateforme (studioma/admin/) : statistiques en direct, comptes, modération, emails, système
+    'admin_live' => ['GET', 'admin'], 'admin_users' => ['GET', 'admin'], 'admin_user' => ['GET', 'admin'], 'admin_user_action' => ['POST', 'admin'],
+    'admin_users_csv' => ['GET', 'admin'], 'admin_content' => ['GET', 'admin'], 'admin_content_action' => ['POST', 'admin'],
+    'admin_mail' => ['GET', 'admin'], 'admin_mail_log' => ['GET', 'admin'], 'admin_mail_test' => ['POST', 'admin'],
+    'admin_campaign' => ['GET', 'admin'], 'admin_campaign_preview' => ['POST', 'admin'], 'admin_campaign_save' => ['POST', 'admin'],
+    'admin_campaign_test' => ['POST', 'admin'], 'admin_campaign_send' => ['POST', 'admin'], 'admin_campaign_action' => ['POST', 'admin'],
+    'admin_pump' => ['POST', 'admin'], 'admin_system' => ['GET', 'admin'],
 ];
 
 /**
@@ -158,6 +169,7 @@ function api_login(array $b, ?array $u): array
     $pass = is_string($b['password'] ?? null) ? $b['password'] : '';
     if ($t && $t['pass'] === '' && (string) $t['google_sub'] !== '') fail('This account signs in with Google. Use “Continue with Google”, or “Forgot your password?” to choose a password.', 401, 'use_google');
     if (!$t || $t['pass'] === '' || !password_verify($pass, (string) $t['pass'])) fail('Wrong email or password.', 401, 'credentials');
+    refuse_suspended($t);
     if (password_needs_rehash((string) $t['pass'], PASSWORD_DEFAULT)) q('UPDATE users SET pass = ? WHERE id = ?', [password_hash($pass, PASSWORD_DEFAULT), $t['id']]);
     return me_view($t, start_session((int) $t['id']));
 }
@@ -170,7 +182,7 @@ function api_forgot(array $b, ?array $u): array
 {
     rate('forgot', 5, 3600);
     $email = strtolower(line_clean($b['email'] ?? '', 190));
-    $t = row('SELECT * FROM users WHERE email = ?', [$email]);
+    $t = row('SELECT * FROM users WHERE email = ? AND suspended = 0', [$email]);
     if ($t) {
         $raw = token(24);
         q('UPDATE users SET rhash = ?, rexp = ? WHERE id = ?', [hash('sha256', $raw), time() + 3600, $t['id']]);
@@ -188,6 +200,7 @@ function api_reset(array $b, ?array $u): array
     $raw = (string) ($b['token'] ?? '');
     $t = preg_match('/^[a-f0-9]{48}$/', $raw) ? row('SELECT * FROM users WHERE rhash = ? AND rexp > ?', [hash('sha256', $raw), time()]) : null;
     if (!$t) fail('This link has expired. Ask for a new one.', 410, 'gone');
+    refuse_suspended($t);
     $password = password_in($b['password'] ?? '');
     // Le lien a été reçu à cette adresse : elle est confirmée.
     q('UPDATE users SET pass = ?, rhash = NULL, rexp = 0, email_ok = 1 WHERE id = ?', [password_hash($password, PASSWORD_DEFAULT), $t['id']]);
@@ -225,7 +238,7 @@ function api_account_save(array $b, array $u): array
     if (isset($b['settings']) && is_array($b['settings'])) {
         $s = user_settings($u);
         if (isset($b['settings']['theme'])) $s['theme'] = in_array($b['settings']['theme'], ['light', 'dark', 'auto'], true) ? $b['settings']['theme'] : 'auto';
-        foreach (['email_notifs', 'show_activity'] as $k) {
+        foreach (['email_notifs', 'email_news', 'show_activity'] as $k) {
             if (isset($b['settings'][$k])) $s[$k] = (bool) $b['settings'][$k];
         }
         q('UPDATE users SET settings = ? WHERE id = ?', [jenc($s), $uid]);
@@ -295,17 +308,31 @@ function api_account_delete(array $b, array $u): array
     } elseif (!password_verify(is_string($b['password'] ?? null) ? $b['password'] : '', (string) $u['pass'])) {
         fail('Your password is not correct.');
     }
+    account_destroy($uid);
+    setcookie(SID_COOKIE, '', cookie_opts(time() - 3600));
+    return [];
+}
+/**
+ * Supprime un compte et ce qui n'appartient qu'à lui (projets dont il est le seul membre, entreprises dont il
+ * est le seul membre, fichiers). Refusé s'il est le seul propriétaire d'un projet ou d'une entreprise partagés.
+ * $self = false : suppression demandée par l'administration (messages formulés pour elle).
+ */
+function account_destroy(int $uid, bool $self = true): void
+{
+    $who = $self ? 'You are' : 'This account is';
     $solo = [];
+    $soloCompanies = [];
     foreach (rows("SELECT p.* FROM projects p JOIN project_members m ON m.project_id = p.id WHERE m.uid = ? AND m.role = 'owner'", [$uid]) as $p) {
         if (owners_count((int) $p['id']) > 1) continue;
-        if ((int) val('SELECT COUNT(*) FROM project_members WHERE project_id = ?', [$p['id']]) > 1) fail('You are the only owner of “' . $p['name'] . '”. Name another owner or delete the project first.');
+        if ((int) val('SELECT COUNT(*) FROM project_members WHERE project_id = ?', [$p['id']]) > 1) fail($who . ' the only owner of “' . $p['name'] . '”. ' . ($self ? 'Name another owner or delete the project first.' : 'Another owner must be named first.'));
         $solo[] = (int) $p['id'];
     }
     foreach (rows("SELECT c.* FROM companies c JOIN company_members m ON m.company_id = c.id WHERE m.uid = ? AND m.role = 'owner'", [$uid]) as $c) {
         if ((int) val("SELECT COUNT(*) FROM company_members WHERE company_id = ? AND role = 'owner'", [$c['id']]) > 1) continue;
-        if ((int) val('SELECT COUNT(*) FROM company_members WHERE company_id = ?', [$c['id']]) > 1) fail('You are the only owner of ' . $c['name'] . '. Name another owner first.');
-        q('DELETE FROM companies WHERE id = ?', [$c['id']]);
+        if ((int) val('SELECT COUNT(*) FROM company_members WHERE company_id = ?', [$c['id']]) > 1) fail($who . ' the only owner of ' . $c['name'] . '. ' . ($self ? 'Name another owner first.' : 'Another owner must be named first.'));
+        $soloCompanies[] = (int) $c['id'];
     }
+    foreach ($soloCompanies as $cid) q('DELETE FROM companies WHERE id = ?', [$cid]);
     tx(function () use ($uid, $solo): void {
         foreach ($solo as $pid) {
             foreach (rows('SELECT id FROM studios WHERE project_id = ?', [$pid]) as $s) studio_destroy((int) $s['id']);
@@ -316,8 +343,6 @@ function api_account_delete(array $b, array $u): array
         foreach (rows("SELECT * FROM files WHERE uid = ? AND scope <> 'studio'", [$uid]) as $f) file_delete($f);
         q('DELETE FROM users WHERE id = ?', [$uid]);
     });
-    setcookie(SID_COOKIE, '', cookie_opts(time() - 3600));
-    return [];
 }
 
 /* ---------------------------------------------------------------- routeur */
@@ -356,7 +381,14 @@ if ($route[0] === 'POST' && !$isPost) fail('Method not allowed.', 405, 'method')
 if ($isPost && ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') !== 'studioma') fail('Request refused.', 403, 'forbidden');
 
 try {
+    if ($route[1] === 'admin') {
+        $data = !$isPost ? $_GET : input_json();
+        $fn = 'api_' . $action;
+        ok($fn($data, require_admin()));
+    }
     $user = $route[1] === 'user' ? require_user() : current_user();
+    // Campagne d'emails en cours : un petit lot part après la réponse (si le serveur le permet, lib/admin.php).
+    if (campaign_waiting()) campaign_pump_later(3);
     // Les envois de fichier arrivent en multipart : leurs champs sont dans $_POST.
     $data = !$isPost ? $_GET : ($action === 'upload' ? $_POST : input_json());
     $fn = 'api_' . $action;
