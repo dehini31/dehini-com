@@ -40,6 +40,8 @@ Site personnel de Mohammed Dehini.
   niveaux → colonnes → cartes, glisser-déposer, passage de relais entre niveaux, calendrier, « My work »),
   invitations et rôles, profils publics, fil d'actualité, portfolio et preuves de travail, opportunités, annuaire
   des talents et messagerie. Voir la section « Studioma » plus bas.
+- `img/projets/` — captures d'écran des plateformes de la vitrine de la section Projets (voir « Vitrine des
+  plateformes en ligne ») ; `tools/vitrine/captures.js` les refait.
 - `robots.txt` — robots du domaine (déclare les plans du site ; Google ne lit que celui de la racine).
 - `sitemap.xml` — plan des pages principales de dehini.com (les questions du défi Impact ont le leur :
   `/impact/sitemap.xml`). Voir « Référencement (SEO) » plus bas.
@@ -1725,6 +1727,34 @@ Editor**.
 
 Dans les champs de titre, `**mot**` affiche le mot en bleu (accent) et, sur le titre principal
 uniquement, `__mot__` l'affiche en gris clair.
+
+## Vitrine des plateformes en ligne (section Projets)
+
+En haut de la section **Projets** de la page d'accueil, une vitrine présente les plateformes hébergées sur
+dehini.com et développées dans ce dépôt : **Défi Impact**, **Studioma**, **ELBAHI FERTI** et **Maillage**.
+
+- Un onglet par plateforme ; le défilement passe tout seul de l'une à l'autre (barre de progression, bouton
+  Pause / Lecture auto). Il s'arrête au survol, au clavier, hors de l'écran et dès qu'on choisit un onglet.
+  Sur téléphone : balayage gauche / droite.
+- Chaque fiche montre le site dans un navigateur et un téléphone : **survoler un écran fait défiler la page**
+  (sur téléphone : le toucher), et la couleur de la fiche suit celle de la marque.
+- **Aperçu en direct** (bouton, ou clic sur un écran) : le vrai site s'ouvre dans une fenêtre, en taille
+  ordinateur, tablette ou téléphone. Cela fonctionne parce que les sites sont sur le même domaine
+  (Studioma et Maillage n'autorisent l'affichage en fenêtre que depuis dehini.com).
+- Si un projet de l'admin a un PDF et un titre qui correspond (ex. « ELBAHI » pour ELBAHI FERTI), la fiche
+  propose aussi **Feuilleter le PDF**.
+- Le chiffre « projets réalisés » du haut de page compte les projets de l'admin **plus** ceux de la vitrine.
+
+Ces fiches font partie du **code** (constante `SHOWCASE` dans `index.html`), pas de `data.json` : elles se
+modifient ici sur GitHub et arrivent sur le serveur avec le cron. Les captures sont dans `img/projets/`
+(`<slug>-desktop.webp` et `<slug>-mobile.webp`). Pour les refaire après un changement sur un site :
+
+```bash
+node tools/vitrine/captures.js            # les quatre plateformes
+node tools/vitrine/captures.js maillage   # une seule
+```
+
+(Playwright doit être installé : `npm i -g playwright && npx playwright install chromium`.)
 
 ## Comment ça se met à jour
 
