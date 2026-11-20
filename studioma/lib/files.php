@@ -247,6 +247,7 @@ function file_copy(array $f, int $uid, string $scope): array
 /** Le compte (ou le visiteur) peut-il lire ce fichier ? */
 function file_readable(array $f, ?array $u): bool
 {
+    if ($u && !empty($u['guest'])) return guest_file_readable($f, $u);   // invité d'un lien de partage
     if ($f['scope'] === 'public') return true;
     if (!$u) return false;
     if ((int) $f['uid'] === (int) $u['id']) return true;

@@ -38,12 +38,19 @@
   /** Erreur de saisie attendue : affichée dans le formulaire, sans trace dans la console. */
   class UserError extends Error {}
   SM.UserError = UserError;
+  /**
+   * Lien de partage ouvert (#/s/<jeton>) : SM.guest porte son jeton, envoyé (en-tête X-Share) avec les
+   * seules actions qu'un invité peut faire ; le serveur vérifie tout le reste.
+   */
+  SM.guest = null;
+  const GUEST_ACTIONS = new Set(['share_open', 'share_code', 'share_verify', 'share_request', 'share_leave', 'board', 'card_get', 'card_save', 'card_create', 'card_move', 'check_save', 'check_delete', 'comment_add', 'comment_delete', 'approval_decide']);
   SM.api = async (action, opts) => {
     opts = opts || {};
     const url = new URL('api.php', BASE);
     url.searchParams.set('action', action);
     Object.entries(opts.params || {}).forEach(([k, v]) => { if (v !== '' && v != null && v !== false) url.searchParams.set(k, v === true ? '1' : v); });
     const init = { credentials: 'same-origin', headers: {} };
+    if (SM.guest && GUEST_ACTIONS.has(action)) init.headers['X-Share'] = SM.guest;
     if (opts.body !== undefined) {
       init.method = 'POST';
       init.headers['X-Requested-With'] = 'studioma';
@@ -92,7 +99,7 @@
     };
     xhr.send(fd);
   });
-  SM.fileUrl = (token, small, download) => (token ? `${BASE}api.php?action=file&t=${token}${small ? '&s=1' : ''}${download ? '&dl=1' : ''}` : '');
+  SM.fileUrl = (token, small, download) => (token ? `${BASE}api.php?action=file&t=${token}${small ? '&s=1' : ''}${download ? '&dl=1' : ''}${SM.guest ? '&share=' + SM.guest : ''}` : '');
 
   /* -------------------------------------------------------------- formats */
   const nf = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });

@@ -37,7 +37,10 @@ function studio_touch(int $studioId): void
 /** Historique : $text complète la phrase « <Nom> … » (ex. « moved this card to “Scheduled” »). */
 function log_event(int $studioId, int $cardId, int $uid, string $kind, string $text): void
 {
-    insert('events', ['studio_id' => $studioId, 'card_id' => $cardId, 'uid' => $uid, 'kind' => $kind, 'text' => mb_substr($text, 0, 400), 'created' => time()]);
+    // Action d'un invité sans compte (uid 0) : elle porte son identité, et part dans le journal du partage.
+    $g = $uid === 0 ? guest_now() : null;
+    insert('events', ['studio_id' => $studioId, 'card_id' => $cardId, 'uid' => $uid, 'guest_id' => $g ? $g['gid'] : 0, 'kind' => $kind, 'text' => mb_substr($text, 0, 400), 'created' => time()]);
+    if ($g) guest_log_change($cardId, $kind, $text);
 }
 function color_in($c, string $default = 'iris'): string
 {
@@ -371,15 +374,18 @@ function board_data(array $s, array $u): array
         'levels' => $levels, 'cols' => $cols,
         'cards' => array_map(function (array $c) use ($members): array { return card_lite($c, $members); }, $cards),
         'members' => studio_people_view($s, $p),
+        // Invités qu'on peut désigner pour valider une carte (lien de partage, lib/share.php).
+        'guests' => !empty($u['guest']) || !can($role, 'work') ? [] : guest_approvers($sid),
     ];
 }
 function api_board(array $b, array $u): array
 {
     $s = load_studio(int_in($b, 'studio'), $u);
+    $guest = !empty($u['guest']);
     // Synchronisation : si le navigateur a déjà cette version, on ne renvoie que les pastilles du menu.
-    $counts = me_counts((int) $u['id']);
+    $counts = $guest ? (object) [] : me_counts((int) $u['id']);
     if (isset($b['rev']) && (int) $b['rev'] === (int) $s['rev']) return ['rev' => (int) $s['rev'], 'same' => true, 'counts' => $counts];
-    return ['rev' => (int) $s['rev'], 'counts' => $counts] + board_data($s, $u);
+    return ['rev' => (int) $s['rev'], 'counts' => $counts] + ($guest ? guest_board($s, $u) : board_data($s, $u));
 }
 
 /* ---------------------------------------------------------------- niveaux */
@@ -726,12 +732,14 @@ function api_card_create(array $b, array $u): array
 {
     $col = load_col(int_in($b, 'col_id'), $u, 'work');
     $col = col_in_studio((int) $col['id'], (int) $col['studio_id']) + ['studio' => $col['studio']];
+    if (!empty($u['guest'])) guest_need_col($u, $col);
     $title = line_clean($b['title'] ?? '', 200);
     if ($title === '') fail('Give this card a title.');
     $uid = (int) $u['id'];
-    $id = tx(function () use ($col, $title, $uid, $b): int {
+    $gid = !empty($u['guest']) ? (int) $u['guest']['gid'] : 0;
+    $id = tx(function () use ($col, $title, $uid, $gid, $b): int {
         $now = time();
-        $id = insert('cards', ['studio_id' => $col['studio_id'], 'col_id' => $col['id'], 'pos' => 0, 'title' => $title, 'created_by' => $uid, 'created' => $now, 'updated' => $now]);
+        $id = insert('cards', ['studio_id' => $col['studio_id'], 'col_id' => $col['id'], 'pos' => 0, 'title' => $title, 'created_by' => $uid, 'created_guest' => $gid, 'created' => $now, 'updated' => $now]);
         card_place($id, $col, empty($b['top']) ? PHP_INT_MAX : 0);
         // Une personne qui ne modifie que ses propres cartes devient responsable de celle qu'elle crée.
         if (!can($col['studio']['role'], 'edit')) q('UPDATE cards SET assignee = ? WHERE id = ?', [$uid, $id]);
@@ -740,12 +748,13 @@ function api_card_create(array $b, array $u): array
         return $id;
     });
     $c = row('SELECT c.*, ' . CARD_COUNTS . ' FROM cards c WHERE c.id = ?', [$id]);
-    return ['card' => card_lite($c)];
+    return ['card' => card_lite($c) + ($gid ? ['editable' => true] : [])];
 }
 function api_card_move(array $b, array $u): array
 {
     $card = load_card(int_in($b, 'id'), $u, 'cardedit');
     $col = col_in_studio(int_in($b, 'col_id'), (int) $card['studio_id']);
+    if (!empty($u['guest'])) guest_need_col($u, $col);
     $res = tx(function () use ($card, $col, $b, $u): ?array {
         $r = card_move($card, $col, int_in($b, 'index'), (int) $u['id']);
         studio_touch((int) $card['studio_id']);
@@ -797,8 +806,8 @@ function api_card_save(array $b, array $u): array
         $a = int_in($b, 'assignee');
         if ($a && !$member($a)) fail('This person is not a member of the Studio.');
         if ($a !== (int) $card['assignee']) {
-            // Seuls ceux qui gèrent toutes les cartes peuvent en changer le responsable.
-            if (!can($s['role'], 'edit')) forbidden('Only creators and managers can reassign a card.');
+            // Seuls ceux qui gèrent toutes les cartes peuvent en changer le responsable (jamais un invité).
+            if (!can($s['role'], 'edit') || !empty($u['guest'])) forbidden('Only creators and managers can reassign a card.');
             $set['assignee'] = $a;
             $name = $a ? (string) val('SELECT name FROM users WHERE id = ?', [$a]) : '';
             $log[] = ['assign', $a ? 'assigned this card to ' . $name : 'removed the assignee'];
@@ -836,12 +845,12 @@ function api_card_save(array $b, array $u): array
         $v = jenc((object) $m);
         if ($v !== $card['metrics'] && !($m === [] && jarr($card['metrics']) === [])) { $set['metrics'] = $v; $log[] = ['edit', 'updated the performance metrics']; }
     }
-    tx(function () use ($b, $card, $cid, $sid, $uid, $set, $log, $member, $s): void {
+    tx(function () use ($b, $card, $cid, $sid, $uid, $set, $log, $member, $s, $u): void {
         if (isset($b['members']) && is_array($b['members'])) {
             $new = array_values(array_unique(array_filter(array_map('intval', $b['members']), $member)));
             $old = array_map('intval', array_column(rows('SELECT uid FROM card_members WHERE card_id = ?', [$cid]), 'uid'));
             if (array_diff($new, $old) || array_diff($old, $new)) {
-                if (!can($s['role'], 'edit')) forbidden('Only creators and managers can change the collaborators of a card.');
+                if (!can($s['role'], 'edit') || !empty($u['guest'])) forbidden('Only creators and managers can change the collaborators of a card.');
                 q('DELETE FROM card_members WHERE card_id = ?', [$cid]);
                 foreach ($new as $m) q('INSERT OR IGNORE INTO card_members (card_id, uid) VALUES (?, ?)', [$cid, $m]);
                 foreach (array_diff($new, $old) as $m) notify($m, $uid, 'assigned', 'added you as a collaborator on “' . $card['title'] . '”', card_link($card), true);
@@ -1001,9 +1010,10 @@ function api_studio_activity(array $b, array $u): array
     $before = int_in($b, 'before') ?: PHP_INT_MAX;
     $evs = rows('SELECT e.*, c.title AS card_title FROM events e LEFT JOIN cards c ON c.id = e.card_id WHERE e.studio_id = ? AND e.id < ? ORDER BY e.id DESC LIMIT 50', [$s['id'], $before]);
     $users = user_cards(array_column($evs, 'uid'));
-    return ['events' => array_map(function (array $e) use ($users): array {
+    $guests = guest_cards(array_column($evs, 'guest_id'));
+    return ['events' => array_map(function (array $e) use ($users, $guests): array {
         return ['id' => (int) $e['id'], 'card_id' => (int) $e['card_id'], 'card_title' => (string) ($e['card_title'] ?? ''), 'kind' => (string) $e['kind'],
-            'text' => (string) $e['text'], 'created' => (int) $e['created'], 'user' => $users[(int) $e['uid']] ?? null];
+            'text' => (string) $e['text'], 'created' => (int) $e['created'], 'user' => $users[(int) $e['uid']] ?? ($guests[(int) $e['guest_id']] ?? null)];
     }, $evs)];
 }
 

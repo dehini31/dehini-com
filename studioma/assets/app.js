@@ -398,7 +398,7 @@
   };
 
   /* --------------------------------------------------------- notifications */
-  const NOTIF_ICONS = { assigned: 'user-plus', mention: 'comment', comment: 'comment', approval: 'shield', handoff: 'zap', invite: 'mail', post: 'heart', network: 'users', portfolio: 'award', opp: 'briefcase' };
+  const NOTIF_ICONS = { assigned: 'user-plus', mention: 'comment', comment: 'comment', approval: 'shield', handoff: 'zap', invite: 'mail', post: 'heart', network: 'users', portfolio: 'award', opp: 'briefcase', guest: 'globe' };
   SM.route(/^\/notifications$/, async (m, ctx) => {
     SM.set(ctx.view, html`<div class="page page-narrow"><header class="page-head"><h1>Notifications</h1></header>${SM.loading(4)}</div>`);
     const r = await SM.get('notifications');
@@ -409,8 +409,8 @@
       <header class="page-head"><h1>Notifications</h1>${unread ? html`<button class="btn btn-soft btn-sm" data-act="notifs-read">${icon('check')}Mark all as read</button>` : ''}</header>
       ${r.notifications.length ? html`<div class="panel list">${r.notifications.map((n) => html`
         <a class="notif${n.seen ? '' : ' is-new'}" href="#/${n.link}" data-act="notif-open" data-id="${n.id}" data-link="${n.link}">
-          <span class="notif-av">${SM.avatar(n.actor, 'av-m')}<i class="notif-kind k-${n.kind}">${icon(NOTIF_ICONS[n.kind] || 'bell')}</i></span>
-          <span class="notif-text"><span><b>${n.actor ? n.actor.name : 'Studioma'}</b> ${n.text}</span><small>${SM.fmt.ago(n.created)}</small></span>
+          <span class="notif-av">${SM.avatar(n.actor || (n.guest ? { name: n.guest } : null), 'av-m')}<i class="notif-kind k-${n.kind}">${icon(NOTIF_ICONS[n.kind] || 'bell')}</i></span>
+          <span class="notif-text"><span><b>${n.actor ? n.actor.name : n.guest ? n.guest + ' (guest)' : 'Studioma'}</b> ${n.text}</span><small>${SM.fmt.ago(n.created)}</small></span>
         </a>`)}</div>`
         : SM.empty('bell', 'You\'re all caught up', 'Assignments, mentions, approvals and invitations will show up here.')}
     </div>`);

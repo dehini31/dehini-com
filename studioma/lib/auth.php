@@ -266,14 +266,16 @@ function me_counts(int $uid): array
  * Notification dans l'application, doublée d'un email pour les sujets importants ($email) si la
  * personne ne l'a pas désactivé. $link : écran de l'application (ex. « studio/3/card/12 »).
  */
-function notify(int $uid, int $actor, string $kind, string $text, string $link = '', bool $email = false): void
+function notify(int $uid, int $actor, string $kind, string $text, string $link = '', bool $email = false, string $guest = ''): void
 {
     if ($uid <= 0 || $uid === $actor) return;
-    insert('notifications', ['uid' => $uid, 'actor' => $actor, 'kind' => $kind, 'text' => mb_substr($text, 0, 300), 'link' => $link, 'created' => time()]);
+    // Action d'un invité sans compte (actor 0) : son adresse vérifiée tient lieu de nom.
+    if ($actor === 0 && $guest === '' && function_exists('guest_now') && ($g = guest_now())) $guest = (string) $g['email'];
+    insert('notifications', ['uid' => $uid, 'actor' => $actor, 'kind' => $kind, 'text' => mb_substr($text, 0, 300), 'link' => $link, 'guest' => $guest, 'created' => time()]);
     if (!$email) return;
     $to = user_by_id($uid);
     if (!$to || !user_settings($to)['email_notifs']) return;
-    $who = $actor > 0 ? (string) val('SELECT name FROM users WHERE id = ?', [$actor]) : STM_NAME;
+    $who = $actor > 0 ? (string) val('SELECT name FROM users WHERE id = ?', [$actor]) : ($guest !== '' ? $guest . ' (guest)' : STM_NAME);
     $line = trim($who . ' ' . $text);
     mail_later((string) $to['email'], mb_substr($line, 0, 120), 'You have a new update', [$line, 'You can turn these emails off in Settings.'], 'Open ' . STM_NAME, app_url($link));
 }

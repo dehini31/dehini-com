@@ -9,7 +9,7 @@ politique de sécurité (CSP).
 tests/studioma/run.sh /tmp/stm-test
 ```
 
-`run.sh` prépare un hébergement neuf, lance le serveur PHP (port 8097) et exécute trois batteries, chacune sur une
+`run.sh` prépare un hébergement neuf, lance le serveur PHP (port 8097) et exécute quatre batteries, chacune sur une
 base vide :
 
 **`api.js` — l'API seule** (Node, sans navigateur) :
@@ -44,6 +44,30 @@ base vide :
   confirmée ni par un lien de mot de passe oublié envoyé à l'ancienne, ni par une connexion Google dont l'adresse
   diffère ; entreprise créée avec Google ; suppression d'un compte sans mot de passe ;
 - mot de passe oublié (anciennes sessions fermées), suppression d'un projet, fichiers internes interdits.
+
+**`share.js` — le partage avec des invités sans compte** (API seule, comme un navigateur malveillant) :
+
+- liens public et privé (un manager seulement), jeton de 48 caractères ;
+- lien public : lecture seule sans compte ; niveaux non partagés, autres Studios et leurs cartes introuvables ;
+  pièces jointes servies seulement pour les cartes partagées ; écritures refusées sans adresse vérifiée ; toute
+  action hors de la liste fermée refusée (espace de travail, membres, réglages, archivage, suppression,
+  invitations, structure, validations demandées…) ; jeton inventé ou tronqué, en-tête manquant ;
+- vérification par code : 5 codes faux et le code ne vaut plus, code à usage unique, session d'invité ; demande
+  d'édition enregistrée, email au responsable (adresse vérifiée, message, liens Examiner / Approuver / Refuser),
+  notification au nom de l'invité ;
+- réponse du responsable (autre compte refusé, déjà traitée), périmètre d'édition (une colonne, une carte) :
+  cartes et colonnes modifiables exactement celles du périmètre ; responsable et collaborateurs d'une carte
+  intouchables ; création, déplacement, check-list et commentaires dans le périmètre seulement ; commentaires des
+  autres protégés ;
+- emails des modifications : le premier tout de suite (invité, quoi, quand, lien vers la carte), les suivants
+  regroupés après la fenêtre de 10 minutes, rien d'envoyé deux fois ;
+- lien privé : rien sans vérification, adresse hors liste sans email ni indice, ajout et invitation par email,
+  lien magique (faux, d'un autre lien, à usage unique), Commenter, cookie d'un autre lien refusé ;
+- validation demandée à un invité (email avec le lien de la carte), refusée pour un invité qui ne voit pas la
+  carte ou pas vérifié ; seul l'invité désigné décide ;
+- retrait (session fermée, plus de code envoyé), remise, changement de rôle immédiat, suppression (commentaires
+  gardant l'adresse) ; lien coupé, expiré, régénéré (l'ancien ne marche plus, l'invité vérifié garde ses
+  droits), Studio archivé ; membre connecté renvoyé vers son Studio ; déconnexion de l'invité ; journal.
 
 **`mcp.js` — le serveur MCP et son OAuth**, comme un assistant IA (claude.ai, ChatGPT, Gemini CLI…) :
 
@@ -100,6 +124,10 @@ base vide :
 - AI assistants : adresse du serveur et guides, jeton personnel montré une fois et utilisable, écran d'accord
   (connexion d'abord, application et site de retour affichés, retour avec le code), application connectée listée
   puis déconnectée (jetons refusés aussitôt) ;
+- partage sans compte : lien public créé depuis Partager, visiteur en lecture seule, demande d'édition (code faux
+  puis bon code), approbation depuis le lien de l'email, l'invité devient Editor sans recharger, crée une carte et
+  commente, périmètre limité à une colonne, lien privé (porte, lien magique, Commenter), accès retiré vu aussitôt,
+  notification au nom de l'invité, invité sur mobile ;
 - mobile (iPhone 13) : tableau, glisser-déposer au doigt (appui long ; un balayage rapide fait défiler sans
   saisir la carte), carte en plein écran, menu ; thème sombre conservé ;
 - contenu saisi jamais interprété, aucune erreur JavaScript, aucune violation de la CSP, aucun défilement
