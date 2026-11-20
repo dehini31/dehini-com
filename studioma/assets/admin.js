@@ -193,6 +193,26 @@
 
   /* ------------------------------------------------------ vue d'ensemble */
   const FEED_ICONS = { signup: 'user-plus', post: 'edit', project: 'folder', studio: 'columns', card: 'board', message: 'message', opp: 'briefcase', apply: 'send', case: 'award', guest: 'globe' };
+  /**
+   * Regroupe les actions répétées d'une même personne qui se suivent (« added 10 cards to a Studio ») : le fil
+   * reste lisible quand quelqu'un travaille beaucoup. Publications, offres et études de cas restent une à une.
+   */
+  const GROUPED = {
+    card: (n) => `added ${n} cards to Studios`, message: (n) => `sent ${n} private messages`, apply: (n) => `applied to ${n} opportunities`,
+    studio: (n) => `created ${n} Studios`, project: (n) => `created ${n} projects`, guest: (n) => `${n} guests joined shared Studios`,
+  };
+  const groupFeed = (list) => {
+    const out = [];
+    list.forEach((e) => {
+      const last = out[out.length - 1];
+      if (last && GROUPED[e.kind] && last.kind === e.kind && last.uid === e.uid && last.tLast - e.t < 86400) {
+        last.n++;
+        last.tLast = e.t;
+        last.text = GROUPED[e.kind](last.n);
+      } else out.push(Object.assign({}, e, { n: 1, tLast: e.t }));
+    });
+    return out;
+  };
   const SERIES = [['active', 'Active accounts'], ['signups', 'New accounts'], ['cards', 'Cards created'], ['posts', 'Posts'], ['messages', 'Private messages'], ['emails', 'Emails sent']];
   const TRANSPORT = { smtp: 'SMTP', mail: 'PHP mail()', log: 'Test log (not sent)' };
 
@@ -203,17 +223,18 @@
         <a class="btn btn-soft" href="#/accounts?filter=online">${icon('users')}<span>Everyone online</span></a></header>
       <div id="ov-tiles" class="tiles">${SM.loading(1)}</div>
       <div class="grid adm-2">
-        <section class="panel pad"><h2>${icon('zap')} Online now <span class="muted small">active in the last 5 minutes</span></h2><div id="ov-online"></div></section>
-        <section class="panel pad"><h2>${icon('history')} Live activity</h2><div id="ov-feed" class="feed"></div></section>
+        <div class="stack-col">
+          <section class="panel pad"><h2>${icon('zap')} Online now <span class="muted small">active in the last 5 minutes</span></h2><div id="ov-online"></div></section>
+          <section class="panel pad"><h2>${icon('mail')} Emails</h2><div id="ov-mail"></div></section>
+        </div>
+        <section class="panel pad feed-panel"><h2>${icon('history')} Live activity</h2><div id="ov-feed" class="feed" tabindex="0" aria-label="Live activity"></div></section>
       </div>
       <h2 class="section-title">${icon('chart')} Last 30 days</h2>
       <div id="ov-charts" class="charts"></div>
-      <div class="grid adm-2">
-        <section class="panel pad"><h2>${icon('layers')} Platform totals</h2><div id="ov-totals" class="kv"></div></section>
-        <section class="panel pad"><h2>${icon('mail')} Emails</h2><div id="ov-mail"></div></section>
-      </div>
+      <section class="panel pad"><h2>${icon('layers')} Platform totals</h2><div id="ov-totals" class="kv"></div></section>
     </div>`);
     let lastSeries = '';
+    let lastFeed = '';
     const load = async () => {
       let d;
       try { d = await SM.get('admin_live'); } catch (e) { if (ctx.alive()) setLive(false, 'Offline — retrying'); return; }
@@ -229,9 +250,14 @@
       SM.set($('#ov-online'), o.list.length
         ? html`<div class="members">${o.list.map((u) => who(u, u.email + ' · ' + fmt.ago(u.last_seen)))}</div>${o.users > o.list.length ? html`<a class="small" href="#/accounts?filter=online">See all ${fmt.num(o.users)}</a>` : ''}`
         : html`<p class="muted">Nobody is online right now.</p>`);
-      SM.set($('#ov-feed'), d.feed.length ? html`${d.feed.map((e) => html`<div class="feed-row"><span class="feed-ico">${icon(FEED_ICONS[e.kind] || 'zap')}</span>
-          <p>${e.user ? html`<a href="#" data-act="adm-user" data-id="${e.user.id}"><b>${e.user.name}</b></a> ` : ''}${e.text}</p><time>${fmt.ago(e.t)}</time></div>`)}`
-        : html`<p class="muted">No activity yet.</p>`);
+      const feed = groupFeed(d.feed).slice(0, 25);
+      const feedKey = JSON.stringify(feed.map((e) => [e.kind, e.uid, e.n, e.t]));
+      if (feedKey !== lastFeed) {
+        lastFeed = feedKey;
+        SM.set($('#ov-feed'), feed.length ? html`${feed.map((e) => html`<div class="feed-row"><span class="feed-ico">${icon(FEED_ICONS[e.kind] || 'zap')}</span>
+            <p>${e.user ? html`<a href="#" data-act="adm-user" data-id="${e.user.id}"><b>${e.user.name}</b></a> ` : ''}${e.text}</p><time>${fmt.ago(e.t)}</time></div>`)}`
+          : html`<p class="muted">No activity yet.</p>`);
+      }
       const key = JSON.stringify(d.series);
       if (key !== lastSeries) {
         lastSeries = key;

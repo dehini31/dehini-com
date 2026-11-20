@@ -198,7 +198,7 @@ function api_admin_live(array $b, array $a): array
             'messages' => daily_counts('msgs', 'created', $days),
             'emails' => daily_counts('mail_log', 'created', $days, "status = 'sent'"),
         ],
-        'feed' => admin_feed(30),
+        'feed' => admin_feed(80),   // l'interface regroupe les actions répétées et en montre 25
         'mail' => mail_status_light(),
     ];
 }
