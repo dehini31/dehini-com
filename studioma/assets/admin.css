@@ -59,8 +59,12 @@
 .on-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); margin-right: 5px; vertical-align: 1px; }
 
 /* Listes en direct */
+/* Fil en direct : hauteur fixe, défilement interne (la page ne s'allonge pas avec l'activité) */
+.stack-col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 .feed { display: flex; flex-direction: column; }
-.feed-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; font-size: 13.5px; } .feed-row + .feed-row { border-top: 1px solid var(--border); }
+.feed-panel .feed { max-height: 440px; overflow-y: auto; overscroll-behavior: contain; margin-right: -10px; padding-right: 10px; }
+#ov-online .members { max-height: 260px; overflow-y: auto; overscroll-behavior: contain; }
+.feed-row { display: flex; gap: 10px; align-items: center; padding: 6px 0; font-size: 13.5px; line-height: 1.4; } .feed-row + .feed-row { border-top: 1px solid var(--border); }
 .feed-row p { flex: 1; min-width: 0; overflow-wrap: anywhere; } .feed-row time { color: var(--muted); font-size: 12px; white-space: nowrap; }
 .feed-ico { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 9px; background: var(--sunken); color: var(--text-2); flex: none; } .feed-ico .ico { width: 15px; height: 15px; }
 .who-btn { display: flex; align-items: center; gap: 10px; text-align: left; width: 100%; padding: 7px 6px; border-radius: 10px; min-width: 0; } .who-btn:hover { background: var(--hover); }

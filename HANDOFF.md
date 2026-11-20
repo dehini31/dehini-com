@@ -13,15 +13,14 @@ secrets here. Mark anything you could not verify as *(unverified)*.
 | Base code | `main` @ `5a0b124` (Merge PR #74: Studioma administration). **`main` = production** (server cron, every 5 min) |
 | Checkpoint | the commit that last changed this file: `git log -1 --format='%H %s' -- HANDOFF.md` |
 | Uncommitted work at checkpoint | none |
-| In progress | **Studioma administration merged into `main` (PR #74) but NOT deployed yet.** Cause found (owner's terminal output, 2026-11-20 23:28 UTC): **the server crontab has no deployment line for `~/dehini-com`** — deployments have been done by hand. The server clone was on `claude/trusting-keller-rynk1j` (now pulled to `fed2b58`, same code as `main`). Owner asked to: `git checkout main && git pull`, copy `studioma/` and `admin/index.html` to `public_html`, then add the cron jobs |
+| In progress | Studioma admin (PR #74) **is live** (owner's screenshot with real data, 2026-11-21; `/studioma/admin/` answers 200). On this branch, not merged: **compact Live activity feed** (UI only). The server crontab had **no deployment job** for `~/dehini-com` (2026-11-20): unless the owner added it since *(unverified)*, merges go live only when copied by hand |
 | Last task changed application code? | **yes** — Studioma (DB schema v5 → v6, additive) |
 
 **Next recommended action**
 
-1. **Owner, urgent**: in cPanel › Terminal, `cd ~/dehini-com && git checkout main && git pull`, then
-   `cp -rf studioma ~/public_html/ && cp -f admin/index.html ~/public_html/admin/index.html`; check
-   `https://dehini.com/studioma/admin/` and `/usr/local/bin/php ~/public_html/studioma/cron.php` (prints `OK — …`).
-   The next Studioma request (or that cron run) migrates the database to v6 by itself.
+1. **Owner**: merge this branch (compact feed), then on the server `cd ~/dehini-com && git checkout main && git pull
+   && cp -rf studioma ~/public_html/` (unless the deployment cron job was added). Check that the server clone is
+   on `main` (`git status --short --branch`) *(unverified)*.
    **Agents: do not assume merges deploy automatically** until the owner adds the deployment cron job (README
    « Installation › 4 »); `AGENTS.md` § 3 / `docs/DECISIONS.md` R2 describe the intended setup, not the state
    observed on 2026-11-20.
@@ -41,6 +40,17 @@ campaigns go out without the cron).
 `admin/`); `tests/swanbida/run.sh` 119 — passed; `php -l` on 111 PHP files and `node --check` on all Studioma JS: 0 errors.
 
 ## Log (newest first)
+
+### 2026-11-21 — Claude Code — Studioma admin: compact Live activity
+- Owner's feedback on the live admin: « Live activity take all the screen » (30 rows, many identical « added a
+  card to a Studio »).
+- `studioma/assets/admin.js`: consecutive repeated actions of one person are grouped (« added 12 cards to
+  Studios »; cards, messages, applications, Studios, projects, guests), 25 lines at most, redrawn only when it
+  changes; layout: Online now + Emails stacked beside Live activity, charts, then Platform totals full width.
+  `admin.css`: feed of fixed height (440 px) with its own scroll, online list capped. `lib/admin.php`: the feed
+  sends 80 raw events so grouping still fills the list.
+- Tests: `tests/studioma/admin.js` 103 checks and `e2e.js` 195 checks — passed; screenshots desktop and mobile
+  (no horizontal scroll). Committed and pushed on this branch; not merged.
 
 ### 2026-11-20 — Claude Code — no deployment cron on the server
 - Owner's terminal output: server clone `~/dehini-com` was on `claude/trusting-keller-rynk1j` at `1a498c7`, clean;
