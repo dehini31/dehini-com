@@ -79,8 +79,12 @@ function site_url(): string
 {
     if (STM_SITE_URL !== '') return rtrim(STM_SITE_URL, '/') . '/';
     if (PHP_SAPI === 'cli') return 'https://dehini.com/studioma/';
-    $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['SERVER_PORT'] ?? '') === '443');
     $host  = $_SERVER['HTTP_HOST'] ?? 'dehini.com';
+    // Les liens (partage, emails, OAuth) sont toujours en https sur un vrai domaine, même si la page a été
+    // ouverte en http ; http seulement sur la machine locale (tests).
+    $local = (bool) preg_match('/^(localhost|127\.\d+\.\d+\.\d+|\[::1\])(:\d+)?$/i', $host);
+    $https = !$local || (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['SERVER_PORT'] ?? '') === '443')
+        || strtolower((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https';
     $dir   = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/studioma/api.php')), '/');
     return ($https ? 'https' : 'http') . '://' . $host . $dir . '/';
 }

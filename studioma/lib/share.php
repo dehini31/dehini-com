@@ -41,13 +41,23 @@ const SHARE_GONE = [
 
 /* ------------------------------------------------------------------ liens */
 
+/** Clé d'un lien : 24 octets aléatoires (192 bits) en base64url, soit 32 caractères — impossible à deviner. */
+const SHARE_TOKEN_RE = '[A-Za-z0-9_-]{32}';
+function share_token(): string
+{
+    return rtrim(strtr(base64_encode(random_bytes(24)), '+/', '-_'), '=');
+}
+/**
+ * Adresse à partager : https://dehini.com/studioma/s/<clé>. s.php renvoie vers l'application
+ * (#/s/<clé>), sans transmettre la clé à d'autres sites (Referrer-Policy: no-referrer).
+ */
 function share_url(array $sh): string
 {
-    return app_url('s/' . $sh['token']);
+    return site_url() . 's/' . $sh['token'];
 }
 function share_by_token(string $token): ?array
 {
-    return preg_match('/^[a-f0-9]{48}$/', $token) ? row('SELECT * FROM shares WHERE token = ?', [$token]) : null;
+    return preg_match('/^' . SHARE_TOKEN_RE . '$/', $token) ? row('SELECT * FROM shares WHERE token = ?', [$token]) : null;
 }
 /** '' si le lien fonctionne, sinon la raison : disabled | expired | unavailable. */
 function share_state(array $sh): string
@@ -570,7 +580,7 @@ function share_get_or_create(array $s, string $kind, int $uid): array
 {
     $sh = row('SELECT * FROM shares WHERE studio_id = ? AND kind = ?', [$s['id'], $kind]);
     if ($sh) return $sh;
-    insert('shares', ['studio_id' => $s['id'], 'kind' => $kind, 'token' => token(24), 'created_by' => $uid, 'created' => time(), 'updated' => time()]);
+    insert('shares', ['studio_id' => $s['id'], 'kind' => $kind, 'token' => share_token(), 'created_by' => $uid, 'created' => time(), 'updated' => time()]);
     share_log((int) $s['id'], 0, $uid, null, 0, 'link', 'created the ' . $kind . ' link');
     return row('SELECT * FROM shares WHERE studio_id = ? AND kind = ?', [$s['id'], $kind]);
 }
@@ -619,7 +629,7 @@ function api_share_regen(array $b, array $u): array
     $s = load_studio(int_in($b, 'studio'), $u, 'manage');
     $sh = row('SELECT * FROM shares WHERE studio_id = ? AND kind = ?', [$s['id'], (string) ($b['kind'] ?? '')]);
     if (!$sh) not_found('This link');
-    q('UPDATE shares SET token = ?, updated = ? WHERE id = ?', [token(24), time(), $sh['id']]);
+    q('UPDATE shares SET token = ?, updated = ? WHERE id = ?', [share_token(), time(), $sh['id']]);
     share_log((int) $s['id'], (int) $sh['id'], (int) $u['id'], null, 0, 'link', 'regenerated the ' . $sh['kind'] . ' link (the old one no longer works)');
     return api_share_list(['studio' => $s['id']], $u);
 }

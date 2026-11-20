@@ -323,6 +323,34 @@
   const ymd = (ts) => { if (!ts) return ''; const d = new Date(ts * 1000); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
   const levelName = (id) => { const l = G.levels.find((x) => x.id === id); return l ? `${l.icon} ${l.name}` : ''; };
 
+  /**
+   * Le lien, présenté comme ce qu'il est : chiffré (https), avec une clé impossible à deviner, masquée à
+   * l'écran (« Show » l'affiche ; « Copy link » copie toujours le lien entier).
+   */
+  function secureLink(kind, url, title) {
+    const u = new URL(url);
+    const key = u.pathname.split('/').pop();
+    const base = u.host + u.pathname.slice(0, -key.length);
+    const https = u.protocol === 'https:';
+    return html`<div class="secure-link${https ? '' : ' is-plain'}" data-link-field>
+        <span class="sl-lock" title="${https ? 'Encrypted connection (HTTPS)' : 'Not encrypted: this is a local test server'}">${icon(https ? 'lock' : 'alert')}</span>
+        <span class="sl-url" title="${title}"><span class="sl-base">${https ? '' : 'http://'}${base}</span><span class="sl-key sl-masked">${key.slice(0, 5)}<i>••••••••</i>${key.slice(-4)}</span><span class="sl-key sl-full">${key}</span></span>
+        <button type="button" class="btn btn-ghost btn-sm sl-show" data-act="glink-reveal" aria-pressed="false">${icon('eye')}<span>Show</span></button>
+        <button class="btn btn-primary btn-sm" data-act="copy" data-text="${url}">${icon('copy')}Copy link</button>
+      </div>
+      <ul class="sl-facts">
+        <li class="${https ? 'is-ok' : 'is-warn'}">${icon(https ? 'lock' : 'alert')}${https ? 'Encrypted (HTTPS)' : 'Not encrypted on this test server'}</li>
+        <li class="is-ok">${icon('shield')}Private 192-bit key — impossible to guess</li>
+        <li class="is-ok">${icon(kind === 'private' ? 'mail' : 'eye')}${kind === 'private' ? 'Opens only for verified emails on your list' : 'Read-only until you approve'}</li>
+      </ul>`;
+  }
+  SM.actions['glink-reveal'] = (el) => {
+    const box = el.closest('[data-link-field]');
+    const on = !box.classList.contains('is-revealed');
+    box.classList.toggle('is-revealed', on);
+    el.setAttribute('aria-pressed', String(on));
+    SM.set(SM.$('span', el), on ? 'Hide' : 'Show');
+  };
   function linkCard(kind) {
     const l = G.links[kind];
     const [ic, title, help] = LINK[kind];
@@ -335,7 +363,7 @@
       <header>${icon(ic)}<b>${title}</b>${off ? html`<span class="chip">${STATE[l.state]}</span>` : html`<span class="chip chip-on">On</span>`}<span class="grow"></span>
         <input type="checkbox" class="switch" title="${l.active ? 'Turn the link off' : 'Turn the link on'}" data-change="glink-active" data-kind="${kind}" ${l.active ? 'checked' : ''} aria-label="${title} on"></header>
       <p class="muted small">${help}</p>
-      <div class="link-url"><input class="input input-sm" readonly value="${l.url}" aria-label="${title}" data-act="select-all"><button class="btn btn-primary btn-sm" data-act="copy" data-text="${l.url}">${icon('copy')}Copy link</button></div>
+      ${secureLink(kind, l.url, title)}
       <div class="link-opts">
         <button class="btn btn-ghost btn-sm" data-act="glink-levels" data-kind="${kind}" title="Levels the link shows">${icon('layers')}${l.levels.length ? l.levels.map(levelName).join(', ') : 'All levels'}</button>
         <label class="btn btn-ghost btn-sm link-exp" title="The link stops working after this day">${icon('calendar')}<span>${l.expires ? 'Expires ' + fmt.date(l.expires) : 'No expiry'}</span><input type="date" class="input input-xs" value="${ymd(l.expires)}" min="${ymd(Date.now() / 1000 + 86400)}" data-change="glink-expires" data-kind="${kind}" aria-label="Expiry date"></label>
@@ -381,7 +409,7 @@
         <div class="link-cards">${linkCard('public')}${linkCard('private')}</div>
         <section><h3 class="section-title">Guests <span class="count">${guests.length}</span></h3>
           ${guests.length ? html`<div class="list">${guests.map(guestRow)}</div>` : html`<p class="muted small">No guest yet. People who open a link and verify their email appear here, with what they can do.</p>`}
-          <p class="muted small">${icon('shield')}Viewer: views · Commenter: comments and approves · Editor: edits what you open to them. Guests never manage the Studio, its members or its structure.</p></section>
+          <p class="muted small guest-legend">${icon('shield')}<span>Viewer: views · Commenter: comments and approves · Editor: edits what you open to them. Guests never manage the Studio, its members or its structure.</span></p></section>
         ${history.length ? html`<details class="share-history"><summary>${icon('history')}Guest activity and access history <span class="count">${history.length}</span></summary><ul class="events">${history.map((e) => SM.eventRow(e, true))}</ul></details>` : ''}
       </div>`);
     // Lien d'un email (Approuver / Refuser) : la demande est mise en avant, et la décision confirmée.
@@ -420,7 +448,6 @@
   SM.changes['glink-active'] = async (el) => { if (await call('share_save', { kind: el.dataset.kind, active: el.checked })) SM.toast(el.checked ? 'Link on' : 'Link off: nobody can open it'); };
   SM.changes['glink-expires'] = async (el) => { if (el.value && await call('share_save', { kind: el.dataset.kind, expires: el.value })) SM.toast('Expiry date saved'); };
   SM.actions['glink-noexp'] = (el) => call('share_save', { kind: el.dataset.kind, expires: '' });
-  SM.actions['select-all'] = (el) => el.select();
   SM.actions['glink-regen'] = async (el) => {
     if (!await SM.confirm({ title: 'Create a new link?', text: 'The current link stops working right away. Guests who verified their email keep their access with the new link — send it to them.', ok: 'Create a new link' })) return;
     if (await call('share_regen', { kind: el.dataset.kind })) SM.toast('New link ready — copy it and send it');

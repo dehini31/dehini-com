@@ -1530,6 +1530,7 @@ du compte Google.
   (entreprises, opportunités, talents, messages), `guest.js` (un Studio ouvert par un lien de partage : porte du
   lien privé, vérification de l'adresse, demande de droits), `ai.js` (écran d'accord des assistants IA, Settings › AI
   assistants), `icons.js` (icônes Lucide utilisées), `app.css` (système de design, thèmes clair et sombre).
+- `studioma/s.php` — l'adresse d'un lien de partage (`/studioma/s/<clé>`), renvoyée vers l'application.
 - `studioma/mcp.php` — le serveur MCP ; `studioma/oauth.php` — son OAuth (adresses `oauth/…` et `.well-known/…`
   réécrites par `studioma/.htaccess`) ; `.well-known/.htaccess` (à la racine du dépôt) — les documents de
   découverte que les assistants cherchent à la racine du domaine.
@@ -1636,6 +1637,12 @@ copié : il ne réécrit que ces adresses et ne touche pas `acme-challenge` (cer
 Rien à configurer : la base passe d'elle-même à la version 5 au premier passage après la mise à jour. Dans un
 Studio : **Share › Guests without an account**.
 
+Un lien ressemble à `https://dehini.com/studioma/s/aJq3XvR8kP2LwN7tZ0mHc5YbQe1dWPEc` : toujours en **https** (même
+si la page a été ouverte en http), suivi d'une clé de 32 caractères tirée au hasard (192 bits : impossible à
+deviner). Dans la fenêtre de partage, la clé est masquée (*Show* l'affiche, *Copy link* copie le lien entier).
+`studioma/s.php` (adresse réécrite par `studioma/.htaccess`) renvoie vers l'application sans jamais transmettre la
+clé à un autre site (`Referrer-Policy: no-referrer`), sans cache ni indexation par les moteurs de recherche.
+
 - **Lien public** — n'importe qui l'ouvre, sans compte ni email, en **lecture seule** : niveaux, colonnes, cartes,
   check-lists, pièces jointes et commentaires de ce que le lien montre. Pour aller plus loin, le visiteur clique
   *Request editing permission*, choisit *Comment & approve* ou *Edit*, donne son adresse et la vérifie.
@@ -1659,7 +1666,7 @@ Studio : **Share › Guests without an account**.
   *Reject* (ils ouvrent Studioma, qui demande confirmation) ; les **modifications des invités** — qui, quoi, quand,
   lien direct vers chaque carte — la première tout de suite, les suivantes regroupées au plus toutes les 10
   minutes. À l'invité : son code, la réponse à sa demande, les validations qu'on lui demande.
-- **Sécurité** — jetons de 192 bits ; aucun accès privé sur simple saisie d'une adresse ; lecture seule par
+- **Sécurité** — clés de 192 bits, liens toujours en https ; aucun accès privé sur simple saisie d'une adresse ; lecture seule par
   défaut ; tout est vérifié par le serveur : une requête faite avec un lien n'atteint qu'une liste fermée
   d'actions (`GUEST_ROUTES` dans `api.php`), sur le seul Studio du lien, ses niveaux partagés et les droits de
   l'invité ; limites de débit (codes, vérifications, écritures) ; actions des invités notées dans l'historique de
@@ -1667,6 +1674,9 @@ Studio : **Share › Guests without an account**.
 
 Pour empêcher quelqu'un de **consulter** un lien public, il faut le régénérer (ou le couper) : retirer un invité
 lui enlève ses droits, mais le lien public reste lisible par quiconque l'a.
+
+Conseillé : dans **cPanel › Domaines**, activer **Force HTTPS Redirect** pour dehini.com. Les liens de partage
+sont déjà en https, mais le reste du site répond encore aussi en http si on tape l'adresse sans `https://`.
 
 ### 6. Fichiers envoyés
 

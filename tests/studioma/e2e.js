@@ -798,9 +798,13 @@ const cardIn = (page, col, title) => page.locator(`${colSel(col)} .kcard:has(h3:
   await ap.click('.studio-head .btn[data-act="share"]');
   await ap.click('[data-act="share-tab"][data-tab="guests"]');
   await ap.click('[data-act="glink-create"][data-kind="public"]');
-  await ap.waitForSelector('.link-card[data-link="public"] .link-url input');
-  const shPub = await ap.inputValue('.link-card[data-link="public"] .link-url input');
-  ok(/#\/s\/[a-f0-9]{48}$/.test(shPub), 'lien public créé depuis Partager › Guests without an account');
+  await ap.waitForSelector('.link-card[data-link="public"] [data-act="copy"]');
+  const shPub = await ap.getAttribute('.link-card[data-link="public"] [data-act="copy"]', 'data-text');
+  ok(/\/studioma\/s\/[A-Za-z0-9_-]{32}$/.test(shPub), 'lien public créé depuis Partager › Guests without an account : /studioma/s/<clé>');
+  const masked = await ap.locator('.link-card[data-link="public"] .sl-url').innerText();
+  ok(masked.includes('••••') && !masked.includes(shPub.split('/s/')[1]), 'la clé est masquée à l\'écran');
+  await ap.click('.link-card[data-link="public"] [data-act="glink-reveal"]');
+  ok((await ap.locator('.link-card[data-link="public"] .sl-url').innerText()).includes(shPub.split('/s/')[1]), '« Show » affiche le lien entier');
   await shot(ap, '22-share-guests');
   await ap.keyboard.press('Escape');
   const shCtx = await browser.newContext(desk);
@@ -869,7 +873,7 @@ const cardIn = (page, col, title) => page.locator(`${colSel(col)} .kcard:has(h3:
   await ap.click('.guest-add button');
   ok(await toast(ap, /received the link by email/), 'personne ajoutée au lien privé, lien envoyé par email');
   const shInv = mails().reverse().find((m) => m.to === 'partner@brand.example');
-  const shPriv = (shInv.text.match(/https?:\/\/\S+#\/s\/[a-f0-9]{48}/) || [])[0];
+  const shPriv = (shInv.text.match(/https?:\/\/\S+\/studioma\/s\/[A-Za-z0-9_-]{32}/) || [])[0];
   const shPCtx = await browser.newContext(desk);
   const shP = await shPCtx.newPage();
   watch(shP, 'invité privé');

@@ -15,7 +15,7 @@
   const flow = { mode: 'open', email: '', role: 'editor', note: '', target: null };
   const byName = () => (G.share && G.share.by ? G.share.by.name : 'the owner');
 
-  SM.route(/^\/s\/([a-f0-9]{48})(?:\/card\/(\d+))?$/, async (m, ctx) => {
+  SM.route(/^\/s\/([A-Za-z0-9_-]{32})(?:\/card\/(\d+))?$/, async (m, ctx) => {
     const token = m[1];
     SM.guest = token;
     document.body.classList.add('guest-mode');
@@ -205,7 +205,7 @@
         ${g.verified ? html`<button class="guest-me" data-act="guest-menu" title="${g.email}" aria-label="Guest access of ${g.email}">${SM.avatar({ name: g.email }, 'av-s')}<span>${g.email}</span>${icon('chevron-down')}</button>`
           : html`<button class="btn btn-ghost btn-sm" data-act="guest-verify" title="Already given access? Verify your email to use it">${icon('mail')}<span>Sign in with email</span></button>`}
       </header>
-      <div class="guest-note">${ic}<span class="grow">${text}${g.levels_limited ? ' Only part of this Studio is shared.' : ''}</span>${by ? html`<span class="guest-by">Shared by ${SM.avatar(by, 'av-s')}<b>${by.name}</b></span>` : ''}</div>
+      <div class="guest-note">${ic}<span class="grow">${text}${g.levels_limited ? ' Only part of this Studio is shared.' : ''}</span><span class="guest-by">${location.protocol === 'https:' ? html`<span class="guest-secure" title="Encrypted connection and private link">${icon('lock')}Secure link</span>` : ''}${by ? html`Shared by ${SM.avatar(by, 'av-s')}<b>${by.name}</b>` : ''}</span></div>
       <div class="studio-bar"><span class="grow"></span><div class="board-tools">
         <label class="search-in">${icon('search')}<input class="input input-sm" placeholder="Filter cards…" value="${SM.board.filter.q}" data-input="board-q" aria-label="Filter cards"></label>
         <button class="btn btn-soft btn-sm${SM.board.filter.assignee || SM.board.filter.platform ? ' is-on' : ''}" data-act="filter-menu">${icon('filter')}<span>Filter</span></button>

@@ -88,7 +88,7 @@ class Guest {
   file(t, token) { return fetch(API + '?action=file&t=' + t + '&share=' + (token || this.token), { headers: this.cookies() ? { Cookie: this.cookies() } : {} }).then((r) => r.status); }
 }
 const codeIn = (m) => (m && m.text.match(/\b(\d{6})\b/) || [])[1];
-const linkIn = (m) => (m && m.text.match(/#\/s\/[a-f0-9]{48}\?v=([a-f0-9]{48})/) || [])[1];
+const linkIn = (m) => (m && m.text.match(/\/studioma\/s\/[A-Za-z0-9_-]{32}\?v=([a-f0-9]{48})/) || [])[1];
 
 (async () => {
   step('Préparation : un Studio, des cartes dans chaque niveau, une pièce jointe');
@@ -129,13 +129,34 @@ const linkIn = (m) => (m && m.text.match(/#\/s\/[a-f0-9]{48}\?v=([a-f0-9]{48})/)
   r = await amel.post('share_save', { studio: sid, kind: 'public', levels: [lv('Creation').id, lv('Production').id] });
   const pub = r.links && r.links.public;
   const T = pub && pub.url.split('/s/')[1];
-  ok(r.status === 200 && pub && /#\/s\/[a-f0-9]{48}$/.test(pub.url) && pub.active && pub.levels.length === 2 && r.history.some((h) => /created the public link/.test(h.text)), 'lien public : jeton de 48 caractères, niveaux Creation et Production', r);
+  ok(r.status === 200 && pub && /\/studioma\/s\/[A-Za-z0-9_-]{32}$/.test(pub.url) && !/#/.test(pub.url) && pub.active && pub.levels.length === 2 && r.history.some((h) => /created the public link/.test(h.text)), 'lien public : /studioma/s/<clé de 32 caractères (192 bits)>, niveaux Creation et Production', r);
   r = await amel.post('share_save', { studio: sid, kind: 'private' });
   const priv = r.links.private;
   const P = priv.url.split('/s/')[1];
   ok(priv && P !== T && priv.levels.length === 0, 'lien privé : un autre jeton, tous les niveaux');
   r = await amel.post('share_save', { studio: sid, kind: 'weird' });
   ok(r.status === 400, 'type de lien inconnu : refusé');
+
+  step('Le lien propre (/studioma/s/<clé>) renvoie vers l\'application, sans fuite de la clé');
+  const S0 = ORIGIN + '/studioma/s/';
+  let res = await fetch(S0 + T, { redirect: 'manual' });
+  ok(res.status === 302 && res.headers.get('location') === ORIGIN + '/studioma/app/#/s/' + T && res.headers.get('referrer-policy') === 'no-referrer' && /no-store/.test(res.headers.get('cache-control')) && /noindex/.test(res.headers.get('x-robots-tag') || ''), 'redirection vers l\'application ; no-referrer, jamais en cache ni indexé');
+  res = await fetch(S0 + T + '/card/' + cIdea + '?v=' + 'c'.repeat(48), { redirect: 'manual' });
+  ok(res.status === 302 && res.headers.get('location').endsWith('#/s/' + T + '/card/' + cIdea + '?v=' + 'c'.repeat(48)), 'lien d\'une carte et lien magique gardés');
+  res = await fetch(S0 + T + '?v=<script>', { redirect: 'manual' });
+  ok(res.status === 404, 'paramètre inattendu : refusé');
+  res = await fetch(S0 + 'short', { redirect: 'manual' });
+  ok(res.status === 404, 'clé mal formée : refusée');
+  // fetch ne laisse pas choisir l'en-tête Host : on passe par le module http.
+  r = await new Promise((resolve, reject) => {
+    const u = new URL(API + '?action=share_list&studio=' + sid);
+    require('http').get({ host: u.hostname, port: u.port, path: u.pathname + u.search, headers: { Cookie: amel.cookie, Host: 'dehini.com' } }, (x) => {
+      let body = '';
+      x.on('data', (c) => { body += c; });
+      x.on('end', () => resolve(JSON.parse(body)));
+    }).on('error', reject);
+  });
+  ok(r.links && /^https:\/\/dehini\.com\/studioma\/s\/[A-Za-z0-9_-]{32}$/.test(r.links.public.url), 'sur un vrai domaine, le lien est toujours en https', r.links && r.links.public.url);
 
   step('Lien public : lecture seule, sans compte, limitée au Studio et aux niveaux partagés');
   const anon = new Guest(T);
@@ -155,7 +176,7 @@ const linkIn = (m) => (m && m.text.match(/#\/s\/[a-f0-9]{48}\?v=([a-f0-9]{48})/)
   ok(r.status === 404, 'autre Studio avec le même lien : introuvable');
   ok(await anon.file(fileOk) === 200, 'pièce jointe d\'une carte partagée : téléchargeable avec le lien');
   ok(await anon.file(fileHidden) === 404, 'pièce jointe d\'un niveau non partagé : refusée');
-  ok(await anon.file(fileOk, 'f'.repeat(48)) === 404, 'pièce jointe avec un faux jeton : refusée');
+  ok(await anon.file(fileOk, 'f'.repeat(32)) === 404, 'pièce jointe avec un faux jeton : refusée');
   r = await fetch(API + '?action=file&t=' + fileOk).then((x) => x.status);
   ok(r === 404, 'pièce jointe sans lien ni compte : refusée');
   for (const [action, body] of [['card_save', { id: cIdea, title: 'Hacked' }], ['comment_add', { card_id: cIdea, body: 'Hi' }], ['card_create', { col_id: ideas.id, title: 'Spam' }], ['card_move', { id: cIdea, col_id: scripting.id, index: 0 }], ['check_save', { card_id: cIdea, text: 'x' }]]) {
@@ -166,9 +187,9 @@ const linkIn = (m) => (m && m.text.match(/#\/s\/[a-f0-9]{48}\?v=([a-f0-9]{48})/)
     r = body ? await anon.post(action, body) : await anon.get(action, params);
     ok(r.status === 403 && r.error === 'forbidden', action + ' avec un lien de partage : hors de la liste des actions permises', r);
   }
-  r = await anon.get('board', { studio: sid }, { token: 'a'.repeat(48) });
+  r = await anon.get('board', { studio: sid }, { token: 'a'.repeat(32) });
   ok(r.status === 404 && r.error === 'share_gone', 'jeton inventé : lien introuvable');
-  r = await anon.get('board', { studio: sid }, { token: T.slice(0, 40) });
+  r = await anon.get('board', { studio: sid }, { token: T.slice(0, 24) });
   ok(r.status === 404, 'jeton tronqué : refusé');
   r = await anon.post('comment_add', { card_id: cIdea, body: 'x' }, { noXrw: true });
   ok(r.status === 403 && r.error === 'forbidden', 'écriture sans l\'en-tête X-Requested-With : refusée');
@@ -218,7 +239,7 @@ const linkIn = (m) => (m && m.text.match(/#\/s\/[a-f0-9]{48}\?v=([a-f0-9]{48})/)
   r = await amel.post('share_guest', { studio: sid, op: 'approve', guest: gClient.id });
   ok(r.status === 200 && r.guests.find((g) => g.id === gClient.id).role === 'editor' && !r.guests.find((g) => g.id === gClient.id).request, 'demande approuvée : Editor');
   m = lastTo('client@brand.example');
-  ok(m && /gave you editor access/.test(m.subject) && /#\/s\/[a-f0-9]{48}/.test(m.text), 'l\'invité est prévenu par email, avec le lien');
+  ok(m && /gave you editor access/.test(m.subject) && m.text.includes('/studioma/s/' + T), 'l\'invité est prévenu par email, avec le lien');
   r = await amel.post('share_guest', { studio: sid, op: 'approve', guest: gClient.id });
   ok(r.status === 409, 'demande déjà traitée : 409');
   r = await amel.post('share_guest', { studio: sid, op: 'scope', guest: gClient.id, cols: [ideas.id], cards: [cProd], levels: [] });
@@ -334,7 +355,7 @@ const linkIn = (m) => (m && m.text.match(/#\/s\/[a-f0-9]{48}\?v=([a-f0-9]{48})/)
   r = await amel.post('approval_request', { card_id: cScript, approver: 'g' + gBoss.id, note: 'Can we go with this script?' });
   ok(r.status === 200, 'validation demandée à l\'invité');
   m = lastTo('boss@brand.example');
-  ok(m && /asks you to approve “Story: behind the scenes”/.test(m.subject) && /Can we go with this script/.test(m.text) && new RegExp('#/s/' + P + '/card/' + cScript).test(m.text), 'email à l\'invité avec le lien direct vers la carte');
+  ok(m && /asks you to approve “Story: behind the scenes”/.test(m.subject) && /Can we go with this script/.test(m.text) && m.text.includes('/studioma/s/' + P + '/card/' + cScript), 'email à l\'invité avec le lien direct vers la carte');
   r = await amel.post('approval_request', { card_id: cPub, approver: 'g' + gClient.id });
   ok(r.status === 400 && /doesn't see this card/.test(r.message), 'invité qui ne voit pas la carte (niveau non partagé) : refusé');
   r = await amel.post('approval_request', { card_id: cScript, approver: 'g999999' });
