@@ -581,6 +581,7 @@ function share_get_or_create(array $s, string $kind, int $uid): array
     $sh = row('SELECT * FROM shares WHERE studio_id = ? AND kind = ?', [$s['id'], $kind]);
     if ($sh) return $sh;
     insert('shares', ['studio_id' => $s['id'], 'kind' => $kind, 'token' => share_token(), 'created_by' => $uid, 'created' => time(), 'updated' => time()]);
+    $GLOBALS['stm_share_created'] = $kind;   // événement Meta « ShareStudio » (lib/meta.php)
     share_log((int) $s['id'], 0, $uid, null, 0, 'link', 'created the ' . $kind . ' link');
     return row('SELECT * FROM shares WHERE studio_id = ? AND kind = ?', [$s['id'], $kind]);
 }

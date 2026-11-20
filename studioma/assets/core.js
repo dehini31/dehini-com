@@ -69,6 +69,8 @@
       if (data.error === 'auth' && SM.me && SM.onAuthLost) SM.onAuthLost();
       throw new ApiError(data.error || 'server', data.message || 'Something went wrong.', res.status, data);
     }
+    // Événements Meta de l'action (le serveur envoie les mêmes, avec le même event_id) : assets/meta.js.
+    if (data._meta && window.StmMeta) window.StmMeta.fire(data._meta);
     return data;
   };
   SM.get = (action, params) => SM.api(action, { params });

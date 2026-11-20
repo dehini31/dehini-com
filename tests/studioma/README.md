@@ -9,8 +9,9 @@ politique de sécurité (CSP).
 tests/studioma/run.sh /tmp/stm-test
 ```
 
-`run.sh` prépare un hébergement neuf, lance le serveur PHP (port 8097) et exécute quatre batteries, chacune sur une
-base vide :
+`run.sh` prépare un hébergement neuf, lance le serveur PHP (port 8097) et exécute cinq batteries, chacune sur une
+base vide. Les événements Meta (API Conversions) sont écrits dans `meta.jsonl` (faux ensemble de données) ; dans le
+navigateur, un faux script du pixel note les appels à `fbq` :
 
 **`api.js` — l'API seule** (Node, sans navigateur) :
 
@@ -69,6 +70,15 @@ base vide :
   gardant l'adresse) ; lien coupé, expiré, régénéré (l'ancien ne marche plus, l'invité vérifié garde ses
   droits), Studio archivé ; membre connecté renvoyé vers son Studio ; déconnexion de l'invité ; journal.
 
+**`meta.js` — le suivi Meta (pixel + API Conversions)** : chaque action produit le bon événement (inscription,
+connexion, projet, Studio, carte, relais, publication, commentaire, invitation, partage, invité, publication, j'aime,
+abonnement, mise en relation, consultation d'un profil, d'une entreprise, d'une opportunité, étude de cas,
+entreprise, opportunité, candidature, message, talent enregistré, recherches, assistant IA), et rien pour les
+consultations répétées (tableau) ou les actions refusées ; même event_id renvoyé au navigateur ; email, id, prénom et
+nom hachés (SHA-256), navigateur, IP et `_fbp` ; invités et visiteurs sans email ; jamais de nom de projet, de Studio,
+d'entreprise, de titre, de commentaire, de message, de texte de recherche, de clé de lien ou d'invitation, ni de
+partie d'adresse après `#`.
+
 **`mcp.js` — le serveur MCP et son OAuth**, comme un assistant IA (claude.ai, ChatGPT, Gemini CLI…) :
 
 - découverte : 401 avec `WWW-Authenticate` et `resource_metadata`, métadonnées de la ressource et du serveur
@@ -124,6 +134,9 @@ base vide :
 - AI assistants : adresse du serveur et guides, jeton personnel montré une fois et utilisable, écran d'accord
   (connexion d'abord, application et site de retour affichés, retour avec le code), application connectée listée
   puis déconnectée (jetons refusés aussitôt) ;
+- pixel Meta : PageView sur la page d'accueil et à chaque écran, événements automatiques coupés, correspondance
+  avancée ; inscription envoyée par le pixel et par l'API Conversions avec le même event_id ; pas de pixel sur un
+  lien de partage ; aucune clé ni nom envoyé à Meta ;
 - partage sans compte : lien public créé depuis Partager, visiteur en lecture seule, demande d'édition (code faux
   puis bon code), approbation depuis le lien de l'email, l'invité devient Editor sans recharger, crée une carte et
   commente, périmètre limité à une colonne, lien privé (porte, lien magique, Commenter), accès retiré vu aussitôt,

@@ -25,6 +25,12 @@
 // define('STM_GOOGLE_FROM_IMPACT', false);
 
 // Emails : par défaut, le compte SMTP du défi Impact (impact/config.php) est réutilisé.
+// Meta Pixel + API Conversions (lib/meta.php). L'ensemble de données est déjà réglé dans le code. Le jeton
+// peut aussi être mis dans le fichier meta-token.txt du dossier des données (conseillé : hors du site).
+// define('STM_META_PIXEL_ID', '1718566156353795');
+// define('STM_META_TOKEN', 'EAAG…');
+// define('STM_META_TEST_CODE', 'TEST12345');   // onglet « Événements de test », à retirer ensuite
+
 // define('STM_SMTP_HOST', 'mail.dehini.com');
 // define('STM_SMTP_PORT', 465);
 // define('STM_SMTP_SECURE', 'ssl');

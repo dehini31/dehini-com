@@ -15,5 +15,9 @@ define('STM_MAIL_LOG', '$DIR/mail.jsonl');
 define('STM_GOOGLE_CLIENT_ID', 'studioma-test.apps.googleusercontent.com');
 define('STM_GOOGLE_FROM_IMPACT', false);
 define('STM_GOOGLE_CERTS', '$DIR/google-certs.json');
+// Meta : faux ensemble de données ; les événements de l'API Conversions sont écrits dans meta.jsonl.
+define('STM_META_PIXEL_ID', '1234567890123');
+define('STM_META_TOKEN', 'test-meta-token-0123456789');
+define('STM_META_LOG', '$DIR/meta.jsonl');
 PHP
 echo "OK $DIR"

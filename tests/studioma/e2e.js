@@ -77,6 +77,10 @@ const signup = async (page, name, email, company) => {
   await page.check('input[name=accept]');
   await page.click('form[data-form="signup"] button.btn-primary');
 };
+/** Événements envoyés à l'API Conversions de Meta (écrits dans meta.jsonl pendant les tests). */
+const metaEvents = () => (fs.existsSync(path.join(DIR, 'meta.jsonl')) ? fs.readFileSync(path.join(DIR, 'meta.jsonl'), 'utf8').trim().split('\n').filter(Boolean).flatMap((l) => JSON.parse(l).data) : []);
+/** Faux script du pixel Meta : il note les appels à fbq (window.__fbqCalls) au lieu de les envoyer. */
+const FAKE_FBQ = 'window.__fbqCalls=window.__fbqCalls||[];(function(){var f=window.fbq;var rec=function(){window.__fbqCalls.push(JSON.parse(JSON.stringify(Array.prototype.slice.call(arguments))));};f.callMethod=rec;(f.queue||[]).forEach(function(a){rec.apply(null,a);});f.queue=[];})();';
 const colSel = (name) => `.bcol:has(.bcol-name:text-is("${name}"))`;
 const cardIn = (page, col, title) => page.locator(`${colSel(col)} .kcard:has(h3:text-is("${title}"))`);
 
@@ -91,6 +95,7 @@ const cardIn = (page, col, title) => page.locator(`${colSel(col)} .kcard:has(h3:
   browser.newContext = async (opts) => {
     const ctx = await newContext(opts);
     await ctx.route('https://accounts.google.com/**', (route) => route.abort());
+    await ctx.route('https://connect.facebook.net/**', (route) => route.fulfill({ status: 200, contentType: 'application/javascript', body: FAKE_FBQ }));
     return ctx;
   };
 
@@ -104,6 +109,7 @@ const cardIn = (page, col, title) => page.locator(`${colSel(col)} .kcard:has(h3:
   ok(await ap.locator('a[data-auth="signup"]').first().getAttribute('href') === 'app/#/signup', 'page d\'accueil : bouton d\'inscription');
   await shot(ap, '00-landing');
   await noOverflow(ap, 'page d\'accueil');
+  ok(await ap.waitForFunction(() => (window.__fbqCalls || []).some((c) => c[0] === 'track' && c[1] === 'PageView'), null, { timeout: 5000 }).then(() => true, () => false), 'pixel Meta : PageView sur la page d\'accueil (sans script en ligne, CSP respectée)');
   await ap.goto(A, { waitUntil: 'load' });
   await ap.waitForSelector('form[data-form="login"]');
   ok(/#\/login$/.test(ap.url()), 'sans compte : redirigé vers la connexion');
@@ -123,6 +129,12 @@ const cardIn = (page, col, title) => page.locator(`${colSel(col)} .kcard:has(h3:
   await ap.click('form[data-form="signup"] button.btn-primary');
   await ap.waitForSelector('.welcome-card');
   ok(/#\/welcome/.test(ap.url()), 'compte créé : premiers pas');
+  const fbqCalls = await ap.evaluate(() => window.__fbqCalls || []);
+  const regPixel = fbqCalls.find((c) => c[0] === 'track' && c[1] === 'CompleteRegistration');
+  const regCapi = metaEvents().find((e) => e.event_name === 'CompleteRegistration');
+  ok(fbqCalls.some((c) => c[0] === 'set' && c[1] === 'autoConfig' && c[2] === false) && fbqCalls.some((c) => c[0] === 'init' && c[1] === '1234567890123')
+    && fbqCalls.filter((c) => c[1] === 'PageView').length >= 2, 'pixel : événements automatiques coupés, PageView à chaque écran', fbqCalls.slice(0, 6));
+  ok(regPixel && regCapi && regPixel[3].eventID === regCapi.event_id && regCapi.user_data.em[0].length === 64, 'inscription : CompleteRegistration par le pixel et par l\'API Conversions, même event_id (déduplication), email haché', [regPixel, regCapi && regCapi.event_id]);
   await ap.fill('input[name=title]', 'Freelance community manager');
   await ap.fill('.chips-in', 'Scriptwriting');
   await ap.keyboard.press('Enter');
@@ -813,6 +825,7 @@ const cardIn = (page, col, title) => page.locator(`${colSel(col)} .kcard:has(h3:
   await shG.goto(shPub, { waitUntil: 'load' });
   await shG.waitForSelector('.guest-head');
   await shG.waitForSelector('.kcard');
+  ok(await shG.evaluate(() => !window.fbq), 'lien de partage : le pixel Meta ne se charge pas (la clé du lien ne part jamais chez Meta)');
   ok(/View only/.test(await shG.locator('.chip-guest-role').innerText()) && await shG.locator('.bcol-add, [data-act="col-add"], [data-act="studio-menu"], .side').count() === 0, 'visiteur sans compte : tableau en lecture seule, ni ajout ni réglages');
   await shG.locator('.kcard').first().click();
   await shG.waitForSelector('.cp h1.cp-title');
@@ -908,6 +921,9 @@ const cardIn = (page, col, title) => page.locator(`${colSel(col)} .kcard:has(h3:
   await noOverflow(shMp, 'invité sur mobile');
   await shot(shMp, '26-guest-mobile');
   await Promise.all([shCtx.close(), shPCtx.close(), shM.close()]);
+  const metaRaw = fs.existsSync(path.join(DIR, 'meta.jsonl')) ? fs.readFileSync(path.join(DIR, 'meta.jsonl'), 'utf8') : '';
+  ok(metaRaw.length > 0 && !metaRaw.includes(shPub.split('/s/')[1]) && !metaRaw.includes(shPriv.split('/s/')[1]) && !/Vélora|Social 2026|Idea from the client|client@brand|partner@brand/.test(metaRaw),
+    'API Conversions : ni clé de lien, ni nom de projet ou de Studio, ni titre de carte, ni email d\'invité');
   // La carte de l'invité est archivée : les étapes suivantes retrouvent le tableau tel qu'il était.
   const shCard = (await call(ap, 'board', undefined, { studio: studioId })).cards.find((c) => c.title === 'Idea from the client');
   await call(ap, 'card_archive', { id: shCard.id, archived: true });
@@ -919,6 +935,7 @@ const cardIn = (page, col, title) => page.locator(`${colSel(col)} .kcard:has(h3:
   watch(mp, 'mobile');
   await mp.goto(A + '#/studio/' + studioId, { waitUntil: 'load' });
   await mp.waitForSelector('.kcard');
+  ok(await mp.evaluate(() => (window.__fbqCalls || []).some((c) => c[0] === 'init' && c[2] && c[2].em === 'amel@test.example')), 'pixel : correspondance avancée (email) pour une personne connectée');
   ok(await mp.locator('.tabbar').isVisible() && !(await mp.locator('.side').isVisible().catch(() => false) && await mp.evaluate(() => document.querySelector('.side').getBoundingClientRect().right > 0)), 'mobile : barre d\'onglets en bas, menu replié');
   await noOverflow(mp, 'tableau sur mobile');
   await shot(mp, '15-mobile-board');

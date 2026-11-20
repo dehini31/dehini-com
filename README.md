@@ -1535,6 +1535,8 @@ du compte Google.
   réécrites par `studioma/.htaccess`) ; `.well-known/.htaccess` (à la racine du dépôt) — les documents de
   découverte que les assistants cherchent à la racine du domaine.
 - `studioma/api.php` — l'API : la table `ROUTES` liste toutes les actions (méthode, compte obligatoire ou non).
+- `studioma/assets/meta.js` — le pixel Meta (sans script en ligne) ; `studioma/lib/meta.php` — l'API Conversions
+  et la liste des événements.
 - `studioma/lib/` — `core.php` (configuration, base, listes de référence, emails), `auth.php` (comptes,
   sessions, notifications), `google.php` (connexion avec Google), `access.php` (**rôles et droits**), `files.php` (fichiers envoyés), `studio.php`
   (projets, Studios, niveaux, colonnes, cartes, passage de relais), `cards.php` (check-lists, commentaires,
@@ -1678,22 +1680,70 @@ lui enlève ses droits, mais le lien public reste lisible par quiconque l'a.
 Conseillé : dans **cPanel › Domaines**, activer **Force HTTPS Redirect** pour dehini.com. Les liens de partage
 sont déjà en https, mais le reste du site répond encore aussi en http si on tape l'adresse sans `https://`.
 
-### 6. Fichiers envoyés
+### 6. Meta Pixel et API Conversions
+
+Ensemble de données **1718566156353795** (réglé dans le code, `STM_META_PIXEL_ID`). Le **jeton** de l'API
+Conversions n'est jamais dans le dépôt : il se met dans `~/studioma-data/meta-token.txt` (hors du site, lisible par
+PHP seulement) ou dans `studioma/config.php` (`STM_META_TOKEN`). Sans jeton, seul le pixel fonctionne.
+
+```bash
+printf '%s' 'LE_JETON' > ~/studioma-data/meta-token.txt && chmod 600 ~/studioma-data/meta-token.txt
+```
+
+Chaque action est décidée par le serveur (`lib/meta.php`, `meta_after()`) : l'événement part par l'API Conversions
+après la réponse, et le pixel du navigateur envoie le même avec le **même event_id** (Meta n'en compte qu'un).
+PageView part du pixel à chaque écran (et sur la page d'accueil).
+
+| Événement | Quand |
+|---|---|
+| `PageView` | chaque écran de l'application et la page d'accueil (pixel) |
+| `CompleteRegistration` | inscription (email ou Google ; `content_name` individual / company) |
+| `Login` | connexion (email ou Google) |
+| `ViewContent` | profil d'une autre personne, page entreprise, opportunité, publication |
+| `Search` | recherche, annuaire des talents ou opportunités filtrés (seulement les valeurs des listes) |
+| `Contact` | message privé envoyé |
+| `SubmitApplication` | candidature à une opportunité |
+| `AddToWishlist` | professionnel enregistré par une entreprise |
+| `Lead` | un invité d'un lien de partage demande à commenter ou à modifier (serveur seulement) |
+| `StartSignup` | clic vers l'inscription sur la page d'accueil (pixel) |
+| `CreateProject`, `CreateStudio`, `CreateCard`, `CardHandoff`, `ContentPublished` | travail dans les Studios |
+| `AddComment`, `AddAttachment`, `RequestApproval`, `ApproveContent`, `RequestChanges` | collaboration sur les cartes |
+| `InviteMember`, `JoinTeam`, `ShareStudio`, `AddGuest`, `ApproveGuest` | équipe et partage sans compte |
+| `GuestVerified`, `GuestCollaboration` | invités sans compte (serveur seulement, sans leur email) |
+| `CreatePost`, `LikePost`, `SavePost`, `Follow`, `ConnectRequest`, `Recommend`, `UpdateProfile` | réseau |
+| `CreateCaseStudy`, `PublishCaseStudy`, `AuthorizeCaseStudy`, `ConfirmResults` | portfolio |
+| `CreateCompany`, `AddTeamMember`, `PublishOpportunity`, `AnswerApplication` | entreprises |
+| `ConfirmEmail`, `ConnectAI` | adresse confirmée, assistant IA connecté |
+
+**Ce qui part chez Meta** : nom de l'événement, catégories (type de compte, rôle, type de contenu, modèle de Studio,
+secteur…), identifiants publics (`profile-12`, `opportunity-4`), et pour une personne connectée son email, son id,
+son prénom et son nom **hachés en SHA-256**, avec l'IP, le navigateur et les cookies `_fbp` / `_fbc`. **Jamais** :
+contenu des Studios (titres, descriptions, commentaires), noms de projets, de Studios ou d'entreprises, messages,
+texte tapé dans une recherche, clés de liens de partage ou d'invitation (le pixel se tait sur ces écrans, et l'adresse
+envoyée s'arrête avant `#`), email des invités sans compte. Les événements automatiques du pixel (clics,
+microdonnées) sont coupés. Comme pour SWANBIDA, pas de bandeau de consentement aux cookies.
+
+Tester : Gestionnaire d'événements → *Événements de test* → copier le code, l'ajouter dans `config.php`
+(`define('STM_META_TEST_CODE', 'TEST…');`), faire une action, puis **retirer la ligne**. En cas d'échec, la
+dernière erreur de l'API est gardée dans la table `meta` de la base (`meta_capi_error`).
+
+### 7. Fichiers envoyés
 
 64 Mo par fichier (`studioma/.user.ini` et `STM_MAX_UPLOAD_MB`), 12 Mo par image. Si l'hébergeur plafonne plus
 bas, baisser les deux valeurs ensemble. Le type est vérifié sur le contenu réel du fichier.
 
-### 7. Sauvegarde
+### 8. Sauvegarde
 
 Tout tient dans `~/studioma-data/` : copier ce dossier sauvegarde la base et les fichiers.
 
-### 8. Tests
+### 9. Tests
 
 ```bash
 tests/studioma/run.sh /tmp/stm-test
 ```
 
-Faux hébergement neuf, puis quatre batteries : `share.js` (le partage sans compte : lecture seule, Studio et
+Faux hébergement neuf, puis cinq batteries : `meta.js` (pixel et API Conversions : chaque événement, même event_id,
+données hachées, rien de privé), `share.js` (le partage sans compte : lecture seule, Studio et
 niveaux du lien, liste fermée d'actions, codes et liens magiques, demandes et réponses, droits et périmètre,
 validation par un invité, emails, retrait, liens coupés, expirés, régénérés), `mcp.js` (le serveur MCP et son OAuth, comme un assistant :
 découverte, enregistrement, PKCE, jetons, tous les outils, droits, renouvellement, révocation), `api.js` (l'API seule : comptes, modèle par défaut, relais avec

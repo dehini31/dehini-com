@@ -35,6 +35,8 @@ function out(array $d, int $code = 200): void
 }
 function ok(array $d = []): void
 {
+    // Événements Meta décidés par le serveur : le pixel du navigateur envoie les mêmes (même event_id).
+    if (!empty($GLOBALS['stm_meta_out'])) $d['_meta'] = $GLOBALS['stm_meta_out'];
     out(['ok' => true] + $d);
 }
 /** $msg est affiché tel quel à la personne ; $code sert au code de la page. */
