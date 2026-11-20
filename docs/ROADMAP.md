@@ -33,6 +33,11 @@ status changes; keep the history of finished items short.
 
 ## Pending — owner actions (outside the code)
 
+- [ ] **Deploy the Studioma admin and decide on automatic deployment** (2026-11-20): the server crontab has **no
+  deployment job** for `~/dehini-com` (verified from the owner's `crontab -l`), so merges to `main` do not go live
+  by themselves. Copy by hand (`HANDOFF.md` › next action 1), or add the deployment cron of README
+  « Installation › 4 » so that `main` = production again.
+
 - [ ] **Put the server clone back on `main`**: on 2026-11-20 `~/dehini-com` on the server was switched to
   `claude/trusting-keller-rynk1j` to try Codex there. Run `cd ~/dehini-com && git checkout main` and check that
   `git status --short --branch` shows `## main...origin/main` *(unverified whether done)*. Nothing changed live:
