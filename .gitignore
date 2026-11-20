@@ -33,3 +33,26 @@
 
 # Python
 __pycache__/
+
+# Environment files, keys and tokens: never committed (secrets live in config.php or the server data folders).
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*-token.txt
+
+# Local databases, dependencies and temporary files (production data lives outside the repository).
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+node_modules/
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# Claude Code personal settings (the shared .claude/settings.json and hooks stay tracked).
+.claude/settings.local.json
