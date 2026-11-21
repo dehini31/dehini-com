@@ -373,6 +373,8 @@ function board_data(array $s, array $u): array
     $members = card_members_map(array_column($cards, 'id'));
     $p = $s['project'];
     $role = (string) $s['role'];
+    // Pastilles « publiée », « opportunité », « partagée » : pour les membres seulement (lib/pubs.php).
+    $badges = empty($u['guest']) ? studio_pub_badges($sid) : [];
     return [
         'studio' => [
             'id' => $sid, 'name' => (string) $s['name'], 'description' => (string) $s['description'], 'rev' => (int) $s['rev'],
@@ -382,7 +384,7 @@ function board_data(array $s, array $u): array
             'project' => ['id' => (int) $p['id'], 'name' => (string) $p['name'], 'color' => (string) $p['color'], 'logo' => (string) $p['logo']],
         ],
         'levels' => $levels, 'cols' => $cols,
-        'cards' => array_map(function (array $c) use ($members): array { return card_lite($c, $members); }, $cards),
+        'cards' => array_map(function (array $c) use ($members, $badges): array { return card_lite($c, $members) + (isset($badges[(int) $c['id']]) ? ['pub' => $badges[(int) $c['id']]] : []); }, $cards),
         'members' => studio_people_view($s, $p),
         // Invités qu'on peut désigner pour valider une carte (lien de partage, lib/share.php).
         'guests' => !empty($u['guest']) || !can($role, 'work') ? [] : guest_approvers($sid),
@@ -503,6 +505,7 @@ function cards_relocate(array $fromCols, array $to): void
     $pos = (int) val('SELECT COALESCE(MAX(pos), -1) + 1 FROM cards WHERE col_id = ?', [$to['id']]);
     foreach (rows('SELECT id FROM cards WHERE col_id IN (' . marks($fromCols) . ') ORDER BY pos, id', $fromCols) as $c) {
         q('UPDATE cards SET col_id = ?, pos = ?, done_at = ? WHERE id = ?', [$to['id'], $pos++, $to['kind'] === 'done' ? time() : 0, $c['id']]);
+        pubs_card_changed((int) $c['id']);
     }
 }
 function api_level_delete(array $b, array $u): array
@@ -554,7 +557,11 @@ function api_column_save(array $b, array $u): array
         if ($set) {
             $sets = implode(', ', array_map(function (string $k): string { return "$k = ?"; }, array_keys($set)));
             q("UPDATE cols SET $sets WHERE id = ?", array_merge(array_values($set), [$id]));
-            if (isset($set['kind']) && $set['kind'] !== $c['kind']) q('UPDATE cards SET done_at = ? WHERE col_id = ?', [$set['kind'] === 'done' ? time() : 0, $id]);
+            if (isset($set['kind']) && $set['kind'] !== $c['kind']) {
+                q('UPDATE cards SET done_at = ? WHERE col_id = ?', [$set['kind'] === 'done' ? time() : 0, $id]);
+                // Les opportunités publiées depuis ces cartes suivent leur nouvelle étape (lib/pubs.php).
+                foreach (rows('SELECT id FROM cards WHERE col_id = ?', [$id]) as $x) pubs_card_changed((int) $x['id']);
+            }
             if (isset($set['name']) && $set['name'] !== $c['name']) log_event((int) $c['studio_id'], 0, (int) $u['id'], 'column', 'renamed the column “' . $c['name'] . '” to “' . $set['name'] . '”');
         }
         studio_touch((int) $c['studio_id']);
@@ -674,6 +681,7 @@ function card_place(int $cardId, array $col, int $index): void
     $was = (int) val('SELECT done_at FROM cards WHERE id = ?', [$cardId]);
     q('UPDATE cards SET col_id = ?, updated = ?, done_at = ? WHERE id = ?', [$col['id'], time(), $col['kind'] === 'done' ? ($was ?: time()) : 0, $cardId]);
     foreach ($ids as $i => $id) q('UPDATE cards SET pos = ? WHERE id = ?', [$i, $id]);
+    pubs_card_changed($cardId);   // terminée ou annulée : son opportunité publiée se ferme (lib/pubs.php)
 }
 /** Personnes à prévenir pour une carte (responsable, collaborateurs, créateur), sauf $except. */
 function card_watchers(array $card, int $except = 0): array
@@ -913,13 +921,20 @@ function card_archive(array $card, bool $on, int $uid): void
         if (!$col) fail('Add a column to this Studio before restoring a card.');
         card_place((int) $card['id'], $col, PHP_INT_MAX);
     }
+    if ($on) pubs_card_changed((int) $card['id']);
     log_event((int) $card['studio_id'], (int) $card['id'], $uid, 'archive', $on ? 'archived this card' : 'restored this card');
 }
+/**
+ * Supprime une carte. Ses liens de partage (carte seule) et leurs invités disparaissent avec elle ; ses
+ * publications restent (contenu copié, choisi par leur auteur) mais perdent leur source : une opportunité se ferme.
+ */
 function card_destroy(array $card): void
 {
     foreach (rows('SELECT f.* FROM card_files cf JOIN files f ON f.id = cf.file_id WHERE cf.card_id = ?', [$card['id']]) as $f) file_delete($f);
     q('DELETE FROM events WHERE card_id = ?', [$card['id']]);
+    q('DELETE FROM shares WHERE card_id = ? AND studio_id = ?', [$card['id'], $card['studio_id']]);
     q('DELETE FROM cards WHERE id = ?', [$card['id']]);
+    pubs_card_changed((int) $card['id']);
 }
 function api_card_archive(array $b, array $u): array
 {

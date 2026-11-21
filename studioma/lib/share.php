@@ -20,6 +20,10 @@
  * guest_load_studio() et guest_load_card(), qui appliquent le lien (Studio, niveaux montrés) et les
  * droits de l'invité (rôle, périmètre). Toute modification d'un invité est notée dans l'historique de la
  * carte sous son adresse, dans le journal du partage, et envoyée par email au responsable.
+ *
+ * Lien d'une seule carte (shares.card_id > 0) : mêmes liens, invités, codes et demandes, mais l'invité ne voit
+ * que cette carte — ni les autres cartes, ni l'équipe, ni l'historique — et seulement les pièces jointes et les
+ * commentaires que le responsable a choisi de montrer (shares.opts). Un éditeur n'y modifie que cette carte.
  */
 declare(strict_types=1);
 
@@ -37,6 +41,7 @@ const SHARE_GONE = [
     'disabled' => 'This link was turned off by the person who shared it.',
     'expired' => 'This link has expired. Ask the person who shared it for a new one.',
     'unavailable' => 'This Studio is no longer available.',
+    'card_unavailable' => 'This card is no longer available.',
 ];
 
 /* ------------------------------------------------------------------ liens */
@@ -66,7 +71,15 @@ function share_state(array $sh): string
     if ((int) $sh['expires'] > 0 && (int) $sh['expires'] <= time()) return 'expired';
     $s = row('SELECT s.archived, p.archived AS p_archived FROM studios s JOIN projects p ON p.id = s.project_id WHERE s.id = ?', [$sh['studio_id']]);
     if (!$s || (int) $s['archived'] || (int) $s['p_archived']) return 'unavailable';
+    // Lien d'une carte : la carte supprimée ou archivée ferme le lien (il rouvre si la carte est restaurée).
+    if ((int) ($sh['card_id'] ?? 0) > 0 && !val('SELECT 1 FROM cards WHERE id = ? AND studio_id = ? AND archived = 0', [$sh['card_id'], $sh['studio_id']])) return 'unavailable';
     return '';
+}
+/** Ce que les invités d'un lien de carte voient en plus de la carte : pièces jointes choisies, commentaires. */
+function share_opts(array $sh): array
+{
+    $o = jarr($sh['opts'] ?? '{}');
+    return ['files' => ids_in($o['files'] ?? []), 'comments' => !empty($o['comments'])];
 }
 function ids_in($v): array
 {
@@ -124,7 +137,7 @@ function guest_principal(string $token): array
     $sh = share_by_token($token);
     if (!$sh) fail('This link doesn\'t work. Ask the person who shared it for a new one.', 404, 'share_gone');
     $state = share_state($sh);
-    if ($state !== '') fail(SHARE_GONE[$state], 410, 'share_' . $state);
+    if ($state !== '') fail(SHARE_GONE[$state === 'unavailable' && (int) $sh['card_id'] > 0 ? 'card_unavailable' : $state], 410, 'share_' . $state);
     $g = guest_session($sh);
     $info = [
         'share' => $sh, 'gid' => $g ? (int) $g['id'] : 0, 'email' => $g ? (string) $g['email'] : '', 'row' => $g,
@@ -133,6 +146,7 @@ function guest_principal(string $token): array
         'capped' => !guest_collab_allowed(studio_account((int) $sh['studio_id'])),
         'locked' => $sh['kind'] === 'private' && !$g,
         'levels' => ids_in(jarr($sh['levels'])), 'scope' => guest_scope($g),
+        'card' => (int) $sh['card_id'], 'opts' => share_opts($sh),
     ];
     if ($info['capped']) $info['role'] = 'viewer';
     if ($g) {
@@ -190,6 +204,7 @@ function guest_load_studio(int $id, array $u, string $cap): array
 function guest_card_place(array $card, array $g): ?array
 {
     if ((int) $card['archived']) return null;
+    if (!empty($g['card']) && (int) $card['id'] !== (int) $g['card']) return null;   // lien d'une carte : celle-ci seulement
     $x = row('SELECT co.id, co.level_id FROM cols co JOIN levels l ON l.id = co.level_id WHERE co.id = ? AND co.archived = 0 AND l.archived = 0', [$card['col_id']]);
     if (!$x || ($g['levels'] && !in_array((int) $x['level_id'], $g['levels'], true))) return null;
     return ['col' => (int) $x['id'], 'level' => (int) $x['level_id']];
@@ -197,6 +212,7 @@ function guest_card_place(array $card, array $g): ?array
 /** L'invité peut-il ajouter ou déposer des cartes dans cette colonne ? */
 function guest_col_writable(array $g, int $colId, int $levelId): bool
 {
+    if (!empty($g['card'])) return false;   // lien d'une carte : ni création ni dépôt de carte
     if ($g['role'] !== 'editor' || ($g['levels'] && !in_array($levelId, $g['levels'], true))) return false;
     $sc = $g['scope'];
     return scope_all($sc) || in_array($colId, $sc['cols'], true) || in_array($levelId, $sc['levels'], true);
@@ -204,6 +220,7 @@ function guest_col_writable(array $g, int $colId, int $levelId): bool
 /** L'invité peut-il modifier cette carte ? */
 function guest_card_editable(array $g, int $cardId, int $colId, int $levelId): bool
 {
+    if (!empty($g['card'])) return $g['role'] === 'editor' && $cardId === (int) $g['card'];
     if ($g['role'] !== 'editor' || ($g['levels'] && !in_array($levelId, $g['levels'], true))) return false;
     return guest_col_writable($g, $colId, $levelId) || in_array($cardId, $g['scope']['cards'], true);
 }
@@ -220,6 +237,7 @@ function guest_load_card(int $id, array $u, string $cap): array
             guest_forbidden($g);
         }
     } elseif ($cap === 'comment') {
+        if (!empty($g['card']) && !$g['opts']['comments']) forbidden('Comments on this card aren\'t shared with guests.');
         if (GUEST_RANK[$g['role']] < GUEST_RANK['commenter']) guest_forbidden($g);
     } elseif ($cap !== 'view') {
         guest_forbidden($g);
@@ -242,6 +260,13 @@ function guest_file_readable(array $f, array $u): bool
     if ($f['scope'] === 'public') return true;
     $g = $u['guest'];
     if ($g['locked'] || $f['scope'] !== 'studio' || (int) $f['studio_id'] !== (int) $g['share']['studio_id']) return false;
+    if (!empty($g['card'])) {
+        // Lien d'une carte : seulement les pièces jointes que le responsable a choisi de montrer.
+        $ids = $g['opts']['files'];
+        if (!$ids) return false;
+        return (bool) val('SELECT 1 FROM card_files cf JOIN cards c ON c.id = cf.card_id WHERE cf.file_id = ? AND cf.card_id = ? AND c.archived = 0 AND cf.id IN (' . marks($ids) . ')',
+            array_merge([$f['id'], $g['card']], $ids));
+    }
     foreach (rows('SELECT c.* FROM card_files cf JOIN cards c ON c.id = cf.card_id WHERE cf.file_id = ?', [$f['id']]) as $c) {
         if ((int) $c['studio_id'] === (int) $g['share']['studio_id'] && guest_card_place($c, $g)) return true;
     }
@@ -264,6 +289,7 @@ function guest_board(array $s, array $u): array
     $people = [];
     foreach ($d['cards'] as $c) {
         if (!isset($levelOf[$c['col_id']])) continue;
+        if (!empty($g['card']) && $c['id'] !== (int) $g['card']) continue;   // lien d'une carte : celle-ci seulement
         $cards[] = $c + ['editable' => guest_card_editable($g, $c['id'], $c['col_id'], $levelOf[$c['col_id']])];
         if ($c['assignee']) $people[$c['assignee']] = true;
         foreach ($c['members'] as $m) $people[$m] = true;
@@ -279,6 +305,14 @@ function guest_board(array $s, array $u): array
         'work' => (bool) array_filter($cols, function (array $c): bool { return $c['writable']; }), 'edit' => false, 'manage' => false, 'own' => false,
     ];
     $d['studio']['guest'] = guest_view($u);
+    if (!empty($g['card'])) {
+        // Lien d'une carte : son niveau et sa colonne seulement, rien du reste du Studio.
+        $col = $cards ? $cards[0]['col_id'] : 0;
+        $cols = array_values(array_filter($cols, function (array $c) use ($col): bool { return $c['id'] === $col; }));
+        $lv = $cols ? $cols[0]['level_id'] : 0;
+        $levels = array_values(array_filter($levels, function (array $l) use ($lv): bool { return $l['id'] === $lv; }));
+        $d['studio']['description'] = '';
+    }
     return ['studio' => $d['studio'], 'levels' => $levels, 'cols' => $cols, 'cards' => $cards, 'members' => $members];
 }
 /** Ce que l'interface de l'invité doit savoir de lui. */
@@ -293,15 +327,17 @@ function guest_view(array $u): array
         'limited' => $g['role'] === 'editor' && !scope_all($scope),
         'levels_limited' => (bool) $g['levels'],
         'requests' => empty($g['capped']),   // false : la formule du Studio ne permet pas de demander plus de droits
+        'card' => (int) ($g['card'] ?? 0), 'comments' => empty($g['card']) || !empty($g['opts']['comments']),
     ];
 }
 /** Invités qu'un membre peut désigner pour valider une carte (rôle commenter ou editor, adresse vérifiée). */
 function guest_approvers(int $studioId): array
 {
     $out = [];
-    foreach (rows("SELECT g.*, s.kind FROM share_guests g JOIN shares s ON s.id = g.share_id
+    foreach (rows("SELECT g.*, s.kind, s.card_id FROM share_guests g JOIN shares s ON s.id = g.share_id
         WHERE g.studio_id = ? AND g.status = 'active' AND g.role IN ('commenter', 'editor') ORDER BY g.email", [$studioId]) as $g) {
-        $out[] = ['id' => 'g' . $g['id'], 'name' => (string) $g['email'], 'role' => (string) $g['role'], 'kind' => (string) $g['kind']];
+        // card > 0 : invité du lien d'une seule carte (il ne peut valider que celle-ci).
+        $out[] = ['id' => 'g' . $g['id'], 'name' => (string) $g['email'], 'role' => (string) $g['role'], 'kind' => (string) $g['kind'], 'card' => (int) $g['card_id']];
     }
     return $out;
 }
@@ -387,11 +423,28 @@ function share_info(array $sh): array
     $s = row('SELECT * FROM studios WHERE id = ?', [$sh['studio_id']]);
     $p = $s ? row('SELECT * FROM projects WHERE id = ?', [$s['project_id']]) : null;
     $by = user_cards([(int) $sh['created_by']])[(int) $sh['created_by']] ?? null;
+    $card = (int) $sh['card_id'] > 0 ? row('SELECT id, title FROM cards WHERE id = ? AND studio_id = ?', [$sh['card_id'], $sh['studio_id']]) : null;
     return [
         'kind' => (string) $sh['kind'], 'studio_id' => (int) $sh['studio_id'], 'studio' => $s ? (string) $s['name'] : '',
         'project' => $p ? ['name' => (string) $p['name'], 'color' => (string) $p['color'], 'logo' => (string) $p['logo']] : null,
         'by' => $by ? ['name' => $by['name'], 'avatar' => $by['avatar']] : null, 'expires' => (int) $sh['expires'],
+        'card' => $card ? ['id' => (int) $card['id'], 'title' => (string) $card['title']] : null,
     ];
+}
+/** Ce que montre un lien, pour les emails : « the card “…” » ou « the Studio “…” ». */
+function share_what(array $info): string
+{
+    return $info['card'] ? 'the card “' . $info['card']['title'] . '”' : 'the Studio “' . $info['studio'] . '”';
+}
+/** Où le responsable gère ce lien : la fenêtre Partager du Studio, ou celle de la carte. */
+function share_manage_url(array $sh, string $extra = ''): string
+{
+    $sid = (int) $sh['studio_id'];
+    return (int) $sh['card_id'] > 0 ? app_url('studio/' . $sid . '/card/' . (int) $sh['card_id'] . '?cardshare=1' . $extra) : guests_url($sid, $extra);
+}
+function share_manage_link(array $sh): string
+{
+    return (int) $sh['card_id'] > 0 ? 'studio/' . (int) $sh['studio_id'] . '/card/' . (int) $sh['card_id'] . '?cardshare=1' : 'studio/' . (int) $sh['studio_id'] . '?guests=1';
 }
 /** GET share_open : ce que montre le lien, et qui le consulte. */
 function api_share_open(array $b, array $u): array
@@ -431,8 +484,8 @@ function api_share_code(array $b, array $u): array
             'req_role' => $req, 'req_note' => str_clean($b['note'] ?? '', 500), 'expires' => time() + SHARE_CODE_MINUTES * 60, 'created' => time(),
         ]);
         $info = share_info($sh);
-        mail_later($email, $code . ' is your code for ' . $info['studio'], 'Your verification code: ' . $code, [
-            ($info['by'] ? $info['by']['name'] . ' shared' : 'You opened') . ' the Studio “' . $info['studio'] . '” on ' . STM_NAME . '. Enter this code on the page to confirm that this email address is yours, or use the button below. Both are valid for ' . SHARE_CODE_MINUTES . ' minutes and work once.',
+        mail_later($email, $code . ' is your code for ' . ($info['card'] ? $info['card']['title'] : $info['studio']), 'Your verification code: ' . $code, [
+            ($info['by'] ? $info['by']['name'] . ' shared' : 'You opened') . ' ' . share_what($info) . ' on ' . STM_NAME . '. Enter this code on the page to confirm that this email address is yours, or use the button below. Both are valid for ' . SHARE_CODE_MINUTES . ' minutes and work once.',
             'No account or password is needed. If you didn\'t ask for this code, ignore this email: nothing happens without it.',
         ], 'Verify my email', share_url($sh) . '?v=' . $link);
     }
@@ -468,8 +521,9 @@ function api_share_verify(array $b, array $u): array
     q('UPDATE share_codes SET used = 1 WHERE id = ?', [$c['id']]);
     $email = (string) $c['email'];
     $g = row('SELECT * FROM share_guests WHERE share_id = ? AND email = ?', [$sh['id'], $email]);
-    if ($sh['kind'] === 'private' && (!$g || !in_array($g['status'], ['invited', 'active'], true))) fail('This email address doesn\'t have access to this Studio.', 403, 'forbidden');
-    if ($g && $g['status'] === 'revoked') fail('Your access to this Studio was removed.', 403, 'forbidden');
+    $thing = (int) $sh['card_id'] > 0 ? 'card' : 'Studio';
+    if ($sh['kind'] === 'private' && (!$g || !in_array($g['status'], ['invited', 'active'], true))) fail('This email address doesn\'t have access to this ' . $thing . '.', 403, 'forbidden');
+    if ($g && $g['status'] === 'revoked') fail('Your access to this ' . $thing . ' was removed.', 403, 'forbidden');
     if (!$g) {
         $gid = insert('share_guests', ['share_id' => $sh['id'], 'studio_id' => $sh['studio_id'], 'email' => $email, 'status' => 'active', 'verified' => time(), 'last_seen' => time(), 'created' => time()]);
     } else {
@@ -481,7 +535,7 @@ function api_share_verify(array $b, array $u): array
     guest_session_start($sh, $gid);
     $capped = !guest_collab_allowed(studio_account((int) $sh['studio_id']));   // formule Free : lecture seule
     $principal = ['id' => 0, 'guest' => ['share' => $sh, 'gid' => $gid, 'email' => $email, 'role' => $capped ? 'viewer' : (string) $g['role'], 'capped' => $capped,
-        'locked' => false, 'levels' => ids_in(jarr($sh['levels'])), 'scope' => guest_scope($g), 'row' => $g]];
+        'locked' => false, 'levels' => ids_in(jarr($sh['levels'])), 'scope' => guest_scope($g), 'row' => $g, 'card' => (int) $sh['card_id'], 'opts' => share_opts($sh)]];
     $asked = '';
     if ($c['req_role'] !== '' && !$capped) $asked = guest_request($sh, $g, (string) $c['req_role'], (string) $c['req_note']);
     return ['guest' => guest_view($principal), 'requested' => $asked];
@@ -496,19 +550,19 @@ function guest_request(array $sh, array $g, string $role, string $note): string
     share_log((int) $sh['studio_id'], (int) $sh['id'], 0, $g, 0, 'request', 'asked for ' . strtolower(GUEST_ROLES[$role]) . ' access' . ($note !== '' ? ': “' . mb_substr($note, 0, 200) . '”' : ''));
     if ($first) {
         $info = share_info($sh);
-        $sid = (int) $sh['studio_id'];
+        $isCard = (bool) $info['card'];
         foreach (share_managers($sh) as $uid) {
-            notify($uid, 0, 'guest', 'asks for ' . strtolower(GUEST_ROLES[$role]) . ' access to “' . $info['studio'] . '”', 'studio/' . $sid . '?guests=1', false, (string) $g['email']);
+            notify($uid, 0, 'guest', 'asks for ' . strtolower(GUEST_ROLES[$role]) . ' access to “' . ($isCard ? $info['card']['title'] : $info['studio']) . '”', share_manage_link($sh), false, (string) $g['email']);
             $to = user_by_id($uid);
             if (!$to) continue;
-            mail_later((string) $to['email'], $g['email'] . ' asks to ' . ($role === 'editor' ? 'edit' : 'comment on') . ' ' . $info['studio'], 'A guest asks for ' . strtolower(GUEST_ROLES[$role]) . ' access', array_values(array_filter([
-                $g['email'] . ' (email verified) opened your ' . $sh['kind'] . ' link to the Studio “' . $info['studio'] . '”' . ($info['project'] ? ' (project ' . $info['project']['name'] . ')' : '') . ' and asks for ' . strtolower(GUEST_ROLES[$role]) . ' access: '
-                    . ($role === 'editor' ? 'to edit the content you open to them.' : 'to comment, and to approve the cards you send them for approval.'),
+            mail_later((string) $to['email'], $g['email'] . ' asks to ' . ($role === 'editor' ? 'edit' : 'comment on') . ' ' . ($isCard ? $info['card']['title'] : $info['studio']), 'A guest asks for ' . strtolower(GUEST_ROLES[$role]) . ' access', array_values(array_filter([
+                $g['email'] . ' (email verified) opened your ' . $sh['kind'] . ' link to ' . share_what($info) . ($isCard ? ' (Studio ' . $info['studio'] . ')' : ($info['project'] ? ' (project ' . $info['project']['name'] . ')' : '')) . ' and asks for ' . strtolower(GUEST_ROLES[$role]) . ' access: '
+                    . ($role === 'editor' ? ($isCard ? 'to edit this card.' : 'to edit the content you open to them.') : ($isCard ? 'to comment on this card, and approve it when you ask them.' : 'to comment, and to approve the cards you send them for approval.')),
                 $note !== '' ? 'Their message: “' . $note . '”' : '',
-                'Nothing changes until you answer. You can approve with a narrower access, or limit editing to some levels, columns or cards.',
-            ])), 'Review the request', guests_url($sid, '&req=' . $g['id']), [
-                ['Approve as ' . GUEST_ROLES[$role], guests_url($sid, '&req=' . $g['id'] . '&do=approve')],
-                ['Reject the request', guests_url($sid, '&req=' . $g['id'] . '&do=reject')],
+                $isCard ? 'Nothing changes until you answer. They never see the rest of the Studio.' : 'Nothing changes until you answer. You can approve with a narrower access, or limit editing to some levels, columns or cards.',
+            ])), 'Review the request', share_manage_url($sh, '&req=' . $g['id']), [
+                ['Approve as ' . GUEST_ROLES[$role], share_manage_url($sh, '&req=' . $g['id'] . '&do=approve')],
+                ['Reject the request', share_manage_url($sh, '&req=' . $g['id'] . '&do=reject')],
             ]);
         }
     }
@@ -553,23 +607,43 @@ function guest_row_view(array $g, array $kinds): array
         'created' => (int) $g['created'],
     ];
 }
-/** GET share_list {studio} : liens, invités, demandes et journal du partage. */
-function api_share_list(array $b, array $u): array
+/**
+ * Studio et carte gérés par une requête de partage : {studio} pour tout le Studio, {studio, card} pour une seule
+ * carte (active, de ce Studio). Gérer le partage demande le droit « manage » du Studio, dans les deux cas.
+ */
+function share_scope(array $b, array $u): array
 {
     $s = load_studio(int_in($b, 'studio'), $u, 'manage');
+    $cid = int_in($b, 'card');
+    $card = null;
+    if ($cid) {
+        $card = row('SELECT * FROM cards WHERE id = ? AND studio_id = ? AND archived = 0', [$cid, $s['id']]);
+        if (!$card) not_found('This card');
+    }
+    return [$s, $card];
+}
+/** Liens d'un périmètre (Studio entier : card_id = 0, ou une carte). */
+function scope_shares(int $sid, int $cid): array
+{
+    return rows('SELECT * FROM shares WHERE studio_id = ? AND card_id = ?', [$sid, $cid]);
+}
+/** GET share_list {studio, card?} : liens, invités, demandes et journal du partage (du Studio, ou d'une carte). */
+function api_share_list(array $b, array $u): array
+{
+    [$s, $card] = share_scope($b, $u);
     $sid = (int) $s['id'];
-    $shares = rows('SELECT * FROM shares WHERE studio_id = ?', [$sid]);
+    $cid = $card ? (int) $card['id'] : 0;
+    $shares = scope_shares($sid, $cid);
     $kinds = array_column($shares, 'kind', 'id');
     $byKind = array_column($shares, null, 'kind');
-    $guests = rows("SELECT * FROM share_guests WHERE studio_id = ? AND status <> 'removed' ORDER BY req_at DESC, last_seen DESC, id DESC", [$sid]);
-    $log = rows('SELECT l.*, c.title AS card_title FROM share_log l LEFT JOIN cards c ON c.id = l.card_id WHERE l.studio_id = ? ORDER BY l.id DESC LIMIT 80', [$sid]);
+    $ids = array_map('intval', array_keys($kinds));
+    $guests = $ids ? rows("SELECT * FROM share_guests WHERE share_id IN (" . marks($ids) . ") AND status <> 'removed' ORDER BY req_at DESC, last_seen DESC, id DESC", $ids) : [];
+    // Journal : celui des liens de ce périmètre (les liens d'une carte ont le leur, à part de celui du Studio).
+    $log = $cid
+        ? ($ids ? rows('SELECT l.*, c.title AS card_title FROM share_log l LEFT JOIN cards c ON c.id = l.card_id WHERE l.studio_id = ? AND l.share_id IN (' . marks($ids) . ') ORDER BY l.id DESC LIMIT 80', array_merge([$sid], $ids)) : [])
+        : rows('SELECT l.*, c.title AS card_title FROM share_log l LEFT JOIN cards c ON c.id = l.card_id WHERE l.studio_id = ? AND l.share_id NOT IN (SELECT id FROM shares WHERE card_id > 0) ORDER BY l.id DESC LIMIT 80', [$sid]);
     $users = user_cards(array_column($log, 'uid'));
-    $levels = [];
-    foreach (studio_levels($sid) as $l) {
-        $levels[] = ['id' => (int) $l['id'], 'name' => (string) $l['name'], 'icon' => (string) $l['icon'],
-            'cols' => array_map(function (array $c): array { return ['id' => (int) $c['id'], 'name' => (string) $c['name']]; }, rows('SELECT id, name FROM cols WHERE level_id = ? AND archived = 0 ORDER BY pos, id', [$l['id']]))];
-    }
-    return [
+    $out = [
         'links' => ['public' => share_view($byKind['public'] ?? null), 'private' => share_view($byKind['private'] ?? null)],
         'guests' => array_map(function (array $g) use ($kinds): array { return guest_row_view($g, $kinds); }, $guests),
         'history' => array_map(function (array $l) use ($users): array {
@@ -577,20 +651,38 @@ function api_share_list(array $b, array $u): array
                 'card_id' => (int) $l['card_id'], 'card_title' => (string) ($l['card_title'] ?? ''),
                 'by' => $l['uid'] ? ($users[(int) $l['uid']] ?? null) : ['id' => 0, 'name' => (string) $l['email'], 'handle' => '', 'title' => 'Guest', 'avatar' => '', 'guest' => true]];
         }, $log),
-        'levels' => $levels,
-        'cards' => array_map(function (array $c): array { return ['id' => (int) $c['id'], 'title' => (string) $c['title'], 'col_id' => (int) $c['col_id']]; },
-            rows('SELECT c.id, c.title, c.col_id FROM cards c JOIN cols co ON co.id = c.col_id JOIN levels l ON l.id = co.level_id WHERE c.studio_id = ? AND c.archived = 0 AND co.archived = 0 AND l.archived = 0 ORDER BY c.updated DESC LIMIT 500', [$sid])),
     ];
+    if ($card) {
+        // Lien d'une carte : ce que les invités en voient (pièces jointes choisies, commentaires).
+        $out['card'] = ['id' => $cid, 'title' => (string) $card['title']];
+        $out['files'] = array_map(function (array $f): array { return ['id' => (int) $f['cf_id'], 'name' => (string) $f['name'], 'kind' => (string) $f['kind']]; },
+            rows('SELECT cf.id AS cf_id, f.name, f.kind FROM card_files cf JOIN files f ON f.id = cf.file_id WHERE cf.card_id = ? ORDER BY cf.id', [$cid]));
+        $one = $byKind['public'] ?? $byKind['private'] ?? null;
+        $out['opts'] = $one ? share_opts($one) : ['files' => [], 'comments' => false];
+        return $out;
+    }
+    $levels = [];
+    foreach (studio_levels($sid) as $l) {
+        $levels[] = ['id' => (int) $l['id'], 'name' => (string) $l['name'], 'icon' => (string) $l['icon'],
+            'cols' => array_map(function (array $c): array { return ['id' => (int) $c['id'], 'name' => (string) $c['name']]; }, rows('SELECT id, name FROM cols WHERE level_id = ? AND archived = 0 ORDER BY pos, id', [$l['id']]))];
+    }
+    $out['levels'] = $levels;
+    $out['cards'] = array_map(function (array $c): array { return ['id' => (int) $c['id'], 'title' => (string) $c['title'], 'col_id' => (int) $c['col_id']]; },
+        rows('SELECT c.id, c.title, c.col_id FROM cards c JOIN cols co ON co.id = c.col_id JOIN levels l ON l.id = co.level_id WHERE c.studio_id = ? AND c.archived = 0 AND co.archived = 0 AND l.archived = 0 ORDER BY c.updated DESC LIMIT 500', [$sid]));
+    return $out;
 }
-/** Lien d'un type, créé s'il n'existe pas encore. */
-function share_get_or_create(array $s, string $kind, int $uid): array
+/** Lien d'un type (du Studio, ou de la carte $cid), créé s'il n'existe pas encore. */
+function share_get_or_create(array $s, string $kind, int $uid, int $cid = 0): array
 {
-    $sh = row('SELECT * FROM shares WHERE studio_id = ? AND kind = ?', [$s['id'], $kind]);
+    $sh = row('SELECT * FROM shares WHERE studio_id = ? AND card_id = ? AND kind = ?', [$s['id'], $cid, $kind]);
     if ($sh) return $sh;
-    insert('shares', ['studio_id' => $s['id'], 'kind' => $kind, 'token' => share_token(), 'created_by' => $uid, 'created' => time(), 'updated' => time()]);
+    // Une carte partagée : le second lien reprend ce que le premier montre (pièces jointes, commentaires).
+    $twin = $cid ? row('SELECT opts FROM shares WHERE studio_id = ? AND card_id = ?', [$s['id'], $cid]) : null;
+    $id = insert('shares', ['studio_id' => $s['id'], 'card_id' => $cid, 'kind' => $kind, 'token' => share_token(), 'opts' => $twin ? (string) $twin['opts'] : '{}',
+        'created_by' => $uid, 'created' => time(), 'updated' => time()]);
     $GLOBALS['stm_share_created'] = $kind;   // événement Meta « ShareStudio » (lib/meta.php)
-    share_log((int) $s['id'], 0, $uid, null, 0, 'link', 'created the ' . $kind . ' link');
-    return row('SELECT * FROM shares WHERE studio_id = ? AND kind = ?', [$s['id'], $kind]);
+    share_log((int) $s['id'], $cid ? $id : 0, $uid, null, $cid, 'link', 'created the ' . $kind . ' link' . ($cid ? ' to this card' : ''));
+    return row('SELECT * FROM shares WHERE id = ?', [$id]);
 }
 /** Niveaux d'un Studio parmi ceux donnés. */
 function studio_level_ids(int $sid, $ids): array
@@ -598,34 +690,53 @@ function studio_level_ids(int $sid, $ids): array
     $ids = ids_in($ids);
     return $ids ? array_map('intval', array_column(rows('SELECT id FROM levels WHERE studio_id = ? AND id IN (' . marks($ids) . ')', array_merge([$sid], $ids)), 'id')) : [];
 }
-/** POST share_save {studio, kind, active?, expires? (YYYY-MM-DD ou ''), levels?} : crée ou règle un lien. */
+/**
+ * POST share_save {studio, card?, kind, active?, expires? (YYYY-MM-DD ou ''), levels?, files?, comments?} : crée ou
+ * règle un lien. levels : Studio seulement ; files (ids des pièces jointes montrées) et comments : carte seulement,
+ * appliqués à ses deux liens.
+ */
 function api_share_save(array $b, array $u): array
 {
-    $s = load_studio(int_in($b, 'studio'), $u, 'manage');
+    [$s, $card] = share_scope($b, $u);
+    $cid = $card ? (int) $card['id'] : 0;
     $kind = (string) ($b['kind'] ?? '');
     if (!in_array($kind, SHARE_KINDS, true)) fail('Choose a public or a private link.');
     $uid = (int) $u['id'];
-    tx(function () use ($s, $kind, $b, $uid): void {
+    tx(function () use ($s, $kind, $b, $uid, $cid): void {
         // Formule du compte propriétaire : liens privés (Solo, Team), nombre de liens actifs (Free : 2).
-        $cur = row('SELECT * FROM shares WHERE studio_id = ? AND kind = ?', [$s['id'], $kind]);
+        $cur = row('SELECT * FROM shares WHERE studio_id = ? AND card_id = ? AND kind = ?', [$s['id'], $cid, $kind]);
         $willBeActive = array_key_exists('active', $b) ? (bool) $b['active'] : ($cur ? (bool) $cur['active'] : true);
         if ($willBeActive && (!$cur || !(int) $cur['active'])) {
             $account = project_account($s['project']);
             if ($kind === 'private') need_feature($account, 'private_links');
             need_share_slot($account, $cur ? (int) $cur['id'] : 0);
         }
-        $sh = share_get_or_create($s, $kind, $uid);
+        $sh = share_get_or_create($s, $kind, $uid, $cid);
         $set = [];
         $what = [];
-        if (array_key_exists('active', $b) && (bool) $b['active'] !== (bool) $sh['active']) { $set['active'] = $b['active'] ? 1 : 0; $what[] = $b['active'] ? 'turned on the ' . $kind . ' link' : 'turned off the ' . $kind . ' link'; }
+        $label = 'the ' . $kind . ' link' . ($cid ? ' to this card' : '');
+        if (array_key_exists('active', $b) && (bool) $b['active'] !== (bool) $sh['active']) { $set['active'] = $b['active'] ? 1 : 0; $what[] = ($b['active'] ? 'turned on ' : 'turned off ') . $label; }
         if (array_key_exists('expires', $b)) {
             $d = date_clean((string) $b['expires']);
             if ($b['expires'] !== '' && $b['expires'] !== null && $d === '') fail('Enter the expiry date as YYYY-MM-DD.');
             $exp = $d === '' ? 0 : (int) strtotime($d . ' 23:59:59');
             if ($exp && $exp <= time()) fail('Choose an expiry date in the future.');
-            if ($exp !== (int) $sh['expires']) { $set['expires'] = $exp; $what[] = $exp ? 'set the ' . $kind . ' link to expire on ' . $d : 'removed the expiry date of the ' . $kind . ' link'; }
+            if ($exp !== (int) $sh['expires']) { $set['expires'] = $exp; $what[] = $exp ? 'set ' . $label . ' to expire on ' . $d : 'removed the expiry date of ' . $label; }
         }
-        if (array_key_exists('levels', $b)) {
+        if ($cid && (array_key_exists('files', $b) || array_key_exists('comments', $b))) {
+            // Ce que voient les invités de la carte : les deux liens de la carte suivent le même choix.
+            $o = share_opts($sh);
+            if (array_key_exists('files', $b)) {
+                $want = ids_in($b['files']);
+                $o['files'] = $want ? array_map('intval', array_column(rows('SELECT id FROM card_files WHERE card_id = ? AND id IN (' . marks($want) . ')', array_merge([$cid], $want)), 'id')) : [];
+            }
+            if (array_key_exists('comments', $b)) $o['comments'] = (bool) $b['comments'];
+            if (jenc($o) !== jenc(share_opts($sh))) {
+                q('UPDATE shares SET opts = ?, updated = ? WHERE studio_id = ? AND card_id = ?', [jenc(['files' => $o['files'], 'comments' => $o['comments'] ? 1 : 0]), time(), $s['id'], $cid]);
+                $what[] = 'chose what guests see on this card: ' . (count($o['files']) ? count($o['files']) . ' attachment' . (count($o['files']) > 1 ? 's' : '') : 'no attachment') . ', comments ' . ($o['comments'] ? 'shown' : 'hidden');
+            }
+        }
+        if (!$cid && array_key_exists('levels', $b)) {
             $lv = studio_level_ids((int) $s['id'], $b['levels']);
             if (is_array($b['levels']) && $b['levels'] && !$lv) fail('Choose levels of this Studio.');
             if (jenc($lv) !== jenc(ids_in(jarr($sh['levels'])))) { $set['levels'] = jenc($lv); $what[] = $lv ? 'limited the ' . $kind . ' link to ' . count($lv) . ' level' . (count($lv) > 1 ? 's' : '') : 'opened the ' . $kind . ' link to all levels'; }
@@ -633,21 +744,22 @@ function api_share_save(array $b, array $u): array
         if ($set) {
             $set['updated'] = time();
             q('UPDATE shares SET ' . implode(', ', array_map(function (string $k): string { return "$k = ?"; }, array_keys($set))) . ' WHERE id = ?', array_merge(array_values($set), [$sh['id']]));
-            foreach ($what as $w) share_log((int) $s['id'], (int) $sh['id'], $uid, null, 0, 'link', $w);
-            studio_touch((int) $s['id']);
         }
+        foreach ($what as $w) share_log((int) $s['id'], (int) $sh['id'], $uid, null, $cid, 'link', $w);
+        if ($set || $what) studio_touch((int) $s['id']);
     });
-    return api_share_list(['studio' => $s['id']], $u);
+    return api_share_list(['studio' => $s['id'], 'card' => $cid], $u);
 }
-/** POST share_regen {studio, kind} : nouveau lien ; l'ancien ne fonctionne plus. */
+/** POST share_regen {studio, card?, kind} : nouveau lien ; l'ancien ne fonctionne plus. */
 function api_share_regen(array $b, array $u): array
 {
-    $s = load_studio(int_in($b, 'studio'), $u, 'manage');
-    $sh = row('SELECT * FROM shares WHERE studio_id = ? AND kind = ?', [$s['id'], (string) ($b['kind'] ?? '')]);
+    [$s, $card] = share_scope($b, $u);
+    $cid = $card ? (int) $card['id'] : 0;
+    $sh = row('SELECT * FROM shares WHERE studio_id = ? AND card_id = ? AND kind = ?', [$s['id'], $cid, (string) ($b['kind'] ?? '')]);
     if (!$sh) not_found('This link');
     q('UPDATE shares SET token = ?, updated = ? WHERE id = ?', [share_token(), time(), $sh['id']]);
-    share_log((int) $s['id'], (int) $sh['id'], (int) $u['id'], null, 0, 'link', 'regenerated the ' . $sh['kind'] . ' link (the old one no longer works)');
-    return api_share_list(['studio' => $s['id']], $u);
+    share_log((int) $s['id'], (int) $sh['id'], (int) $u['id'], null, $cid, 'link', 'regenerated the ' . $sh['kind'] . ' link' . ($cid ? ' to this card' : '') . ' (the old one no longer works)');
+    return api_share_list(['studio' => $s['id'], 'card' => $cid], $u);
 }
 function guest_role_in($r): string
 {
@@ -657,11 +769,12 @@ function guest_role_in($r): string
 function guest_invite_mail(array $sh, string $email, string $role, array $by, string $message): void
 {
     $info = share_info($sh);
-    mail_later($email, $by['name'] . ' shared “' . $info['studio'] . '” with you', $by['name'] . ' shared a Studio with you', array_values(array_filter([
-        $by['name'] . ' invites you to the Studio “' . $info['studio'] . '”' . ($info['project'] ? ' (project ' . $info['project']['name'] . ')' : '') . ' on ' . STM_NAME . ', as ' . strtolower(GUEST_ROLES[$role]) . '.',
+    $isCard = (bool) $info['card'];
+    mail_later($email, $by['name'] . ' shared “' . ($isCard ? $info['card']['title'] : $info['studio']) . '” with you', $by['name'] . ' shared ' . ($isCard ? 'a card' : 'a Studio') . ' with you', array_values(array_filter([
+        $by['name'] . ' invites you to ' . share_what($info) . ($isCard ? '' : ($info['project'] ? ' (project ' . $info['project']['name'] . ')' : '')) . ' on ' . STM_NAME . ', as ' . strtolower(GUEST_ROLES[$role]) . '.',
         $message !== '' ? '“' . $message . '”' : '',
         'No account is needed: open the link and confirm your email address with the code you\'ll receive.',
-    ])), 'Open the Studio', share_url($sh));
+    ])), $isCard ? 'Open the card' : 'Open the Studio', share_url($sh));
 }
 /**
  * POST share_guest {studio, op, …} :
@@ -673,7 +786,8 @@ function guest_invite_mail(array $sh, string $email, string $role, array $by, st
  */
 function api_share_guest(array $b, array $u): array
 {
-    $s = load_studio(int_in($b, 'studio'), $u, 'manage');
+    [$s, $card] = share_scope($b, $u);
+    $cid = $card ? (int) $card['id'] : 0;
     $sid = (int) $s['id'];
     $uid = (int) $u['id'];
     $op = (string) ($b['op'] ?? '');
@@ -692,8 +806,17 @@ function api_share_guest(array $b, array $u): array
         }
         rate('share_add', 300, 3600, 'u' . $uid);
         $message = str_clean($b['message'] ?? '', 500);
-        $sh = tx(function () use ($s, $kind, $uid, $emails, $role, $sid): array {
-            $sh = share_get_or_create($s, $kind, $uid);
+        $sh = tx(function () use ($s, $kind, $uid, $emails, $role, $sid, $cid): array {
+            // Ajouter quelqu'un crée le lien s'il n'existe pas (et rallume celui d'une carte) : mêmes règles de formule
+            // qu'en l'allumant avec share_save.
+            $cur = row('SELECT * FROM shares WHERE studio_id = ? AND card_id = ? AND kind = ?', [$s['id'], $cid, $kind]);
+            if (!$cur || ($cid && !(int) $cur['active'])) {
+                $account = project_account($s['project']);
+                if ($kind === 'private') need_feature($account, 'private_links');
+                need_share_slot($account, $cur ? (int) $cur['id'] : 0);
+                if ($cur) q('UPDATE shares SET active = 1, updated = ? WHERE id = ?', [time(), $cur['id']]);
+            }
+            $sh = share_get_or_create($s, $kind, $uid, $cid);
             foreach ($emails as $e) {
                 $g = row('SELECT * FROM share_guests WHERE share_id = ? AND email = ?', [$sh['id'], $e]);
                 if ($g) {
@@ -702,7 +825,7 @@ function api_share_guest(array $b, array $u): array
                 } else {
                     insert('share_guests', ['share_id' => $sh['id'], 'studio_id' => $sid, 'email' => $e, 'role' => $role, 'status' => 'invited', 'added_by' => $uid, 'created' => time()]);
                 }
-                share_log($sid, (int) $sh['id'], $uid, ['id' => (int) val('SELECT id FROM share_guests WHERE share_id = ? AND email = ?', [$sh['id'], $e]), 'email' => $e], 0, 'access', 'added ' . $e . ' to the ' . $kind . ' link as ' . strtolower(GUEST_ROLES[$role]));
+                share_log($sid, (int) $sh['id'], $uid, ['id' => (int) val('SELECT id FROM share_guests WHERE share_id = ? AND email = ?', [$sh['id'], $e]), 'email' => $e], $cid, 'access', 'added ' . $e . ' to the ' . $kind . ' link' . ($cid ? ' to this card' : '') . ' as ' . strtolower(GUEST_ROLES[$role]));
             }
             studio_touch($sid);
             return $sh;
@@ -710,18 +833,20 @@ function api_share_guest(array $b, array $u): array
         if (!empty($b['send'])) {
             foreach ($emails as $e) guest_invite_mail($sh, $e, $role, $u, $message);
         }
-        return api_share_list(['studio' => $sid], $u);
+        return api_share_list(['studio' => $sid, 'card' => $cid], $u);
     }
-    $g = row('SELECT * FROM share_guests WHERE id = ? AND studio_id = ?', [int_in($b, 'guest'), $sid]);
+    // L'invité doit être celui d'un lien de ce périmètre (le Studio, ou cette carte).
+    $g = row('SELECT g.* FROM share_guests g JOIN shares s ON s.id = g.share_id WHERE g.id = ? AND g.studio_id = ? AND s.card_id = ?', [int_in($b, 'guest'), $sid, $cid]);
     if (!$g || $g['status'] === 'removed') not_found('This guest');
     $sh = row('SELECT * FROM shares WHERE id = ?', [$g['share_id']]);
-    $log = function (string $text) use ($sid, $sh, $uid, $g): void { share_log($sid, (int) $sh['id'], $uid, $g, 0, 'access', $text); };
+    $log = function (string $text) use ($sid, $sh, $uid, $g, $cid): void { share_log($sid, (int) $sh['id'], $uid, $g, $cid, 'access', $text); };
     $email = (string) $g['email'];
     $by = (string) $u['name'];
-    $tell = function (string $subject, string $title, array $lines, bool $open = true) use ($email, $sh): void {
-        mail_later($email, $subject, $title, $lines, $open ? 'Open the Studio' : '', $open ? share_url($sh) : '');
+    $tell = function (string $subject, string $title, array $lines, bool $open = true) use ($email, $sh, $cid): void {
+        mail_later($email, $subject, $title, $lines, $open ? ($cid ? 'Open the card' : 'Open the Studio') : '', $open ? share_url($sh) : '');
     };
-    $studioName = (string) $s['name'];
+    $studioName = $cid ? (string) $card['title'] : (string) $s['name'];
+    $thing = $cid ? 'card' : 'Studio';
     switch ($op) {
         case 'role':
         case 'approve':
@@ -735,9 +860,10 @@ function api_share_guest(array $b, array $u): array
             $log(($op === 'approve' ? 'approved the request of ' : 'changed the access of ') . $email . ': ' . strtolower(GUEST_ROLES[$role]));
             if ($op === 'approve' || $up) {
                 $tell($by . ' gave you ' . strtolower(GUEST_ROLES[$role]) . ' access to ' . $studioName, 'Your access to “' . $studioName . '” changed', [
-                    $by . ' gave you ' . strtolower(GUEST_ROLES[$role]) . ' access to the Studio “' . $studioName . '”: '
-                        . ['viewer' => 'you can view the shared content.', 'commenter' => 'you can comment, and approve the cards sent to you for approval.', 'editor' => 'you can edit the content opened to you.'][$role],
-                    'Open the Studio with the button below. If you are asked, confirm your email address with the code you\'ll receive.',
+                    $by . ' gave you ' . strtolower(GUEST_ROLES[$role]) . ' access to the ' . $thing . ' “' . $studioName . '”: '
+                        . ($cid ? ['viewer' => 'you can view it.', 'commenter' => 'you can comment on it, and approve it when you\'re asked.', 'editor' => 'you can edit it.']
+                            : ['viewer' => 'you can view the shared content.', 'commenter' => 'you can comment, and approve the cards sent to you for approval.', 'editor' => 'you can edit the content opened to you.'])[$role],
+                    'Open the ' . $thing . ' with the button below. If you are asked, confirm your email address with the code you\'ll receive.',
                 ]);
             }
             break;
@@ -745,9 +871,10 @@ function api_share_guest(array $b, array $u): array
             if (!(int) $g['req_at']) fail('This request was already answered.', 409, 'stale');
             q("UPDATE share_guests SET req_role = '', req_note = '', req_at = 0 WHERE id = ?", [$g['id']]);
             $log('rejected the request of ' . $email . ' (' . strtolower(GUEST_ROLES[$g['req_role']] ?? 'access') . ')');
-            $tell('Your request for ' . $studioName . ' was declined', 'Your request was declined', [$by . ' declined your request for ' . strtolower(GUEST_ROLES[$g['req_role']] ?? '') . ' access to the Studio “' . $studioName . '”. Your current access doesn\'t change.']);
+            $tell('Your request for ' . $studioName . ' was declined', 'Your request was declined', [$by . ' declined your request for ' . strtolower(GUEST_ROLES[$g['req_role']] ?? '') . ' access to the ' . $thing . ' “' . $studioName . '”. Your current access doesn\'t change.']);
             break;
         case 'scope':
+            if ($cid) fail('A guest of a card link edits only this card.');
             $lv = studio_level_ids($sid, $b['levels'] ?? []);
             $cols = ids_in($b['cols'] ?? []);
             $cols = $cols ? array_map('intval', array_column(rows('SELECT id FROM cols WHERE studio_id = ? AND id IN (' . marks($cols) . ')', array_merge([$sid], $cols)), 'id')) : [];
@@ -780,7 +907,7 @@ function api_share_guest(array $b, array $u): array
             fail('Unknown action.');
     }
     studio_touch($sid);
-    return api_share_list(['studio' => $sid], $u);
+    return api_share_list(['studio' => $sid, 'card' => $cid], $u);
 }
 
 /* -------------------------------------------- validation demandée à un invité */
@@ -791,7 +918,7 @@ function guest_approver(int $gid, array $card): array
     $g = row("SELECT * FROM share_guests WHERE id = ? AND studio_id = ? AND status = 'active' AND role IN ('commenter', 'editor')", [$gid, $card['studio_id']]);
     $sh = $g ? row('SELECT * FROM shares WHERE id = ?', [$g['share_id']]) : null;
     if (!$g || !$sh || share_state($sh) !== '') fail('This guest can\'t approve cards right now: give them commenter or editor access first.');
-    if (!guest_card_place($card, ['levels' => ids_in(jarr($sh['levels']))])) fail('This guest doesn\'t see this card: its level isn\'t shared with them.');
+    if (!guest_card_place($card, ['levels' => ids_in(jarr($sh['levels'])), 'card' => (int) $sh['card_id']])) fail('This guest doesn\'t see this card: ' . ((int) $sh['card_id'] ? 'their link is for another card.' : 'its level isn\'t shared with them.'));
     return $g + ['share' => $sh];
 }
 function guest_approval_mail(array $g, array $card, array $by, string $note): void

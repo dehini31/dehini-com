@@ -19,6 +19,15 @@ function card_full(int $id, array $u, array $studio): array
     $comments = rows('SELECT * FROM card_comments WHERE card_id = ? ORDER BY id', [$id]);
     $approvals = rows('SELECT * FROM card_approvals WHERE card_id = ? ORDER BY id DESC LIMIT 20', [$id]);
     $events = rows('SELECT * FROM events WHERE card_id = ? ORDER BY id DESC LIMIT 80', [$id]);
+    $g0 = !empty($u['guest']) ? $u['guest'] : null;
+    if ($g0 && !empty($g0['card'])) {
+        // Invité du lien de cette seule carte : les pièces jointes et les commentaires que le responsable a choisi
+        // de montrer, jamais l'historique (il nomme l'équipe et le reste du travail).
+        $show = $g0['opts']['files'];
+        $files = array_values(array_filter($files, function (array $f) use ($show): bool { return in_array((int) $f['cf_id'], $show, true); }));
+        if (!$g0['opts']['comments']) $comments = [];
+        $events = [];
+    }
     $users = user_cards(array_merge(
         array_column($files, 'cf_uid'), array_column($comments, 'uid'), array_column($events, 'uid'),
         array_column($approvals, 'by_uid'), array_column($approvals, 'approver_uid'), [(int) $c['created_by']]
@@ -67,8 +76,14 @@ function card_full(int $id, array $u, array $studio): array
             'handoff' => !$g && $canEdit && $level && $level['handoff'] !== 'off' && (int) $level['handoff_col'] === (int) $c['col_id'] && $target !== null,
             // Pièces jointes et demandes de validation : membres seulement.
             'upload' => !$g && $canEdit, 'request' => !$g && $canEdit,
+            // Partager la carte seule (gestion du partage : manage) ; la publier dans la communauté (edit).
+            'share' => !$g && can($role, 'manage'), 'publish' => !$g && can($role, 'edit'),
         ],
-    ] + ($g ? ['editable' => $canEdit] : []);
+        // Étape de la carte pour « Share & publish » : open (en cours) | done (terminée) | cancelled.
+        'stage' => $col && $col['kind'] === 'done' ? 'done' : ($col && $col['kind'] === 'cancelled' ? 'cancelled' : 'open'),
+        'pubs' => $g ? [] : card_pubs_view($id),
+        'shared' => $g ? null : card_share_summary((int) $c['studio_id'], $id),
+    ] + ($g ? ['editable' => $canEdit, 'comments_shared' => empty($g['card']) || !empty($g['opts']['comments'])] : []);
 }
 
 /* ------------------------------------------------------------ check-lists */

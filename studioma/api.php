@@ -28,6 +28,7 @@ require __DIR__ . '/lib/talent.php';
 require __DIR__ . '/lib/google.php';
 require __DIR__ . '/lib/oauth.php';
 require __DIR__ . '/lib/share.php';
+require __DIR__ . '/lib/pubs.php';
 require __DIR__ . '/lib/meta.php';
 require __DIR__ . '/lib/admin.php';
 
@@ -81,6 +82,10 @@ const ROUTES = [
     'company_get' => ['GET', 'public'], 'company_save' => ['POST', 'user'], 'company_member' => ['POST', 'user'],
     'opps' => ['GET', 'public'], 'opp_get' => ['GET', 'public'], 'opp_save' => ['POST', 'user'], 'opp_delete' => ['POST', 'user'],
     'opp_apply' => ['POST', 'user'], 'opp_application' => ['POST', 'user'], 'talent' => ['GET', 'user'], 'talent_save' => ['POST', 'user'],
+    // Communauté : cartes publiées en réalisations ou en opportunités, propositions des professionnels (lib/pubs.php)
+    'community' => ['GET', 'public'], 'pub_get' => ['GET', 'public'], 'pub_save' => ['POST', 'user'], 'pub_status' => ['POST', 'user'],
+    'pub_delete' => ['POST', 'user'], 'pub_invite' => ['POST', 'user'], 'proposal_save' => ['POST', 'user'], 'proposal_withdraw' => ['POST', 'user'],
+    'proposal_decide' => ['POST', 'user'],
     'threads' => ['GET', 'user'], 'thread' => ['GET', 'user'], 'message_send' => ['POST', 'user'],
     // Administration de la plateforme (studioma/admin/) : statistiques en direct, comptes, modération, emails, système
     'admin_live' => ['GET', 'admin'], 'admin_users' => ['GET', 'admin'], 'admin_user' => ['GET', 'admin'], 'admin_user_action' => ['POST', 'admin'],
@@ -128,6 +133,7 @@ function reference(): array
         'languages' => STM_LANGUAGES, 'contracts' => STM_CONTRACTS, 'modes' => STM_WORK_MODES, 'availability' => STM_AVAILABILITY,
         'colors' => STM_COLORS, 'priorities' => STM_PRIORITIES, 'roles' => ROLE_LABELS, 'relations' => RELATIONS,
         'sizes' => COMPANY_SIZES, 'app_statuses' => APP_STATUSES, 'metrics' => METRIC_KEYS, 'templates' => templates_view(),
+        'opp_kinds' => OPP_KINDS, 'pub_categories' => PUB_CATEGORIES, 'currencies' => PUB_CURRENCIES, 'proposal_statuses' => PROPOSAL_STATUSES,
         'max_upload_mb' => upload_limit_mb(), 'name' => STM_NAME, 'google_client_id' => google_client_id(), 'meta_pixel' => meta_pixel_id(),
     ];
 }
