@@ -26,10 +26,11 @@ status changes; keep the history of finished items short.
 
 ## In progress
 
-- **Studioma administration** (`studioma/admin/`): live statistics, accounts (search, record, suspension,
-  deletion, CSV), moderation, email log, campaigns with one-click unsubscribe, system page; DB schema v6.
-  Done and tested on branch `claude/trusting-keller-rynk1j` (2026-11-20) — **not in `main`, not deployed** until
-  the owner opens/merges a pull request (see `HANDOFF.md`).
+- **Studioma Share & publish** (2026-11-21): share a single card with guests, publish finished cards as
+  achievements and cards in progress as opportunities with proposals, Community page; DB schema v10. Done and
+  tested on branch `claude/card-share-publish` — **not in `main`, not deployed** (see `HANDOFF.md`).
+- Studioma administration (v6) and billing (v9) are in `main` since PR #79 (`f5ff9f3`, 2026-11-21); whether they
+  were copied to the live site is *(unverified)* — the server has no deployment cron.
 
 ## Pending — owner actions (outside the code)
 

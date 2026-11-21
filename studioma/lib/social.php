@@ -117,6 +117,7 @@ function api_profile_get(array $b, ?array $u): array
             'saved' => $me && (bool) val('SELECT 1 FROM saved_pros WHERE uid = ? AND pro_uid = ?', [$me, $tid])],
         'companies' => $companies,
         'portfolio' => array_map('portfolio_view', rows('SELECT * FROM portfolio WHERE uid = ?' . ($self ? '' : " AND status = 'published'") . ' ORDER BY id DESC', [$tid])),
+        'achievements' => profile_achievements($tid, $u),   // cartes publiées en réalisations (lib/pubs.php)
         'recommendations' => array_map(function (array $r) use ($authors): array {
             return ['id' => (int) $r['id'], 'body' => (string) $r['body'], 'relation' => (string) $r['relation'], 'together' => (bool) $r['together'],
                 'status' => (string) $r['status'], 'created' => (int) $r['created'], 'from' => $authors[(int) $r['from_uid']] ?? null];
@@ -168,6 +169,9 @@ function post_views(array $posts, ?array $u, bool $withShared = true): array
         $hidden = array_map('intval', array_column(rows('SELECT id FROM users WHERE suspended > 0 AND id IN (' . marks($authors) . ')', $authors), 'id'));
         if ($hidden) $posts = array_values(array_filter($posts, function (array $p) use ($hidden): bool { return !in_array((int) $p['uid'], $hidden, true); }));
     }
+    // Publication liée à une réalisation (lib/pubs.php) : montrée seulement tant que la réalisation est en ligne.
+    $pubs = $posts ? feed_pubs(array_column($posts, 'pub_id')) : [];
+    $posts = array_values(array_filter($posts, function (array $p) use ($pubs): bool { return !(int) ($p['pub_id'] ?? 0) || isset($pubs[(int) $p['pub_id']]); }));
     if (!$posts) return [];
     $me = $u ? (int) $u['id'] : 0;
     $ids = array_map('intval', array_column($posts, 'id'));
@@ -196,6 +200,7 @@ function post_views(array $posts, ?array $u, bool $withShared = true): array
             'author' => $users[(int) $p['uid']] ?? null, 'company' => $companies[$cid] ?? null,
             'likes' => $likes[$id] ?? 0, 'comments' => $comments[$id] ?? 0, 'liked' => in_array($id, $liked, true), 'saved' => in_array($id, $saved, true),
             'share_id' => (int) $p['share_id'], 'shared' => (int) $p['share_id'] ? ($shared[(int) $p['share_id']] ?? null) : null,
+            'pub' => (int) ($p['pub_id'] ?? 0) ? ($pubs[(int) $p['pub_id']] ?? null) : null,
             'mine' => $me && ((int) $p['uid'] === $me || ($cid && company_admin($me, $cid))),
         ];
     }
@@ -264,6 +269,9 @@ function api_post_delete(array $b, array $u): array
     if (!$p) return [];
     $uid = (int) $u['id'];
     if ((int) $p['uid'] !== $uid && !((int) $p['company_id'] && company_admin($uid, (int) $p['company_id']))) forbidden('You can only delete your own posts.');
+    // Publication d'une réalisation : la supprimer du fil retire la réalisation de la communauté (elle reste
+    // dans la carte et peut être republiée).
+    if ((int) ($p['pub_id'] ?? 0)) q("UPDATE pubs SET status = 'hidden', post_id = 0, updated = ? WHERE id = ? AND post_id = ?", [time(), $p['pub_id'], $p['id']]);
     q('DELETE FROM posts WHERE id = ?', [$p['id']]);
     files_release(jarr($p['media']));
     return [];

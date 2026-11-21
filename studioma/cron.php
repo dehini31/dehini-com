@@ -27,6 +27,7 @@ require __DIR__ . '/lib/collab.php';
 require __DIR__ . '/lib/social.php';
 require __DIR__ . '/lib/talent.php';
 require __DIR__ . '/lib/share.php';
+require __DIR__ . '/lib/pubs.php';
 require __DIR__ . '/lib/meta.php';
 require __DIR__ . '/lib/admin.php';
 

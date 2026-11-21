@@ -194,7 +194,7 @@ function marks(array $a): string
 /** Schéma compatible avec les vieilles versions de SQLite des hébergeurs mutualisés. */
 function migrate(PDO $pdo): void
 {
-    if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= 9) return;
+    if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= 10) return;
     // Deux premières visites simultanées : la seconde attend la fin de la création, puis ne fait rien.
     $pdo->exec('BEGIN IMMEDIATE');
     try {
@@ -1000,6 +1000,83 @@ function migrate(PDO $pdo): void
             PRIMARY KEY (uid, period, metric)
         );
         PRAGMA user_version = 9;
+        SQL);
+        }
+        if ($v < 10) {
+            // Partager une seule carte, et la publier dans la communauté (lib/share.php, lib/pubs.php). Ajouts seulement :
+            // les liens existants (card_id = 0) restent ceux d'un Studio entier, avec la même règle d'unicité.
+            $has = function (string $t, string $c) use ($pdo): bool { return in_array($c, array_column($pdo->query("PRAGMA table_info($t)")->fetchAll(), 'name'), true); };
+            if (!$has('shares', 'card_id')) $pdo->exec('ALTER TABLE shares ADD COLUMN card_id INTEGER NOT NULL DEFAULT 0');
+            if (!$has('shares', 'opts')) $pdo->exec("ALTER TABLE shares ADD COLUMN opts TEXT NOT NULL DEFAULT '{}'");
+            if (!$has('posts', 'pub_id')) $pdo->exec('ALTER TABLE posts ADD COLUMN pub_id INTEGER NOT NULL DEFAULT 0');
+            $pdo->exec(<<<SQL
+        -- Un lien public et un privé au plus par Studio (card_id = 0) et par carte partagée seule.
+        -- opts (lien d'une carte) : ce que voient les invités {files: [ids de card_files], comments: 0|1}.
+        DROP INDEX IF EXISTS shares_sk;
+        CREATE UNIQUE INDEX IF NOT EXISTS shares_sck ON shares(studio_id, card_id, kind);
+        CREATE INDEX IF NOT EXISTS shares_c ON shares(card_id);
+        -- Publication d'une carte dans la communauté. kind : achievement (carte terminée, travail montré) |
+        -- opportunity (carte en cours : on cherche un professionnel, des propositions, de l'aide).
+        -- status : achievement published | hidden ; opportunity open | closed. Le contenu publié est une copie
+        -- choisie par l'auteur (textes saisis, fichiers copiés en public) : la carte n'est jamais modifiée ni
+        -- exposée. card_id reste la source (la carte peut disparaître : la publication le sait à la lecture).
+        -- post_id : publication du fil qui porte les mentions J'aime, commentaires et partages d'une réalisation.
+        CREATE TABLE IF NOT EXISTS pubs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            kind TEXT NOT NULL,
+            uid INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            card_id INTEGER NOT NULL DEFAULT 0,
+            studio_id INTEGER NOT NULL DEFAULT 0,
+            project_id INTEGER NOT NULL DEFAULT 0,
+            status TEXT NOT NULL,
+            title TEXT NOT NULL,
+            body TEXT NOT NULL DEFAULT '',
+            category TEXT NOT NULL DEFAULT '',
+            skills TEXT NOT NULL DEFAULT '[]',
+            media TEXT NOT NULL DEFAULT '[]',
+            outcome TEXT NOT NULL DEFAULT '',
+            team TEXT NOT NULL DEFAULT '[]',
+            opp_kind TEXT NOT NULL DEFAULT '',
+            deliverables TEXT NOT NULL DEFAULT '',
+            budget_min INTEGER NOT NULL DEFAULT 0,
+            budget_max INTEGER NOT NULL DEFAULT 0,
+            currency TEXT NOT NULL DEFAULT 'USD',
+            deadline TEXT NOT NULL DEFAULT '',
+            apply_until TEXT NOT NULL DEFAULT '',
+            mode TEXT NOT NULL DEFAULT 'remote',
+            location TEXT NOT NULL DEFAULT '',
+            post_id INTEGER NOT NULL DEFAULT 0,
+            closed_reason TEXT NOT NULL DEFAULT '',
+            search TEXT NOT NULL DEFAULT '',
+            created INTEGER NOT NULL,
+            updated INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS pubs_k ON pubs(kind, status, id);
+        CREATE INDEX IF NOT EXISTS pubs_u ON pubs(uid);
+        CREATE INDEX IF NOT EXISTS pubs_s ON pubs(studio_id);
+        -- Une réalisation et une opportunité au plus par carte : republier réutilise la même ligne.
+        CREATE UNIQUE INDEX IF NOT EXISTS pubs_ck ON pubs(card_id, kind) WHERE card_id > 0;
+        -- Proposition d'un professionnel pour une opportunité. status : new | shortlisted | accepted | declined |
+        -- withdrawn. price : montant entier dans la devise de l'opportunité (0 = à discuter). work : études de
+        -- cas et réalisations de son profil jointes [{t: case|achievement, id}]. Accepter une proposition ne donne
+        -- aucun accès à la carte : l'auteur invite ensuite la personne s'il le souhaite.
+        CREATE TABLE IF NOT EXISTS proposals (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            pub_id INTEGER NOT NULL REFERENCES pubs(id) ON DELETE CASCADE,
+            uid INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            message TEXT NOT NULL,
+            price INTEGER NOT NULL DEFAULT 0,
+            timeline TEXT NOT NULL DEFAULT '',
+            work TEXT NOT NULL DEFAULT '[]',
+            status TEXT NOT NULL DEFAULT 'new',
+            created INTEGER NOT NULL,
+            updated INTEGER NOT NULL,
+            decided INTEGER NOT NULL DEFAULT 0,
+            UNIQUE (pub_id, uid)
+        );
+        CREATE INDEX IF NOT EXISTS proposals_u ON proposals(uid);
+        CREATE INDEX IF NOT EXISTS posts_pub ON posts(pub_id);
+        PRAGMA user_version = 10;
         SQL);
         }
         $pdo->exec('COMMIT');

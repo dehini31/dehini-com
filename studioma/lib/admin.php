@@ -470,9 +470,9 @@ function api_admin_users_csv(array $b, array $a): array
 
 /* ------------------------------------------------------------ modération */
 
-const ADMIN_CONTENT = ['posts', 'comments', 'opps', 'companies', 'cases'];
+const ADMIN_CONTENT = ['posts', 'comments', 'opps', 'companies', 'cases', 'pubs'];
 
-/** GET admin_content : type (posts | comments | opps | companies | cases), q, page — contenus publics seulement. */
+/** GET admin_content : type (posts | comments | opps | companies | cases | pubs), q, page — contenus publics seulement. */
 function api_admin_content(array $b, array $a): array
 {
     $type = in_array($b['type'] ?? '', ADMIN_CONTENT, true) ? (string) $b['type'] : 'posts';
@@ -512,6 +512,15 @@ function api_admin_content(array $b, array $a): array
                     'members' => (int) $c['members'], 'opps' => (int) $c['opps'], 'created' => (int) $c['created'], 'link' => 'c/' . $c['slug']];
             }, $list);
             break;
+        case 'pubs':
+            // Cartes publiées dans la communauté (réalisations en ligne, opportunités) : leur contenu public seulement.
+            $list = rows("SELECT p.*, (SELECT COUNT(*) FROM proposals x WHERE x.pub_id = p.id AND x.status <> 'withdrawn') AS props FROM pubs p
+                WHERE p.status IN ('published', 'open', 'closed')" . ($term !== '' ? " AND p.search LIKE ? ESCAPE '\\'" : '') . ' ORDER BY p.id DESC' . $lim, $term !== '' ? [like($term)] : []);
+            $items = array_map(function (array $p): array {
+                return ['id' => (int) $p['id'], 'uid' => (int) $p['uid'], 'title' => (string) $p['title'], 'text' => mb_substr((string) $p['body'], 0, 300),
+                    'kind' => (string) $p['kind'], 'status' => (string) $p['status'], 'proposals' => (int) $p['props'], 'created' => (int) $p['created'], 'link' => 'pub/' . $p['id']];
+            }, $list);
+            break;
         default:
             $list = rows("SELECT * FROM portfolio WHERE status = 'published'" . ($term !== '' ? " AND (title LIKE ? ESCAPE '\\' OR brand LIKE ? ESCAPE '\\')" : '') . ' ORDER BY id DESC' . $lim, $term !== '' ? [$likeRaw, $likeRaw] : []);
             $items = array_map(function (array $p): array {
@@ -525,7 +534,7 @@ function api_admin_content(array $b, array $a): array
     foreach ($items as &$i) $i['user'] = $users[$i['uid']] ?? null;
     return ['type' => $type, 'items' => $items, 'more' => $more, 'page' => $page];
 }
-/** POST admin_content_action {type, id, op} : delete (posts, comments, opps, companies) | close (opps) | unpublish (cases). */
+/** POST admin_content_action {type, id, op} : delete (posts, comments, opps, companies, pubs) | close (opps, pubs) | unpublish (cases, pubs). */
 function api_admin_content_action(array $b, array $a): array
 {
     $type = (string) ($b['type'] ?? '');
@@ -533,6 +542,7 @@ function api_admin_content_action(array $b, array $a): array
     $id = int_in($b, 'id');
     $done = false;
     if ($type === 'posts' && $op === 'delete' && ($p = row('SELECT * FROM posts WHERE id = ?', [$id]))) {
+        if ((int) ($p['pub_id'] ?? 0)) q("UPDATE pubs SET status = 'hidden', post_id = 0, updated = ? WHERE id = ? AND post_id = ?", [time(), $p['pub_id'], $id]);
         q('DELETE FROM posts WHERE id = ?', [$id]);
         files_release(jarr($p['media']));
         admin_log('delete_post', 'user:' . $p['uid'], mb_substr((string) $p['body'], 0, 120));
@@ -550,6 +560,21 @@ function api_admin_content_action(array $b, array $a): array
         q('DELETE FROM companies WHERE id = ?', [$id]);
         foreach (['logo', 'cover'] as $k) if ((string) $c[$k] !== '') files_release([(string) $c[$k]]);
         admin_log('delete_company', 'company:' . $id, (string) $c['name']);
+        $done = true;
+    } elseif ($type === 'pubs' && in_array($op, ['unpublish', 'close', 'delete'], true) && ($p = row('SELECT * FROM pubs WHERE id = ?', [$id]))) {
+        if ($op === 'delete') {
+            if ((int) $p['post_id']) q('DELETE FROM posts WHERE id = ? AND pub_id = ?', [$p['post_id'], $p['id']]);
+            q('DELETE FROM pubs WHERE id = ?', [$id]);
+            files_release(pub_tokens($p));
+        } elseif ($op === 'close' && $p['kind'] === 'opportunity') {
+            q("UPDATE pubs SET status = 'closed', closed_reason = 'admin', updated = ? WHERE id = ?", [time(), $id]);
+        } elseif ($op === 'unpublish' && $p['kind'] === 'achievement') {
+            q("UPDATE pubs SET status = 'hidden', updated = ? WHERE id = ?", [time(), $id]);
+            pub_media_scope(jarr($p['media']), 'private');
+        } else {
+            fail('This action isn\'t possible for this publication.');
+        }
+        admin_log($op . '_pub', 'user:' . $p['uid'], (string) $p['title']);
         $done = true;
     } elseif ($type === 'cases' && $op === 'unpublish' && ($p = row('SELECT * FROM portfolio WHERE id = ?', [$id]))) {
         q("UPDATE portfolio SET status = 'draft' WHERE id = ?", [$id]);

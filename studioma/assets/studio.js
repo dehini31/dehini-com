@@ -225,7 +225,7 @@
     await drawShare();
   };
   /** Onglets d'un Studio : son équipe (comptes Studioma) et ses invités sans compte (liens de partage). */
-  const shareTabs = () => (share.scope.studio_id ? html`<div class="tabs share-tabs" role="tablist">
+  const shareTabs = () => (share.scope.studio_id && !share.scope.card_id ? html`<div class="tabs share-tabs" role="tablist">
       <button class="tab${share.tab === 'team' ? ' is-active' : ''}" data-act="share-tab" data-tab="team" role="tab" aria-selected="${share.tab === 'team'}">${icon('users')}Team</button>
       <button class="tab${share.tab === 'guests' ? ' is-active' : ''}" data-act="share-tab" data-tab="guests" role="tab" aria-selected="${share.tab === 'guests'}">${icon('globe')}Guests without an account${share.pending ? html`<span class="nav-badge">${share.pending}</span>` : ''}</button>
     </div>` : '');
@@ -272,6 +272,8 @@
           })}</div></div>
       </div>`);
   }
+  /** Partager une seule carte (Share & publish) : la même fenêtre, limitée aux invités de cette carte. */
+  SM.cardShareDialog = (studioId, cardId, opts) => SM.shareDialog({ studio_id: studioId, card_id: cardId }, Object.assign({}, opts || {}, { tab: 'guests' }));
   SM.actions.share = (el) => SM.shareDialog(+el.dataset.project ? { project_id: +el.dataset.project } : { studio_id: +el.dataset.studio || SM.board.id });
   SM.changes['role-help'] = (el) => { SM.set(SM.$('[data-role-help]', el.form), ROLE_HELP[el.value]); };
   SM.forms['invite-email'] = async (form, data) => {
@@ -311,12 +313,20 @@
   'use strict';
   const { html, icon, fmt } = SM;
   const GROLES = { viewer: 'Viewer', commenter: 'Commenter', editor: 'Editor' };
-  const GHELP = { viewer: 'Views what the link shows.', commenter: 'Views, comments, approves the cards you send them.', editor: 'Edits the content you open to them.' };
-  const LINK = {
+  const GHELP0 = { viewer: 'Views what the link shows.', commenter: 'Views, comments, approves the cards you send them.', editor: 'Edits the content you open to them.' };
+  const GHELP1 = { viewer: 'Views this card.', commenter: 'Views this card, comments if you show comments, approves it when asked.', editor: 'Edits this card only.' };
+  const LINK0 = {
     public: ['globe', 'Public link', 'Anyone with the link can view, read-only, without an account. To comment or edit, they verify their email and ask you.'],
     private: ['lock', 'Private link', 'Only the people you add below can open it, after confirming their email address with a one-time code.'],
   };
-  const STATE = { disabled: 'Off', expired: 'Expired', unavailable: 'Studio archived' };
+  const LINK1 = {
+    public: ['globe', 'Public link', 'Anyone with the link can view this card only, read-only, without an account. To comment or edit, they verify their email and ask you.'],
+    private: ['lock', 'Private link', 'Only the people you add below can open this card, after confirming their email address with a one-time code.'],
+  };
+  const isCard = () => !!(share() && share().scope.card_id);
+  const GHELP = new Proxy({}, { get: (t, k) => (isCard() ? GHELP1 : GHELP0)[k] });
+  const LINK = new Proxy({}, { get: (t, k) => (isCard() ? LINK1 : LINK0)[k] });
+  const STATE = new Proxy({}, { get: (t, k) => ({ disabled: 'Off', expired: 'Expired', unavailable: isCard() ? 'Card archived' : 'Studio archived' })[k] });
   let G = null;   // dernière réponse de share_list
   const share = () => SM.shareState();
   const roleSel = (name, value, attrs) => html`<select class="input input-sm" name="${name}" ${SM.raw(attrs || '')}>${Object.entries(GROLES).map(([k, l]) => html`<option value="${k}" ${k === value ? 'selected' : ''}>${l}</option>`)}</select>`;
@@ -365,7 +375,7 @@
       <p class="muted small">${help}</p>
       ${secureLink(kind, l.url, title)}
       <div class="link-opts">
-        <button class="btn btn-ghost btn-sm" data-act="glink-levels" data-kind="${kind}" title="Levels the link shows">${icon('layers')}${l.levels.length ? l.levels.map(levelName).join(', ') : 'All levels'}</button>
+        ${isCard() ? '' : html`<button class="btn btn-ghost btn-sm" data-act="glink-levels" data-kind="${kind}" title="Levels the link shows">${icon('layers')}${l.levels.length ? l.levels.map(levelName).join(', ') : 'All levels'}</button>`}
         <label class="btn btn-ghost btn-sm link-exp" title="The link stops working after this day">${icon('calendar')}<span>${l.expires ? 'Expires ' + fmt.date(l.expires) : 'No expiry'}</span><input type="date" class="input input-xs" value="${ymd(l.expires)}" min="${ymd(Date.now() / 1000 + 86400)}" data-change="glink-expires" data-kind="${kind}" aria-label="Expiry date"></label>
         ${l.expires ? html`<button class="btn btn-ghost btn-sm" data-act="glink-noexp" data-kind="${kind}">Remove expiry</button>` : ''}
         <button class="btn btn-ghost btn-sm" data-act="glink-regen" data-kind="${kind}" title="Create a new link: the current one stops working">${icon('restore')}New link</button>
@@ -391,25 +401,41 @@
     return html`<div class="list-row guest-row${g.status === 'revoked' ? ' is-off' : ''}">${SM.avatar({ name: g.email }, 'av-m')}
       <span class="grow"><b>${g.email}</b><small class="muted">${g.kind === 'public' ? 'Public' : 'Private'} link · ${st}</small></span>
       ${g.status === 'revoked' ? '' : html`${roleSel('role', g.role, `data-change="guest-role" data-id="${g.id}" aria-label="Access of ${SM.esc(g.email)}" title="${SM.esc(GHELP[g.role])}"`)}
-        ${g.role === 'editor' ? html`<button class="btn btn-ghost btn-sm" data-act="guest-scope" data-id="${g.id}" title="Choose what they can edit">${icon(g.limited ? 'filter' : 'edit')}${g.limited ? 'Limited editing' : 'Edits everything shared'}</button>` : ''}`}
+        ${g.role === 'editor' && !isCard() ? html`<button class="btn btn-ghost btn-sm" data-act="guest-scope" data-id="${g.id}" title="Choose what they can edit">${icon(g.limited ? 'filter' : 'edit')}${g.limited ? 'Limited editing' : 'Edits everything shared'}</button>` : ''}`}
       <button class="btn-icon" data-act="guest-more" data-id="${g.id}" aria-label="More for ${g.email}">${icon('more')}</button></div>`;
+  }
+  /** Lien d'une carte : ce que les invités voient en plus de la carte (pièces jointes cochées, commentaires). */
+  function cardSees() {
+    const l = G.links.public || G.links.private;
+    if (!G.card || !l) return '';
+    const kind = G.links.public ? 'public' : 'private';
+    return html`<section class="panel pad card-sees"><h3 class="section-title">${icon('eye')}What guests see on this card</h3>
+      <p class="muted small">The title, description, checklist and stage of the card, always. Never its history, the rest of the Studio or your team list. Choose what else to show:</p>
+      <div class="stack-s">
+        ${G.files.length ? G.files.map((f) => html`<label class="check"><input type="checkbox" data-change="gsee-file" data-kind="${kind}" value="${f.id}" ${G.opts.files.includes(f.id) ? 'checked' : ''}>${icon(f.kind === 'image' ? 'image' : f.kind === 'video' ? 'video' : 'file')}${f.name}</label>`)
+          : html`<p class="muted small">${icon('paperclip')}No attachment on this card.</p>`}
+        <label class="check"><input type="checkbox" data-change="gsee-comments" data-kind="${kind}" ${G.opts.comments ? 'checked' : ''}>${icon('comment')}Show the comments (and let commenters and editors reply)</label>
+      </div>
+      <p class="muted small privacy-note">${icon('lock')}Unticked attachments can't be opened by guests, even with the file address.</p></section>`;
   }
   async function drawGuests() {
     const st = share();
-    const r = await SM.try(SM.get('share_list', { studio: st.scope.studio_id }));
+    const r = await SM.try(SM.get('share_list', { studio: st.scope.studio_id, card: st.scope.card_id || 0 }));
     if (!r || !document.contains(st.modal.el)) return;
     G = r;
     const pending = G.guests.filter((g) => g.request && g.status !== 'revoked');
     st.pending = pending.length;
     const guests = G.guests;
     const history = G.history.map((h) => ({ user: h.by, text: h.text, created: h.created, card_id: h.card_id, card_title: h.card_title }));
-    SM.set(st.modal.el, html`${SM.modalHead('Share this Studio', 'Share a link with clients and partners who don\'t have a Studioma account. They can only view at first: nothing changes without your approval.')}
+    SM.set(st.modal.el, html`${G.card ? SM.modalHead('Share this card', `“${G.card.title}” — guests see this card only, never the rest of the Studio. They can only view at first: nothing changes without your approval.`)
+      : SM.modalHead('Share this Studio', 'Share a link with clients and partners who don\'t have a Studioma account. They can only view at first: nothing changes without your approval.')}
       <div class="modal-body stack-l">${SM.shareTabsHtml()}
         ${pending.length ? html`<section><h3 class="section-title">${icon('hand')}Requests <span class="count">${pending.length}</span></h3><div class="list">${pending.map(requestRow)}</div></section>` : ''}
         <div class="link-cards">${linkCard('public')}${linkCard('private')}</div>
+        ${cardSees()}
         <section><h3 class="section-title">Guests <span class="count">${guests.length}</span></h3>
           ${guests.length ? html`<div class="list">${guests.map(guestRow)}</div>` : html`<p class="muted small">No guest yet. People who open a link and verify their email appear here, with what they can do.</p>`}
-          <p class="muted small guest-legend">${icon('shield')}<span>Viewer: views · Commenter: comments and approves · Editor: edits what you open to them. Guests never manage the Studio, its members or its structure.</span></p></section>
+          <p class="muted small guest-legend">${icon('shield')}<span>${G.card ? 'Viewer: views the card · Commenter: comments (if shown) and approves · Editor: edits this card only. Guests never see or manage the rest of the Studio.' : 'Viewer: views · Commenter: comments and approves · Editor: edits what you open to them. Guests never manage the Studio, its members or its structure.'}</span></p></section>
         ${history.length ? html`<details class="share-history"><summary>${icon('history')}Guest activity and access history <span class="count">${history.length}</span></summary><ul class="events">${history.map((e) => SM.eventRow(e, true))}</ul></details>` : ''}
       </div>`);
     // Lien d'un email (Approuver / Refuser) : la demande est mise en avant, et la décision confirmée.
@@ -427,10 +453,18 @@
   }
   SM.drawGuests = drawGuests;
   const call = async (action, body) => {
-    const r = await SM.try(SM.post(action, Object.assign({ studio: share().scope.studio_id }, body)));
+    const sc = share().scope;
+    const r = await SM.try(SM.post(action, Object.assign({ studio: sc.studio_id, card: sc.card_id || 0 }, body)));
     if (r) await drawGuests();
+    // Le panneau de la carte résume son partage : il suit.
+    if (r && sc.card_id && SM.cardPanel.id === sc.card_id && SM.cardPanel.refresh) SM.cardPanel.refresh();
     return r;
   };
+  SM.changes['gsee-file'] = async (el) => {
+    const ids = SM.$$('[data-change="gsee-file"]', el.closest('.card-sees')).filter((c) => c.checked).map((c) => +c.value);
+    if (await call('share_save', { kind: el.dataset.kind, files: ids })) SM.toast(el.checked ? 'Guests can open this attachment' : 'Attachment hidden from guests');
+  };
+  SM.changes['gsee-comments'] = async (el) => { if (await call('share_save', { kind: el.dataset.kind, comments: el.checked })) SM.toast(el.checked ? 'Comments shown to guests' : 'Comments hidden from guests'); };
   async function decide(id, op, role) {
     const g = G.guests.find((x) => x.id === id);
     if (!g) return;
@@ -461,7 +495,7 @@
       ...G.levels.map((l) => ({ label: `${l.icon} ${l.name}`, checked: chosen.has(l.id), act: (it) => { if (it.checked) chosen.add(l.id); else chosen.delete(l.id); if (!chosen.size) return; save(); } }))], { keep: true, width: 250 });
   };
   SM.forms['guest-add'] = async (form, data) => {
-    const r = await SM.post('share_guest', { studio: share().scope.studio_id, op: 'add', kind: 'private', emails: data.emails, role: data.role, send: data.send });
+    const r = await SM.post('share_guest', { studio: share().scope.studio_id, card: share().scope.card_id || 0, op: 'add', kind: 'private', emails: data.emails, role: data.role, send: data.send });
     SM.toast(data.send ? 'Added — they received the link by email' : 'Added — send them the private link');
     await drawGuests();
     return r;

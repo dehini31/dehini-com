@@ -68,9 +68,9 @@ each published under its own path on the same domain:
 Each platform creates and migrates its own SQLite database on first request (schema and migrations in its
 `lib/`, guarded by `PRAGMA user_version`; never edit production databases by hand).
 
-Studioma (most active project) — `~/studioma-data/studioma.sqlite`, schema **version 8** in `main` (v6 admin, v7
-`users.terms_at`, v8 `visitors` + `visit_days`), **version 9** (billing) on branch `claude/trusting-keller-rynk1j` until merged
-(`studioma/lib/core.php` › `migrate()`):
+Studioma (most active project) — `~/studioma-data/studioma.sqlite`, schema **version 9** in `main` (v6 admin, v7
+`users.terms_at`, v8 `visitors` + `visit_days`, v9 billing), **version 10** (card sharing and Community) on branch
+`claude/card-share-publish` until merged (`studioma/lib/core.php` › `migrate()`):
 
 - accounts & network: `users`, `sessions`, `companies`, `company_members`, `follows`, `connections`, `posts`,
   `post_likes`, `post_saves`, `post_comments`, `portfolio`, `recommendations`, `opps`, `opp_apps`,
@@ -80,6 +80,8 @@ Studioma (most active project) — `~/studioma-data/studioma.sqlite`, schema **v
 - AI assistants (v4): `oauth_clients`, `oauth_requests`, `ai_grants`, `ai_tokens`;
 - guest sharing (v5): `shares`, `share_guests`, `share_codes`, `guest_sessions`, `share_log`
   (+ guest columns on `events`, `card_comments`, `card_approvals`, `cards`, `notifications`);
+- card sharing and Community (v10): `shares.card_id` / `shares.opts` (a link for one card), `pubs` (card published as
+  achievement or opportunity), `proposals`, `posts.pub_id` (feed post of an achievement) — see README « Studioma › 9 »;
 - billing (v9): `subscriptions`, `billing_customers`, `billing_events` (Paddle webhooks), `billing_transactions`,
   `usage_counters` (new cards per account and month) — see `docs/billing.md`;
 - administration (v6): `users.suspended` / `suspend_note`, `activity_days` (active accounts per day),
@@ -93,7 +95,8 @@ Studioma (most active project) — `~/studioma-data/studioma.sqlite`, schema **v
 - `studioma/lib/` — `core.php` (config, DB, migrations, mail), `auth.php` (accounts, sessions, notifications),
   `access.php` (roles and rights), `studio.php`, `cards.php`, `collab.php`, `social.php`, `talent.php`,
   `files.php`, `google.php`, `oauth.php`, `mcp.php`, `share.php` (guests), `meta.php` (Pixel/CAPI events),
-  `admin.php` (platform administration: routes with access `admin` in `ROUTES`).
+  `admin.php` (platform administration: routes with access `admin` in `ROUTES`), `pubs.php` (cards published to the
+  Community: achievements, opportunities, proposals).
 - `studioma/app/index.html` + `studioma/assets/*.js` — single-page app with hash routes (`#/studio/12`, guest
   links `#/s/<key>`), no inline script; `studioma/index.html` — landing page; `studioma/admin/index.html` +
   `assets/admin.{js,css}` — administration; `studioma/unsubscribe.php` (campaign unsubscribe page),

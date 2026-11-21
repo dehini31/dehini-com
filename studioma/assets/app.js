@@ -22,6 +22,7 @@
   const NAV = [
     { key: 'home', path: '/', label: 'Home', icon: 'home' },
     { key: 'discover', path: '/discover', label: 'Discover', icon: 'compass' },
+    { key: 'community', path: '/community', label: 'Community', icon: 'sparkles' },
     { key: 'network', path: '/network', label: 'My Network', icon: 'users' },
     { sep: 'Workspace' },
     { key: 'projects', path: '/projects', label: 'Projects', icon: 'folder' },
@@ -42,7 +43,7 @@
   const sectionOf = (path) => {
     const seg = path.split('/')[1] || '';
     return ({ '': 'home', post: 'home', discover: 'discover', network: 'network', projects: 'projects', project: 'projects', studios: 'studios', studio: 'studios', work: 'studios',
-      opportunities: 'opportunities', opportunity: 'opportunities', messages: 'messages', notifications: 'notifications', requests: 'notifications', settings: 'settings',
+      opportunities: 'opportunities', opportunity: 'opportunities', community: 'community', pub: 'community', messages: 'messages', notifications: 'notifications', requests: 'notifications', settings: 'settings',
       talent: 'talent', team: 'team', c: 'team', profile: 'profile' })[seg] || (seg === 'u' && SM.me && path === '/u/' + SM.me.handle ? 'profile' : '');
   };
   const badge = (n) => (n > 0 ? html`<span class="nav-badge">${n > 99 ? '99+' : n}</span>` : '');
@@ -56,7 +57,7 @@
     if (!SM.me) {
       SM.set(app, html`<div class="public">
         <header class="public-top"><a href="${SM.base}" class="logo-link">${SM.logo()}</a><span class="grow"></span>
-          <a class="btn btn-ghost" href="#/login">Sign in</a><a class="btn btn-primary" href="#/signup">Join Studioma</a></header>
+          <a class="btn btn-ghost" href="#/community">Community</a><a class="btn btn-ghost" href="#/login">Sign in</a><a class="btn btn-primary" href="#/signup">Join Studioma</a></header>
         <main id="view" class="view"></main>
       </div>`);
       return;

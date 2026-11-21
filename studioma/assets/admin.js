@@ -527,7 +527,7 @@
   };
 
   /* ---------------------------------------------------------- modération */
-  const CONTENT = [['posts', 'Posts', 'edit'], ['comments', 'Comments', 'comment'], ['opps', 'Opportunities', 'briefcase'], ['companies', 'Companies', 'building'], ['cases', 'Case studies', 'award']];
+  const CONTENT = [['posts', 'Posts', 'edit'], ['comments', 'Comments', 'comment'], ['opps', 'Opportunities', 'briefcase'], ['companies', 'Companies', 'building'], ['cases', 'Case studies', 'award'], ['pubs', 'Card publications', 'sparkles']];
   SM.route(/^\/content$/, async (m, ctx) => {
     setTitle('Moderation');
     const q = SM.query();
@@ -539,13 +539,15 @@
       const b = (op, label, cls) => html`<button class="btn btn-sm ${cls || ''}" data-act="adm-cop" data-type="${d.type}" data-id="${i.id}" data-op="${op}">${label}</button>`;
       if (d.type === 'opps') return html`${i.status === 'open' ? b('close', 'Close') : ''}${b('delete', 'Delete', 'is-danger')}`;
       if (d.type === 'cases') return b('unpublish', 'Unpublish', 'is-danger');
+      if (d.type === 'pubs') return html`${i.kind === 'opportunity' && i.status === 'open' ? b('close', 'Close') : ''}${i.kind === 'achievement' && i.status === 'published' ? b('unpublish', 'Unpublish') : ''}${b('delete', 'Delete', 'is-danger')}`;
       return b('delete', 'Delete', 'is-danger');
     };
     const meta = (i) => [fmt.time(i.created),
       d.type === 'posts' ? `${fmt.plural(i.likes, 'like')} · ${fmt.plural(i.comments, 'comment')}${i.media ? ' · ' + fmt.plural(i.media, 'media file') : ''}` : '',
       d.type === 'opps' ? `${i.company || 'No company'} · ${i.status} · ${fmt.plural(i.apps, 'application')}` : '',
       d.type === 'companies' ? `${fmt.plural(i.members, 'member')} · ${fmt.plural(i.opps, 'opportunity', 'opportunities')}` : '',
-      d.type === 'cases' ? (i.source === 'studio' ? 'from a Studio' : 'manual') : ''].filter(Boolean).join(' · ');
+      d.type === 'cases' ? (i.source === 'studio' ? 'from a Studio' : 'manual') : '',
+      d.type === 'pubs' ? (i.kind === 'achievement' ? 'Achievement' : `Opportunity · ${i.status} · ${fmt.plural(i.proposals, 'proposal')}`) : ''].filter(Boolean).join(' · ');
     SM.set(ctx.view, html`<div class="page">
       <header class="page-head"><div><h1>Moderation</h1><p class="muted">Public content only. Private Studio content and messages are never shown here.</p></div></header>
       <nav class="tabs">${CONTENT.map(([k, l, ic]) => html`<a class="tab ${d.type === k ? 'is-active' : ''}" href="#/content?type=${k}">${icon(ic)}${l}</a>`)}</nav>
@@ -562,9 +564,10 @@
   SM.forms['adm-content-search'] = (form, data) => SM.go('/content?' + qs({ type: data.type, q: data.q.trim() }));
   SM.actions['adm-cop'] = async (el) => {
     const { type, id, op } = el.dataset;
-    const what = { posts: 'post', comments: 'comment', opps: 'opportunity', companies: 'company page', cases: 'case study' }[type];
+    const what = { posts: 'post', comments: 'comment', opps: 'opportunity', companies: 'company page', cases: 'case study', pubs: 'publication' }[type];
     const text = op === 'close' ? 'It stops accepting applications; existing applications are kept.'
-      : op === 'unpublish' ? 'It goes back to the author\'s drafts and disappears from their public profile.'
+      : op === 'unpublish' ? (type === 'pubs' ? 'It disappears from the community and the author\'s profile. The card is not affected.' : 'It goes back to the author\'s drafts and disappears from their public profile.')
+        : type === 'pubs' ? 'The publication, its proposals and its public file copies are deleted. The card is not affected.'
         : type === 'companies' ? 'The company page, its team list and its opportunities are deleted. Member accounts are kept.' : 'It is deleted permanently.';
     if (!(await SM.confirm({ title: (op === 'close' ? 'Close' : op === 'unpublish' ? 'Unpublish' : 'Delete') + ' this ' + what + '?', text, ok: op === 'close' ? 'Close' : op === 'unpublish' ? 'Unpublish' : 'Delete', danger: op !== 'close' }))) return;
     SM.busy(el, true);

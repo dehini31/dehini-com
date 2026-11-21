@@ -4,7 +4,8 @@
  * Le tableau et le panneau d'une carte sont ceux des membres (board.js, card.js) : SM.guest porte le
  * jeton du lien, et le serveur dit ce que l'invité peut faire (rien par défaut). Ici : la porte d'un lien
  * privé, la vérification de l'adresse (code à 6 chiffres ou lien magique reçu par email), la demande de
- * droits, et l'en-tête de l'invité.
+ * droits, et l'en-tête de l'invité. Lien d'une seule carte (share.card) : la carte s'ouvre directement, le tableau
+ * ne montre qu'elle, et les textes parlent de la carte.
  */
 (function () {
   'use strict';
@@ -14,6 +15,8 @@
   /** Parcours de vérification : open (lien privé), verify (invité déjà autorisé), request (demande de droits). */
   const flow = { mode: 'open', email: '', role: 'editor', note: '', target: null };
   const byName = () => (G.share && G.share.by ? G.share.by.name : 'the owner');
+  const isCard = () => !!(G.share && G.share.card);
+  const what = () => (isCard() ? 'this card' : 'this Studio');
 
   SM.route(/^\/s\/([A-Za-z0-9_-]{32})(?:\/card\/(\d+))?$/, async (m, ctx) => {
     const token = m[1];
@@ -38,9 +41,12 @@
     if (open.member) { SM.guest = null; SM.go('/studio/' + open.member + (m[2] ? '/card/' + m[2] : ''), true); return; }
     G.token = token;
     G.share = open.share;
-    document.title = open.share.studio + ' · Studioma';
+    document.title = (open.share.card ? open.share.card.title : open.share.studio) + ' · Studioma';
     if (open.share.kind === 'private' && !open.guest.verified) { gate(ctx.view); return; }
-    await SM.board.open(open.share.studio_id, 'board', +m[2] || 0, ctx);
+    // Lien d'une carte : elle s'ouvre directement.
+    const cardId = +m[2] || (open.share.card ? open.share.card.id : 0);
+    if (open.share.card && !m[2]) history.replaceState(null, '', '#/s/' + token + '/card/' + cardId);
+    await SM.board.open(open.share.studio_id, 'board', cardId, ctx);
   }, { public: true, wide: true, update: (m, prev) => {
     if (m[1] !== prev[1] || !SM.board.data || G.reopen) { G.reopen = false; return false; }
     if (m[2]) SM.cardPanel.open(+m[2]); else SM.cardPanel.close(true);
@@ -60,7 +66,7 @@
   }
   /** Le lien a cessé de fonctionner pendant la visite (désactivé, régénéré, accès retiré…). */
   SM.guestGone = (e) => {
-    if (e.status === 401) { if (!G.reopen) { SM.toast('Your access to this Studio changed.', 'error'); reopen(); } return; }
+    if (e.status === 401) { if (!G.reopen) { SM.toast(`Your access to ${what()} changed.`, 'error'); reopen(); } return; }
     SM.cardPanel.close(true);
     gonePage(SM.$('#view'), e);
   };
@@ -73,9 +79,9 @@
     SM.board.data = null;
     SM.set(view, html`<div class="guest-gate panel">
       <span class="gate-ico">${icon('lock')}</span>
-      <h1>${s.studio}</h1>
-      <p class="muted">Shared privately${s.by ? html` by <b>${s.by.name}</b>` : ''}${s.project ? html` · project ${s.project.name}` : ''}</p>
-      <p>Enter your email address: if it's on the list of people this Studio is shared with, you'll receive a code to open it.</p>
+      <h1>${s.card ? s.card.title : s.studio}</h1>
+      <p class="muted">${s.card ? 'A card shared privately' : 'Shared privately'}${s.by ? html` by <b>${s.by.name}</b>` : ''}${s.card ? '' : s.project ? html` · project ${s.project.name}` : ''}</p>
+      <p>Enter your email address: if it's on the list of people ${s.card ? 'this card' : 'this Studio'} is shared with, you'll receive a code to open it.</p>
       <div id="gate-flow" class="gate-flow"></div>
       <p class="muted small">${icon('shield')}No account or password: the code proves this address is yours.</p>
     </div>`);
@@ -149,7 +155,7 @@
     const g = SM.board.data.studio.guest;
     flow.mode = 'request';
     flow.role = 'editor';
-    flowModal('Request editing permission', `${byName()} receives your request by email and decides what you can do. Nothing changes until then.`);
+    flowModal('Request editing permission', `${byName()} receives your request by email and decides what you can do with ${what()}. Nothing changes until then.`);
     if (!g.verified) { step('email'); return; }
     SM.set(flow.target, html`<form class="stack" data-form="guest-ask">
       ${roleChoice(g.role)}
@@ -185,6 +191,12 @@
   /* ---------------------------------------------------------- en-tête */
   function status(g) {
     if (g.pending) return [icon('clock'), html`Your request for <b>${ROLE[g.pending][1].toLowerCase()}</b> access was sent to ${byName()}. You'll receive an email when they answer.`];
+    if (g.card) {
+      if (g.role === 'editor') return [icon('edit'), 'You can edit this card.'];
+      if (g.role === 'commenter') return [icon('comment'), g.comments ? 'You can comment on this card, and approve it when you\'re asked.' : 'You can approve this card when you\'re asked.'];
+      if (g.verified) return [icon('eye'), html`Signed in as <b>${g.email}</b> — view only.`];
+      return [icon('eye'), 'Read-only view of a shared card. To comment or edit, request permission — no account needed.'];
+    }
     if (g.role === 'editor') return [icon('edit'), g.limited ? html`You can edit the cards marked ${icon('edit', 'ico-inline')} — the rest is read-only.` : 'You can edit, add and move cards.'];
     if (g.role === 'commenter') return [icon('comment'), 'You can comment, and approve the cards sent to you for approval.'];
     if (g.verified) return [icon('eye'), html`Signed in as <b>${g.email}</b> — view only.`];
@@ -197,7 +209,8 @@
     const by = G.share && G.share.by;
     return html`
       <header class="studio-head guest-head">
-        <div class="crumbs">${SM.projectMark(s.project, 'pmark-s')}<span class="crumb-text">${s.project.name}</span><span class="crumb-sep">/</span><b class="crumb-text crumb-strong">${s.name}</b>
+        <div class="crumbs">${g.card ? html`<span class="chip chip-guest">${icon('link')}Shared card</span><b class="crumb-text crumb-strong">${(G.share.card || {}).title || ''}</b>`
+          : html`${SM.projectMark(s.project, 'pmark-s')}<span class="crumb-text">${s.project.name}</span><span class="crumb-sep">/</span><b class="crumb-text crumb-strong">${s.name}</b>`}
           <span class="chip chip-guest-role">${icon(ROLE[g.role][0])}${ROLE[g.role][1]}</span></div>
         <span class="grow"></span>
         ${g.pending ? html`<span class="chip chip-pending">${icon('clock')}Request pending</span>`
@@ -205,10 +218,11 @@
         ${g.verified ? html`<button class="guest-me" data-act="guest-menu" title="${g.email}" aria-label="Guest access of ${g.email}">${SM.avatar({ name: g.email }, 'av-s')}<span>${g.email}</span>${icon('chevron-down')}</button>`
           : html`<button class="btn btn-ghost btn-sm" data-act="guest-verify" title="Already given access? Verify your email to use it">${icon('mail')}<span>Sign in with email</span></button>`}
       </header>
-      <div class="guest-note">${ic}<span class="grow">${text}${g.levels_limited ? ' Only part of this Studio is shared.' : ''}</span><span class="guest-by">${location.protocol === 'https:' ? html`<span class="guest-secure" title="Encrypted connection and private link">${icon('lock')}Secure link</span>` : ''}${by ? html`Shared by ${SM.avatar(by, 'av-s')}<b>${by.name}</b>` : ''}</span></div>
-      <div class="studio-bar"><span class="grow"></span><div class="board-tools">
+      <div class="guest-note">${ic}<span class="grow">${text}${g.card ? ' Only this card is shared with you.' : g.levels_limited ? ' Only part of this Studio is shared.' : ''}</span><span class="guest-by">${location.protocol === 'https:' ? html`<span class="guest-secure" title="Encrypted connection and private link">${icon('lock')}Secure link</span>` : ''}${by ? html`Shared by ${SM.avatar(by, 'av-s')}<b>${by.name}</b>` : ''}</span></div>
+      ${g.card ? html`<div class="studio-bar"><span class="grow"></span><button class="btn btn-soft btn-sm" data-act="guest-open-card">${icon('external')}Open the card</button></div>` : html`<div class="studio-bar"><span class="grow"></span><div class="board-tools">
         <label class="search-in">${icon('search')}<input class="input input-sm" placeholder="Filter cards…" value="${SM.board.filter.q}" data-input="board-q" aria-label="Filter cards"></label>
         <button class="btn btn-soft btn-sm${SM.board.filter.assignee || SM.board.filter.platform ? ' is-on' : ''}" data-act="filter-menu">${icon('filter')}<span>Filter</span></button>
-      </div></div>`;
+      </div></div>`}`;
   };
+  SM.actions['guest-open-card'] = () => { if (G.share && G.share.card) SM.go('/s/' + G.token + '/card/' + G.share.card.id); };
 })();

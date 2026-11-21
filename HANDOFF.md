@@ -8,73 +8,84 @@ secrets here. Mark anything you could not verify as *(unverified)*.
 
 | | |
 |---|---|
-| Last agent | Claude Code (cloud session) — handoff checkpoint for Codex |
-| Branch | `claude/trusting-keller-rynk1j` (tracks `origin/claude/trusting-keller-rynk1j`) — **open PR #79 → `main`** (https://github.com/dehini31/dehini-com/pull/79, not merged: merging it ships billing) |
-| Base code | `main` @ `7b703d3` (Merge PR #78 — everything before billing is in `main`). **`main` = production** — but the server has **no deployment cron** (2026-11-20): merges go live only when copied by hand |
+| Last agent | Claude Code (cloud session) |
+| Branch | **`claude/card-share-publish`** (tracks `origin/claude/card-share-publish`), created from `origin/main` @ `f5ff9f3` — **open PR #80 → `main`** (https://github.com/dehini31/dehini-com/pull/80, not merged: merging it ships Share & publish). Pushing to this branch updates the PR |
+| Base code | `main` @ `f5ff9f3` = Merge PR #79 (billing, admin, everything before). **`main` = production** — the server has **no deployment cron** (2026-11-20): merges go live only when copied by hand. Whether PR #79 was copied to the live site is *(unverified)* |
 | Checkpoint | the commit that last changed this file: `git log -1 --format='%H %s' -- HANDOFF.md` |
 | Uncommitted work at checkpoint | none |
-| In progress | **Studioma SaaS billing (Free / Solo / Team + Paddle)** — implemented, tested, committed and pushed on this branch; **not merged, not deployed; online payment closed** until the owner configures Paddle (`docs/billing.md`). **Sandbox → live migration prepared, not done**: sandbox never tested against real Paddle; live account empty (`docs/billing.md` § 8) |
-| Last task changed application code? | no (handoff: docs, `.gitignore`); the task before it: **yes** — Studioma billing, DB schema 8 → 9 (additive) |
-| Codex access | **not verified** — Codex has not been run on this repository from this session; it reads `AGENTS.md` by itself |
+| In progress | **Studioma « Share & publish »** — share a single card with guests; publish finished cards as achievements and cards in progress as opportunities with proposals; Community page. Implemented, tested, committed and pushed on `claude/card-share-publish`; **not merged, not deployed** |
+| Last task changed application code? | **yes** — Studioma, DB schema 9 → 10 (additive) |
+| Codex access | **not verified** — Codex has not been run on this repository from this session |
 
 **Start here (Codex or Claude)**
 
-1. `git fetch origin`, then work on `claude/trusting-keller-rynk1j` (pushing to it updates PR #79) or branch off it:
-   `git switch -c codex/<topic> origin/claude/trusting-keller-rynk1j`. Production is `origin/main` @ `7b703d3`; a
-   local `main` in a container may be stale (it was `84d01c1` in the last Claude container).
-2. Read `docs/billing.md` before touching Studioma billing (§ 8 = sandbox → live migration rules).
-3. Checks: `AGENTS.md` § 5 (lint, then `tests/studioma/run.sh`).
+1. `git fetch origin`, then `git switch claude/card-share-publish` (or `git switch -c codex/<topic> origin/claude/card-share-publish`).
+   Production is `origin/main` @ `f5ff9f3`. The older branch `claude/trusting-keller-rynk1j` = `main` (merged).
+2. Read README « Studioma › 9 » and decisions S25–S27 before touching card sharing or the Community; `docs/billing.md`
+   before touching billing.
+3. Checks: `AGENTS.md` § 5 (lint, then `tests/studioma/run.sh`, ~9 min, 9 suites).
 
-**Done on this branch, not in `main`** (commits `a267cfc`, `4c9af1e`, `b98b5d7`, `550f1a6` + handoff checkpoint):
-Studioma SaaS billing — plans Free / Solo / Team (`studioma/lib/plans.php`); entitlements and server-side limits
-(`lib/billing.php`, hooks in `lib/{access,studio,cards,collab,share,admin,core}.php`, `api.php`, `mcp.php`,
-`cron.php`); Paddle Billing REST v1 + signed webhook (`lib/paddle.php`, `paddle-webhook.php`, `pay/`); pricing page,
-Plan & billing settings, upgrade prompts (`assets/{billing,core,app,board}.js`, `app.css`, `app/index.html`,
-`index.html`); admin Billing analytics and complimentary plans (`lib/admin.php`, `assets/admin.js`); DB **v9**;
-sandbox/live config guard; `.env.example`; `config.example.php`; docs (`docs/billing.md`, README « Studioma › 8 »,
-DECISIONS S20–S24); tests (`tests/studioma/{billing.js,billing-config.php,fake-paddle.php}`, `setup.sh`,
-`router.php`, `run.sh`).
+**Done on `claude/card-share-publish`, not in `main`** (commits `6dce94a` backend, then the UI/docs commit):
+- Card sharing (reuses Studio sharing): `shares.card_id` + `shares.opts`; guest principal limited to one card,
+  chosen attachments, optional comments, no history (`studioma/lib/share.php`, `studioma/lib/cards.php`); card-aware
+  share dialog (`studioma/assets/studio.js`), single-card guest view (`studioma/assets/guest.js`).
+- Publications: `studioma/lib/pubs.php` (`pubs`, `proposals`, `posts.pub_id`), routes in `studioma/api.php`
+  (`community`, `pub_get`, `pub_save`, `pub_status`, `pub_delete`, `pub_invite`, `proposal_save`, `proposal_withdraw`,
+  `proposal_decide`), lifecycle hooks in `studioma/lib/studio.php`, feed/profile in `studioma/lib/social.php`, admin
+  moderation « Card publications » (`studioma/lib/admin.php`, `studioma/assets/admin.js`).
+- UI: `studioma/assets/publish.js` (Share & publish menu, publish forms with preview + confirmation, Community
+  `#/community`, publication pages `#/pub/<id>`, proposals), `card.js` (button, indicators), `board.js` (badges, menu),
+  `social.js` (feed block, profile Achievements), `app.js` (nav « Community »), `app.css`, `app/index.html`.
+- Tests: `tests/studioma/publish.js` (130 checks, API), `tests/studioma/publish-e2e.js` (37 checks, Chromium,
+  desktop + iPhone 13), wired in `run.sh`; `admin.js` / `billing.js` expect schema 10.
+- Docs: README « Studioma › 9 » (sections renumbered 10–12), DECISIONS S25–S27, ROADMAP, PROJECT_CONTEXT, AGENTS.md map,
+  tests README.
 
 **Unfinished / waiting**
 
-- Owner, before merging PR #79: complimentary plans for existing accounts, or `STM_PLANS_ENFORCED` false (§ 6).
-- Owner's Paddle choices, asked 2026-11-21, **not answered yet** (do not change them without the owner): tax mode
-  (agent's advice: keep `location`), payment methods (Google Pay on or off), balance currency (advice: keep USD).
-- Sandbox end-to-end test against real Paddle: **not done** (`docs/billing.md` § 8.2; needs the owner's sandbox
-  account and a staging copy). No live Paddle entity exists yet; none may be created before it passes.
-- Terms of Service, Privacy Policy, Refund Policy pages and a public contact address: **missing** (Paddle review).
-- Maillage test « stock enregistré » fails, also on unmodified `main` (cause unknown).
+- Owner: review and merge PR #80 (`claude/card-share-publish`), then deploy
+  (`cd ~/dehini-com && git checkout main && git pull && cp -rf studioma ~/public_html/`); the database migrates to v10
+  by itself. Nothing to configure.
+- Not done (documented in README « Ce qui n'est pas fait »): Share & publish through the MCP server; member
+  reporting of publications; payments between members.
+- Carried over: Paddle sandbox test and live setup (`docs/billing.md` § 8), owner's Paddle choices (tax mode, Google
+  Pay, balance currency) **not answered**; Terms / Privacy / Refund pages and a public contact address **missing**;
+  Maillage test « stock enregistré » fails also on unmodified `main`.
 
 **Next recommended action**
 
-1. **Owner, before merging** (`docs/billing.md` § 6): limits apply to every account as soon as this code is deployed
-   (existing accounts are on Free). Decide which accounts get a complimentary Solo/Team plan (admin › Accounts ›
-   account › Plan) — or set `define('STM_PLANS_ENFORCED', false);` in `studioma/config.php` on the server until
-   payments open. Then merge and deploy (`cd ~/dehini-com && git checkout main && git pull && cp -rf studioma
-   ~/public_html/`); the database migrates to v9 by itself.
-2. **Owner, sandbox test first** (`docs/billing.md` § 8.2): a sandbox Paddle account + a staging copy
-   `~/public_html/studioma-staging/` with its **own** `STM_DATA_DIR`, then the 9-step pass table. Live entities are
-   created only after it passes (§ 8.5); fill the ID mapping table (§ 8.4).
-3. **Owner, Paddle** (`docs/billing.md` § 5): account approval (needs Terms / Privacy / Refund pages on dehini.com —
-   not written yet), products + 4 prices in sandbox, API key, client token, default payment link
-   `https://dehini.com/studioma/pay/`, webhook `https://dehini.com/studioma/paddle-webhook.php`, settings in
-   `studioma/config.php`, sandbox test with a Paddle test card, then live.
-4. **Agent, next recommended task**: draft Studioma's Terms of Service, Privacy Policy and Refund Policy pages (Paddle
-   as merchant of record) and link them from the landing footer and the pricing page — ask the owner for the legal
-   name and contact email to display (never guess them; owner reviews the legal text). Then: the Maillage failure.
+1. **Owner**: review PR #80, try it (open a card › *Share & publish*), merge, deploy.
+2. **Owner, billing** (unchanged): `docs/billing.md` § 6 (plans for existing accounts) and § 8.2 (sandbox test first).
+3. **Agent, next task**: Terms of Service / Privacy Policy / Refund Policy pages (ask the owner for the legal name
+   and contact email; owner reviews the text) — now also covering Community publications and proposals.
 
-**Blockers**: Paddle account approval and credentials (owner). Unverified: behaviour against the real Paddle API
-(tested only against `tests/studioma/fake-paddle.php`, which follows Paddle Billing API v1 shapes); production PHP CLI
-path for cron; host's hourly email limit.
+**Blockers**: none for Share & publish. Billing: Paddle approval and credentials (owner).
 
-**Validation at this checkpoint** (2026-11-21, re-run for the handoff on the code of `550f1a6`):
-`tests/studioma/run.sh` **1,036 checks, 7 suites** (api, share, meta, mcp, admin, **billing 107**, e2e) **+ 15 config
-unit checks** (`billing-config.php`) — all passed, 0 failures; `tests/swanbida/run.sh` **119 — passed**;
-`tests/maillage/run.sh` **180/181 — 1 failure that also happens on unmodified `main` (7b703d3)**: « stock enregistré :
-6 déclinaisons en stock » (no Maillage file changed; passed on 2026-11-20; flaky or date-dependent *(cause unknown)*);
-`php -l` 117 tracked PHP files and `node --check` 52 JS files: 0 errors; session hook: exit 0 in ~30 ms, read-only.
+**Validation at this checkpoint** (2026-11-21, branch `claude/card-share-publish`): `tests/studioma/run.sh` —
+**1,203 checks, 9 suites, 0 failures** (api 239, share 144, meta 73, mcp 155, admin 116, billing 107, **publish 130**,
+**publish-e2e 37**, e2e 202) **+ 15 config unit checks**; `php -l` 118 PHP files and `node --check` all Studioma JS and
+tests: 0 errors. SWANBIDA and Maillage not re-run (no file of theirs changed; last run 2026-11-21: 119 passed,
+180/181 with the known Maillage failure).
 
 ## Log (newest first)
+
+### 2026-11-21 — Claude Code — Studioma: Share & publish (card sharing, Community, proposals)
+- Owner's brief: share individual cards with guests (public, email-restricted, edit requests, revoke, expiry),
+  publish unfinished cards as opportunities (proposals with approach, price, timeline, portfolio) and completed
+  cards as achievements (likes, comments, sharing, profile), Community area, links to the source card, security,
+  notifications, tests; reuse existing systems; dedicated feature branch.
+- Audit: Studio sharing (links, verified guests, requests, emails), company opportunities (`opps`, tied to a
+  company by FK), posts with likes/comments, portfolio case studies, notifications, file copies already existed —
+  all reused. Columns of kind `done` / `cancelled` give the card stage.
+- Branch `claude/card-share-publish` from `origin/main` `f5ff9f3` (PR #79 had been merged by the owner; local
+  `claude/trusting-keller-rynk1j` fast-forwarded to it).
+- Done: see « Current state ». Decisions S25 (card sharing reuses Studio sharing, separate scopes), S26 (only chosen
+  copies are published; one per kind per card; `edit` to publish, author or Studio manager to manage), S27 (opportunity
+  lifecycle; acceptance grants nothing; company jobs listed beside card opportunities).
+- Fixed on the way: avatar initials in post bylines were top-aligned (`.post-by > .avatar`); guest board thumbnail
+  hidden when its image isn't a shared attachment.
+- Tests: see « Validation at this checkpoint ». Committed and pushed; not merged.
+
 
 ### 2026-11-21 — Claude Code — handoff checkpoint for Codex
 - Branch `claude/trusting-keller-rynk1j`, base `550f1a6` (= `origin` branch; 4 commits above `origin/main`

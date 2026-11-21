@@ -23,6 +23,7 @@ require __DIR__ . '/lib/social.php';
 require __DIR__ . '/lib/talent.php';
 require __DIR__ . '/lib/oauth.php';
 require __DIR__ . '/lib/share.php';
+require __DIR__ . '/lib/pubs.php';
 require __DIR__ . '/lib/mcp.php';
 
 cors_headers();

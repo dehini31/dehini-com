@@ -9,7 +9,7 @@ politique de sécurité (CSP).
 tests/studioma/run.sh /tmp/stm-test
 ```
 
-`run.sh` prépare un hébergement neuf, lance le serveur PHP (port 8097) et exécute sept batteries, chacune sur une
+`run.sh` prépare un hébergement neuf, lance le serveur PHP (port 8097) et exécute neuf batteries, chacune sur une
 base vide. Les événements Meta (API Conversions) sont écrits dans `meta.jsonl` (faux ensemble de données) ; dans le
 navigateur, un faux script du pixel note les appels à `fbq` :
 
@@ -123,6 +123,33 @@ résiliation, reprise, fin confirmée par Paddle, dépassements ; paiement en é
 espace client ; indicateurs de l'administration (MRR, ARR, sandbox séparé), formule offerte ; navigateur : page des
 prix, mensuel / annuel, invitation à changer de formule, paiement avec un faux Paddle.js, attente de la
 confirmation, réglages, Insights, mobile, aucune violation de la CSP.
+
+**`publish.js` — partager une carte, la publier dans la communauté** (API seule, comme un navigateur malveillant) :
+
+- lien d'une **seule carte** (public, privé restreint à des adresses vérifiées) : l'invité ne voit que cette carte
+  (tableau d'une colonne, aucune autre carte du Studio ni d'un autre Studio), ni historique, ni publication, ni
+  pièce jointe non cochée (introuvable, même avec l'adresse du fichier, vignette masquée), ni commentaires s'ils
+  ne sont pas montrés ; le lien n'apparaît pas dans le partage du Studio ; gestion réservée aux responsables ;
+- demande d'édition (email et notification vers la fenêtre de partage de la carte), accord, l'éditeur ne modifie
+  que cette carte (ni création, ni déplacement) ; périmètres séparés (une demande ne se traite pas depuis le
+  Studio) ; retrait, lien coupé (410), expiré (410), régénéré (l'ancien : 404), journal, pastille « Shared » ;
+- **opportunité** : publication refusée à un non-membre, à un Viewer, sur une carte terminée ; validations
+  (description, budget, fichier d'une autre carte) ; copie publique de l'image choisie, fichier de la carte privé ;
+  republier sans doublon ; vue publique sans adresse de la carte ni contenu privé ; recherche et filtres ;
+- **propositions** : compte obligatoire, pas à soi-même, travaux joints seulement les siens et publiés,
+  modification, propositions invisibles du public et des autres professionnels, décisions réservées à l'auteur ;
+  accepter ne donne aucun accès ; invitation sur la seule carte (lien privé, vérification) ou dans le Studio ;
+- fermeture, réouverture, **fermeture automatique** (carte terminée, archivée, date limite), plus de proposition ;
+- **réalisation** : carte terminée seulement, couverture image, fil (J'aime, commentaire, partage), profil,
+  retrait (introuvable, copie redevenue privée, absente du fil), republication (J'aime gardés), carte supprimée
+  (la réalisation reste, sans source ; plus de partage), suppression d'une opportunité avec ses propositions ;
+- le partage d'un **Studio entier** fonctionne comme avant.
+
+**`publish-e2e.js` — Share & publish dans Chromium** : menu selon l'étape de la carte, fenêtre de partage d'une carte
+(sans onglet Team ni niveaux, *What guests see*), invité sans compte qui ouvre directement la carte et rien d'autre,
+publication d'une opportunité (description de la carte jamais reprise d'office, aperçu, confirmation), pastilles
+dans la carte et sur le tableau, proposition d'un professionnel et réponse, réalisation avec couverture choisie,
+J'aime, Communauté, fil, profil, mobile (iPhone 13, sans défilement horizontal), aucune erreur ni violation de la CSP.
 
 **`admin.js` — l'administration** (`studioma/admin/`, API seule ; `setup.sh` copie aussi `admin/` avec le mot de
 passe de test `test-owner-pass`) :
