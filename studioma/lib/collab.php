@@ -107,6 +107,12 @@ function api_invite_create(array $b, array $u): array
     $where = $s ? $s['name'] . ' (' . $p['name'] . ')' : $p['name'];
     $message = str_clean($b['message'] ?? '', 600);
     $id = tx(function () use ($p, $s, $email, $target, $role, $uid, $message): int {
+        // Une invitation réserve une place de membre dans la formule du compte propriétaire (lib/billing.php).
+        $account = project_account($p);
+        if (!$target || !in_array($target, account_seats($account), true)) {
+            if ($email !== '') q("UPDATE invites SET status = 'revoked' WHERE project_id = ? AND studio_id = ? AND email = ? AND status = 'pending'", [$p['id'], $s ? $s['id'] : 0, $email]);
+            need_seat($account, $uid, true);
+        }
         // Une nouvelle invitation à la même personne remplace la précédente.
         if ($email !== '') q("UPDATE invites SET status = 'revoked' WHERE project_id = ? AND studio_id = ? AND email = ? AND status = 'pending'", [$p['id'], $s ? $s['id'] : 0, $email]);
         return insert('invites', ['token' => token(16), 'project_id' => $p['id'], 'studio_id' => $s ? $s['id'] : 0, 'email' => $email, 'uid' => $target,
@@ -172,6 +178,13 @@ function api_invite_accept(array $b, array $u): array
     if (!$p || ((int) $i['studio_id'] && !$s)) fail('This project no longer exists.', 410, 'gone');
     $role = (string) $i['role'];
     tx(function () use ($i, $p, $s, $uid, $role, $u): void {
+        // Rejoindre occupe une place dans la formule du compte propriétaire (sauf pour quelqu'un qui en a déjà une).
+        $account = project_account($p);
+        if (billing_enforced() && !in_array($uid, account_seats($account), true)) {
+            if (!plan_has($account, 'team')) plan_fail('This workspace\'s plan doesn\'t include team members. Ask the person who invited you to upgrade to the Team plan.', '', 'team');
+            $max = account_entitlements($account)['limits']['members'];
+            if ($max !== null && count(account_seats($account)) >= $max) plan_fail('This team is full on its current plan (' . $max . ' members). Ask the person who invited you to make room or change plan.', '', 'members');
+        }
         if ($s) {
             $cur = (string) (val('SELECT role FROM studio_members WHERE studio_id = ? AND uid = ?', [$s['id'], $uid]) ?? '');
             q('INSERT OR REPLACE INTO studio_members (studio_id, uid, role, created) VALUES (?, ?, ?, ?)', [$s['id'], $uid, role_max($cur, $role), time()]);
@@ -187,6 +200,7 @@ function api_invite_accept(array $b, array $u): array
         }
         if ($i['email'] === '' && !(int) $i['uid']) q('UPDATE invites SET uses = uses + 1 WHERE id = ?', [$i['id']]);
         else q("UPDATE invites SET status = 'accepted', uid = ?, uses = 1 WHERE id = ?", [$uid, $i['id']]);
+        billing_cache_clear();
     });
     notify((int) $i['by_uid'], $uid, 'invite', 'joined ' . ($s ? $s['name'] : $p['name']) . ' as ' . ROLE_LABELS[$role], $s ? 'studio/' . $s['id'] : 'project/' . $p['id']);
     return ['project_id' => (int) $p['id'], 'studio_id' => $s ? (int) $s['id'] : 0];

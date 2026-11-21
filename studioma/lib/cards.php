@@ -217,6 +217,7 @@ function api_approval_request(array $b, array $u): array
 {
     $card = load_card(int_in($b, 'card_id'), $u, 'cardedit');
     $s = $card['studio'];
+    need_feature(project_account($s['project']), 'approvals');   // validations : Solo et Team (lib/billing.php)
     $uid = (int) $u['id'];
     // Validateur : un membre (id) ou un invité d'un lien de partage (« g » + id).
     $guest = preg_match('/^g(\d+)$/', (string) ($b['approver'] ?? ''), $gm) ? guest_approver((int) $gm[1], $card) : null;

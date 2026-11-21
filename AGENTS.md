@@ -14,6 +14,8 @@ true; put details in the files it points to.
    changing behaviour, security or data handling.
 4. If `HANDOFF.md` says another agent is mid-task on the same files, do not edit them: ask the user, or work on
    another branch / worktree.
+5. Run `git fetch origin` and start from the branch and commit named in `HANDOFF.md` « Current state » (a local
+   `main` may be stale: compare with `origin/main`). Check open pull requests for that branch before pushing to it.
 
 ## 2. What this repository is
 
@@ -31,7 +33,7 @@ vanilla HTML/CSS/JS in the browser. Full context: `docs/PROJECT_CONTEXT.md`. Hum
 | `swanbida/` | e-shop, cash on delivery, Meta Pixel + Conversions API | « SWANBIDA » |
 | `marketing/` | private marketing dashboard (Meta Graph API, webhooks) | « Marketing Dashboard », `docs/meta-*.md` |
 | `maillage/` | points-of-sale / distribution platform, map, in-browser image search | « Maillage », `tools/vision/` |
-| `studioma/` | social network + collaborative studio for community managers (English UI), MCP server, guest sharing, Meta Pixel/CAPI, platform admin (`studioma/admin/`) | « Studioma » |
+| `studioma/` | social network + collaborative studio for community managers (English UI), MCP server, guest sharing, Meta Pixel/CAPI, platform admin (`studioma/admin/`), plans & Paddle billing (`docs/billing.md`) | « Studioma » |
 | `.well-known/` | OAuth discovery rewrites for Studioma's MCP server | « Studioma › 4 » |
 | `tests/<project>/` | fake-hosting test suites (Studioma, SWANBIDA, Maillage) | `tests/*/README.md` |
 | `tools/` | one-off scripts (data import, vision model build, showcase screenshots) | each tool's header |
@@ -39,8 +41,10 @@ vanilla HTML/CSS/JS in the browser. Full context: `docs/PROJECT_CONTEXT.md`. Hum
 ## 3. Production and deployment — read this
 
 - **`main` is production.** A cron job on the server runs `git pull` on `main` every 5 minutes and copies the code
-  into `~/public_html/`. **Merging or pushing to `main` deploys to the live site.** Never push to `main`; never
-  merge a pull request. The owner merges.
+  into `~/public_html/` (README « Installation › 4 »). *Verified 2026-11-20: the server's crontab had no such job, so
+  the owner currently copies `main` to the live site by hand — see `HANDOFF.md`.* Either way, **treat merging or
+  pushing to `main` as deploying to the live site.** Never push to `main`; never merge a pull request. The owner
+  merges.
 - Work on a feature branch (`claude/<topic>` or `codex/<topic>`), push it, and open a pull request **only when the
   user asks**. Never force-push, never rewrite published history, never `git reset --hard`, `git clean -fd`,
   `git checkout -- <file>` on someone else's changes, or delete branches you did not create.
@@ -86,7 +90,7 @@ find . -name '*.php' -not -path './.git/*' -print0 | xargs -0 -n1 php -l | grep 
 for f in studioma/assets/*.js; do node --check "$f"; done
 
 # Full suites: each builds a throw-away fake cPanel hosting in the given folder (never touches production)
-tests/studioma/run.sh /tmp/stm-test      # API, guest sharing, Meta, MCP/OAuth, admin, browser e2e (~6 min, port 8097)
+tests/studioma/run.sh /tmp/stm-test      # API, sharing, Meta, MCP/OAuth, admin, billing, browser e2e (~7 min, port 8097)
 tests/swanbida/run.sh /tmp/swb-test      # ports 8090-8091
 tests/maillage/run.sh /tmp/mlg-test      # port 8096
 ```

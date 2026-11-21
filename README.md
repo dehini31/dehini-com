@@ -1429,6 +1429,7 @@ Grow professionally. Get discovered.* L'interface est en anglais.
 | `https://dehini.com/studioma/app/` | membres | **L'application** : fil, découverte, réseau, projets, Studios, opportunités, messages, notifications, profil, réglages — et, pour les entreprises, talents et équipe |
 | `…/app/#/u/<identifiant>`, `#/c/<entreprise>`, `#/opportunity/<n>`, `#/post/<n>` | visiteurs | **Pages publiques** lisibles sans compte : profil et portfolio, page d'une entreprise, opportunité, publication |
 | `…/app/#/join/<jeton>` | invités | **Invitation** à un projet ou à un Studio (lien ou email) |
+| `…/app/#/pricing` | tout le monde | **Prix** : formules Free, Solo, Team (mensuel ou annuel), comparatif, questions fréquentes (voir « 8. Formules et abonnements ») |
 | `https://dehini.com/studioma/admin/` | propriétaire du site | **Administration** : statistiques en direct, comptes, modération, emails et campagnes, système (voir « 7. Administration ») |
 
 ### Ce que fait la plateforme
@@ -1817,22 +1818,48 @@ l'hébergeur *(chemin habituel de cPanel, à vérifier)*.
 Studios (nom, projet, équipe, nombres) ; du contenu des Studios et des messages, elle ne voit que des nombres —
 jamais un titre de carte, un script, un commentaire ou le texte d'un message. Aucun pixel ni suivi sur ses pages. Pas de suivi d'ouverture des emails.
 
-### 8. Fichiers envoyés
+### 8. Formules et abonnements (Free, Solo, Team)
+
+Trois formules, définies à un seul endroit (`studioma/lib/plans.php`) et **appliquées par le serveur** à chaque
+action (application, serveur MCP, liens de partage) : **Free** (0 $ : 1 projet, 1 Studio, 30 nouvelles cartes par
+mois, 1 membre, 2 liens invités en lecture seule), **Solo** (12 $ / mois ou 120 $ / an : 3 projets, 5 Studios,
+cartes illimitées, liens privés, invités qui commentent / valident / modifient, validations des clients) et
+**Team** (29 $ / mois ou 290 $ / an : 10 projets, 20 Studios, 5 membres, invitations et rôles, Insights). Le compte
+propriétaire d'un projet paie pour tout ce qui s'y passe ; les invités ne sont jamais des membres payants.
+
+- Page des prix `…/app/#/pricing` (lien « Pricing » sur la page d'accueil) ; **Settings › Plan & billing** : formule,
+  état, échéance, usage réel, dépassements, changer de formule ou de rythme, résilier ou garder, espace client
+  Paddle, paiements. Une limite atteinte ouvre une invitation à changer de formule.
+- **Rien n'est jamais supprimé** par un changement de formule : au-delà des limites, tout reste lisible, la création
+  est refusée, les membres en trop et les invités passent en lecture seule.
+- Paiement : **Paddle Billing** (paiement hébergé, Paddle revendeur), page `studioma/pay/`, notifications signées
+  `studioma/paddle-webhook.php`. La formule n'est activée que par les données vérifiées de Paddle. **Fermé tant que
+  Paddle n'est pas configuré** (« Coming soon » sur la page des prix). Réglages, mise en route pas à pas, politique
+  de paiement en échec (14 jours de grâce) et limites : **`docs/billing.md`**.
+- Administration › **Billing** : abonnés, MRR, ARR, conversions, résiliations, notifications Paddle ; dans la fiche
+  d'un compte, **offrir une formule** (sans paiement, hors chiffre d'affaires).
+- `STM_PLANS_ENFORCED` (true par défaut) applique les limites. Les comptes existants passent en Free : avant de
+  mettre en ligne, offrir Solo ou Team aux comptes qui doivent continuer à collaborer (voir `docs/billing.md` § 6).
+
+### 9. Fichiers envoyés
 
 64 Mo par fichier (`studioma/.user.ini` et `STM_MAX_UPLOAD_MB`), 12 Mo par image. Si l'hébergeur plafonne plus
 bas, baisser les deux valeurs ensemble. Le type est vérifié sur le contenu réel du fichier.
 
-### 9. Sauvegarde
+### 10. Sauvegarde
 
 Tout tient dans `~/studioma-data/` : copier ce dossier sauvegarde la base et les fichiers.
 
-### 10. Tests
+### 11. Tests
 
 ```bash
 tests/studioma/run.sh /tmp/stm-test
 ```
 
-Faux hébergement neuf, puis six batteries : `admin.js` (l'administration : accès réservé à la session `/admin`
+Faux hébergement neuf, puis sept batteries : `billing.js` (formules et abonnements, limites appliquées, faux Paddle :
+migration, limites Free / Solo / Team, compteur mensuel, invités en lecture seule, paiement, webhooks signés, rejeu,
+désordre, montée, descente, résiliation, paiement en échec, places de membres, créations simultanées, isolement,
+indicateurs, page des prix et paiement dans le navigateur), `admin.js` (l'administration : accès réservé à la session `/admin`
 et à son jeton, statistiques sans contenu privé, actions sur les comptes, suspension appliquée partout,
 suppression, export CSV, modération, journal des emails, campagnes et désinscription, tâche planifiée), `meta.js` (pixel et API Conversions : chaque événement, même event_id,
 données hachées, rien de privé), `share.js` (le partage sans compte : lecture seule, Studio et

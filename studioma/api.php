@@ -15,6 +15,9 @@ declare(strict_types=1);
 
 require __DIR__ . '/lib/core.php';
 require __DIR__ . '/lib/auth.php';
+require __DIR__ . '/lib/plans.php';
+require __DIR__ . '/lib/billing.php';
+require __DIR__ . '/lib/paddle.php';
 require __DIR__ . '/lib/access.php';
 require __DIR__ . '/lib/files.php';
 require __DIR__ . '/lib/studio.php';
@@ -38,6 +41,9 @@ const ROUTES = [
     'forgot' => ['POST', 'public'], 'reset' => ['POST', 'public'], 'password' => ['POST', 'user'], 'account_save' => ['POST', 'user'],
     'account_delete' => ['POST', 'user'], 'counts' => ['GET', 'user'], 'email_confirm_send' => ['POST', 'user'], 'email_confirm' => ['POST', 'user'],
     'terms_accept' => ['POST', 'user'], 'ping' => ['POST', 'public'],
+    // Formules et abonnements (lib/billing.php, lib/paddle.php)
+    'billing_plans' => ['GET', 'public'], 'billing_config' => ['GET', 'public'], 'billing' => ['GET', 'user'], 'billing_checkout' => ['POST', 'user'],
+    'billing_change' => ['POST', 'user'], 'billing_cancel' => ['POST', 'user'], 'billing_resume' => ['POST', 'user'], 'billing_portal' => ['POST', 'user'],
     'google' => ['POST', 'public'], 'google_link' => ['POST', 'user'], 'google_unlink' => ['POST', 'user'],
     // Assistants IA (serveur MCP) : écran d'accord OAuth, applications connectées, jetons personnels
     'oauth_request' => ['GET', 'user'], 'oauth_decide' => ['POST', 'user'], 'ai_access' => ['GET', 'user'],
@@ -83,6 +89,7 @@ const ROUTES = [
     'admin_campaign' => ['GET', 'admin'], 'admin_campaign_preview' => ['POST', 'admin'], 'admin_campaign_save' => ['POST', 'admin'],
     'admin_campaign_test' => ['POST', 'admin'], 'admin_campaign_send' => ['POST', 'admin'], 'admin_campaign_action' => ['POST', 'admin'],
     'admin_pump' => ['POST', 'admin'], 'admin_system' => ['GET', 'admin'], 'admin_studios' => ['GET', 'admin'], 'admin_studio' => ['GET', 'admin'],
+    'admin_billing' => ['GET', 'admin'],
 ];
 
 /**
@@ -382,6 +389,8 @@ function account_destroy(int $uid, bool $self = true): void
         q('UPDATE cards SET assignee = 0 WHERE assignee = ?', [$uid]);
         q('DELETE FROM card_members WHERE uid = ?', [$uid]);
         foreach (rows("SELECT * FROM files WHERE uid = ? AND scope <> 'studio'", [$uid]) as $f) file_delete($f);
+        // Projets partagés qui restent : un autre propriétaire en devient le compte titulaire (sa formule s'applique).
+        q("UPDATE projects SET owner_uid = COALESCE((SELECT m.uid FROM project_members m WHERE m.project_id = projects.id AND m.role = 'owner' AND m.uid <> ? ORDER BY m.created LIMIT 1), owner_uid) WHERE owner_uid = ?", [$uid, $uid]);
         q('DELETE FROM users WHERE id = ?', [$uid]);
     });
 }

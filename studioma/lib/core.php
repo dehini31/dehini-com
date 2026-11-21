@@ -194,7 +194,7 @@ function marks(array $a): string
 /** Schéma compatible avec les vieilles versions de SQLite des hébergeurs mutualisés. */
 function migrate(PDO $pdo): void
 {
-    if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= 8) return;
+    if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= 9) return;
     // Deux premières visites simultanées : la seconde attend la fin de la création, puis ne fait rien.
     $pdo->exec('BEGIN IMMEDIATE');
     try {
@@ -918,6 +918,88 @@ function migrate(PDO $pdo): void
             PRIMARY KEY (day, vid)
         );
         PRAGMA user_version = 8;
+        SQL);
+        }
+        if ($v < 9) {
+            // Abonnements (lib/billing.php, lib/paddle.php). Aucune ligne n'est créée pour les comptes existants :
+            // sans abonnement valable, un compte est sur la formule Free (pas de doublon possible, aucune donnée touchée).
+            $pdo->exec(<<<SQL
+        -- Un abonnement d'un compte. provider : paddle | manual (offert par l'administration). env : sandbox |
+        -- production (Paddle) ou manual. status : trialing | active | past_due | paused | canceled | expired.
+        -- amount : prix de l'abonnement en centimes (donnée vérifiée de Paddle) ; interval : month | year.
+        -- provider_updated : date de mise à jour chez Paddle (les événements arrivés dans le désordre sont ignorés).
+        CREATE TABLE IF NOT EXISTS subscriptions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            uid INTEGER NOT NULL,
+            provider TEXT NOT NULL,
+            env TEXT NOT NULL DEFAULT '',
+            provider_sub_id TEXT NOT NULL DEFAULT '',
+            provider_customer_id TEXT NOT NULL DEFAULT '',
+            plan TEXT NOT NULL,
+            interval TEXT NOT NULL DEFAULT '',
+            status TEXT NOT NULL,
+            amount INTEGER NOT NULL DEFAULT 0,
+            currency TEXT NOT NULL DEFAULT '',
+            period_start INTEGER NOT NULL DEFAULT 0,
+            period_end INTEGER NOT NULL DEFAULT 0,
+            cancel_at INTEGER NOT NULL DEFAULT 0,
+            canceled_at INTEGER NOT NULL DEFAULT 0,
+            past_due_since INTEGER NOT NULL DEFAULT 0,
+            provider_updated TEXT NOT NULL DEFAULT '',
+            note TEXT NOT NULL DEFAULT '',
+            created INTEGER NOT NULL,
+            updated INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS subscriptions_u ON subscriptions(uid);
+        CREATE UNIQUE INDEX IF NOT EXISTS subscriptions_p ON subscriptions(provider, provider_sub_id) WHERE provider_sub_id <> '';
+        -- Client Paddle d'un compte (un par environnement).
+        CREATE TABLE IF NOT EXISTS billing_customers (
+            uid INTEGER NOT NULL,
+            env TEXT NOT NULL,
+            customer_id TEXT NOT NULL,
+            created INTEGER NOT NULL,
+            PRIMARY KEY (uid, env)
+        );
+        CREATE UNIQUE INDEX IF NOT EXISTS billing_customers_c ON billing_customers(env, customer_id);
+        -- Notifications reçues de Paddle (webhooks) : une seule fois chacune (event_id), avec le résultat.
+        CREATE TABLE IF NOT EXISTS billing_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            provider TEXT NOT NULL,
+            event_id TEXT NOT NULL,
+            type TEXT NOT NULL,
+            occurred TEXT NOT NULL DEFAULT '',
+            uid INTEGER NOT NULL DEFAULT 0,
+            status TEXT NOT NULL,
+            error TEXT NOT NULL DEFAULT '',
+            payload TEXT NOT NULL DEFAULT '',
+            received INTEGER NOT NULL
+        );
+        CREATE UNIQUE INDEX IF NOT EXISTS billing_events_e ON billing_events(provider, event_id);
+        CREATE INDEX IF NOT EXISTS billing_events_r ON billing_events(received);
+        -- Paiements (transactions Paddle terminées ou en échec) : montants vérifiés, jamais de données de carte.
+        CREATE TABLE IF NOT EXISTS billing_transactions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            uid INTEGER NOT NULL,
+            env TEXT NOT NULL DEFAULT '',
+            provider_txn_id TEXT NOT NULL UNIQUE,
+            provider_sub_id TEXT NOT NULL DEFAULT '',
+            status TEXT NOT NULL,
+            amount INTEGER NOT NULL DEFAULT 0,
+            currency TEXT NOT NULL DEFAULT '',
+            origin TEXT NOT NULL DEFAULT '',
+            billed_at INTEGER NOT NULL DEFAULT 0,
+            created INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS billing_transactions_u ON billing_transactions(uid);
+        -- Compteurs d'usage par compte et par mois civil (« AAAA-MM ») : n'augmentent jamais à rebours.
+        CREATE TABLE IF NOT EXISTS usage_counters (
+            uid INTEGER NOT NULL,
+            period TEXT NOT NULL,
+            metric TEXT NOT NULL,
+            n INTEGER NOT NULL DEFAULT 0,
+            PRIMARY KEY (uid, period, metric)
+        );
+        PRAGMA user_version = 9;
         SQL);
         }
         $pdo->exec('COMMIT');

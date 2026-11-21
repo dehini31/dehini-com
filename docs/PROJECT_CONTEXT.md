@@ -27,6 +27,8 @@ each published under its own path on the same domain:
   code into `~/public_html/` (exact command: README « Installation › 4 »). So **`main` = production**. The cron
   pulls the branch that is checked out in `~/dehini-com`: that clone must stay on `main` with no local edits, and
   no coding agent (Codex, Claude) is ever run on the server.
+  *Verified 2026-11-20: `crontab -l` on the server lists no `dehini-com` deployment job; deployments are currently
+  copied by hand by the owner (`HANDOFF.md`). `main` stays production either way.*
 - Live data is never in Git: SQLite databases and uploads live **outside `public_html`** in `~/impact-data/`,
   `~/metakpis-data/`, `~/swanbida-data/`, `~/marketing-data/`, `~/maillage-data/`, `~/studioma-data/`
   (plus `~/public_html/uploads/`, `swanbida/media/`, `maillage/media/`, `impact/uploads/pros/`). The served
@@ -57,6 +59,7 @@ each published under its own path on the same domain:
 | Email (SMTP, Brevo API) | Impact (Brevo key set in its admin), Studioma (SMTP, defaults to Impact's settings), Maillage, SWANBIDA | tests write emails to `mail.jsonl` |
 | Meta Graph API / Marketing API | Stats Meta KPIs extension, Marketing Dashboard (incl. webhooks), SWANBIDA and Studioma (Pixel + Conversions API, Graph v24.0) | Marketing's Meta app migration: `docs/meta-app-review.md` |
 | Payment links (SofizPay CIB/Edahabia, PayPal, RedotPay, CCP) | Impact « Soutenir » page | see README « Défi Impact » |
+| Paddle Billing (subscriptions, hosted checkout, webhooks) | Studioma plans Solo / Team | `docs/billing.md`; closed until configured in `studioma/config.php` |
 | OpenStreetMap tiles | Maillage map | Leaflet vendored |
 | MCP + OAuth 2.1 (Streamable HTTP, DCR, PKCE S256) | Studioma (`studioma/mcp.php`, `studioma/oauth.php`, root `.well-known/`) | Claude, ChatGPT, Gemini CLI connect as the user |
 
@@ -65,8 +68,8 @@ each published under its own path on the same domain:
 Each platform creates and migrates its own SQLite database on first request (schema and migrations in its
 `lib/`, guarded by `PRAGMA user_version`; never edit production databases by hand).
 
-Studioma (most active project) — `~/studioma-data/studioma.sqlite`, schema **version 6** in `main` (admin), **version 8**
-on branch `claude/trusting-keller-rynk1j` (v7 `users.terms_at`, v8 `visitors` + `visit_days`) until it is merged
+Studioma (most active project) — `~/studioma-data/studioma.sqlite`, schema **version 8** in `main` (v6 admin, v7
+`users.terms_at`, v8 `visitors` + `visit_days`), **version 9** (billing) on branch `claude/trusting-keller-rynk1j` until merged
 (`studioma/lib/core.php` › `migrate()`):
 
 - accounts & network: `users`, `sessions`, `companies`, `company_members`, `follows`, `connections`, `posts`,
@@ -77,6 +80,8 @@ on branch `claude/trusting-keller-rynk1j` (v7 `users.terms_at`, v8 `visitors` + 
 - AI assistants (v4): `oauth_clients`, `oauth_requests`, `ai_grants`, `ai_tokens`;
 - guest sharing (v5): `shares`, `share_guests`, `share_codes`, `guest_sessions`, `share_log`
   (+ guest columns on `events`, `card_comments`, `card_approvals`, `cards`, `notifications`);
+- billing (v9): `subscriptions`, `billing_customers`, `billing_events` (Paddle webhooks), `billing_transactions`,
+  `usage_counters` (new cards per account and month) — see `docs/billing.md`;
 - administration (v6): `users.suspended` / `suspend_note`, `activity_days` (active accounts per day),
   `mail_log` (every email sent), `campaigns`, `mail_queue`, `admin_log`;
 - technical: `rate` (rate limits), `meta` (key/value, incl. `meta_capi_error`, `mail_last_error`, `cron_last`).

@@ -43,6 +43,10 @@ __pycache__/
 *.p12
 *.pfx
 *-token.txt
+id_rsa*
+id_ed25519*
+*.ppk
+credentials.json
 
 # Local databases, dependencies and temporary files (production data lives outside the repository).
 *.sqlite

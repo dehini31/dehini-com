@@ -69,7 +69,10 @@
       if (data.error === 'auth' && SM.me && SM.onAuthLost) SM.onAuthLost();
       // Conditions d'utilisation pas encore acceptées (compte créé avec Google) : la fenêtre d'acceptation s'ouvre.
       if (data.error === 'terms' && SM.onTermsRequired) SM.onTermsRequired();
-      throw new ApiError(data.error || 'server', data.message || 'Something went wrong.', res.status, data);
+      const err = new ApiError(data.error || 'server', data.message || 'Something went wrong.', res.status, data);
+      // Limite de la formule sur une écriture : invitation à changer de formule (assets/billing.js), pas de message en double.
+      if (data.error === 'plan_limit' && opts.body !== undefined && SM.onPlanLimit) { SM.onPlanLimit(data); err.shown = true; }
+      throw err;
     }
     // Événements Meta de l'action (le serveur envoie les mêmes, avec le même event_id) : assets/meta.js.
     if (data._meta && window.StmMeta) window.StmMeta.fire(data._meta);
@@ -79,7 +82,7 @@
   SM.post = (action, body) => SM.api(action, { body: body || {} });
   /** Exécute une écriture ; en cas d'échec, affiche le message et retourne null. */
   SM.try = async (promise) => {
-    try { return await promise; } catch (e) { SM.toast(e.message, 'error'); return null; }
+    try { return await promise; } catch (e) { if (!e.shown) SM.toast(e.message, 'error'); return null; }
   };
   /** Envoi d'un fichier avec progression (0 à 1). */
   SM.upload = (kind, file, extra, onProgress) => new Promise((resolve, reject) => {
@@ -263,6 +266,7 @@
     } catch (e) {
       if (!SM.alive(token)) return;
       if (e instanceof ApiError && e.code === 'auth') return;
+      if (e instanceof ApiError && e.code === 'plan_limit' && SM.planGate) { SM.set(view, SM.planGate(e.data)); return; }
       SM.set(view, e instanceof ApiError && e.status === 404
         ? SM.empty('lock', 'Nothing here', e.message, html`<a class="btn btn-primary" href="#/">Back to home</a>`)
         : SM.empty('alert', 'Something went wrong', e.message || 'Please try again.', html`<button class="btn btn-primary" data-act="reload">Try again</button>`));
@@ -299,6 +303,7 @@
     if (err) err.hidden = true;
     SM.busy(btn, true);
     Promise.resolve(fn(form, SM.formData(form), e)).catch((ex) => {
+      if (ex.shown) return;   // déjà expliqué (fenêtre « changer de formule »)
       if (err) { err.textContent = ex.message; err.hidden = false; } else SM.toast(ex.message, 'error');
       if (!(ex instanceof ApiError) && !(ex instanceof UserError)) console.error(ex);
     }).finally(() => SM.busy(btn, false));

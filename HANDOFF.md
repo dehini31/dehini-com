@@ -4,42 +4,126 @@ Shared memory between **Claude Code** and **OpenAI Codex** (protocol: `AGENTS.md
 state » block short and true; add a log entry at the top of « Log » after every meaningful task. Never write
 secrets here. Mark anything you could not verify as *(unverified)*.
 
-## Current state — 2026-11-20
+## Current state — 2026-11-21
 
 | | |
 |---|---|
-| Last agent | Claude Code (cloud session) |
-| Branch | `claude/trusting-keller-rynk1j` (tracks `origin/claude/trusting-keller-rynk1j`) |
-| Base code | `main` @ `5a0b124` (Merge PR #74: Studioma administration). **`main` = production** (server cron, every 5 min) |
+| Last agent | Claude Code (cloud session) — handoff checkpoint for Codex |
+| Branch | `claude/trusting-keller-rynk1j` (tracks `origin/claude/trusting-keller-rynk1j`) — **open PR #79 → `main`** (https://github.com/dehini31/dehini-com/pull/79, not merged: merging it ships billing) |
+| Base code | `main` @ `7b703d3` (Merge PR #78 — everything before billing is in `main`). **`main` = production** — but the server has **no deployment cron** (2026-11-20): merges go live only when copied by hand |
 | Checkpoint | the commit that last changed this file: `git log -1 --format='%H %s' -- HANDOFF.md` |
 | Uncommitted work at checkpoint | none |
-| In progress | Studioma admin (PR #74) **is live** (owner's screenshot with real data, 2026-11-21; `/studioma/admin/` answers 200). On this branch, not merged: **compact Live activity feed** and **terms of use: sentence under « Create my account » + « One last step » pop-up for Google accounts, enforced server-side (DB v7)** and **admin: Studios page + real-time visitors (DB v8)**. The server crontab had **no deployment job** for `~/dehini-com` (2026-11-20): unless the owner added it since *(unverified)*, merges go live only when copied by hand |
-| Last task changed application code? | **yes** — Studioma (DB schema v5 → v6, additive) |
+| In progress | **Studioma SaaS billing (Free / Solo / Team + Paddle)** — implemented, tested, committed and pushed on this branch; **not merged, not deployed; online payment closed** until the owner configures Paddle (`docs/billing.md`). **Sandbox → live migration prepared, not done**: sandbox never tested against real Paddle; live account empty (`docs/billing.md` § 8) |
+| Last task changed application code? | no (handoff: docs, `.gitignore`); the task before it: **yes** — Studioma billing, DB schema 8 → 9 (additive) |
+| Codex access | **not verified** — Codex has not been run on this repository from this session; it reads `AGENTS.md` by itself |
+
+**Start here (Codex or Claude)**
+
+1. `git fetch origin`, then work on `claude/trusting-keller-rynk1j` (pushing to it updates PR #79) or branch off it:
+   `git switch -c codex/<topic> origin/claude/trusting-keller-rynk1j`. Production is `origin/main` @ `7b703d3`; a
+   local `main` in a container may be stale (it was `84d01c1` in the last Claude container).
+2. Read `docs/billing.md` before touching Studioma billing (§ 8 = sandbox → live migration rules).
+3. Checks: `AGENTS.md` § 5 (lint, then `tests/studioma/run.sh`).
+
+**Done on this branch, not in `main`** (commits `a267cfc`, `4c9af1e`, `b98b5d7`, `550f1a6` + handoff checkpoint):
+Studioma SaaS billing — plans Free / Solo / Team (`studioma/lib/plans.php`); entitlements and server-side limits
+(`lib/billing.php`, hooks in `lib/{access,studio,cards,collab,share,admin,core}.php`, `api.php`, `mcp.php`,
+`cron.php`); Paddle Billing REST v1 + signed webhook (`lib/paddle.php`, `paddle-webhook.php`, `pay/`); pricing page,
+Plan & billing settings, upgrade prompts (`assets/{billing,core,app,board}.js`, `app.css`, `app/index.html`,
+`index.html`); admin Billing analytics and complimentary plans (`lib/admin.php`, `assets/admin.js`); DB **v9**;
+sandbox/live config guard; `.env.example`; `config.example.php`; docs (`docs/billing.md`, README « Studioma › 8 »,
+DECISIONS S20–S24); tests (`tests/studioma/{billing.js,billing-config.php,fake-paddle.php}`, `setup.sh`,
+`router.php`, `run.sh`).
+
+**Unfinished / waiting**
+
+- Owner, before merging PR #79: complimentary plans for existing accounts, or `STM_PLANS_ENFORCED` false (§ 6).
+- Owner's Paddle choices, asked 2026-11-21, **not answered yet** (do not change them without the owner): tax mode
+  (agent's advice: keep `location`), payment methods (Google Pay on or off), balance currency (advice: keep USD).
+- Sandbox end-to-end test against real Paddle: **not done** (`docs/billing.md` § 8.2; needs the owner's sandbox
+  account and a staging copy). No live Paddle entity exists yet; none may be created before it passes.
+- Terms of Service, Privacy Policy, Refund Policy pages and a public contact address: **missing** (Paddle review).
+- Maillage test « stock enregistré » fails, also on unmodified `main` (cause unknown).
 
 **Next recommended action**
 
-1. **Owner**: merge this branch (compact feed, terms pop-up, Studios + visitors; DB migrates to v8 by itself), then on the server `cd ~/dehini-com && git checkout main && git pull
-   && cp -rf studioma ~/public_html/` (unless the deployment cron job was added). Check that the server clone is
-   on `main` (`git status --short --branch`) *(unverified)*.
-   **Agents: do not assume merges deploy automatically** until the owner adds the deployment cron job (README
-   « Installation › 4 »); `AGENTS.md` § 3 / `docs/DECISIONS.md` R2 describe the intended setup, not the state
-   observed on 2026-11-20.
-2. **Owner, after merge**: open `https://dehini.com/studioma/admin/` with the `/admin` password; send a test email
-   from *Emails › Sending settings*; add the cron job `/usr/local/bin/php ~/public_html/studioma/cron.php
-   >/dev/null 2>&1` every 5 minutes (PHP path *(unverified)* on this host); set `STM_MAIL_PER_HOUR` in
-   `studioma/config.php` if the host's hourly email limit is under 200 *(limit unverified)*.
-3. Owner, still open: server clone back on `main` *(unverified whether done)*, Meta token on the server and its
-   regeneration, cPanel « Force HTTPS Redirect », cookie-consent decision (`docs/ROADMAP.md`).
+1. **Owner, before merging** (`docs/billing.md` § 6): limits apply to every account as soon as this code is deployed
+   (existing accounts are on Free). Decide which accounts get a complimentary Solo/Team plan (admin › Accounts ›
+   account › Plan) — or set `define('STM_PLANS_ENFORCED', false);` in `studioma/config.php` on the server until
+   payments open. Then merge and deploy (`cd ~/dehini-com && git checkout main && git pull && cp -rf studioma
+   ~/public_html/`); the database migrates to v9 by itself.
+2. **Owner, sandbox test first** (`docs/billing.md` § 8.2): a sandbox Paddle account + a staging copy
+   `~/public_html/studioma-staging/` with its **own** `STM_DATA_DIR`, then the 9-step pass table. Live entities are
+   created only after it passes (§ 8.5); fill the ID mapping table (§ 8.4).
+3. **Owner, Paddle** (`docs/billing.md` § 5): account approval (needs Terms / Privacy / Refund pages on dehini.com —
+   not written yet), products + 4 prices in sandbox, API key, client token, default payment link
+   `https://dehini.com/studioma/pay/`, webhook `https://dehini.com/studioma/paddle-webhook.php`, settings in
+   `studioma/config.php`, sandbox test with a Paddle test card, then live.
+4. **Agent, next recommended task**: draft Studioma's Terms of Service, Privacy Policy and Refund Policy pages (Paddle
+   as merchant of record) and link them from the landing footer and the pricing page — ask the owner for the legal
+   name and contact email to display (never guess them; owner reviews the legal text). Then: the Maillage failure.
 
-**Blockers**: none for development. Unverified: production PHP CLI path for the cron, the host's hourly email
-limit, whether `fastcgi_finish_request`/`litespeed_finish_request` exist in production (only affects how fast
-campaigns go out without the cron).
+**Blockers**: Paddle account approval and credentials (owner). Unverified: behaviour against the real Paddle API
+(tested only against `tests/studioma/fake-paddle.php`, which follows Paddle Billing API v1 shapes); production PHP CLI
+path for cron; host's hourly email limit.
 
-**Validation at this checkpoint** (2026-11-21, on this branch): `tests/studioma/run.sh` **929 checks, 6 suites**
-(api, share, meta, mcp, **admin**, e2e) — all passed, 0 failures; `tests/maillage/run.sh` 181 — passed (it copies
-`admin/`); `tests/swanbida/run.sh` 119 — passed; `php -l` on 111 PHP files and `node --check` on all Studioma JS: 0 errors.
+**Validation at this checkpoint** (2026-11-21, re-run for the handoff on the code of `550f1a6`):
+`tests/studioma/run.sh` **1,036 checks, 7 suites** (api, share, meta, mcp, admin, **billing 107**, e2e) **+ 15 config
+unit checks** (`billing-config.php`) — all passed, 0 failures; `tests/swanbida/run.sh` **119 — passed**;
+`tests/maillage/run.sh` **180/181 — 1 failure that also happens on unmodified `main` (7b703d3)**: « stock enregistré :
+6 déclinaisons en stock » (no Maillage file changed; passed on 2026-11-20; flaky or date-dependent *(cause unknown)*);
+`php -l` 117 tracked PHP files and `node --check` 52 JS files: 0 errors; session hook: exit 0 in ~30 ms, read-only.
 
 ## Log (newest first)
+
+### 2026-11-21 — Claude Code — handoff checkpoint for Codex
+- Branch `claude/trusting-keller-rynk1j`, base `550f1a6` (= `origin` branch; 4 commits above `origin/main`
+  `7b703d3`); open PR #79 from this branch (not merged). Working tree was clean.
+- Verified: `CLAUDE.md` imports `@AGENTS.md` (unchanged); `AGENTS.md` tells both agents to read `HANDOFF.md`,
+  inspect Git and update the handoff after each task. Added step 1.5 (fetch, start from the branch named here,
+  beware a stale local `main`, check open PRs). Corrected the deployment facts without removing the rule: the
+  5-minute cron is documented but was absent from the server crontab on 2026-11-20 (`AGENTS.md` § 3,
+  `docs/PROJECT_CONTEXT.md`).
+- `.gitignore`: also ignores SSH keys (`id_rsa*`, `id_ed25519*`, `*.ppk`) and `credentials.json`; no tracked file
+  became ignored. Secret scan of tracked files: only fake test fixtures (e.g. `tests/swanbida/run.sh` dummy token).
+- HANDOFF « Current state » rewritten: start steps, done-on-branch list, unfinished work, owner choices pending.
+- Tests: see « Validation at this checkpoint » (Studioma 1,036 + 15, SWANBIDA 119 passed; Maillage 180/181, known).
+- No application code changed. Codex access not verified.
+
+### 2026-11-21 — Claude Code — Studioma: Paddle sandbox → live migration preparation
+- Owner's brief: verify sandbox first, audit live read-only, prepare the live setup without publishing or taking a
+  real payment; never delete/recreate/rotate live entities; never expose credentials.
+- MCP: no `paddle-sandbox` / `paddle-live` servers in the repo or session. The owner connected the claude.ai **Paddle**
+  connector: it is the **live** account (`environment: production`) with **read-only** scopes. No sandbox connector.
+- Sandbox: **not passed** — the billing code was never deployed and no sandbox credentials exist anywhere; the only
+  evidence is the fake-Paddle suite. No live entity created.
+- Live audit (read-only, nothing changed): no products, prices, discounts, notification destinations, API keys,
+  client tokens, checkout domains; default payment link not set; website `https://dehini.com/studioma/`; tax mode
+  `location`; balance currency USD; card, PayPal, Apple Pay, Bancontact enabled (Google Pay off); statement
+  descriptor `STUDIOMA`; legal name and email filled, display name empty; onboarding verification **in progress**
+  (account setup step; automated review pending) — not started or changed by the agent.
+- Code: `billing_config_check()` / `billing_config_problems()` (`studioma/lib/billing.php`) keep payment closed on a
+  sandbox/live mix-up and list problems by name in admin › Billing (`lib/admin.php`, `assets/admin.js`, `.notice-list`
+  in `app.css`); `.env.example` (names + placeholders only); `docs/billing.md` § 8 (guard, staging sandbox test, live
+  audit, ID mapping, go-live checklist); DECISIONS S24; ROADMAP.
+- Tests: new `tests/studioma/billing-config.php` (15 checks, run first by `run.sh`); `billing.js` +1 check (no config
+  problem with the test settings). `tests/studioma/run.sh`: **1,036 checks, 7 suites + 15 unit checks — all passed**.
+- Gaps found for Paddle's website review: no Terms of Service / Privacy Policy / Refund Policy pages, no contact
+  address on the Studioma landing page or pricing page.
+
+### 2026-11-21 — Claude Code — Studioma: SaaS plans and Paddle billing
+- Owner's brief: complete subscription system with Free / Solo ($12 / $120) / Team ($29 / $290), server-side limits,
+  Paddle Billing, pricing page, Plan & billing settings, upgrade/downgrade, admin analytics, tests.
+- Audit: no billing existed; PHP 8 + SQLite, no package manager (no Paddle SDK — REST v1 via curl); ownership =
+  `projects.owner_uid`; roles in `lib/access.php`. Branch fast-forwarded to `main` 7b703d3 first.
+- Checkpoints: `a267cfc` backend (schema v9, `lib/plans.php`, `lib/billing.php`, `lib/paddle.php`,
+  `paddle-webhook.php`, hooks in access/studio/cards/collab/share/admin, MCP), `4c9af1e` UI (`assets/billing.js`,
+  `pay/`, admin Billing), then docs (`docs/billing.md`, README « Studioma › 8 », DECISIONS S20–S23, ROADMAP,
+  PROJECT_CONTEXT, `config.example.php`, tests README).
+- Tests: new `tests/studioma/billing.js` (106 checks, fake Paddle `tests/studioma/fake-paddle.php` routed by
+  `router.php`, setup with `BILLING=1`); other suites run with `STM_PLANS_ENFORCED` false. Two e2e waits fixed
+  (redraw race; the new « Plan & billing » link shares the `.ai-link` class).
+- Committed and pushed on this branch; not merged.
 
 ### 2026-11-21 — Claude Code — Studioma admin: Studios and real-time visitors
 - Owner: « as admin i need to see studios created … and numbers of visiters in realtime and who is active ».

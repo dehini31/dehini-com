@@ -129,9 +129,12 @@ function guest_principal(string $token): array
     $info = [
         'share' => $sh, 'gid' => $g ? (int) $g['id'] : 0, 'email' => $g ? (string) $g['email'] : '', 'row' => $g,
         'role' => $g && isset(GUEST_RANK[$g['role']]) ? (string) $g['role'] : 'viewer',
+        // Formule Free du compte propriétaire : invités en lecture seule, quels que soient leurs droits enregistrés.
+        'capped' => !guest_collab_allowed(studio_account((int) $sh['studio_id'])),
         'locked' => $sh['kind'] === 'private' && !$g,
         'levels' => ids_in(jarr($sh['levels'])), 'scope' => guest_scope($g),
     ];
+    if ($info['capped']) $info['role'] = 'viewer';
     if ($g) {
         $GLOBALS['stm_guest'] = $info;
         if ((int) $g['last_seen'] < time() - 300) q('UPDATE share_guests SET last_seen = ? WHERE id = ?', [time(), $g['id']]);
@@ -289,6 +292,7 @@ function guest_view(array $u): array
         'pending' => $row && (int) $row['req_at'] > 0 ? (string) $row['req_role'] : '',
         'limited' => $g['role'] === 'editor' && !scope_all($scope),
         'levels_limited' => (bool) $g['levels'],
+        'requests' => empty($g['capped']),   // false : la formule du Studio ne permet pas de demander plus de droits
     ];
 }
 /** Invités qu'un membre peut désigner pour valider une carte (rôle commenter ou editor, adresse vérifiée). */
@@ -475,9 +479,11 @@ function api_share_verify(array $b, array $u): array
     $g = row('SELECT * FROM share_guests WHERE id = ?', [$gid]);
     share_log((int) $sh['studio_id'], (int) $sh['id'], 0, $g, 0, 'access', 'verified their email and opened the ' . $sh['kind'] . ' link');
     guest_session_start($sh, $gid);
-    $principal = ['id' => 0, 'guest' => ['share' => $sh, 'gid' => $gid, 'email' => $email, 'role' => (string) $g['role'], 'locked' => false, 'levels' => ids_in(jarr($sh['levels'])), 'scope' => guest_scope($g), 'row' => $g]];
+    $capped = !guest_collab_allowed(studio_account((int) $sh['studio_id']));   // formule Free : lecture seule
+    $principal = ['id' => 0, 'guest' => ['share' => $sh, 'gid' => $gid, 'email' => $email, 'role' => $capped ? 'viewer' : (string) $g['role'], 'capped' => $capped,
+        'locked' => false, 'levels' => ids_in(jarr($sh['levels'])), 'scope' => guest_scope($g), 'row' => $g]];
     $asked = '';
-    if ($c['req_role'] !== '') $asked = guest_request($sh, $g, (string) $c['req_role'], (string) $c['req_note']);
+    if ($c['req_role'] !== '' && !$capped) $asked = guest_request($sh, $g, (string) $c['req_role'], (string) $c['req_note']);
     return ['guest' => guest_view($principal), 'requested' => $asked];
 }
 /** Enregistre une demande de droits et prévient le responsable. Retourne pending, ou already si l'invité a déjà ce droit. */
@@ -515,6 +521,7 @@ function api_share_request(array $b, array $u): array
     if (!$g['gid']) fail('Verify your email address first.', 401, 'verify');
     $role = (string) ($b['role'] ?? '');
     if (!in_array($role, ['commenter', 'editor'], true)) fail('Choose the access you need.');
+    if (!empty($g['capped'])) fail('This Studio\'s guest links are view-only: the owner\'s plan doesn\'t include guest comments or edits.', 403, 'guest_view_only');
     $res = guest_request($g['share'], $g['row'], $role, str_clean($b['note'] ?? '', 500));
     if ($res === 'already') fail('You already have this access.', 409, 'already');
     return ['guest' => guest_view(guest_principal((string) $g['share']['token']))];
@@ -599,6 +606,14 @@ function api_share_save(array $b, array $u): array
     if (!in_array($kind, SHARE_KINDS, true)) fail('Choose a public or a private link.');
     $uid = (int) $u['id'];
     tx(function () use ($s, $kind, $b, $uid): void {
+        // Formule du compte propriétaire : liens privés (Solo, Team), nombre de liens actifs (Free : 2).
+        $cur = row('SELECT * FROM shares WHERE studio_id = ? AND kind = ?', [$s['id'], $kind]);
+        $willBeActive = array_key_exists('active', $b) ? (bool) $b['active'] : ($cur ? (bool) $cur['active'] : true);
+        if ($willBeActive && (!$cur || !(int) $cur['active'])) {
+            $account = project_account($s['project']);
+            if ($kind === 'private') need_feature($account, 'private_links');
+            need_share_slot($account, $cur ? (int) $cur['id'] : 0);
+        }
         $sh = share_get_or_create($s, $kind, $uid);
         $set = [];
         $what = [];
@@ -662,6 +677,8 @@ function api_share_guest(array $b, array $u): array
     $sid = (int) $s['id'];
     $uid = (int) $u['id'];
     $op = (string) ($b['op'] ?? '');
+    // Ajouter des invités et leur donner des droits : Solo et Team. Retirer un accès reste toujours possible.
+    if (in_array($op, ['add', 'approve', 'role'], true)) need_feature(project_account($s['project']), 'guest_collab');
     if ($op === 'add') {
         $kind = (string) ($b['kind'] ?? 'private');
         if (!in_array($kind, SHARE_KINDS, true)) fail('Choose a public or a private link.');

@@ -81,7 +81,7 @@
   };
 
   /* ---------------------------------------------------------------- cadre */
-  const NAV = [['#/', 'chart', 'Live overview'], ['#/accounts', 'users', 'Accounts'], ['#/studios', 'board', 'Studios'], ['#/content', 'shield', 'Moderation'], ['#/emails', 'mail', 'Emails'], ['#/system', 'settings', 'System']];
+  const NAV = [['#/', 'chart', 'Live overview'], ['#/accounts', 'users', 'Accounts'], ['#/studios', 'board', 'Studios'], ['#/content', 'shield', 'Moderation'], ['#/billing', 'zap', 'Billing'], ['#/emails', 'mail', 'Emails'], ['#/system', 'settings', 'System']];
   function shell() {
     SM.set($('#app'), html`<div class="app adm">
       <aside class="side">
@@ -368,6 +368,7 @@
         <div class="chips-row">${u.online ? html`<span class="chip chip-ok"><span class="on-dot"></span>online</span>` : ''}${u.google ? html`<span class="chip">Google sign-in</span>` : ''}${u.has_password ? html`<span class="chip">Password</span>` : ''}${u.pro ? html`<span class="chip">In talent directory</span>` : ''}${u.location ? html`<span class="chip">${icon('pin')}${u.location}</span>` : ''}</div>
         <section><h3>Activity</h3><div class="kv">${stat('Joined', fmt.date(u.created))}${stat('Last seen', u.last_seen ? fmt.ago(u.last_seen) : '—')}${stat('Active days (30)', s.active_days)}${stat('Open sessions', s.sessions)}${stat('Terms accepted', u.terms_at ? fmt.date(u.terms_at) : 'not yet')}</div>
           <div class="days" title="Active days over the last 30 days" aria-label="Active on ${s.active_days} of the last 30 days">${DAYS30().map((day) => html`<i class="${on.has(day) ? 'on' : ''}" title="${day}"></i>`)}</div></section>
+        <section><h3>Plan</h3>${planBlock(d.billing)}</section>
         <section><h3>Usage</h3><div class="kv">
           ${stat('Projects (owner)', `${s.projects} (${s.projects_owned})`)}${stat('Studios (direct)', s.studios)}${stat('Cards created', s.cards)}${stat('Card comments', s.comments)}
           ${stat('Posts', s.posts)}${stat('Messages sent', s.messages)}${stat('Case studies', s.cases)}${stat('Followers', s.followers)}${stat('Connections', s.connections)}${stat('Files', `${s.files} · ${bytes(s.bytes)}`)}
@@ -392,6 +393,29 @@
         ${d.log.length ? html`<section><h3>Administration history</h3>${d.log.map((l) => html`<div class="list-row"><span class="grow"><b>${l.action.replace(/_/g, ' ')}</b><small class="muted">${l.text}</small></span><small class="muted nowrap">${fmt.time(l.created)}</small></div>`)}</section>` : ''}
       </div>`);
   }
+  /** Formule d'un compte, son usage et la formule offerte (fiche d'un compte). */
+  const planBlock = (b) => {
+    if (!b) return '';
+    const s = b.subscription;
+    const lim = (v) => (v == null ? '∞' : fmt.num(v));
+    return html`<div class="kv">
+        <div><span>Plan</span><b>${b.plan_name}${s && s.provider === 'manual' ? ' (offered)' : ''}</b></div>
+        <div><span>State</span><b>${s && s.cancel_at ? 'ends ' + fmt.date(s.cancel_at) : b.state}</b></div>
+        ${s && s.provider === 'paddle' ? html`<div><span>Billing</span><b>${'$' + s.amount / 100} / ${s.interval} · ${s.env}</b></div><div><span>Renews</span><b>${s.period_end ? fmt.date(s.period_end) : '—'}</b></div>` : ''}
+        ${s && s.provider === 'manual' ? html`<div><span>Offered until</span><b>${s.period_end ? fmt.date(s.period_end) : 'no end date'}</b></div>` : ''}
+        <div><span>Projects</span><b>${b.usage.projects} / ${lim(b.limits.projects)}</b></div><div><span>Studios</span><b>${b.usage.studios} / ${lim(b.limits.studios)}</b></div>
+        <div><span>Members</span><b>${b.usage.members} / ${lim(b.limits.members)}</b></div><div><span>Cards this month</span><b>${b.usage.cards_month} / ${lim(b.limits.cards_month)}</b></div>
+      </div>
+      ${b.over.length ? html`<p class="notice notice-warn">${icon('alert')}<span>Above the plan: ${b.over.map((o) => o.label + ' ' + o.used + '/' + o.max).join(', ')}</span></p>` : ''}
+      <form class="row row-wrap" data-form="adm-plan"><select class="input input-sm" name="plan" aria-label="Plan">${['free', 'solo', 'team'].map((k) => html`<option value="${k}" ${k === (s && s.provider === 'manual' ? s.plan : 'free') ? 'selected' : ''}>${k === 'free' ? 'No offered plan' : 'Offer ' + k[0].toUpperCase() + k.slice(1)}</option>`)}</select>
+        <input class="input input-sm" type="date" name="until" aria-label="Until (optional)" style="max-width:170px"><button class="btn btn-sm" type="submit">Apply</button></form>
+      <p class="muted small">An offered plan is free for this account (no payment, not counted in revenue). Paid subscriptions are managed in Paddle.</p>`;
+  };
+  SM.forms['adm-plan'] = async (form, data) => {
+    const r = await SM.post('admin_user_action', { id: ud.data.user.id, op: 'plan', plan: data.plan, until: data.until || '' });
+    renderUser(r);
+    SM.toast('Plan updated');
+  };
   const mailChip = (s) => (s === 'sent' ? html`<span class="chip chip-ok">sent</span>` : html`<span class="chip chip-bad">failed</span>`);
   const DONE = {
     confirm_email: 'Email marked as confirmed', send_reset: 'Password reset link sent', send_confirm: 'Confirmation link sent', signout: 'Signed out everywhere',
@@ -760,6 +784,47 @@
     out.className = r.sent ? 'result-ok' : 'result-bad';
     out.textContent = r.sent ? (r.transport === 'log' ? 'Written to the test log (not really sent).' : 'Sent. Check the inbox (and the spam folder) of ' + data.to + '.') : 'Failed: ' + r.error;
   };
+
+  /* ------------------------------------------------------------ abonnements */
+  SM.route(/^\/billing$/, async (m, ctx) => {
+    setTitle('Billing');
+    const env = SM.query().get('env') === 'sandbox' ? 'sandbox' : 'production';
+    const d = await SM.get('admin_billing', { env });
+    if (!ctx.alive()) return;
+    const M = d.metrics;
+    const cur = (o) => { const k = Object.keys(o); return k.length ? k.map((c) => (c === 'USD' ? '$' : c + ' ') + (o[c] / 100).toLocaleString('en-US', { maximumFractionDigits: 0 })).join(' + ') : '$0'; };
+    const STATUS = { active: 'chip-ok', trialing: 'chip-soft', past_due: 'chip-bad', paused: 'chip-warn', canceled: '', expired: '' };
+    SM.set(ctx.view, html`<div class="page">
+      <header class="page-head"><div><h1>Billing</h1><p class="muted">Subscriptions from verified Paddle data. ${env === 'production' ? 'Live payments only.' : 'Sandbox (test) payments — never counted as revenue.'}</p></div>
+        <nav class="seg-inline">${['production', 'sandbox'].map((e) => html`<a class="btn btn-sm ${env === e ? 'btn-soft is-on' : 'btn-ghost'}" href="#/billing${e === 'sandbox' ? '?env=sandbox' : ''}">${e === 'production' ? 'Live' : 'Sandbox'}</a>`)}</nav></header>
+      ${!d.available ? html`<p class="notice notice-warn">${icon('alert')}<span><b>Online payment is off.</b> ${d.missing.length ? html`Missing settings in <code>studioma/config.php</code>: ${d.missing.join(', ')}. ` : ''}The pricing page shows paid plans as “Coming soon”.</span></p>` : html`<p class="notice notice-ok">${icon('check')}<span>Online payment is on (Paddle ${d.configured_env}).</span></p>`}
+      ${(d.problems || []).length ? html`<div class="notice notice-warn">${icon('alert')}<span><b>Paddle settings to fix</b> (payment stays closed until they are consistent):<ul class="notice-list">${d.problems.map((p) => html`<li>${p}</li>`)}</ul></span></div>` : ''}
+      ${!d.enforced ? html`<p class="notice notice-warn">${icon('alert')}<span>Plan limits are switched off (STM_PLANS_ENFORCED = false).</span></p>` : ''}
+      <div class="tiles">
+        ${tile('users', 'Accounts', fmt.num(M.users), `${fmt.num(M.free)} on Free · ${fmt.num(M.complimentary)} offered`)}
+        ${tile('zap', 'Paid subscribers', fmt.num(M.paid), `${fmt.num(M.solo)} Solo · ${fmt.num(M.team)} Team${M.trialing ? ' · ' + M.trialing + ' trialing' : ''}`, M.paid ? 'tile-ok' : '')}
+        ${tile('chart', 'MRR', cur(M.mrr), 'yearly plans counted as 1/12')}
+        ${tile('award', 'ARR', cur(M.arr), 'MRR × 12')}
+        ${tile('user-plus', 'Conversions', fmt.num(M.converted), `${M.conversion_rate}% of accounts · ${fmt.num(M.converted_30)} in 30 days`)}
+        ${tile('alert', 'Churn & risk', fmt.num(M.canceled_30), `canceled in 30 days · ${M.past_due} past due · ${M.scheduled_cancel} ending`, M.past_due ? 'tile-bad' : '')}
+      </div>
+      <section class="panel pad"><h2>${icon('layers')} Plan distribution</h2><div class="kv">
+        <div><span>Solo monthly</span><b>${M.distribution.solo.month}</b></div><div><span>Solo yearly</span><b>${M.distribution.solo.year}</b></div>
+        <div><span>Team monthly</span><b>${M.distribution.team.month}</b></div><div><span>Team yearly</span><b>${M.distribution.team.year}</b></div>
+        <div><span>Collected (30 days)</span><b>${'$' + (M.revenue_30 / 100).toLocaleString('en-US')}</b></div><div><span>Canceled (all time)</span><b>${M.canceled_total}</b></div></div></section>
+      <h2 class="section-title">${icon('list')} Subscriptions</h2>
+      ${d.subscriptions.length ? html`<section class="panel table-wrap"><table class="table"><thead><tr><th>Account</th><th>Plan</th><th>State</th><th class="hide-s">Price</th><th class="hide-s">Period end</th><th class="hide-s">Source</th></tr></thead>
+        <tbody>${d.subscriptions.map((s) => html`<tr${s.user ? html` class="is-click" data-act="adm-user" data-id="${s.user.id}"` : ''}><td>${s.user ? html`<b>${s.user.name}</b><br><small>${s.user.email}</small>` : 'Deleted account'}</td>
+          <td>${s.plan} ${s.interval ? html`<small>· ${s.interval}</small>` : ''}</td><td><span class="chip ${STATUS[s.status] || ''}">${s.status}${s.cancel_at ? ' · ends ' + fmt.date(s.cancel_at) : ''}</span>${s.note ? html`<br><small class="result-bad">${s.note}</small>` : ''}</td>
+          <td class="hide-s">${s.provider === 'manual' ? 'offered' : '$' + s.amount / 100}</td><td class="hide-s nowrap">${s.period_end ? fmt.date(s.period_end) : '—'}</td><td class="hide-s"><small>${s.provider === 'manual' ? 'admin' : 'Paddle ' + s.env}</small></td></tr>`)}</tbody></table></section>`
+        : SM.empty('zap', 'No subscription yet', 'Paid subscriptions appear here as soon as Paddle confirms them.')}
+      <h2 class="section-title">${icon('history')} Paddle notifications</h2>
+      ${d.events.length ? html`<section class="panel table-wrap"><table class="table"><thead><tr><th>When</th><th>Event</th><th>Result</th></tr></thead>
+        <tbody>${d.events.map((e) => html`<tr><td class="nowrap"><small>${fmt.time(e.received)}</small></td><td>${e.type}<br><small class="muted">${e.event_id}</small></td>
+          <td><span class="chip ${e.status === 'processed' ? 'chip-ok' : e.status === 'failed' || e.status === 'unmatched' ? 'chip-bad' : ''}">${e.status}</span>${e.error ? html`<br><small class="result-bad">${e.error}</small>` : ''}</td></tr>`)}</tbody></table></section>`
+        : html`<p class="muted">No notification received yet. Webhook address: <code>${SM.base}paddle-webhook.php</code></p>`}
+    </div>`);
+  });
 
   /* ---------------------------------------------------------------- système */
   SM.route(/^\/system$/, async (m, ctx) => {

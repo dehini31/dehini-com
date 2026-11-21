@@ -2,7 +2,9 @@
 # Lance toute la batterie de tests de Studioma sur un faux hébergement neuf :
 #   tests/studioma/run.sh [dossier] [port]   (par défaut : un dossier temporaire, port 8097)
 # D'abord l'API seule (api.js), le partage avec des invités sans compte (share.js), le suivi Meta (meta.js), puis le serveur MCP
-# et son OAuth (mcp.js), l'administration (admin.js), puis l'application dans un navigateur (e2e.js, Playwright / Chromium).
+# et son OAuth (mcp.js), l'administration (admin.js), les formules et abonnements avec un faux Paddle (billing.js, limites
+# appliquées, et billing-config.php pour le contrôle des réglages sandbox / production), puis l'application dans un
+# navigateur (e2e.js, Playwright / Chromium).
 set -euo pipefail
 HERE=$(cd "$(dirname "$0")" && pwd)
 REPO=$(cd "$HERE/../.." && pwd)
@@ -15,7 +17,7 @@ cleanup() { [ -n "$P1" ] || return 0; pkill -P "$P1" 2>/dev/null || true; kill "
 trap cleanup EXIT
 fresh() {
   cleanup
-  "$HERE/setup.sh" "$DIR" >/dev/null
+  BILLING=${1:-0} "$HERE/setup.sh" "$DIR" "$PORT" >/dev/null
   php -r '$i = imagecreatetruecolor(900, 600); imagefill($i, 0, 0, imagecolorallocate($i, 91, 75, 255)); imagefilledellipse($i, 450, 300, 380, 380, imagecolorallocate($i, 255, 122, 89)); imagepng($i, $argv[1]);' "$DIR/photo.png"
   echo "pas une image" > "$DIR/faux.jpg"
   echo "Notes de tournage" > "$DIR/notes.txt"
@@ -23,6 +25,7 @@ fresh() {
   for _ in 1 2 3 4 5 6 7 8 9 10; do curl -s -o /dev/null "http://127.0.0.1:$PORT/studioma/assets/favicon.svg" && break; sleep 0.3; done
 }
 cd "$REPO"
+php "$HERE/billing-config.php"   # contrôle des réglages Paddle (sandbox / production), sans serveur
 fresh
 node "$HERE/api.js" "http://127.0.0.1:$PORT" "$DIR"
 fresh
@@ -33,5 +36,7 @@ fresh
 node "$HERE/mcp.js" "http://127.0.0.1:$PORT" "$DIR"
 fresh
 node "$HERE/admin.js" "http://127.0.0.1:$PORT" "$DIR"
+fresh 1
+node "$HERE/billing.js" "http://127.0.0.1:$PORT" "$DIR"
 fresh
 node "$HERE/e2e.js" "http://127.0.0.1:$PORT" "$DIR"

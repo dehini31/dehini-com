@@ -343,6 +343,7 @@ function api_admin_user(array $b, array $a): array
             return ['id' => (int) $g['id'], 'name' => (string) $g['name'], 'personal' => (string) $g['client_id'] === '', 'created' => (int) $g['created'], 'used' => (int) $g['used']];
         }, rows('SELECT * FROM ai_grants WHERE uid = ? ORDER BY id DESC', [$uid])),
         'emails' => rows('SELECT created, subject, kind, status, error FROM mail_log WHERE email = ? ORDER BY id DESC LIMIT 25', [(string) $t['email']]),
+        'billing' => billing_summary($uid),
         'log' => rows('SELECT created, action, text FROM admin_log WHERE target = ? ORDER BY id DESC LIMIT 25', ['user:' . $uid]),
     ];
 }
@@ -413,6 +414,22 @@ function api_admin_user_action(array $b, array $a): array
             $error = mail_send_logged($email, $subject, $html, $text, 'admin');
             admin_log('email', $target, $subject);
             if ($error !== '') fail('The email could not be sent: ' . $error, 502, 'mail');
+            break;
+        case 'plan':
+            // Formule offerte par l'administration (sans paiement, jamais comptée dans le chiffre d'affaires).
+            $plan = (string) ($b['plan'] ?? '');
+            if (!isset(STM_PLANS[$plan])) fail('Choose Free, Solo or Team.');
+            $until = date_clean((string) ($b['until'] ?? ''));
+            if (($b['until'] ?? '') !== '' && $until === '') fail('Enter the end date as YYYY-MM-DD.');
+            tx(function () use ($uid, $plan, $until): void {
+                q("UPDATE subscriptions SET status = 'canceled', canceled_at = ?, updated = ? WHERE uid = ? AND provider = 'manual' AND status = 'active'", [time(), time(), $uid]);
+                if ($plan !== 'free') {
+                    insert('subscriptions', ['uid' => $uid, 'provider' => 'manual', 'env' => 'manual', 'plan' => $plan, 'status' => 'active', 'period_start' => time(),
+                        'period_end' => $until !== '' ? (int) strtotime($until . ' 23:59:59') : 0, 'note' => 'Granted by the administration', 'created' => time(), 'updated' => time()]);
+                }
+            });
+            billing_cache_clear();
+            admin_log('plan', $target, $email . ' — ' . ($plan === 'free' ? 'complimentary plan removed' : 'complimentary ' . STM_PLANS[$plan]['name'] . ($until !== '' ? ' until ' . $until : '')));
             break;
         case 'delete':
             if (strtolower(trim(is_string($b['confirm'] ?? null) ? $b['confirm'] : '')) !== strtolower($email)) fail('Type the account\'s email address to confirm.');
@@ -925,6 +942,60 @@ function api_admin_studio(array $b, array $a): array
         ],
         'shares' => array_map(function (array $x): array { return ['kind' => (string) $x['kind'], 'active' => (bool) $x['active'], 'guests' => (int) $x['n']]; },
             rows("SELECT x.kind, x.active, (SELECT COUNT(*) FROM share_guests g WHERE g.share_id = x.id AND g.status = 'active') AS n FROM shares x WHERE x.studio_id = ?", [$sid])),
+    ];
+}
+
+/* ------------------------------------------------------------ abonnements */
+
+/**
+ * GET admin_billing {env} : indicateurs des abonnements, calculés sur les seuls abonnements Paddle vérifiés de
+ * l'environnement choisi (production par défaut ; sandbox = tests, jamais mêlés). Un compte compte une fois (son
+ * meilleur abonnement en cours) ; MRR = prix mensuel, ou annuel / 12. Les formules offertes sont à part.
+ */
+function api_admin_billing(array $b, array $a): array
+{
+    $env = ($b['env'] ?? '') === 'sandbox' ? 'sandbox' : 'production';
+    $now = time();
+    $grace = $now - STM_PAST_DUE_GRACE_DAYS * 86400;
+    $live = rows("SELECT * FROM subscriptions WHERE provider = 'paddle' AND env = ? AND (status IN ('trialing', 'active') OR (status = 'past_due' AND past_due_since > ?)) ORDER BY id", [$env, $grace]);
+    $best = [];
+    foreach ($live as $s) {
+        $u = (int) $s['uid'];
+        if (!isset($best[$u]) || plan_def($s['plan'])['rank'] > plan_def($best[$u]['plan'])['rank']) $best[$u] = $s;
+    }
+    $mrr = [];
+    $dist = ['solo' => ['month' => 0, 'year' => 0], 'team' => ['month' => 0, 'year' => 0]];
+    $trialing = 0;
+    foreach ($best as $s) {
+        if (isset($dist[$s['plan']][$s['interval']])) $dist[$s['plan']][$s['interval']]++;
+        if ($s['status'] === 'trialing') { $trialing++; continue; }   // pas encore payé
+        $cur = $s['currency'] !== '' ? $s['currency'] : 'USD';
+        $mrr[$cur] = ($mrr[$cur] ?? 0) + ($s['interval'] === 'year' ? (int) round((int) $s['amount'] / 12) : (int) $s['amount']);
+    }
+    $users = (int) val('SELECT COUNT(*) FROM users');
+    $comp = (int) val("SELECT COUNT(DISTINCT uid) FROM subscriptions WHERE provider = 'manual' AND status = 'active' AND (period_end = 0 OR period_end > ?)", [$now]);
+    $everPaid = (int) val("SELECT COUNT(DISTINCT uid) FROM subscriptions WHERE provider = 'paddle' AND env = ?", [$env]);
+    $firsts = rows("SELECT uid, MIN(created) AS first FROM subscriptions WHERE provider = 'paddle' AND env = ? GROUP BY uid", [$env]);
+    $conv30 = count(array_filter($firsts, function (array $r) use ($now): bool { return (int) $r['first'] >= $now - 30 * 86400; }));
+    $list = rows("SELECT s.*, u.name, u.email, u.handle, u.avatar FROM subscriptions s LEFT JOIN users u ON u.id = s.uid WHERE s.env = ? OR s.provider = 'manual' ORDER BY s.id DESC LIMIT 60", [$env]);
+    return [
+        'env' => $env, 'configured_env' => billing_env(), 'available' => billing_available(), 'missing' => billing_missing(), 'problems' => billing_config_problems(), 'enforced' => billing_enforced(),
+        'metrics' => [
+            'users' => $users, 'paid' => count($best), 'free' => max(0, $users - count($best) - $comp), 'complimentary' => $comp, 'trialing' => $trialing,
+            'solo' => $dist['solo']['month'] + $dist['solo']['year'], 'team' => $dist['team']['month'] + $dist['team']['year'], 'distribution' => $dist,
+            'mrr' => $mrr, 'arr' => array_map(function (int $v): int { return $v * 12; }, $mrr),
+            'past_due' => count(array_filter($best, function (array $s): bool { return $s['status'] === 'past_due'; })),
+            'scheduled_cancel' => count(array_filter($best, function (array $s): bool { return (int) $s['cancel_at'] > 0; })),
+            'canceled_total' => (int) val("SELECT COUNT(*) FROM subscriptions WHERE provider = 'paddle' AND env = ? AND status = 'canceled'", [$env]),
+            'canceled_30' => (int) val("SELECT COUNT(*) FROM subscriptions WHERE provider = 'paddle' AND env = ? AND status = 'canceled' AND updated >= ?", [$env, $now - 30 * 86400]),
+            'converted' => $everPaid, 'converted_30' => $conv30, 'conversion_rate' => $users ? round($everPaid / $users * 100, 1) : 0,
+            'revenue_30' => (int) val("SELECT COALESCE(SUM(amount), 0) FROM billing_transactions WHERE env = ? AND status IN ('completed', 'paid') AND billed_at >= ?", [$env, $now - 30 * 86400]),
+        ],
+        'subscriptions' => array_map(function (array $s): array {
+            return subscription_view($s) + ['user' => $s['name'] !== null ? ['id' => (int) $s['uid'], 'name' => (string) $s['name'], 'email' => (string) $s['email'], 'handle' => (string) $s['handle'], 'avatar' => (string) $s['avatar']] : null,
+                'provider_sub_id' => (string) $s['provider_sub_id'], 'created' => (int) $s['created']];
+        }, $list),
+        'events' => rows('SELECT event_id, type, status, error, uid, received FROM billing_events ORDER BY id DESC LIMIT 40'),
     ];
 }
 
