@@ -37,7 +37,7 @@ const ROUTES = [
     'me' => ['GET', 'public'], 'pixel' => ['GET', 'public'], 'signup' => ['POST', 'public'], 'login' => ['POST', 'public'], 'logout' => ['POST', 'public'],
     'forgot' => ['POST', 'public'], 'reset' => ['POST', 'public'], 'password' => ['POST', 'user'], 'account_save' => ['POST', 'user'],
     'account_delete' => ['POST', 'user'], 'counts' => ['GET', 'user'], 'email_confirm_send' => ['POST', 'user'], 'email_confirm' => ['POST', 'user'],
-    'terms_accept' => ['POST', 'user'],
+    'terms_accept' => ['POST', 'user'], 'ping' => ['POST', 'public'],
     'google' => ['POST', 'public'], 'google_link' => ['POST', 'user'], 'google_unlink' => ['POST', 'user'],
     // Assistants IA (serveur MCP) : écran d'accord OAuth, applications connectées, jetons personnels
     'oauth_request' => ['GET', 'user'], 'oauth_decide' => ['POST', 'user'], 'ai_access' => ['GET', 'user'],
@@ -82,7 +82,7 @@ const ROUTES = [
     'admin_mail' => ['GET', 'admin'], 'admin_mail_log' => ['GET', 'admin'], 'admin_mail_test' => ['POST', 'admin'],
     'admin_campaign' => ['GET', 'admin'], 'admin_campaign_preview' => ['POST', 'admin'], 'admin_campaign_save' => ['POST', 'admin'],
     'admin_campaign_test' => ['POST', 'admin'], 'admin_campaign_send' => ['POST', 'admin'], 'admin_campaign_action' => ['POST', 'admin'],
-    'admin_pump' => ['POST', 'admin'], 'admin_system' => ['GET', 'admin'],
+    'admin_pump' => ['POST', 'admin'], 'admin_system' => ['GET', 'admin'], 'admin_studios' => ['GET', 'admin'], 'admin_studio' => ['GET', 'admin'],
 ];
 
 /**
@@ -245,6 +245,34 @@ function api_account_save(array $b, array $u): array
         q('UPDATE users SET settings = ? WHERE id = ?', [jenc($s), $uid]);
     }
     return me_view(user_by_id($uid), (string) $u['s_csrf']);
+}
+
+/* ------------------------------------------------- visiteurs en temps réel */
+
+/**
+ * POST ping {p} : la page ou l'application signale qu'elle est ouverte (au chargement, à chaque écran, puis
+ * toutes les 60 s tant que l'onglet est visible). Sert aux « visiteurs en ce moment » de l'administration.
+ */
+function api_ping(array $b, ?array $u): array
+{
+    $ua = (string) ($_SERVER['HTTP_USER_AGENT'] ?? '');
+    if ($ua === '' || preg_match('/bot|crawl|spider|slurp|facebookexternalhit|preview|monitor/i', $ua)) return [];
+    $page = strtolower((string) ($b['p'] ?? ''));
+    if (!preg_match('/^[a-z0-9-]{1,20}$/', $page)) $page = 'other';
+    $now = time();
+    $vid = $u ? 'u' . $u['id'] : 'a' . substr(hash('sha256', install_salt() . '|' . date('Y-m-d') . '|' . ($_SERVER['REMOTE_ADDR'] ?? '') . '|' . $ua), 0, 24);
+    $device = preg_match('/Mobi|Android|iPhone|iPad/i', $ua) ? 'mobile' : 'desktop';
+    $uid = $u ? (int) $u['id'] : 0;
+    q('INSERT OR IGNORE INTO visitors (vid, uid, page, device, first_seen, last_seen, hits) VALUES (?, ?, ?, ?, ?, ?, 0)', [$vid, $uid, $page, $device, $now, $now]);
+    // Une visite reprend après 30 minutes d'absence : « depuis » repart de maintenant.
+    q('UPDATE visitors SET uid = ?, page = ?, device = ?, first_seen = CASE WHEN last_seen < ? THEN ? ELSE first_seen END, last_seen = ?, hits = hits + 1 WHERE vid = ?',
+        [$uid, $page, $device, $now - 1800, $now, $now, $vid]);
+    q('INSERT OR IGNORE INTO visit_days (day, vid, uid) VALUES (?, ?, ?)', [date('Y-m-d'), $vid, $uid]);
+    if (random_int(1, 200) === 1) {
+        q('DELETE FROM visitors WHERE last_seen < ?', [$now - 2 * 86400]);
+        q('DELETE FROM visit_days WHERE day < ?', [date('Y-m-d', $now - 400 * 86400)]);
+    }
+    return [];
 }
 
 /* ------------------------------------------------- conditions d'utilisation */

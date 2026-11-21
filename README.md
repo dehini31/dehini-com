@@ -1762,6 +1762,17 @@ par le serveur (`lib/admin.php`) et chaque action est inscrite au journal de l'a
   comptes, cartes, publications, messages, emails), avec la valeur au survol et le tableau des valeurs ; totaux
   (projets, Studios, cartes livrées, offres, études de cas, fichiers et stockage, liens de partage, invités,
   connexions IA) ; état des emails.
+- **Visiteurs en temps réel** — tuile *Visitors now* et panneau *Who's here now* : chaque personne présente dans
+  les 5 dernières minutes, connectée (nom) ou non (« Visitor »), avec l'écran où elle se trouve (page d'accueil, un
+  Studio, un profil, inscription…), son appareil et depuis quand ; nombre par écran ; visiteurs uniques du jour,
+  de la semaine et courbe sur 30 jours. La page d'accueil et l'application signalent leur présence toutes les
+  minutes tant que l'onglet est visible. Sans compte, un visiteur est une empreinte anonyme du jour (IP et
+  navigateur hachés avec un sel, **sans cookie**, change chaque jour) ; seul le type d'écran est gardé, jamais
+  l'adresse ni une clé ; les robots sont ignorés.
+- **Studios** — tous les Studios créés : nom, projet, propriétaire, nombre de cartes (et livrées), équipe, liens
+  de partage et invités, dates ; recherche (Studio, projet, propriétaire), filtres actifs / archivés, tri. La fiche
+  d'un Studio : équipe et rôles, niveaux et leur nombre de cartes, activité de la semaine, partage. Le contenu des
+  cartes (titres, scripts, commentaires) n'y apparaît jamais.
 - **Accounts** — recherche (nom, email, identifiant), filtres (en ligne, nouveaux, actifs, inactifs, adresse non
   confirmée, particuliers, entreprises, Google, suspendus), tri, **export CSV** (une cellule qui commence par `=`
   est neutralisée pour les tableurs). La fiche d'un compte : jours d'activité sur 30 jours, sessions ouvertes,
@@ -1802,9 +1813,9 @@ est ouverte (et après les requêtes des membres si le serveur sait terminer une
 mais plus lentement. `cron.php` ne répond pas depuis le web (404). Le chemin de PHP peut différer selon
 l'hébergeur *(chemin habituel de cPanel, à vérifier)*.
 
-**Confidentialité** : l'administration voit les comptes (nom, email, dates) et les contenus publics ; du contenu
-privé des Studios et des messages, elle ne voit que des nombres — jamais un nom de projet, un titre de carte ou
-le texte d'un message. Aucun pixel ni suivi sur ses pages. Pas de suivi d'ouverture des emails.
+**Confidentialité** : l'administration voit les comptes (nom, email, dates), les contenus publics et la liste des
+Studios (nom, projet, équipe, nombres) ; du contenu des Studios et des messages, elle ne voit que des nombres —
+jamais un titre de carte, un script, un commentaire ou le texte d'un message. Aucun pixel ni suivi sur ses pages. Pas de suivi d'ouverture des emails.
 
 ### 8. Fichiers envoyés
 

@@ -194,7 +194,7 @@ function marks(array $a): string
 /** Schéma compatible avec les vieilles versions de SQLite des hébergeurs mutualisés. */
 function migrate(PDO $pdo): void
 {
-    if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= 7) return;
+    if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= 8) return;
     // Deux premières visites simultanées : la seconde attend la fin de la création, puis ne fait rien.
     $pdo->exec('BEGIN IMMEDIATE');
     try {
@@ -895,6 +895,30 @@ function migrate(PDO $pdo): void
                 $pdo->exec("UPDATE users SET terms_at = created WHERE google_sub IS NULL OR google_sub = ''");
             }
             $pdo->exec('PRAGMA user_version = 7');
+        }
+        if ($v < 8) {
+            // Visiteurs en temps réel (administration) : un visiteur = un compte connecté (« u<id> ») ou, sans compte,
+            // une empreinte anonyme du jour (hash salé de l'IP et du navigateur, sans cookie, change chaque jour).
+            // page : type d'écran seulement (landing, studio, u…), jamais une adresse complète ni une clé.
+            $pdo->exec(<<<SQL
+        CREATE TABLE IF NOT EXISTS visitors (
+            vid TEXT PRIMARY KEY,
+            uid INTEGER NOT NULL DEFAULT 0,
+            page TEXT NOT NULL DEFAULT '',
+            device TEXT NOT NULL DEFAULT '',
+            first_seen INTEGER NOT NULL,
+            last_seen INTEGER NOT NULL,
+            hits INTEGER NOT NULL DEFAULT 1
+        );
+        CREATE INDEX IF NOT EXISTS visitors_l ON visitors(last_seen);
+        CREATE TABLE IF NOT EXISTS visit_days (
+            day TEXT NOT NULL,
+            vid TEXT NOT NULL,
+            uid INTEGER NOT NULL DEFAULT 0,
+            PRIMARY KEY (day, vid)
+        );
+        PRAGMA user_version = 8;
+        SQL);
         }
         $pdo->exec('COMMIT');
     } catch (Throwable $e) {

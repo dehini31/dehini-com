@@ -120,6 +120,34 @@ const signup = async (name, email, extra) => {
   ok(!/Secret Project|Hidden Studio|Confidential card|Private message body/.test(live), 'aucun nom de projet, de Studio, titre de carte ni texte de message');
   ok(r.mail.transport === 'log' && r.mail.per_hour === 200, 'état des emails (journal de test, limite horaire)');
 
+  step('Visiteurs en temps réel');
+  const ping = (page, ua, cookies) => fetch(API + '?action=ping', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json', 'X-Requested-With': 'studioma', 'User-Agent': ua }, cookies ? { Cookie: cookies } : {}), body: JSON.stringify({ p: page }) });
+  ok((await ping('landing', 'Mozilla/5.0 (iPhone; Mobile) Visitor-A')).status === 200, 'ping d\'un visiteur sans compte (page d\'accueil)');
+  await ping('u', 'Mozilla/5.0 (Windows) Visitor-B');
+  await ping('../../etc', 'Mozilla/5.0 (Windows) Visitor-C');
+  await ping('landing', 'Googlebot/2.1');
+  await ping('studio', 'Mozilla/5.0 (Windows) Amel', amel.cookies());
+  r = await adm.get('admin_live');
+  const vis = r.visitors;
+  ok(vis.now === 4 && vis.members === 1 && vis.today === 4, 'visiteurs en ce moment : 3 sans compte + 1 compte (robot ignoré)', vis);
+  ok(vis.list[0].member && vis.list[0].user.name === 'Amel Haddad' && vis.list[0].page === 'studio' && vis.list.some((x) => !x.member && x.page === 'landing' && x.device === 'mobile'), 'qui est là : compte, page, appareil');
+  ok(vis.pages.some((x) => x.page === 'other') && !JSON.stringify(vis).includes('etc'), 'page inconnue rangée dans « other » (jamais une adresse)');
+  ok(r.series.visitors.length === 30 && r.series.visitors[29] === 4, 'visiteurs uniques par jour (30 jours)');
+  await ping('home', 'Mozilla/5.0 (Windows) Amel', amel.cookies());
+  ok((await adm.get('admin_live')).visitors.now === 4, 'un même visiteur n\'est compté qu\'une fois');
+  ok((await fetch(API + '?action=ping', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })).status === 403, 'ping sans l\'en-tête X-Requested-With : refusé');
+
+  step('Studios');
+  r = await adm.get('admin_studios');
+  const st0 = r.studios.find((x) => x.name === 'Hidden Studio Name');
+  ok(st0 && st0.project === 'Secret Project Velora' && st0.owner.id === amel.id && st0.cards === 1 && st0.members === 1 && r.counts.active >= 1, 'liste des Studios : nom, projet, propriétaire, cartes, équipe', st0);
+  ok((await adm.get('admin_studios', { q: 'amel@test' })).studios.length === 1 && (await adm.get('admin_studios', { q: 'nothing-like-this' })).studios.length === 0, 'recherche par propriétaire');
+  ok((await adm.get('admin_studios', { filter: 'archived' })).studios.length === 0, 'filtre « archivés »');
+  r = await adm.get('admin_studio', { id: st0.id });
+  ok(r.studio.name === 'Hidden Studio Name' && r.members.length === 1 && r.members[0].role === 'owner' && r.levels.length === 3 && r.stats.cards === 1, 'fiche d\'un Studio : équipe, niveaux, nombres');
+  ok(!JSON.stringify(r).includes('Confidential card title'), 'fiche d\'un Studio : jamais le titre d\'une carte');
+  ok((await amel.get('admin_studios')).status === 401 && (await adm.get('admin_studio', { id: 9999 })).status === 404, 'réservé à l\'administration ; Studio inconnu : 404');
+
   step('Comptes : recherche, filtres, fiche');
   r = await adm.get('admin_users', { q: 'karim' });
   ok(r.total === 1 && r.users[0].email === 'karim@test.example', 'recherche par nom');
@@ -307,7 +335,7 @@ const signup = async (name, email, extra) => {
   const out = execFileSync('php', [path.join(DIR, 'public_html/studioma/cron.php')], { encoding: 'utf8' });
   ok(/^OK — 0 campaign email/.test(out), 'cron en ligne de commande', out);
   r = await adm.get('admin_system');
-  ok(r.system.schema === 7 && r.integrations.cron_last > 0 && r.integrations.meta_pixel === '1234567890123' && r.integrations.meta_token === true, 'système : schéma v7, dernière exécution du cron, intégrations', r.integrations);
+  ok(r.system.schema === 8 && r.integrations.cron_last > 0 && r.integrations.meta_pixel === '1234567890123' && r.integrations.meta_token === true, 'système : schéma v8, dernière exécution du cron, intégrations', r.integrations);
   const actions = r.log.map((l) => l.action);
   ok(['suspend', 'unsuspend', 'delete', 'export', 'delete_post', 'close_opp', 'delete_company', 'campaign_send', 'mail_test', 'revoke_ai'].every((a) => actions.includes(a)), 'journal de l\'administration : chaque action', actions);
   ok(r.log.some((l) => l.action === 'suspend' && l.target === 'user:' + karim.id && /Spam reports/.test(l.text)), 'journal : cible et motif');

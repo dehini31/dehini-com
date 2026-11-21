@@ -81,7 +81,7 @@
   };
 
   /* ---------------------------------------------------------------- cadre */
-  const NAV = [['#/', 'chart', 'Live overview'], ['#/accounts', 'users', 'Accounts'], ['#/content', 'shield', 'Moderation'], ['#/emails', 'mail', 'Emails'], ['#/system', 'settings', 'System']];
+  const NAV = [['#/', 'chart', 'Live overview'], ['#/accounts', 'users', 'Accounts'], ['#/studios', 'board', 'Studios'], ['#/content', 'shield', 'Moderation'], ['#/emails', 'mail', 'Emails'], ['#/system', 'settings', 'System']];
   function shell() {
     SM.set($('#app'), html`<div class="app adm">
       <aside class="side">
@@ -213,7 +213,16 @@
     });
     return out;
   };
-  const SERIES = [['active', 'Active accounts'], ['signups', 'New accounts'], ['cards', 'Cards created'], ['posts', 'Posts'], ['messages', 'Private messages'], ['emails', 'Emails sent']];
+  const PAGES = {
+    landing: 'Landing page', home: 'Home feed', discover: 'Discover', network: 'My Network', projects: 'Projects', project: 'a project', studios: 'Studios',
+    studio: 'a Studio', 'shared-studio': 'a shared Studio (guest)', work: 'My work', opportunities: 'Opportunities', opportunity: 'an opportunity',
+    talent: 'Talent', messages: 'Messages', notifications: 'Notifications', profile: 'their profile', settings: 'Settings', u: 'a profile', c: 'a company page',
+    post: 'a post', signup: 'Sign up', login: 'Sign in', welcome: 'Getting started', team: 'Team', requests: 'Requests', join: 'an invitation', forgot: 'Password reset',
+  };
+  const pageName = (p) => PAGES[p] || p;
+  /** Durée depuis le début de la visite. */
+  const dur = (since) => { const m = Math.round((Date.now() / 1000 - since) / 60); return m < 1 ? 'less than a minute' : m < 60 ? m + ' min' : Math.floor(m / 60) + ' h ' + (m % 60) + ' min'; };
+  const SERIES = [['visitors', 'Visitors (unique per day)'], ['active', 'Active accounts'], ['signups', 'New accounts'], ['cards', 'Cards created'], ['posts', 'Posts'], ['messages', 'Private messages'], ['emails', 'Emails sent']];
   const TRANSPORT = { smtp: 'SMTP', mail: 'PHP mail()', log: 'Test log (not sent)' };
 
   SM.route(/^\/$/, async (m, ctx) => {
@@ -224,7 +233,7 @@
       <div id="ov-tiles" class="tiles">${SM.loading(1)}</div>
       <div class="grid adm-2">
         <div class="stack-col">
-          <section class="panel pad"><h2>${icon('zap')} Online now <span class="muted small">active in the last 5 minutes</span></h2><div id="ov-online"></div></section>
+          <section class="panel pad"><h2>${icon('zap')} Who's here now <span class="muted small">last 5 minutes</span></h2><div id="ov-online"></div></section>
           <section class="panel pad"><h2>${icon('mail')} Emails</h2><div id="ov-mail"></div></section>
         </div>
         <section class="panel pad feed-panel"><h2>${icon('history')} Live activity</h2><div id="ov-feed" class="feed" tabindex="0" aria-label="Live activity"></div></section>
@@ -241,15 +250,20 @@
       if (!ctx.alive()) return;
       const o = d.online, t = d.totals, td = d.today;
       SM.set($('#ov-tiles'), html`
-        ${tile('zap', 'Online now', fmt.num(o.users), `${fmt.plural(o.guests, 'guest')} · ${fmt.num(o.ai)} via AI`, o.users ? 'tile-ok' : '')}
+        ${tile('zap', 'Visitors now', fmt.num(d.visitors.now), `${fmt.num(d.visitors.members)} signed in · ${fmt.num(d.visitors.now - d.visitors.members)} not signed in · ${fmt.num(d.visitors.today)} today`, d.visitors.now ? 'tile-ok' : '')}
         ${tile('user', 'Active today', fmt.num(d.active.day), `${fmt.num(d.active.week)} this week · ${fmt.num(d.active.month)} this month`)}
         ${tile('user-plus', 'New today', fmt.num(td.signups), `${fmt.num(t.new7)} in 7 days · ${fmt.num(t.new30)} in 30`)}
         ${tile('users', 'Accounts', fmt.num(t.users), `${pct(t.confirmed, t.users)} confirmed · ${fmt.num(t.suspended)} suspended`)}
         ${tile('board', 'Cards today', fmt.num(td.cards), `${fmt.plural(td.comments, 'comment')} · ${fmt.plural(td.posts, 'post')}`)}
         ${tile('send', 'Emails today', fmt.num(td.emails), td.email_failed ? `${fmt.num(td.email_failed)} failed` : 'no failure', td.email_failed ? 'tile-bad' : '')}`);
-      SM.set($('#ov-online'), o.list.length
-        ? html`<div class="members">${o.list.map((u) => who(u, u.email + ' · ' + fmt.ago(u.last_seen)))}</div>${o.users > o.list.length ? html`<a class="small" href="#/accounts?filter=online">See all ${fmt.num(o.users)}</a>` : ''}`
-        : html`<p class="muted">Nobody is online right now.</p>`);
+      const v = d.visitors;
+      SM.set($('#ov-online'), v.list.length ? html`
+          <div class="chips-row">${v.pages.map((p) => html`<span class="chip chip-soft">${pageName(p.page)} · ${p.n}</span>`)}</div>
+          <div class="members">${v.list.map((x) => (x.user
+            ? who(x.user, `on ${pageName(x.page)} · ${x.device} · here for ${dur(x.since)}`)
+            : html`<span class="who-btn">${SM.avatar(null, 'av-s')}<span class="who-txt"><b>Visitor (not signed in)</b><small>on ${pageName(x.page)} · ${x.device} · here for ${dur(x.since)}</small></span></span>`))}</div>
+          <p class="muted small">${fmt.plural(o.guests, 'guest')} on share links · ${fmt.num(o.ai)} via AI assistants · ${fmt.num(v.week)} unique visitors in 7 days</p>`
+        : html`<p class="muted">Nobody is on Studioma right now.</p><p class="muted small">${fmt.num(v.today)} visitors today · ${fmt.num(v.week)} in 7 days</p>`);
       const feed = groupFeed(d.feed).slice(0, 25);
       const feedKey = JSON.stringify(feed.map((e) => [e.kind, e.uid, e.n, e.t]));
       if (feedKey !== lastFeed) {
@@ -433,6 +447,59 @@
     SM.topModal().close(true);
     renderUser(r);
     SM.toast('Email sent');
+  };
+
+  /* ---------------------------------------------------------------- Studios */
+  SM.route(/^\/studios$/, async (m, ctx) => {
+    setTitle('Studios');
+    const q = SM.query();
+    const st = { q: q.get('q') || '', filter: q.get('filter') || 'active', sort: q.get('sort') || 'new', page: +q.get('page') || 0 };
+    const d = await SM.get('admin_studios', st);
+    if (!ctx.alive()) return;
+    // « all » est un vrai filtre ici : pas de qs(), qui l'enlève.
+    const sq = (o) => Object.entries(Object.assign({}, st, o)).filter(([, v]) => v !== '' && v !== 0).map(([k, v]) => k + '=' + encodeURIComponent(v)).join('&');
+    const link = (o) => '#/studios?' + sq(Object.assign({ page: 0 }, o));
+    SM.set(ctx.view, html`<div class="page">
+      <header class="page-head"><div><h1>Studios</h1><p class="muted">Every Studio created on Studioma: owner, team, cards and sharing. Card contents stay private.</p></div></header>
+      <form class="filters" data-form="adm-studios-search">
+        <label class="search-in grow">${icon('search')}<input class="input" name="q" value="${st.q}" placeholder="Search a Studio, a project or an owner" autocomplete="off"></label>
+        <select class="input" name="sort" data-change="adm-studios-sort" aria-label="Sort">${[['new', 'Newest first'], ['activity', 'Last activity'], ['cards', 'Most cards']].map(([k, l]) => html`<option value="${k}" ${st.sort === k ? 'selected' : ''}>${l}</option>`)}</select>
+        <button class="btn btn-primary" type="submit">Search</button>
+      </form>
+      <div class="filters">${[['active', 'Active'], ['archived', 'Archived'], ['all', 'All']].map(([k, l]) => html`<a class="btn btn-sm ${st.filter === k ? 'btn-soft is-on' : 'btn-ghost'}" href="${link({ filter: k })}">${l} <small>${fmt.num(d.counts[k])}</small></a>`)}</div>
+      ${d.studios.length ? html`<section class="panel table-wrap"><table class="table">
+        <thead><tr><th>Studio</th><th>Owner</th><th class="num">Cards</th><th class="num hide-s">Team</th><th class="hide-s">Shared</th><th class="hide-s">Created</th><th>Last activity</th></tr></thead>
+        <tbody>${d.studios.map((s) => html`<tr class="is-click" data-act="adm-studio" data-id="${s.id}">
+          <td><button class="who" data-act="adm-studio" data-id="${s.id}"><span class="list-ico">${icon('board')}</span><span class="who-txt"><b>${s.name}</b><small>${s.project}${s.company ? ' · company' : ''}${s.archived ? ' · archived' : ''}</small></span></button></td>
+          <td>${s.owner ? html`<span class="nowrap">${s.owner.name}</span>` : '—'}</td>
+          <td class="num">${fmt.num(s.cards)}${s.done ? html` <small>(${fmt.num(s.done)} done)</small>` : ''}</td>
+          <td class="num hide-s">${fmt.num(s.members)}</td>
+          <td class="hide-s">${s.shares ? html`<span class="chip chip-soft">${fmt.plural(s.shares, 'link')}${s.guests ? ' · ' + fmt.plural(s.guests, 'guest') : ''}</span>` : html`<small>no</small>`}</td>
+          <td class="hide-s nowrap">${fmt.date(s.created)}</td>
+          <td class="nowrap">${fmt.ago(s.updated)}</td>
+        </tr>`)}</tbody></table></section>${pager(d.page, d.more, (p) => '#/studios?' + sq({ page: p }))}`
+        : SM.empty('board', 'No Studio found', st.q ? 'Try another search.' : 'No Studio in this list yet.')}
+    </div>`);
+  });
+  SM.forms['adm-studios-search'] = (form, data) => SM.go('/studios?filter=' + (SM.query().get('filter') || 'active') + '&sort=' + data.sort + (data.q.trim() ? '&q=' + encodeURIComponent(data.q.trim()) : ''));
+  SM.changes['adm-studios-sort'] = (el) => SM.forms['adm-studios-search'](el.form, SM.formData(el.form));
+  SM.actions['adm-studio'] = async (el) => {
+    const md = SM.modal(html`<div class="pad">${SM.spinner()}</div>`, { side: true });
+    let d;
+    try { d = await SM.get('admin_studio', { id: +el.dataset.id }); } catch (e) { SM.set(md.el, html`${SM.modalHead('Studio')}<div class="pad">${SM.empty('alert', 'Unavailable', e.message)}</div>`); return; }
+    const s = d.studio, k = d.stats;
+    const stat = (l, val) => html`<div><span>${l}</span><b>${val}</b></div>`;
+    SM.set(md.el, html`
+      <div class="ud-head"><span class="list-ico">${icon('board')}</span><div class="grow"><h2>${s.name}</h2><span class="muted small">${s.project}${s.archived ? ' · archived' : ''}</span></div>
+        <button class="btn-icon" data-act="modal-close" aria-label="Close">${icon('x')}</button></div>
+      <div class="ud-body">
+        <section><h3>Overview</h3><div class="kv">${stat('Created', fmt.date(s.created))}${stat('Last activity', fmt.ago(s.updated))}${stat('Cards', k.cards)}${stat('Delivered', k.done)}
+          ${stat('New cards (7 days)', k.week)}${stat('Actions (7 days)', k.events7)}${stat('Comments', k.comments)}${stat('Files', k.files)}${stat('Archived cards', k.archived)}</div>
+          <p class="muted small">Numbers only: card titles, scripts and comments stay private.</p></section>
+        ${d.levels.length ? html`<section><h3>Levels</h3>${d.levels.map((l) => html`<div class="list-row"><span class="grow"><b>${l.icon} ${l.name}</b>${l.archived ? html`<small class="muted">archived</small>` : ''}</span><span class="chip">${fmt.plural(l.cards, 'card')}</span></div>`)}</section>` : ''}
+        <section><h3>Team (${d.members.length})</h3>${d.members.map((x) => html`<div class="list-row">${x.user ? who(x.user, x.role + (x.scope === 'project' ? ' · whole project' : ' · this Studio') + ' · since ' + fmt.date(x.since)) : html`<span class="muted">Deleted account</span>`}</div>`)}</section>
+        <section><h3>Sharing</h3>${d.shares.length ? d.shares.map((x) => html`<div class="list-row"><span class="grow"><b>${x.kind === 'public' ? 'Public link' : 'Private link'}</b><small class="muted">${x.active ? 'active' : 'turned off'} · ${fmt.plural(x.guests, 'guest')}</small></span></div>`) : html`<p class="muted small">Not shared outside the team.</p>`}</section>
+      </div>`);
   };
 
   /* ---------------------------------------------------------- modération */

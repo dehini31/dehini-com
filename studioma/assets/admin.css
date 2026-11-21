@@ -34,7 +34,7 @@
 .chart svg { width: 100%; height: auto; display: block; overflow: visible; }
 .chart .grid-line { stroke: var(--border); stroke-width: 1; }
 .chart .axis { fill: var(--muted); font-size: 10px; font-family: var(--font); }
-.chart .bar { fill: var(--primary); }
+.chart .bar { fill: var(--primary); pointer-events: none; }   /* le survol est capté par la zone .hit, plus large */
 .chart .hit { fill: transparent; cursor: default; }
 .chart .hit:hover + .bar, .chart .hit:focus + .bar { fill: var(--primary-h); }
 .chart details { font-size: 12.5px; color: var(--muted); }
