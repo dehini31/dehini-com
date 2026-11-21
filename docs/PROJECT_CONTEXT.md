@@ -27,6 +27,8 @@ each published under its own path on the same domain:
   code into `~/public_html/` (exact command: README « Installation › 4 »). So **`main` = production**. The cron
   pulls the branch that is checked out in `~/dehini-com`: that clone must stay on `main` with no local edits, and
   no coding agent (Codex, Claude) is ever run on the server.
+  *Verified 2026-11-20: `crontab -l` on the server lists no `dehini-com` deployment job; deployments are currently
+  copied by hand by the owner (`HANDOFF.md`). `main` stays production either way.*
 - Live data is never in Git: SQLite databases and uploads live **outside `public_html`** in `~/impact-data/`,
   `~/metakpis-data/`, `~/swanbida-data/`, `~/marketing-data/`, `~/maillage-data/`, `~/studioma-data/`
   (plus `~/public_html/uploads/`, `swanbida/media/`, `maillage/media/`, `impact/uploads/pros/`). The served
