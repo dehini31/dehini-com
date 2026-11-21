@@ -95,8 +95,22 @@
     if (counts) SM.counts = counts;
     SM.$$('[data-count]').forEach((el) => SM.set(el, badge(SM.counts[el.dataset.count])));
   };
+  /*
+   * Présence (administration › visiteurs en ce moment) : le type d'écran seulement (« studio », « u »…), jamais
+   * l'adresse complète ni une clé ; au changement d'écran puis toutes les 60 s tant que l'onglet est visible.
+   */
+  let pingAt = 0;
+  const ping = (force) => {
+    if (document.hidden || (!force && Date.now() - pingAt < 55000)) return;
+    pingAt = Date.now();
+    const seg = SM.path().split('?')[0].split('/')[1] || 'home';
+    SM.post('ping', { p: seg === 's' ? 'shared-studio' : seg }).catch(() => {});
+  };
+  setInterval(() => ping(false), 60000);
+  document.addEventListener('visibilitychange', () => ping(false));
   SM.afterRoute = (path) => {
     if (window.StmMeta) window.StmMeta.page();   // PageView (jamais sur un écran à clé secrète)
+    ping(true);
     const key = sectionOf(path);
     SM.$$('[data-nav]').forEach((a) => a.classList.toggle('is-active', a.dataset.nav === key));
     document.body.classList.remove('side-open');

@@ -85,6 +85,35 @@ function daily_active(int $days): array
     for ($i = $days - 1; $i >= 0; $i--) $out[] = $map[date('Y-m-d', day_start($i))] ?? 0;
     return $out;
 }
+/** Visiteurs uniques par jour (table visit_days : comptes et visiteurs anonymes). */
+function daily_visitors(int $days): array
+{
+    $from = date('Y-m-d', day_start($days - 1));
+    $map = [];
+    foreach (rows('SELECT day, COUNT(*) AS n FROM visit_days WHERE day >= ? GROUP BY day', [$from]) as $r) $map[$r['day']] = (int) $r['n'];
+    $out = [];
+    for ($i = $days - 1; $i >= 0; $i--) $out[] = $map[date('Y-m-d', day_start($i))] ?? 0;
+    return $out;
+}
+/** Qui est sur Studioma en ce moment (ping des 5 dernières minutes) : comptes et visiteurs anonymes, page, appareil. */
+function admin_visitors(): array
+{
+    $since = time() - ONLINE_WINDOW;
+    $list = rows('SELECT * FROM visitors WHERE last_seen >= ? ORDER BY uid > 0 DESC, last_seen DESC LIMIT 60', [$since]);
+    $users = user_cards(array_column($list, 'uid'));
+    return [
+        'now' => (int) val('SELECT COUNT(*) FROM visitors WHERE last_seen >= ?', [$since]),
+        'members' => (int) val('SELECT COUNT(*) FROM visitors WHERE last_seen >= ? AND uid > 0', [$since]),
+        'today' => (int) val('SELECT COUNT(*) FROM visit_days WHERE day = ?', [date('Y-m-d')]),
+        'week' => (int) val('SELECT COUNT(DISTINCT vid) FROM visit_days WHERE day >= ?', [date('Y-m-d', day_start(6))]),
+        'pages' => array_map(function (array $r): array { return ['page' => (string) $r['page'], 'n' => (int) $r['n']]; },
+            rows('SELECT page, COUNT(*) AS n FROM visitors WHERE last_seen >= ? GROUP BY page ORDER BY n DESC', [$since])),
+        'list' => array_map(function (array $v) use ($users): array {
+            return ['user' => (int) $v['uid'] ? ($users[(int) $v['uid']] ?? null) : null, 'member' => (int) $v['uid'] > 0, 'page' => (string) $v['page'],
+                'device' => (string) $v['device'], 'since' => (int) $v['first_seen'], 'last' => (int) $v['last_seen'], 'hits' => (int) $v['hits']];
+        }, $list),
+    ];
+}
 function admin_user_row(array $t): array
 {
     return [
@@ -146,6 +175,7 @@ function api_admin_live(array $b, array $a): array
     if (campaign_waiting()) campaign_pump_later(10);
     return [
         'now' => $now,
+        'visitors' => admin_visitors(),
         'online' => [
             'users' => $count('SELECT COUNT(*) FROM users WHERE last_seen >= ? AND suspended = 0', [$now - ONLINE_WINDOW]),
             'list' => array_map('admin_user_row', $online),
@@ -192,6 +222,7 @@ function api_admin_live(array $b, array $a): array
         ],
         'series' => [
             'from' => date('Y-m-d', day_start($days - 1)),
+            'visitors' => daily_visitors($days),
             'signups' => daily_counts('users', 'created', $days),
             'active' => daily_active($days),
             'cards' => daily_counts('cards', 'created', $days),
@@ -817,6 +848,84 @@ function campaign_pump_later(int $max): void
 function campaign_waiting(): bool
 {
     return (bool) val("SELECT 1 FROM mail_queue WHERE status = 'pending' LIMIT 1");
+}
+
+/* ---------------------------------------------------------------- Studios */
+
+/**
+ * GET admin_studios : q (Studio, projet, propriétaire), filter (active | archived | all), sort (new | activity |
+ * cards), page. Noms, propriétaire, équipe et nombres — jamais le contenu des cartes.
+ */
+function api_admin_studios(array $b, array $a): array
+{
+    $filter = in_array($b['filter'] ?? '', ['active', 'archived', 'all'], true) ? (string) $b['filter'] : 'active';
+    $where = $filter === 'active' ? ['s.archived = 0 AND p.archived = 0'] : ($filter === 'archived' ? ['(s.archived = 1 OR p.archived = 1)'] : ['1 = 1']);
+    $args = [];
+    $term = line_clean($b['q'] ?? '', 80);
+    if ($term !== '') {
+        $l = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $term) . '%';
+        $where[] = "(s.name LIKE ? ESCAPE '\\' OR p.name LIKE ? ESCAPE '\\' OR u.name LIKE ? ESCAPE '\\' OR u.email LIKE ? ESCAPE '\\')";
+        array_push($args, $l, $l, $l, $l);
+    }
+    $order = ['activity' => 's.updated DESC', 'cards' => 'n_cards DESC, s.id DESC'][$b['sort'] ?? ''] ?? 's.id DESC';
+    $page = max(0, int_in($b, 'page'));
+    $list = rows("SELECT s.*, p.name AS project, p.owner_uid, p.archived AS p_archived, p.company_id,
+            (SELECT COUNT(*) FROM cards c WHERE c.studio_id = s.id AND c.archived = 0) AS n_cards,
+            (SELECT COUNT(*) FROM cards c WHERE c.studio_id = s.id AND c.done_at > 0) AS n_done,
+            (SELECT COUNT(*) FROM project_members m WHERE m.project_id = s.project_id) + (SELECT COUNT(*) FROM studio_members m WHERE m.studio_id = s.id) AS n_members,
+            (SELECT COUNT(*) FROM shares x WHERE x.studio_id = s.id AND x.active = 1) AS n_shares,
+            (SELECT COUNT(*) FROM share_guests g WHERE g.studio_id = s.id AND g.status = 'active') AS n_guests
+        FROM studios s JOIN projects p ON p.id = s.project_id LEFT JOIN users u ON u.id = p.owner_uid
+        WHERE " . implode(' AND ', $where) . " ORDER BY $order LIMIT " . (ADMIN_PAGE + 1) . ' OFFSET ' . ($page * ADMIN_PAGE), $args);
+    $more = count($list) > ADMIN_PAGE;
+    $list = array_slice($list, 0, ADMIN_PAGE);
+    $users = user_cards(array_merge(array_column($list, 'owner_uid'), array_column($list, 'created_by')));
+    return [
+        'studios' => array_map(function (array $s) use ($users): array {
+            return ['id' => (int) $s['id'], 'name' => (string) $s['name'], 'project' => (string) $s['project'], 'company' => (int) $s['company_id'] > 0,
+                'owner' => $users[(int) $s['owner_uid']] ?? null, 'creator' => $users[(int) $s['created_by']] ?? null,
+                'archived' => (int) $s['archived'] || (int) $s['p_archived'], 'created' => (int) $s['created'], 'updated' => (int) $s['updated'],
+                'cards' => (int) $s['n_cards'], 'done' => (int) $s['n_done'], 'members' => (int) $s['n_members'], 'shares' => (int) $s['n_shares'], 'guests' => (int) $s['n_guests']];
+        }, $list),
+        'more' => $more, 'page' => $page,
+        'counts' => [
+            'active' => (int) val('SELECT COUNT(*) FROM studios s JOIN projects p ON p.id = s.project_id WHERE s.archived = 0 AND p.archived = 0'),
+            'archived' => (int) val('SELECT COUNT(*) FROM studios s JOIN projects p ON p.id = s.project_id WHERE s.archived = 1 OR p.archived = 1'),
+            'all' => (int) val('SELECT COUNT(*) FROM studios'),
+        ],
+    ];
+}
+/** GET admin_studio {id} : équipe et rôles, niveaux avec leur nombre de cartes, liens de partage, activité (nombres). */
+function api_admin_studio(array $b, array $a): array
+{
+    $s = row('SELECT s.*, p.name AS project, p.owner_uid, p.archived AS p_archived FROM studios s JOIN projects p ON p.id = s.project_id WHERE s.id = ?', [int_in($b, 'id')]);
+    if (!$s) fail('This Studio no longer exists.', 404, 'notfound');
+    $sid = (int) $s['id'];
+    $members = [];
+    foreach (rows('SELECT uid, role, created FROM project_members WHERE project_id = ?', [$s['project_id']]) as $m) $members[(int) $m['uid']] = ['role' => (string) $m['role'], 'scope' => 'project', 'since' => (int) $m['created']];
+    foreach (rows('SELECT uid, role, created FROM studio_members WHERE studio_id = ?', [$sid]) as $m) {
+        if (!isset($members[(int) $m['uid']])) $members[(int) $m['uid']] = ['role' => (string) $m['role'], 'scope' => 'studio', 'since' => (int) $m['created']];
+    }
+    $users = user_cards(array_merge(array_keys($members), [(int) $s['owner_uid'], (int) $s['created_by']]));
+    $count = function (string $sql, array $args): int { return (int) val($sql, $args); };
+    return [
+        'studio' => ['id' => $sid, 'name' => (string) $s['name'], 'project' => (string) $s['project'], 'archived' => (int) $s['archived'] || (int) $s['p_archived'],
+            'created' => (int) $s['created'], 'updated' => (int) $s['updated'], 'owner' => $users[(int) $s['owner_uid']] ?? null, 'creator' => $users[(int) $s['created_by']] ?? null],
+        'members' => array_values(array_map(function (int $uid, array $m) use ($users): array { return $m + ['user' => $users[$uid] ?? null]; }, array_keys($members), $members)),
+        'levels' => array_map(function (array $l): array { return ['name' => (string) $l['name'], 'icon' => (string) $l['icon'], 'cards' => (int) $l['n'], 'archived' => (bool) $l['archived']]; },
+            rows('SELECT l.name, l.icon, l.archived, (SELECT COUNT(*) FROM cards c JOIN cols k ON k.id = c.col_id WHERE k.level_id = l.id AND c.archived = 0) AS n FROM levels l WHERE l.studio_id = ? ORDER BY l.pos', [$sid])),
+        'stats' => [
+            'cards' => $count('SELECT COUNT(*) FROM cards WHERE studio_id = ? AND archived = 0', [$sid]),
+            'done' => $count('SELECT COUNT(*) FROM cards WHERE studio_id = ? AND done_at > 0', [$sid]),
+            'archived' => $count('SELECT COUNT(*) FROM cards WHERE studio_id = ? AND archived = 1', [$sid]),
+            'week' => $count('SELECT COUNT(*) FROM cards WHERE studio_id = ? AND created >= ?', [$sid, day_start(6)]),
+            'comments' => $count('SELECT COUNT(*) FROM card_comments c JOIN cards k ON k.id = c.card_id WHERE k.studio_id = ?', [$sid]),
+            'files' => $count('SELECT COUNT(*) FROM files WHERE studio_id = ?', [$sid]),
+            'events7' => $count('SELECT COUNT(*) FROM events WHERE studio_id = ? AND created >= ?', [$sid, day_start(6)]),
+        ],
+        'shares' => array_map(function (array $x): array { return ['kind' => (string) $x['kind'], 'active' => (bool) $x['active'], 'guests' => (int) $x['n']]; },
+            rows("SELECT x.kind, x.active, (SELECT COUNT(*) FROM share_guests g WHERE g.share_id = x.id AND g.status = 'active') AS n FROM shares x WHERE x.studio_id = ?", [$sid])),
+    ];
 }
 
 /* ---------------------------------------------------------------- système */
