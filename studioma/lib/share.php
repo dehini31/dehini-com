@@ -521,7 +521,7 @@ function api_share_request(array $b, array $u): array
     if (!$g['gid']) fail('Verify your email address first.', 401, 'verify');
     $role = (string) ($b['role'] ?? '');
     if (!in_array($role, ['commenter', 'editor'], true)) fail('Choose the access you need.');
-    if (!empty($g['capped'])) fail('This Studio\'s guest links are view-only: the owner\'s plan doesn\'t include guest comments or edits.', 403, 'plan_limit');
+    if (!empty($g['capped'])) fail('This Studio\'s guest links are view-only: the owner\'s plan doesn\'t include guest comments or edits.', 403, 'guest_view_only');
     $res = guest_request($g['share'], $g['row'], $role, str_clean($b['note'] ?? '', 500));
     if ($res === 'already') fail('You already have this access.', 409, 'already');
     return ['guest' => guest_view(guest_principal((string) $g['share']['token']))];

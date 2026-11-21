@@ -515,7 +515,8 @@ const cardIn = (page, col, title) => page.locator(`${colSel(col)} .kcard:has(h3:
   await ap.waitForSelector('.person');
   ok(/Requests/.test(await ap.locator('.section-title').first().innerText()), 'demande de mise en relation reçue');
   await ap.click('.person [data-act="connect"]:has-text("Accept")');
-  await ap.waitForFunction(() => /Connections/.test(document.querySelector('.section-title').textContent));
+  // La page se redessine après l'acceptation : le titre peut manquer un instant.
+  await ap.waitForFunction(() => /Connections/.test((document.querySelector('.section-title') || {}).textContent || ''));
   ok(true, 'mise en relation acceptée');
   // Étude de cas déclarée.
   await ap.goto(A + '#/profile');
@@ -759,7 +760,7 @@ const cardIn = (page, col, title) => page.locator(`${colSel(col)} .kcard:has(h3:
   const rpc = (tok, method, params) => fetch(MCP, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + tok }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params: params || {} }) })
     .then(async (x) => ({ status: x.status, data: x.status === 200 ? await x.json() : null }));
   await ap.goto(A + '#/settings');
-  await ap.click('a.ai-link');
+  await ap.click('a.ai-link[href="#/settings/ai"]');
   await ap.waitForSelector('.ai-page');
   ok(/\/studioma\/mcp$/.test(await ap.locator('.ai-page .code pre').first().innerText()) && await ap.locator('.guide[open]').count() === 1 && await ap.locator('.guide').count() === 5, 'page AI assistants : adresse du serveur et guides de connexion');
   await ap.fill('form[data-form="ai-token"] input[name=name]', 'Script on my laptop');

@@ -799,7 +799,12 @@
   /* --------------------------------------------------------- tableau de bord */
   async function drawInsights(el) {
     SM.set(el, html`<div class="page">${SM.loading(3)}</div>`);
-    const r = await SM.try(SM.get('studio_stats', { studio: B.id }));
+    let r = null;
+    try { r = await SM.get('studio_stats', { studio: B.id }); } catch (e) {
+      // Insights : formule Team (lib/billing.php) ; autre erreur : message habituel.
+      if (alive()) SM.set(el, e.code === 'plan_limit' && SM.planGate ? html`<div class="page">${SM.planGate(e.data)}</div>` : html`<div class="page">${SM.empty('alert', 'Something went wrong', e.message)}</div>`);
+      return;
+    }
     if (!r || !alive()) return;
     const t = r.totals;
     const tile = (label, value, ic, cls, hint) => html`<div class="panel stat ${cls || ''}"><span class="stat-ico">${icon(ic)}</span><b>${value}</b><span>${label}</span>${hint ? html`<small class="muted">${hint}</small>` : ''}</div>`;
