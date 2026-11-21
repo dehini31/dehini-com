@@ -13,12 +13,12 @@ secrets here. Mark anything you could not verify as *(unverified)*.
 | Base code | `main` @ `5a0b124` (Merge PR #74: Studioma administration). **`main` = production** (server cron, every 5 min) |
 | Checkpoint | the commit that last changed this file: `git log -1 --format='%H %s' -- HANDOFF.md` |
 | Uncommitted work at checkpoint | none |
-| In progress | Studioma admin (PR #74) **is live** (owner's screenshot with real data, 2026-11-21; `/studioma/admin/` answers 200). On this branch, not merged: **compact Live activity feed** (UI only). The server crontab had **no deployment job** for `~/dehini-com` (2026-11-20): unless the owner added it since *(unverified)*, merges go live only when copied by hand |
+| In progress | Studioma admin (PR #74) **is live** (owner's screenshot with real data, 2026-11-21; `/studioma/admin/` answers 200). On this branch, not merged: **compact Live activity feed** and **sign-up: Google button locked until the terms box is ticked** (UI only). The server crontab had **no deployment job** for `~/dehini-com` (2026-11-20): unless the owner added it since *(unverified)*, merges go live only when copied by hand |
 | Last task changed application code? | **yes** — Studioma (DB schema v5 → v6, additive) |
 
 **Next recommended action**
 
-1. **Owner**: merge this branch (compact feed), then on the server `cd ~/dehini-com && git checkout main && git pull
+1. **Owner**: merge this branch (compact feed, locked Google sign-up), then on the server `cd ~/dehini-com && git checkout main && git pull
    && cp -rf studioma ~/public_html/` (unless the deployment cron job was added). Check that the server clone is
    on `main` (`git status --short --branch`) *(unverified)*.
    **Agents: do not assume merges deploy automatically** until the owner adds the deployment cron job (README
@@ -40,6 +40,19 @@ campaigns go out without the cron).
 `admin/`); `tests/swanbida/run.sh` 119 — passed; `php -l` on 111 PHP files and `node --check` on all Studioma JS: 0 errors.
 
 ## Log (newest first)
+
+### 2026-11-21 — Claude Code — Studioma sign-up: Google button locked until the terms are accepted
+- Owner's report: on Sign up, choosing a Google account first, then « Please accept the terms » appeared (and
+  Google had already notified the account). The Google button is in Google's iframe, so the click cannot be
+  checked before Google opens.
+- `studioma/assets/app.js` (`signupLock`, `signupNudge`, `signup-gate`): on Sign up the Google button is covered by
+  a transparent gate, greyed and `inert` until the terms box is ticked (and the company name entered for a
+  company); a click on it shakes and highlights what is missing, focuses it and shows a message; the email form
+  does the same instead of the old error at the bottom. `app.css`: gate, lock hint, shake and highlight (reduced
+  motion respected by the existing global rule). Login page unchanged.
+- Tests: `e2e.js` 199 checks — passed (new: locked button, nudge of company name then terms, focus, no Google
+  request before acceptance, unlock). Screenshots light and dark. README « Studioma › 3 » updated.
+- Committed and pushed on this branch; not merged.
 
 ### 2026-11-21 — Claude Code — Studioma admin: compact Live activity
 - Owner's feedback on the live admin: « Live activity take all the screen » (30 rows, many identical « added a
