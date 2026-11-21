@@ -290,6 +290,8 @@ function guest_board(array $s, array $u): array
     foreach ($d['cards'] as $c) {
         if (!isset($levelOf[$c['col_id']])) continue;
         if (!empty($g['card']) && $c['id'] !== (int) $g['card']) continue;   // lien d'une carte : celle-ci seulement
+        // Lien d'une carte : la vignette n'est montrée que si son image fait partie des pièces jointes partagées.
+        if (!empty($g['card']) && !empty($c['cover']) && !(($f = file_by_token((string) $c['cover'])) && guest_file_readable($f, $u))) $c['cover'] = '';
         $cards[] = $c + ['editable' => guest_card_editable($g, $c['id'], $c['col_id'], $levelOf[$c['col_id']])];
         if ($c['assignee']) $people[$c['assignee']] = true;
         foreach ($c['members'] as $m) $people[$m] = true;

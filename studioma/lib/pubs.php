@@ -177,6 +177,8 @@ function pub_view(array $p, ?array $u, bool $full = false): array
         'source' => ['available' => $src['stage'] !== 'gone', 'stage' => $src['stage']]
             + ($me && ($manage || pub_member($p, $me)) && $src['card'] ? ['studio_id' => (int) $src['card']['studio_id'], 'card_id' => (int) $src['card']['id']] : []),
     ];
+    // Gestionnaires : pièces jointes de la carte d'où viennent les copies (pour modifier le choix).
+    if ($manage) $v['media_src'] = array_values(array_filter(array_map(function ($m): int { return is_array($m) ? (int) ($m['src'] ?? 0) : 0; }, jarr($p['media']))));
     if ($p['kind'] === 'achievement') {
         $post = (int) $p['post_id'];
         $v += [

@@ -13,8 +13,16 @@
   const typing = () => { const a = document.activeElement; return !!(P.modal && a && P.modal.el.contains(a) && (a.matches('input:not([type=checkbox]):not([type=file]), textarea, [contenteditable="true"]'))); };
   const part = (id, content) => { const el = P.modal && SM.$('#' + id, P.modal.el); if (el) SM.set(el, content); };
 
+  /** Lien d'un email ou du menu de la carte : ?cardshare=1[&req&do] ouvre son partage, ?publish=1 « Share & publish ». */
+  const fromQuery = () => {
+    const q = SM.query();
+    if (SM.guest || !P.card || (!q.get('cardshare') && !q.get('publish'))) return;
+    history.replaceState(null, '', '#' + B.cardPath(P.id));
+    if (q.get('cardshare') && P.card.can.share) SM.cardShareDialog(B.id, P.id, { req: +q.get('req') || 0, do: q.get('do') || '' });
+    else if (q.get('publish') && SM.sharePublish) SM.sharePublish(P.card);
+  };
   P.open = async (id) => {
-    if (P.id === id && P.modal) return;
+    if (P.id === id && P.modal) { fromQuery(); return; }
     P.close(true);
     P.id = id;
     P.card = null;
@@ -25,6 +33,7 @@
       if (P.modal !== m) return;
       P.card = r.card;
       draw();
+      fromQuery();
       // Dépôt de fichiers n'importe où sur le panneau.
       m.el.addEventListener('dragover', (e) => { if (P.card.can.upload && e.dataTransfer && Array.from(e.dataTransfer.types).includes('Files')) { e.preventDefault(); m.el.classList.add('is-drop'); } });
       m.el.addEventListener('dragleave', (e) => { if (!m.el.contains(e.relatedTarget)) m.el.classList.remove('is-drop'); });
@@ -52,6 +61,7 @@
     if (typing()) return;   // on ne redessine pas sous les doigts : la prochaine synchronisation s'en chargera
     await refresh();
   };
+  P.refresh = () => refresh();
   async function refresh() {
     const id = P.id;
     try {
@@ -94,6 +104,7 @@
         <div class="cp-main">
           ${c.can.edit ? html`<textarea class="cp-title" rows="1" maxlength="200" data-change="card-title" data-input="autogrow" aria-label="Card title">${c.title}</textarea>` : html`<h1 class="cp-title">${c.title}</h1>`}
           <section class="cp-props" id="cp-props"></section>
+          <section class="cp-pubs" id="cp-pubs"></section>
           <section class="cp-sec"><h3>${icon('edit')}Description & script<span class="cp-saving" aria-live="polite"></span></h3>
             ${c.can.edit ? SM.editor(c.body, { placeholder: 'Write the brief, the script, the caption, the notes…', name: 'card-body' }) : (c.body ? html`<div class="rich">${SM.rich(c.body)}</div>` : html`<p class="muted">No description yet.</p>`)}</section>
           <section class="cp-sec" id="cp-checks"></section>
@@ -105,7 +116,7 @@
       </div>
       <div class="cp-drop">${icon('upload')}Drop files to attach them</div>
     </div>`);
-    drawHead(); drawProps(); drawChecks(); drawFiles(); drawApproval(); drawMetrics(); drawFeed();
+    drawHead(); drawProps(); drawPubs(); drawChecks(); drawFiles(); drawApproval(); drawMetrics(); drawFeed();
     SM.$('.cp-scroll', P.modal.el).scrollTop = top;
     const t = SM.$('textarea.cp-title', P.modal.el);
     if (t) grow(t);
@@ -121,9 +132,24 @@
       ${c.can.handoff ? html`<button class="btn btn-primary btn-sm" data-act="cp-handoff">Send to ${c.level.target}${icon('arrow-right')}</button>` : ''}
       ${SM.approvalBadge(c.approval)}
       <span class="grow"></span>
+      ${!SM.guest && (c.can.share || c.can.publish) ? html`<button class="btn btn-soft btn-sm cp-sharepub" data-act="cp-sharepub" aria-haspopup="menu">${icon('share')}<span>Share & publish</span></button>` : ''}
       <button class="btn-icon" data-act="cp-menu" aria-label="Card options">${icon('more')}</button>
       <button class="btn-icon" data-act="modal-close" aria-label="Close">${icon('x')}</button>`);
   }
+  /** Indicateurs de « Share & publish » : réalisation publiée, opportunité ouverte ou fermée, partage de la carte. */
+  function drawPubs() {
+    const c = P.card;
+    if (SM.guest || !c.pubs) { part('cp-pubs', ''); return; }
+    const sh = c.shared || { links: 0, guests: 0, requests: 0 };
+    const items = c.pubs.map((p) => (p.kind === 'achievement'
+      ? html`<a class="pub-pill pub-ach${p.status === 'published' ? '' : ' is-closed'}" href="#/pub/${p.id}">${icon('award')}<span>${p.status === 'published' ? 'Published as Achievement' : 'Achievement unpublished'}</span></a>`
+      : html`<a class="pub-pill pub-opp${p.status === 'open' ? '' : ' is-closed'}" href="#/pub/${p.id}">${icon('briefcase')}<span>${p.status === 'open' ? 'Open Opportunity' : 'Closed Opportunity'}</span>${p.proposals ? html`<b>${fmt.plural(p.proposals, 'proposal')}${p.new ? ` · ${p.new} new` : ''}</b>` : ''}</a>`));
+    if (sh.links || sh.guests) {
+      items.push(html`<button class="pub-pill pub-shared" data-act="cp-share" ${c.can.share ? '' : 'disabled'}>${icon('link')}<span>Shared with guests</span><b>${fmt.plural(sh.links, 'link')}${sh.guests ? ' · ' + fmt.plural(sh.guests, 'guest') : ''}${sh.requests ? ` · ${sh.requests} request${sh.requests > 1 ? 's' : ''}` : ''}</b></button>`);
+    }
+    part('cp-pubs', items.length ? html`<div class="pub-pills">${items}</div>` : '');
+  }
+  P.drawPubs = () => drawPubs();
   function drawProps() {
     const c = P.card;
     const e = c.can.edit;
@@ -192,7 +218,7 @@
     const me = SM.me ? SM.me.id : -1;
     const approvers = B.data.members.filter((u) => ['owner', 'manager', 'client'].includes(u.role) && u.id !== me)
       .map((u) => ({ id: u.id, label: `${u.name} — ${SM.ref.roles[u.role]}` }))
-      .concat((B.data.guests || []).map((g) => ({ id: g.id, label: `${g.name} — Guest (${g.role === 'editor' ? 'Editor' : 'Commenter'})` })));
+      .concat((B.data.guests || []).filter((g) => !g.card || g.card === P.id).map((g) => ({ id: g.id, label: `${g.name} — Guest (${g.role === 'editor' ? 'Editor' : 'Commenter'})` })));
     const moveHint = c.level && c.level.final && c.level.handoff !== 'off' && c.col && c.level.final.id !== c.col.id ? html`<p class="muted small">Once approved, this card moves to <b>${c.level.final.name}</b>${c.level.handoff === 'auto' && c.level.target ? html` and is handed off to <b>${c.level.target}</b>` : ''}.</p>` : '';
     let body = '';
     if (c.approval === 'pending' && last) {
@@ -246,6 +272,8 @@
   /* ---------------------------------------------------------------- actions */
   SM.actions['cp-tab'] = (el) => { P.tab = el.dataset.tab; drawFeed(); };
   SM.actions['cp-menu'] = (el) => B.cardMenu(el, P.id, { align: 'right' });
+  SM.actions['cp-sharepub'] = (el) => SM.sharePublishMenu(el, P.card);
+  SM.actions['cp-share'] = () => SM.cardShareDialog(B.id, P.id);
   SM.actions['cp-move'] = (el) => B.pickColumn(el, P.card.col_id, async (col) => {
     const r = await B.run('card_move', { id: P.id, col_id: col.id, index: 9999 });
     if (r && r.handoff) SM.toast(`Handed off to ${r.handoff.level} › ${r.handoff.col}`, 'handoff');

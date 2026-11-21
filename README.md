@@ -1841,22 +1841,75 @@ propriétaire d'un projet paie pour tout ce qui s'y passe ; les invités ne sont
 - `STM_PLANS_ENFORCED` (true par défaut) applique les limites. Les comptes existants passent en Free : avant de
   mettre en ligne, offrir Solo ou Team aux comptes qui doivent continuer à collaborer (voir `docs/billing.md` § 6).
 
-### 9. Fichiers envoyés
+### 9. Partager une carte et la publier dans la communauté (Share & publish)
+
+Rien à configurer : la base passe d'elle-même à la version 10 au premier passage. Dans le panneau d'une carte,
+bouton **Share & publish** (ou menu de la carte › *Share & publish…*). Ce qu'il propose dépend de l'étape de la carte :
+
+| Carte | Choix |
+|---|---|
+| toute carte | **Share card** (responsables du Studio) |
+| en cours (colonne ni « done » ni « cancelled ») | + **Publish opportunity** (rôle Creator ou plus) |
+| terminée (colonne « done ») | + **Publish achievement** (rôle Creator ou plus) |
+| annulée | partage seulement |
+
+- **Partager une seule carte** — la même fenêtre et les mêmes règles que le partage d'un Studio (§ 5) : lien public
+  ou privé, adresses vérifiées par code, demande de droits et réponse, retrait, coupure, expiration, nouveau lien,
+  journal, emails. Mais l'invité ne voit **que cette carte** : son titre, sa description, sa check-list et son étape,
+  plus ce que le responsable coche dans *What guests see* — certaines pièces jointes (les autres restent
+  introuvables, même avec l'adresse du fichier) et, s'il le veut, les commentaires. Jamais l'historique, les autres
+  cartes, l'équipe ni le reste du Studio. Un *Editor* ne modifie que cette carte (ni création, ni déplacement). Les
+  liens d'une carte sont à part de ceux du Studio (`shares.card_id`). Carte archivée : lien inactif (il revient avec
+  la carte) ; carte supprimée : ses liens et leurs invités sont supprimés.
+- **Publier une opportunité** (carte en cours) — *Find a professional*, *Request proposals*, *Request
+  collaboration* ou *Request feedback or help* : titre, description, catégorie, compétences, livrables, budget
+  (fourchette et devise, facultatif), échéance, date limite des propositions, à distance ou sur place, pièces
+  jointes cochées. **Aperçu**, puis confirmation. Les professionnels connectés envoient une **proposition**
+  (approche, prix, délai, études de cas et réalisations de leur profil) et la suivent (*Community › My proposals*).
+  L'auteur (ou un responsable du Studio) présélectionne, accepte, refuse, écrit à la personne (messages), ferme et
+  rouvre. **Accepter ne donne aucun accès à la carte** : *Invite to collaborate* propose ensuite, au choix, un lien
+  privé vers cette seule carte (Editor ou Commenter) ou l'invitation habituelle au Studio.
+- **Publier une réalisation** (carte terminée) — titre, description, couverture, visuels cochés, catégorie, outils
+  et compétences, résultat, et au choix l'équipe de la carte. Aperçu, confirmation ; la réalisation va dans la
+  Communauté, sur le profil et dans le fil (une publication liée porte les J'aime, commentaires, partages,
+  enregistrements). Retirer (*Unpublish*) la masque partout ; la republier rend J'aime et commentaires.
+- **Ce qui est public** : seulement ce qui est saisi ou coché dans le formulaire. Les fichiers choisis sont **copiés**
+  en fichiers publics ; ceux de la carte restent privés. La carte n'est jamais déplacée, dupliquée ni modifiée, et
+  modifier la publication ne touche pas la carte. Seuls les membres du Studio voient le lien vers la carte d'origine.
+- **Cycle de vie** — une réalisation et une opportunité au plus par carte (republier réutilise la même). Une
+  opportunité **se ferme d'elle-même** quand la carte est terminée, annulée, archivée ou supprimée, ou à sa date
+  limite ; fermée, elle n'accepte plus de proposition (rouvrir exige une carte de nouveau en cours). Une réalisation
+  reste publiée si la carte disparaît (c'est une copie) ; son auteur ou un responsable du Studio peut la retirer.
+- **Pastilles** sur le tableau et dans la carte : *Achievement*, *Open / Closed opportunity*, *Shared*.
+- **Communauté** (`…/app/#/community`, menu *Community*) : *Achievements* (recherche, catégories), *Opportunities*
+  (recherche, type, collaboration, budget, ouvertes / fermées, avec les offres des entreprises de la page
+  *Opportunities*), *My publications*, *My proposals*. Pages publiques `#/pub/<n°>`, visibles sans compte.
+- **Notifications** — dans l'application et par email : nouvelle proposition, proposition présélectionnée,
+  acceptée ou refusée ; J'aime et commentaires d'une réalisation ; demandes d'accès des invités d'une carte (lien
+  direct vers son partage) ; invitation à collaborer.
+- **Administration › Moderation › Card publications** : fermer une opportunité, retirer ou supprimer une publication.
+- Code : `studioma/lib/pubs.php` (règles), `studioma/lib/share.php` (liens d'une carte), `studioma/assets/publish.js`
+  (menu, formulaires, Communauté) ; décisions S25 à S27 de `docs/DECISIONS.md`.
+
+### 10. Fichiers envoyés
 
 64 Mo par fichier (`studioma/.user.ini` et `STM_MAX_UPLOAD_MB`), 12 Mo par image. Si l'hébergeur plafonne plus
 bas, baisser les deux valeurs ensemble. Le type est vérifié sur le contenu réel du fichier.
 
-### 10. Sauvegarde
+### 11. Sauvegarde
 
 Tout tient dans `~/studioma-data/` : copier ce dossier sauvegarde la base et les fichiers.
 
-### 11. Tests
+### 12. Tests
 
 ```bash
 tests/studioma/run.sh /tmp/stm-test
 ```
 
-Faux hébergement neuf, puis sept batteries : `billing.js` (formules et abonnements, limites appliquées, faux Paddle :
+Faux hébergement neuf, puis neuf batteries : `publish.js` (partager une carte seule, la publier : invités limités à
+la carte et aux pièces jointes choisies, demandes, retrait, opportunités, propositions, réponses, invitation après
+acceptation, fermeture automatique, réalisations, fil, profil, rien de privé, cycle de vie), `publish-e2e.js` (les
+mêmes écrans dans le navigateur, ordinateur et mobile), `billing.js` (formules et abonnements, limites appliquées, faux Paddle :
 migration, limites Free / Solo / Team, compteur mensuel, invités en lecture seule, paiement, webhooks signés, rejeu,
 désordre, montée, descente, résiliation, paiement en échec, places de membres, créations simultanées, isolement,
 indicateurs, page des prix et paiement dans le navigateur), `admin.js` (l'administration : accès réservé à la session `/admin`
@@ -1880,6 +1933,9 @@ parcours complet dans le navigateur, sur ordinateur et sur mobile, avec deux com
 - Pas d'IA intégrée à l'application : l'assistance passe par les assistants externes connectés au serveur MCP.
 - Serveur MCP : pas de flux d'événements ni de notifications envoyées par le serveur (chaque appel reçoit sa
   réponse) ; pas encore de jeton « lecture seule ».
+- Share & publish : pas d'opportunité ni de réalisation par le serveur MCP (assistants IA) ; pas de signalement
+  d'une publication par les membres (modération depuis l'administration) ; un professionnel ne peut joindre que
+  des travaux déjà publiés sur son profil ; pas de paiement entre membres (le prix d'une proposition est indicatif).
 - Invités sans compte : pas d'envoi de fichier, pas de calendrier ni de tableau de bord (le tableau seulement),
   pas de demande de validation (ils valident celles qu'on leur adresse). L'email regroupant leurs modifications
   part dès qu'une requête arrive après la fenêtre de 10 minutes : sur un site sans aucune visite, il attend la

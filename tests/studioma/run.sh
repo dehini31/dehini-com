@@ -4,7 +4,8 @@
 # D'abord l'API seule (api.js), le partage avec des invités sans compte (share.js), le suivi Meta (meta.js), puis le serveur MCP
 # et son OAuth (mcp.js), l'administration (admin.js), les formules et abonnements avec un faux Paddle (billing.js, limites
 # appliquées, et billing-config.php pour le contrôle des réglages sandbox / production), le partage d'une carte et sa
-# publication dans la communauté (publish.js), puis l'application dans un navigateur (e2e.js, Playwright / Chromium).
+# publication dans la communauté (publish.js, puis publish-e2e.js dans un navigateur), puis l'application dans un
+# navigateur (e2e.js, Playwright / Chromium).
 set -euo pipefail
 HERE=$(cd "$(dirname "$0")" && pwd)
 REPO=$(cd "$HERE/../.." && pwd)
@@ -40,5 +41,7 @@ fresh 1
 node "$HERE/billing.js" "http://127.0.0.1:$PORT" "$DIR"
 fresh
 node "$HERE/publish.js" "http://127.0.0.1:$PORT" "$DIR"
+fresh
+node "$HERE/publish-e2e.js" "http://127.0.0.1:$PORT" "$DIR"
 fresh
 node "$HERE/e2e.js" "http://127.0.0.1:$PORT" "$DIR"

@@ -174,6 +174,12 @@
   };
   const APPROVAL = { pending: ['clock', 'Awaiting approval'], approved: ['check-circle', 'Approved'], changes: ['alert', 'Changes requested'] };
   SM.approvalBadge = (state) => (APPROVAL[state] ? html`<span class="appr appr-${state}" title="${APPROVAL[state][1]}">${icon(APPROVAL[state][0])}<span>${APPROVAL[state][1]}</span></span>` : '');
+  /** Pastilles de « Share & publish » : réalisation publiée, opportunité ouverte ou fermée, carte partagée seule. */
+  const pubBadges = (c) => (c.pub && (c.pub.a || c.pub.o || c.pub.s) ? html`<div class="kcard-pubs">
+      ${c.pub.a ? html`<span class="pub-badge pub-ach" title="Published as an achievement in the Community">${icon('award')}Achievement</span>` : ''}
+      ${c.pub.o ? html`<span class="pub-badge pub-opp${c.pub.o === 'closed' ? ' is-closed' : ''}" title="${c.pub.o === 'closed' ? 'Closed opportunity' : 'Open opportunity in the Community'}">${icon('briefcase')}${c.pub.o === 'closed' ? 'Closed' : 'Open'} opportunity</span>` : ''}
+      ${c.pub.s ? html`<span class="pub-badge pub-shared" title="Shared on its own with guests">${icon('link')}Shared</span>` : ''}
+    </div>` : '');
   function cardView(c, col, level) {
     const done = col.kind !== '';
     const assignee = c.assignee ? B.member(c.assignee) : null;
@@ -183,6 +189,7 @@
       ${c.cover ? html`<img class="kcard-cover" src="${SM.fileUrl(c.cover, true)}" alt="" loading="lazy" draggable="false">` : ''}
       ${c.ctype || c.platforms.length ? html`<div class="kcard-top">${c.ctype ? html`<span class="chip chip-type">${SM.ref.content_types[c.ctype]}</span>` : ''}${c.platforms.slice(0, 3).map((p) => html`<span class="chip chip-pf pf-${p}">${SM.ref.platforms[p]}</span>`)}${c.platforms.length > 3 ? html`<span class="chip">+${c.platforms.length - 3}</span>` : ''}</div>` : ''}
       <h3>${c.title}</h3>
+      ${pubBadges(c)}
       ${c.tags.length ? html`<div class="kcard-tags">${c.tags.slice(0, 4).map((t) => html`<span class="tag">#${t}</span>`)}</div>` : ''}
       ${manual ? html`<button class="btn btn-soft btn-sm kcard-send" data-act="card-handoff" data-id="${c.id}">Send to ${targetOf(level).name}${icon('arrow-right')}</button>` : ''}
       ${c.priority || c.due || c.publish_at || c.approval || c.n_checks || c.n_comments || c.n_files || assignee ? html`<footer class="kcard-meta">
@@ -464,6 +471,8 @@
     }
     if (can('edit') && B.view === 'board') items.push({ label: B.selected.has(id) ? 'Deselect' : 'Select', hint: 'Then act on several cards at once', icon: 'checklist', act: () => toggleSelect(id) });
     items.push({ label: 'Copy link', icon: 'link', act: () => SM.copy(location.origin + location.pathname + '#/studio/' + B.id + '/card/' + id) });
+    // Share & publish (assets/publish.js) : partager la carte seule, la publier dans la communauté.
+    if (can('manage') || can('edit')) items.push({ label: 'Share & publish…', icon: 'share', act: () => SM.go(B.cardPath(id) + '?publish=1') });
     if (editable) {
       items.push({ sep: true }, { label: 'Archive', icon: 'archive', act: async () => { if (await B.run('card_archive', { id, archived: true })) { SM.toast('Card archived. Restore it from the Studio menu › Archive.'); if (SM.cardPanel.id === id) SM.go(base()); } } });
     }

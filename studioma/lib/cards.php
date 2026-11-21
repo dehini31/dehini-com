@@ -69,7 +69,8 @@ function card_full(int $id, array $u, array $studio): array
             return ['id' => (int) $e['id'], 'kind' => (string) $e['kind'], 'text' => (string) $e['text'], 'created' => (int) $e['created'], 'user' => $who((int) $e['uid'], (int) $e['guest_id'])];
         }, $events),
         'can' => [
-            'edit' => $canEdit, 'reassign' => !$g && can($role, 'edit'), 'comment' => can($role, 'comment'),
+            'edit' => $canEdit, 'reassign' => !$g && can($role, 'edit'),
+            'comment' => can($role, 'comment') && (!$g || empty($g['card']) || !empty($g['opts']['comments'])),
             // Seule la personne (ou l'invité) désignée valide ; un propriétaire peut le faire à sa place.
             'decide' => $pending && ($g ? $gid > 0 && (int) $pending['approver_guest'] === $gid : (((int) $pending['approver_uid'] === $uid && $uid > 0) || can($role, 'own'))),
             'delete' => !$g && card_can_delete($c, $role, $uid),

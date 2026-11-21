@@ -33,7 +33,7 @@ vanilla HTML/CSS/JS in the browser. Full context: `docs/PROJECT_CONTEXT.md`. Hum
 | `swanbida/` | e-shop, cash on delivery, Meta Pixel + Conversions API | « SWANBIDA » |
 | `marketing/` | private marketing dashboard (Meta Graph API, webhooks) | « Marketing Dashboard », `docs/meta-*.md` |
 | `maillage/` | points-of-sale / distribution platform, map, in-browser image search | « Maillage », `tools/vision/` |
-| `studioma/` | social network + collaborative studio for community managers (English UI), MCP server, guest sharing, Meta Pixel/CAPI, platform admin (`studioma/admin/`), plans & Paddle billing (`docs/billing.md`) | « Studioma » |
+| `studioma/` | social network + collaborative studio for community managers (English UI), MCP server, guest sharing (Studio or single card), Community (cards published as achievements / opportunities, proposals), Meta Pixel/CAPI, platform admin (`studioma/admin/`), plans & Paddle billing (`docs/billing.md`) | « Studioma » |
 | `.well-known/` | OAuth discovery rewrites for Studioma's MCP server | « Studioma › 4 » |
 | `tests/<project>/` | fake-hosting test suites (Studioma, SWANBIDA, Maillage) | `tests/*/README.md` |
 | `tools/` | one-off scripts (data import, vision model build, showcase screenshots) | each tool's header |

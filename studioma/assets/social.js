@@ -15,11 +15,16 @@
     const a = p.author || { name: 'Former member', handle: '' };
     return html`<a class="post-by" href="#/${c ? 'c/' + c.slug : 'u/' + a.handle}">${c ? SM.logoBox(c, 'av-m') : SM.avatar(a, 'av-m')}<span><b>${c ? c.name : a.name}</b><small class="muted">${c ? (c.tagline || 'Company') : (a.title || '@' + a.handle)} · ${fmt.ago(p.created)}</small></span></a>`;
   };
+  /** Réalisation publiée depuis une carte (lib/pubs.php) : un aperçu qui mène à sa page. */
+  const pubBlock = (x) => (x ? html`<a class="post-pub" href="#/pub/${x.id}">${x.cover && x.cover.kind === 'image' ? html`<img src="${SM.fileUrl(x.cover.token)}" alt="" loading="lazy">` : ''}
+      <span class="post-pub-body"><span class="pub-kicker">${icon('award')}Achievement${x.category ? ' · ' + x.category : ''}</span><b>${x.title}</b>${x.body ? html`<span class="clamp-2 muted small">${x.body}</span>` : ''}
+      ${x.skills && x.skills.length ? html`<span class="chips-list">${x.skills.map((k) => html`<span class="chip chip-soft">${k}</span>`)}</span>` : ''}</span></a>` : '');
   SM.postView = (p) => html`<article class="panel post" data-post="${p.id}">
       <header>${byline(p)}<button class="btn-icon" data-act="post-menu" data-id="${p.id}" data-mine="${p.mine ? 1 : 0}" aria-label="Post options">${icon('more')}</button></header>
       ${p.body ? html`<p class="post-body">${SM.linkify(p.body)}</p>` : ''}
       ${mediaGrid(p.media)}
-      ${p.share_id ? (p.shared ? html`<div class="post-shared">${byline(p.shared)}${p.shared.body ? html`<p class="post-body clamp-4">${SM.linkify(p.shared.body)}</p>` : ''}${mediaGrid(p.shared.media)}</div>` : html`<div class="post-shared muted">This post is no longer available.</div>`) : ''}
+      ${pubBlock(p.pub)}
+      ${p.share_id ? (p.shared ? html`<div class="post-shared">${byline(p.shared)}${p.shared.body ? html`<p class="post-body clamp-4">${SM.linkify(p.shared.body)}</p>` : ''}${mediaGrid(p.shared.media)}${pubBlock(p.shared.pub)}</div>` : html`<div class="post-shared muted">This post is no longer available.</div>`) : ''}
       <footer class="post-actions">
         <button class="post-act${p.liked ? ' is-on' : ''}" data-act="post-like" data-id="${p.id}" aria-pressed="${p.liked}">${icon('heart')}<span>${p.likes || ''}</span><em>Like</em></button>
         <button class="post-act" data-act="post-comments" data-id="${p.id}">${icon('comment')}<span>${p.comments || ''}</span><em>Comment</em></button>
@@ -256,6 +261,8 @@
           ${section('Portfolio', 'award', r.portfolio.length ? html`<div class="grid grid-2 cases">${r.portfolio.map(caseCard)}</div>`
             : SM.empty('award', self ? 'Showcase your best work' : 'No case study yet', self ? 'Add a case study: the campaign, your role, the objectives and the results. Work done in a Studio can be turned into a verified case study.' : '', self ? html`<button class="btn btn-primary" data-act="case-new">${icon('plus')}Add case study</button>` : ''),
             self && r.portfolio.length ? html`<button class="btn btn-soft btn-sm" data-act="case-new">${icon('plus')}Add</button>` : '')}
+          ${(r.achievements || []).length || self ? section('Achievements', 'sparkles', (r.achievements || []).length ? html`<div class="ach-grid ach-grid-s">${r.achievements.map((a) => SM.achCard(a))}</div>`
+            : html`<p class="muted small">Finished cards you publish from your Studios (“Share & publish” › Publish achievement) appear here and in the <a href="#/community">Community</a>.</p>`) : ''}
           ${section('Recommendations', 'quote', r.recommendations.length ? html`<div class="recs">${r.recommendations.map((x) => html`<blockquote class="rec${x.status !== 'visible' ? ' is-pending' : ''}">
               <p>${x.body}</p><footer><a class="row" href="#/u/${x.from ? x.from.handle : ''}">${SM.avatar(x.from, 'av-m')}<span><b>${x.from ? x.from.name : 'Former member'}</b><small class="muted">${SM.ref.relations[x.relation]}${x.from && x.from.title ? ' · ' + x.from.title : ''}</small></span></a>
                 ${x.together ? html`<span class="vbadge v-studio" title="They shared a project on Studioma">${icon('badge')}Worked together</span>` : ''}<span class="grow"></span>
