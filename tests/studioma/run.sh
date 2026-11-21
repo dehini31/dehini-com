@@ -18,7 +18,7 @@ cleanup() { [ -n "$P1" ] || return 0; pkill -P "$P1" 2>/dev/null || true; kill "
 trap cleanup EXIT
 fresh() {
   cleanup
-  BILLING=${1:-0} "$HERE/setup.sh" "$DIR" "$PORT" >/dev/null
+  BILLING=${1:-0} PROMO=${PROMO:-0} "$HERE/setup.sh" "$DIR" "$PORT" >/dev/null
   php -r '$i = imagecreatetruecolor(900, 600); imagefill($i, 0, 0, imagecolorallocate($i, 91, 75, 255)); imagefilledellipse($i, 450, 300, 380, 380, imagecolorallocate($i, 255, 122, 89)); imagepng($i, $argv[1]);' "$DIR/photo.png"
   echo "pas une image" > "$DIR/faux.jpg"
   echo "Notes de tournage" > "$DIR/notes.txt"
@@ -39,6 +39,8 @@ fresh
 node "$HERE/admin.js" "http://127.0.0.1:$PORT" "$DIR"
 fresh 1
 node "$HERE/billing.js" "http://127.0.0.1:$PORT" "$DIR"
+PROMO=1 fresh
+node "$HERE/promo.js" "http://127.0.0.1:$PORT" "$DIR"
 fresh
 node "$HERE/publish.js" "http://127.0.0.1:$PORT" "$DIR"
 fresh

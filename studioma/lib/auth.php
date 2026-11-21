@@ -270,6 +270,8 @@ function me_view(array $u, string $csrf): array
             'terms' => (int) ($u['terms_at'] ?? 0) > 0,
         ],
         'companies' => my_companies((int) $u['id']),
+        // Offre de lancement (essai, année offerte) : bannières de l'application (lib/promo.php).
+        'promo' => function_exists('promo_state') ? promo_state((int) $u['id']) : null,
         'csrf' => $csrf,
         'counts' => me_counts((int) $u['id']),
     ];

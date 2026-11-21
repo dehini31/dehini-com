@@ -42,6 +42,17 @@ const STM_FAIR_USE_CARDS = 5000;
 /** Paiement en échec (past_due) : la formule payée reste active ce nombre de jours, puis la formule Free s'applique. */
 const STM_PAST_DUE_GRACE_DAYS = 14;
 
+/*
+ * Offre de lancement (lib/promo.php) : 30 jours d'accès complet (formule Team) sans carte, et 1 an offert pour 10 amis
+ * inscrits et vérifiés. Réglage STM_LAUNCH_PROMO (true par défaut) ; ces valeurs ne se changent qu'ici.
+ */
+const STM_PROMO_ID = 'launch2026';
+const STM_PROMO_PLAN = 'team';
+const STM_PROMO_TRIAL_DAYS = 30;
+const STM_REFERRAL_GOAL = 10;
+const STM_REFERRAL_REWARD_MONTHS = 12;
+const STM_REFERRAL_ATTRIBUTION_DAYS = 30;
+
 /**
  * Ce que la page des prix affiche pour chaque formule : uniquement des fonctionnalités qui existent et qui sont
  * réellement appliquées (voir les tests tests/studioma/billing.js).

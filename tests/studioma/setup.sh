@@ -41,7 +41,20 @@ define('STM_PADDLE_PRICE_SOLO_YEARLY', 'pri_solo_year');
 define('STM_PADDLE_PRICE_TEAM_MONTHLY', 'pri_team_month');
 define('STM_PADDLE_PRICE_TEAM_YEARLY', 'pri_team_year');
 PHP
+elif [ "${PROMO:-0}" = "1" ]; then
+  # Offre de lancement (promo.js) : limites appliquées, paiement fermé comme en production ; tout appel à Paddle irait
+  # au faux Paddle et serait noté dans fake-paddle.json (il ne doit jamais y en avoir). Règles anti-abus réglées par le test.
+  PORT=${2:-8097}
+  cat >> "$DIR/public_html/studioma/config.php" <<PHP
+define('STM_PLANS_ENFORCED', true);
+define('STM_LAUNCH_PROMO', true);
+define('STM_PADDLE_API_BASE', 'http://127.0.0.1:$PORT/fake-paddle');
+define('STM_REFERRAL_SAME_IP_MAX', 0);
+define('STM_REFERRAL_BURST_MAX', 0);
+PHP
 else
   echo "define('STM_PLANS_ENFORCED', false);" >> "$DIR/public_html/studioma/config.php"
 fi
+# Les batteries historiques (et billing.js) créent des comptes sans l'offre de lancement : ils restent en Free.
+[ "${PROMO:-0}" = "1" ] || echo "define('STM_LAUNCH_PROMO', false);" >> "$DIR/public_html/studioma/config.php"
 echo "OK $DIR"
