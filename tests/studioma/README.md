@@ -9,7 +9,7 @@ politique de sécurité (CSP).
 tests/studioma/run.sh /tmp/stm-test
 ```
 
-`run.sh` prépare un hébergement neuf, lance le serveur PHP (port 8097) et exécute neuf batteries, chacune sur une
+`run.sh` prépare un hébergement neuf, lance le serveur PHP (port 8097) et exécute onze batteries, chacune sur une
 base vide. Les événements Meta (API Conversions) sont écrits dans `meta.jsonl` (faux ensemble de données) ; dans le
 navigateur, un faux script du pixel note les appels à `fbq` :
 
@@ -123,6 +123,22 @@ résiliation, reprise, fin confirmée par Paddle, dépassements ; paiement en é
 espace client ; indicateurs de l'administration (MRR, ARR, sandbox séparé), formule offerte ; navigateur : page des
 prix, mensuel / annuel, invitation à changer de formule, paiement avec un faux Paddle.js, attente de la
 confirmation, réglages, Insights, mobile, aucune violation de la CSP.
+
+**`promo.js` — l'offre de lancement** (`setup.sh` avec `PROMO=1` : limites appliquées, paiement fermé comme en
+production, règles anti-abus réglées par le test ; les autres batteries tournent sans l'offre) : essai de 30 jours
+à l'inscription (limites Team, une seule fois, réclamable par un compte existant, jamais par-dessus un accès Team),
+fin de l'essai (Free, rien supprimé, API comprise), lien de parrainage (code aléatoire), clics et visiteurs uniques
+(robots et membres ignorés), attribution (première valable, signée, 30 jours ; cookie falsifié ou trop vieux
+ignoré), vérification par lien de confirmation et par mot de passe oublié, parrainage de soi refusé, 10 amis : 12
+mois civils à la suite de l'essai, une seule fois (même avec 12 vérifications simultanées), immédiate si l'essai est
+fini, sans réduire un accès offert, fin de l'année offerte, activité suspecte à examiner puis approuvée, indicateurs
+de l'administration, aucun appel à Paddle ni paiement, offre coupée.
+
+**`promo-e2e.js` — l'offre dans Chromium** : page des prix (plus de « Coming soon », « Get 30 Days Free » et « No
+credit card required » sur Solo et Team, annonce, mensuel / annuel, Most Popular, aucun champ de carte), accueil
+(offre, messages de confiance, lien ?ref= compté), inscription sans paiement, bannière (jours restants, date), Refer &
+Earn (lien, copie, partages, statistiques, progression 7 / 10 puis 10 / 10, messages, félicitations), essai terminé,
+réclamation par un compte existant, Plan & billing, administration, mobile.
 
 **`publish.js` — partager une carte, la publier dans la communauté** (API seule, comme un navigateur malveillant) :
 

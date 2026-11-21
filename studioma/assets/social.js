@@ -174,6 +174,7 @@
     const tab = SM.query().get('tab') === 'saved' ? 'saved' : 'home';
     SM.set(ctx.view, html`<div class="page with-rail feed-page">
       <div class="feed-col">
+        ${SM.promoBanner ? SM.promoBanner() : ''}
         <div class="panel composer" data-act="compose" role="button" tabindex="0">${SM.avatar(SM.me, 'av-m')}<span class="composer-in">Share a result, a lesson learned, a behind-the-scenes…</span><span class="btn btn-soft btn-sm">${icon('image')}Media</span></div>
         <div class="tabs"><a class="tab${tab === 'home' ? ' is-active' : ''}" href="#/">${icon('home')}For you</a><a class="tab${tab === 'saved' ? ' is-active' : ''}" href="#/?tab=saved">${icon('bookmark')}Saved</a></div>
         <div id="feed" class="feed">${SM.loading(3)}</div>

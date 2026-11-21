@@ -29,6 +29,7 @@ require __DIR__ . '/lib/google.php';
 require __DIR__ . '/lib/oauth.php';
 require __DIR__ . '/lib/share.php';
 require __DIR__ . '/lib/pubs.php';
+require __DIR__ . '/lib/promo.php';
 require __DIR__ . '/lib/meta.php';
 require __DIR__ . '/lib/admin.php';
 
@@ -86,6 +87,8 @@ const ROUTES = [
     'community' => ['GET', 'public'], 'pub_get' => ['GET', 'public'], 'pub_save' => ['POST', 'user'], 'pub_status' => ['POST', 'user'],
     'pub_delete' => ['POST', 'user'], 'pub_invite' => ['POST', 'user'], 'proposal_save' => ['POST', 'user'], 'proposal_withdraw' => ['POST', 'user'],
     'proposal_decide' => ['POST', 'user'],
+    // Offre de lancement : essai de 30 jours, parrainage, année offerte — sans carte ni paiement (lib/promo.php)
+    'promo' => ['GET', 'user'], 'promo_claim' => ['POST', 'user'], 'ref_click' => ['POST', 'public'],
     'threads' => ['GET', 'user'], 'thread' => ['GET', 'user'], 'message_send' => ['POST', 'user'],
     // Administration de la plateforme (studioma/admin/) : statistiques en direct, comptes, modération, emails, système
     'admin_live' => ['GET', 'admin'], 'admin_users' => ['GET', 'admin'], 'admin_user' => ['GET', 'admin'], 'admin_user_action' => ['POST', 'admin'],
@@ -94,7 +97,7 @@ const ROUTES = [
     'admin_campaign' => ['GET', 'admin'], 'admin_campaign_preview' => ['POST', 'admin'], 'admin_campaign_save' => ['POST', 'admin'],
     'admin_campaign_test' => ['POST', 'admin'], 'admin_campaign_send' => ['POST', 'admin'], 'admin_campaign_action' => ['POST', 'admin'],
     'admin_pump' => ['POST', 'admin'], 'admin_system' => ['GET', 'admin'], 'admin_studios' => ['GET', 'admin'], 'admin_studio' => ['GET', 'admin'],
-    'admin_billing' => ['GET', 'admin'],
+    'admin_billing' => ['GET', 'admin'], 'admin_promo' => ['GET', 'admin'], 'admin_promo_review' => ['POST', 'admin'],
 ];
 
 /**
@@ -133,6 +136,7 @@ function reference(): array
         'languages' => STM_LANGUAGES, 'contracts' => STM_CONTRACTS, 'modes' => STM_WORK_MODES, 'availability' => STM_AVAILABILITY,
         'colors' => STM_COLORS, 'priorities' => STM_PRIORITIES, 'roles' => ROLE_LABELS, 'relations' => RELATIONS,
         'sizes' => COMPANY_SIZES, 'app_statuses' => APP_STATUSES, 'metrics' => METRIC_KEYS, 'templates' => templates_view(),
+        'launch_promo' => promo_enabled(), 'promo_trial_days' => STM_PROMO_TRIAL_DAYS, 'referral_goal' => STM_REFERRAL_GOAL,
         'opp_kinds' => OPP_KINDS, 'pub_categories' => PUB_CATEGORIES, 'currencies' => PUB_CURRENCIES, 'proposal_statuses' => PROPOSAL_STATUSES,
         'max_upload_mb' => upload_limit_mb(), 'name' => STM_NAME, 'google_client_id' => google_client_id(), 'meta_pixel' => meta_pixel_id(),
     ];
@@ -166,13 +170,16 @@ function api_signup(array $b, ?array $u): array
         if ($kind === 'company') company_create(['name' => $company], $uid);
         return $uid;
     });
+    // Offre de lancement : essai de 30 jours et parrainage éventuel (lib/promo.php ; jamais de carte ni de paiement).
+    $trial = promo_on_signup($uid, false, $u);
     $csrf = start_session($uid);
     // L'email de bienvenue porte le lien de confirmation de l'adresse.
-    mail_later($email, 'Welcome to ' . STM_NAME, 'Welcome, ' . $name . '!', [
+    mail_later($email, 'Welcome to ' . STM_NAME, 'Welcome, ' . $name . '!', array_values(array_filter([
         'Your account is ready. ' . ($kind === 'company' ? 'Set up your company page, create your first Studio and invite your team.' : 'Complete your profile, create your first Studio and invite your collaborators.'),
+        $trial ? 'Your ' . STM_PROMO_TRIAL_DAYS . '-day full-access trial is active: every Studioma feature, no credit card, no automatic billing.' : '',
         'Please confirm your email address: invitations to projects and Studios sent to it will then appear in your workspace. Open the link while signed in; it is valid for ' . EMAIL_CONFIRM_DAYS . ' days.',
         'If you didn\'t create this account, ignore this email: the address stays unconfirmed. To take back an account created with your address, use “Forgot your password?” on the sign-in page.',
-    ], 'Confirm my email', email_confirm_link($uid));
+    ])), 'Confirm my email', email_confirm_link($uid));
     return me_view(user_by_id($uid), $csrf);
 }
 function api_login(array $b, ?array $u): array
@@ -219,6 +226,7 @@ function api_reset(array $b, ?array $u): array
     // Le lien a été reçu à cette adresse : elle est confirmée.
     q('UPDATE users SET pass = ?, rhash = NULL, rexp = 0, email_ok = 1 WHERE id = ?', [password_hash($password, PASSWORD_DEFAULT), $t['id']]);
     q('DELETE FROM sessions WHERE uid = ?', [$t['id']]);   // les anciennes sessions sont fermées
+    promo_on_verified((int) $t['id']);   // adresse vérifiée : parrainage en attente (lib/promo.php)
     return me_view($t, start_session((int) $t['id']));
 }
 function api_password(array $b, array $u): array
@@ -346,6 +354,7 @@ function api_email_confirm(array $b, array $u): array
         fail('This link has expired or was sent for another account. Send a new one from Settings.', 410, 'gone');
     }
     q('UPDATE users SET email_ok = 1, chash = NULL, cexp = 0 WHERE id = ?', [$u['id']]);
+    promo_on_verified((int) $u['id']);   // adresse vérifiée : parrainage en attente (lib/promo.php)
     return me_view(user_by_id((int) $u['id']), (string) $u['s_csrf']);
 }
 

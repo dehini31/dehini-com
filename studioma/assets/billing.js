@@ -47,6 +47,10 @@
     ['Team invitations, roles and assignments', (p) => yes(p.features.team)],
     ['Studio performance insights', (p) => yes(p.features.insights)],
   ];
+  /** Réponse « essai gratuit » : l'offre de lancement quand elle est ouverte (lib/promo.php), sinon la formule Free. */
+  const trialAnswer = (on) => (on
+    ? `Yes. Every account gets ${SM.ref.promo_trial_days || 30} days of full access to all features (the Team plan and its limits) — no credit card, no payment, no automatic billing. When it ends you continue on Free: nothing is deleted and nothing is charged. Invite 10 friends who verify their accounts and you unlock a full year.`
+    : 'The Free plan is free forever, without a card. Start there and upgrade when you need more clients or a team.');
   const FAQ = [
     ['Can I change plans later?', 'Yes. Upgrades apply right away and Paddle charges only the prorated difference. Moving to a lower plan or back to Free never deletes anything.'],
     ['What happens to my work if I downgrade?', 'Everything stays: projects, Studios, cards, history. If you are above the new plan\'s limits, you can still open everything, but you can\'t create more until you archive or delete some, or upgrade again. Extra team members and guests keep read-only access.'],
@@ -54,7 +58,7 @@
     ['What counts as a card on the Free plan?', 'Each new card created in your projects during the calendar month (by you, a guest or an AI assistant). The allowance renews on the 1st. Existing cards are never deleted. Paid plans have unlimited cards, with a fair-use limit of 5,000 new cards per month.'],
     ['How does payment work?', 'Payments are handled by Paddle, our reseller and merchant of record. Your card details go to Paddle, never to Studioma. Taxes may apply depending on your country; Paddle shows the final amount before you pay and emails your invoices.'],
     ['Can I cancel at any time?', 'Yes, from Settings › Plan & billing. You keep your paid plan until the end of the period you paid for, then your account moves to Free.'],
-    ['Is there a free trial?', 'The Free plan is free forever, without a card. Start there and upgrade when you need more clients or a team.'],
+    ['Is there a free trial?', ''],
   ];
   SM.route(/^\/pricing$/, async (m, ctx) => {
     const q = SM.query();
@@ -65,7 +69,21 @@
     if (!ctx.alive()) return;
     const current = me ? me.plan : null;
     const paid = me && me.subscription && me.subscription.provider === 'paddle' ? me.subscription : null;
+    const promoSub = me && me.subscription && me.subscription.provider === 'promo' ? me.subscription : null;
     const focus = q.get('plan');
+    // Offre de lancement : 30 jours d'accès complet, sans carte (la même pour Solo et Team), et parrainage.
+    const promoOn = !!d.promo;
+    const promo = SM.me ? SM.promo : null;
+    /** Bouton d'une carte payante pendant l'offre : jamais de paiement, un seul essai par compte. */
+    const promoCta = (p) => {
+      const tag = html`<p class="plan-nocard">${icon('check')}No credit card required</p>`;
+      if (!SM.me) return html`<a class="btn ${p.key === 'solo' ? 'btn-primary' : 'btn-soft'} btn-block" href="#/signup">Get 30 Days Free</a>${tag}`;
+      if (promo && (promo.reward.state === 'active' || promo.reward.state === 'scheduled')) return html`<button class="btn btn-block" disabled>${icon('award')}Free year unlocked</button>${tag}`;
+      if (promo && promo.trial.state === 'active') return html`<button class="btn btn-block" disabled>${icon('check')}Free trial active — ${fmt.plural(promo.trial.days_left, 'day')} left</button>${tag}`;
+      if (promo && promo.claimable) return html`<button class="btn ${p.key === 'solo' ? 'btn-primary' : 'btn-soft'} btn-block" data-act="promo-claim">Get 30 Days Free</button>${tag}`;
+      if (promo && promo.other_team) return html`<button class="btn btn-block" disabled>${icon('check')}You already have full access</button>`;
+      return html`<button class="btn btn-block" disabled>Free trial already used</button><a class="plan-alt" href="#/refer">${icon('award')}Invite 10 friends for a free year</a>`;
+    };
     const draw = () => {
       const card = (p) => {
         const isCurrent = current === p.key && (!paid || paid.interval === interval || p.key === 'free');
@@ -75,6 +93,8 @@
           cta = !SM.me ? html`<a class="btn btn-block" href="#/signup">Get Started Free</a>`
             : current === 'free' ? html`<button class="btn btn-block" disabled>${icon('check')}Current plan</button>`
               : html`<a class="btn btn-ghost btn-block" href="#/settings/billing">Downgrade to Free</a>`;
+        } else if (!d.checkout && promoOn) {
+          cta = promoCta(p);   // même essai Team pour Solo et Team, jamais de paiement
         } else if (isCurrent) {
           cta = html`<button class="btn btn-block" disabled>${icon('check')}Current plan</button>`;
         } else if (!d.checkout) {
@@ -85,7 +105,7 @@
         }
         return html`<article class="panel plan-card ${p.key === 'solo' ? 'is-popular' : ''} ${focus === p.key ? 'is-focus' : ''}">
           ${p.key === 'solo' ? html`<span class="plan-badge">Most Popular</span>` : ''}
-          <header><h2>${p.name}</h2>${current === p.key ? html`<span class="chip chip-ok">Your plan</span>` : ''}</header>
+          <header><h2>${p.name}</h2>${current === p.key ? html`<span class="chip chip-ok">${promoSub ? (promoSub.status === 'trialing' ? 'Free trial' : 'Free year') : 'Your plan'}</span>` : ''}</header>
           <p class="muted">${p.tagline}</p>
           <p class="plan-price"><b>${money(price)}</b><span>/${interval}</span></p>
           <p class="plan-sub">${p.key === 'free' ? 'Free forever — no card needed' : interval === 'year' ? `${money(Math.round(price / 12))}/month billed yearly · 2 months free` : `or ${money(p.price.year)}/year — 2 months free`}</p>
@@ -103,15 +123,20 @@
             <label><input type="radio" name="interval" value="year" data-change="plan-interval" ${interval === 'year' ? 'checked' : ''}><span>Yearly <em class="save">2 months free</em></span></label>
           </div>
         </header>
-        ${!d.checkout ? html`<p class="notice pricing-note">${icon('info')}<span>Online payment for Solo and Team opens soon. Start free today — everything you create stays when you upgrade.</span></p>` : ''}
+        ${promoOn ? html`<div class="promo-hero pricing-note">${icon('sparkles')}<div><b>Special Launch Offer: Enjoy 30 days of full access to all Studioma features — completely free. No credit card required.</b>
+            ${!d.checkout ? html`<span>Paid subscriptions aren't available yet: the Solo and Team prices below are planned prices. The offer is a free trial of every feature, not a subscription — nothing is ever charged, and you return to Free when it ends without losing anything.</span>` : ''}</div></div>`
+          : !d.checkout ? html`<p class="notice pricing-note">${icon('info')}<span>Online payment for Solo and Team opens soon. Start free today — everything you create stays when you upgrade.</span></p>` : ''}
         ${me && me.over && me.over.length ? html`<p class="notice notice-warn pricing-note">${icon('alert')}<span>Your account is above the ${me.plan_name} plan limits (${me.over.map((o) => `${o.label} ${o.used}/${o.max}`).join(', ')}). Nothing was deleted — <a href="#/settings/billing">see details</a>.</span></p>` : ''}
         <div class="plan-grid">${plans.map(card)}</div>
+        ${promoOn ? html`<section class="panel pad promo-invite">${icon('award')}<div class="grow"><h2>Invite 10 Friends. Get 1 Year Free.</h2>
+            <p>Share Studioma with your friends. When 10 new users register and verify their accounts through your referral link, unlock 12 months of full access.</p></div>
+            <a class="btn btn-primary" href="${SM.me ? '#/refer' : '#/signup'}" data-act="promo-invite">${icon('users')}Invite & Earn</a></section>` : ''}
         <section class="panel compare-wrap"><h2 class="pad">Compare plans</h2>
           <div class="table-scroll"><table class="compare">
             <thead><tr><th></th>${plans.map((p) => html`<th>${p.name}<small>${money(p.price[interval])}/${interval}</small></th>`)}</tr></thead>
             <tbody>${COMPARE.map(([label, fn]) => html`<tr><th scope="row">${label}</th>${plans.map((p) => html`<td>${fn(p)}</td>`)}</tr>`)}</tbody>
           </table></div></section>
-        <section class="faq"><h2>Frequently asked questions</h2>${FAQ.map(([qq, a]) => html`<details class="panel"><summary>${qq}</summary><p>${a}</p></details>`)}</section>
+        <section class="faq"><h2>Frequently asked questions</h2>${FAQ.map(([qq, a]) => html`<details class="panel"><summary>${qq}</summary><p>${a || trialAnswer(promoOn)}</p></details>`)}</section>
       </div>`);
       const f = focus && SM.$('.plan-card.is-focus');
       if (f && f.scrollIntoView) f.scrollIntoView({ block: 'center' });
@@ -119,6 +144,7 @@
     SM.changes['plan-interval'] = (el) => { interval = el.value; draw(); };
     draw();
   }, { public: true });
+  SM.actions['promo-invite'] = (el) => { if (!SM.me) sessionStorage.setItem('stm.next', '/refer'); SM.go(SM.me ? '/refer' : '/signup'); };
   const STM_RANK = { free: 0, solo: 1, team: 2 };
 
   /** Choisir une formule : paiement Paddle (nouvel abonnement) ou changement de l'abonnement en cours. */
@@ -159,7 +185,8 @@
     const draw = () => {
       const s = d.subscription;
       const paddle = s && s.provider === 'paddle';
-      const [stateLabel, stateCls] = s && s.provider === 'manual' ? ['Complimentary', 'chip-soft'] : s && s.cancel_at ? ['Ends ' + fmt.date(s.cancel_at), 'chip-warn'] : (STATE[d.state] || [d.state, '']);
+      const promoSub = s && s.provider === 'promo';
+      const [stateLabel, stateCls] = promoSub ? [s.status === 'trialing' ? 'Free trial' : 'Free year (referrals)', 'chip-ok'] : s && s.provider === 'manual' ? ['Complimentary', 'chip-soft'] : s && s.cancel_at ? ['Ends ' + fmt.date(s.cancel_at), 'chip-warn'] : (STATE[d.state] || [d.state, '']);
       const L = d.limits;
       const U = d.usage;
       const bar = (label, used, max, hint) => {
@@ -179,6 +206,7 @@
           <div class="row between"><div><small class="muted">Current plan</small><h2 class="plan-name">${d.plan_name}</h2></div><span class="chip ${stateCls}">${stateLabel}</span></div>
           ${paddle ? html`<p>${money(s.amount)} per ${s.interval === 'year' ? 'year' : 'month'} · billed ${s.interval === 'year' ? 'yearly' : 'monthly'}${s.cancel_at ? html` · <b>ends on ${fmt.date(s.cancel_at)}</b>, then Free` : s.period_end ? ` · renews on ${fmt.date(s.period_end)}` : ''}</p>` : ''}
           ${s && s.provider === 'manual' ? html`<p>Offered by Studioma${s.period_end ? ' until ' + fmt.date(s.period_end) : ''}.</p>` : ''}
+          ${promoSub ? html`<p>Launch offer: full access until <b>${fmt.date(s.period_end)}</b> — no credit card, no payment, no automatic billing. Then your account returns to Free; nothing is deleted. <a href="#/refer">Invite friends to earn a free year</a>.</p>` : ''}
           ${d.plan === 'free' ? html`<p class="muted">Free forever. Upgrade when you need more projects, client approvals or a team.</p>` : ''}
           <div class="row row-wrap">
             ${d.plan !== 'team' ? html`<a class="btn btn-primary" href="#/pricing?plan=${d.plan === 'free' ? 'solo' : 'team'}">${icon('zap')}${d.plan === 'free' ? 'Upgrade' : 'Upgrade to Team'}</a>` : ''}

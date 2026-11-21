@@ -194,7 +194,7 @@ function marks(array $a): string
 /** Schéma compatible avec les vieilles versions de SQLite des hébergeurs mutualisés. */
 function migrate(PDO $pdo): void
 {
-    if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= 10) return;
+    if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= 11) return;
     // Deux premières visites simultanées : la seconde attend la fin de la création, puis ne fait rien.
     $pdo->exec('BEGIN IMMEDIATE');
     try {
@@ -1077,6 +1077,62 @@ function migrate(PDO $pdo): void
         CREATE INDEX IF NOT EXISTS proposals_u ON proposals(uid);
         CREATE INDEX IF NOT EXISTS posts_pub ON posts(pub_id);
         PRAGMA user_version = 10;
+        SQL);
+        }
+        if ($v < 11) {
+            // Offre de lancement (lib/promo.php) : essai de 30 jours, parrainage, année offerte. Tables nouvelles seulement ;
+            // les accès accordés sont des lignes de subscriptions (provider « promo »), lues par account_plan().
+            $pdo->exec(<<<SQL
+        -- Code de parrainage d'un compte (un seul, permanent) : 8 caractères tirés au hasard, jamais l'id ni l'email.
+        CREATE TABLE IF NOT EXISTS ref_codes (
+            uid INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+            code TEXT NOT NULL UNIQUE,
+            created INTEGER NOT NULL
+        );
+        -- Clic sur un lien de parrainage (page d'accueil ou application, JavaScript exécuté) : visitor = empreinte d'un
+        -- identifiant aléatoire du navigateur (cookie stm_vid), jamais d'adresse IP ni de donnée personnelle.
+        CREATE TABLE IF NOT EXISTS ref_clicks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            uid INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            visitor TEXT NOT NULL,
+            created INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS ref_clicks_u ON ref_clicks(uid, visitor);
+        CREATE INDEX IF NOT EXISTS ref_clicks_c ON ref_clicks(created);
+        -- Compte créé par un lien de parrainage (un seul parrain par compte). status : pending (adresse pas encore
+        -- vérifiée) | verified (compte pour la récompense) | review (activité suspecte, décision de l'administration) |
+        -- rejected. ip_hash : empreinte salée de l'adresse IP à l'inscription, seulement pour repérer les abus.
+        CREATE TABLE IF NOT EXISTS referrals (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            referrer_uid INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            referred_uid INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+            code TEXT NOT NULL,
+            clicked_at INTEGER NOT NULL DEFAULT 0,
+            registered_at INTEGER NOT NULL,
+            verified_at INTEGER NOT NULL DEFAULT 0,
+            status TEXT NOT NULL DEFAULT 'pending',
+            reason TEXT NOT NULL DEFAULT '',
+            ip_hash TEXT NOT NULL DEFAULT '',
+            decided_at INTEGER NOT NULL DEFAULT 0
+        );
+        CREATE INDEX IF NOT EXISTS referrals_r ON referrals(referrer_uid, status);
+        -- Avantages de l'offre accordés à un compte : un essai et une récompense au plus par campagne (contrainte
+        -- d'unicité : ni double essai, ni double année, même avec des requêtes simultanées). sub_id : la ligne de
+        -- subscriptions qui donne l'accès ; starts / ends : sa période.
+        CREATE TABLE IF NOT EXISTS promo_grants (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            uid INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            promo TEXT NOT NULL,
+            kind TEXT NOT NULL,
+            source TEXT NOT NULL DEFAULT '',
+            sub_id INTEGER NOT NULL DEFAULT 0,
+            starts INTEGER NOT NULL,
+            ends INTEGER NOT NULL,
+            created INTEGER NOT NULL,
+            UNIQUE (uid, promo, kind)
+        );
+        CREATE INDEX IF NOT EXISTS promo_grants_k ON promo_grants(promo, kind, ends);
+        PRAGMA user_version = 11;
         SQL);
         }
         $pdo->exec('COMMIT');

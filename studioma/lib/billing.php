@@ -150,7 +150,8 @@ function billing_cache_clear(): void
 }
 /**
  * Formule en vigueur d'un compte, d'après les seuls abonnements vérifiés (Paddle, par webhook ou réponse de son
- * API ; ou offert par l'administration). ['plan', 'status', 'sub' (ligne ou null), 'grace_until'].
+ * API ; offert par l'administration ; ou offre de lancement, provider « promo »). Le meilleur l'emporte : plusieurs
+ * accès en même temps ne se réduisent jamais. ['plan', 'status', 'sub' (ligne ou null), 'grace_until'].
  */
 function account_plan(int $uid): array
 {
@@ -162,6 +163,10 @@ function account_plan(int $uid): array
     foreach (rows("SELECT * FROM subscriptions WHERE uid = ? AND status IN ('trialing', 'active', 'past_due') ORDER BY id DESC", [$uid]) as $s) {
         if ($s['provider'] === 'manual') {
             if ((int) $s['period_end'] && (int) $s['period_end'] <= $now) continue;   // offert jusqu'à une date passée
+        } elseif ($s['provider'] === 'promo') {
+            // Offre de lancement (lib/promo.php) : valable de period_start à period_end exclusivement ; une année offerte
+            // peut commencer à la fin de l'essai. Jamais de paiement, jamais de renouvellement.
+            if ((int) $s['period_start'] > $now || (int) $s['period_end'] <= $now) continue;
         } elseif ($s['env'] !== billing_env()) {
             continue;   // un abonnement de test (sandbox) ne vaut rien en production, et inversement
         }
@@ -425,6 +430,8 @@ function api_billing_plans(array $b, ?array $u): array
     }
     return [
         'plans' => $plans, 'fair_use_cards' => STM_FAIR_USE_CARDS, 'checkout' => billing_available(), 'env' => billing_env(),
+        // Offre de lancement ouverte (lib/promo.php) : la page des prix propose l'essai gratuit, sans carte.
+        'promo' => function_exists('promo_enabled') && promo_enabled(),
         'current' => $u ? account_plan((int) $u['id'])['plan'] : null,
     ];
 }

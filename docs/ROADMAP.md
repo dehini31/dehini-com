@@ -26,9 +26,11 @@ status changes; keep the history of finished items short.
 
 ## In progress
 
-- **Studioma Share & publish** (2026-11-21): share a single card with guests, publish finished cards as
-  achievements and cards in progress as opportunities with proposals, Community page; DB schema v10. Done and
-  tested on branch `claude/card-share-publish` — **not in `main`, not deployed** (see `HANDOFF.md`).
+- **Studioma launch offer** (2026-11-21): 30 days of full access without a card, « invite 10 friends, get 1 year
+  free », Refer & Earn, pricing and landing updates, admin analytics; DB schema v11. Done and tested on branch
+  `claude/trusting-keller-rynk1j` — **not in `main`, not deployed** (see `HANDOFF.md`).
+- Studioma Share & publish (DB v10) is in `main` since PR #80 (`e8f118b`); not on the live site as of 2026-11-21
+  (`studioma/assets/publish.js` answered 404).
 - Studioma administration (v6) and billing (v9) are in `main` since PR #79 (`f5ff9f3`, 2026-11-21); whether they
   were copied to the live site is *(unverified)* — the server has no deployment cron.
 

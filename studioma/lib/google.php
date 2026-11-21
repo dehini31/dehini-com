@@ -185,6 +185,7 @@ function google_link(array $u, string $sub): array
     // Compte repris à quelqu'un qui avait pris l'adresse : c'est à son vrai propriétaire d'accepter les conditions.
     q('UPDATE users SET google_sub = ?, email_ok = 1' . ($reset ? ", pass = '', terms_at = 0" : '') . ' WHERE id = ?', [$sub, $u['id']]);
     if ($reset) q('DELETE FROM sessions WHERE uid = ?', [$u['id']]);
+    promo_on_verified((int) $u['id']);   // adresse vérifiée par Google : parrainage en attente (lib/promo.php)
     return ['reset' => $reset];
 }
 
@@ -218,6 +219,8 @@ function api_google(array $b, ?array $u): array
                 return $uid;
             });
             google_avatar($uid, $c['picture'] ?? '');
+            // Offre de lancement : essai de 30 jours, parrainage (adresse vérifiée par Google) — lib/promo.php.
+            $extra['trial'] = promo_on_signup($uid, true, $u);
             $t = ['id' => $uid];
             mail_later($c['email'], 'Welcome to ' . STM_NAME, 'Welcome, ' . $name . '!', [
                 'Your account is ready — you signed up with Google. ' . ($kind === 'company' ? 'Set up your company page, create your first Studio and invite your team.' : 'Complete your profile, create your first Studio and invite your collaborators.'),
@@ -232,6 +235,7 @@ function api_google(array $b, ?array $u): array
     if (!(int) $t['email_ok'] && (string) $t['email'] === $c['email']) {
         q('UPDATE users SET email_ok = 1 WHERE id = ?', [$t['id']]);
         $t['email_ok'] = 1;
+        promo_on_verified((int) $t['id']);
     }
     return me_view($t, start_session((int) $t['id'])) + $extra;
 }

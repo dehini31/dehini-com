@@ -720,3 +720,37 @@ body.guest-mode .public-top .btn-primary { display: none; }
 .pub-manage { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 /* Avatar sans photo dans une signature : ses initiales restent centrées (.post-by > span vise les textes). */
 .post-by > .avatar { display: inline-grid; flex-direction: initial; }
+
+/* ------------------------------------------------ Offre de lancement (assets/promo.js, billing.js) */
+.promo-banner { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: var(--r-l); color: #fff; margin-bottom: 16px; flex-wrap: wrap;
+  background: radial-gradient(500px 160px at 0 0, rgba(255, 122, 89, .35), transparent 70%), linear-gradient(135deg, #3a2bd6, var(--primary) 65%, #7a4bff); box-shadow: var(--shadow-m); }
+.promo-banner > .ico { width: 26px; height: 26px; flex: none; } .promo-banner .grow { display: flex; flex-direction: column; gap: 2px; min-width: 220px; }
+.promo-banner b { font-size: 15px; } .promo-banner span { font-size: 13.5px; opacity: .92; } .promo-banner .promo-days { font-size: 13.5px; }
+.promo-banner .btn-primary { background: #fff; color: #3a2bd6; box-shadow: none; } .promo-banner .btn-primary:hover { background: #f1efff; }
+.promo-banner .btn-soft { background: rgba(255, 255, 255, .18); color: #fff; } .promo-banner .btn-soft:hover { background: rgba(255, 255, 255, .28); }
+.promo-banner.is-soon { background: linear-gradient(135deg, #b5480f, #e0731f 60%, #f2a33d); } .promo-banner.is-ended { background: linear-gradient(135deg, #2c2650, #4a3f8f); }
+.promo-banner.is-reward { background: radial-gradient(500px 160px at 100% 0, rgba(184, 255, 218, .25), transparent 70%), linear-gradient(135deg, #0f6b48, #17a66a 70%, #3cc78a); }
+@media (max-width: 600px) { .promo-banner .btn { width: 100%; } }
+.promo-note { display: flex; gap: 8px; align-items: flex-start; margin: 0; padding: 10px 12px; border-radius: var(--r-m); background: var(--ok-soft); color: var(--text); font-size: 13px; line-height: 1.45; }
+.promo-note .ico { width: 16px; height: 16px; flex: none; margin-top: 1px; color: var(--ok); }
+.plan-nocard { display: flex; align-items: center; justify-content: center; gap: 5px; margin: -2px 0 0; font-size: 13px; font-weight: 600; color: var(--ok); } .plan-nocard .ico { width: 15px; height: 15px; }
+.plan-alt { display: inline-flex; align-items: center; justify-content: center; gap: 5px; font-size: 13px; font-weight: 600; } .plan-alt .ico { width: 14px; height: 14px; }
+.promo-hero { display: flex; gap: 12px; align-items: flex-start; padding: 16px 18px; border-radius: var(--r-l); color: #fff; background: linear-gradient(135deg, #3a2bd6, var(--primary) 65%, #7a4bff); box-shadow: var(--shadow-m); }
+.promo-hero > .ico { width: 24px; height: 24px; flex: none; margin-top: 2px; } .promo-hero > div { display: flex; flex-direction: column; gap: 6px; } .promo-hero b { font-size: 16px; line-height: 1.35; } .promo-hero span { font-size: 13.5px; opacity: .9; }
+.promo-invite { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; border: 2px dashed color-mix(in srgb, var(--primary) 45%, transparent); }
+.promo-invite > .ico { width: 30px; height: 30px; color: var(--primary-text); flex: none; } .promo-invite .grow { min-width: 220px; }
+@media (max-width: 600px) { .promo-invite { flex-direction: column; align-items: stretch; } .promo-invite .btn { width: 100%; } } .promo-invite h2 { margin: 0 0 4px; font-size: 19px; } .promo-invite p { margin: 0; color: var(--muted); }
+.eyebrow-s { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 6px; font-size: 12.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--primary-text); } .eyebrow-s .ico { width: 15px; height: 15px; }
+.refer .page-head h1 { font-size: clamp(24px, 4vw, 32px); }
+.ref-link { display: flex; gap: 8px; } .ref-link .input { flex: 1; min-width: 0; font-weight: 600; } .ref-share { gap: 6px; }
+.ref-msg summary { cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-weight: 600; } .ref-msg p { margin: 10px 0; padding: 12px; border-radius: var(--r-m); background: var(--sunken); }
+.ref-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 16px 0; }
+.ref-stats .stat { padding: 14px; display: flex; flex-direction: column; gap: 2px; } .ref-stats .stat small { color: var(--muted); font-weight: 600; } .ref-stats .stat b { font-size: 26px; line-height: 1.2; }
+@media (max-width: 720px) { .ref-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .ref-link { flex-direction: column; } }
+.ref-progress { display: flex; align-items: baseline; gap: 6px; } .ref-progress b { font-size: 22px; }
+.progress.progress-l { display: block; height: 12px; flex: none; }
+.ref-msg-line { margin: 0; font-weight: 600; }
+.congrats { text-align: center; border: 2px solid var(--ok); background: var(--ok-soft); margin-bottom: 16px; } .congrats h2 { margin: 0 0 6px; font-size: 24px; text-align: center; justify-content: center; }
+.congrats-emoji { font-size: 40px; margin: 0; line-height: 1; } .congrats .pub-facts { text-align: left; margin: 14px 0; }
+/* En-tête public sur téléphone : le lien « Community » s'efface pour que l'en-tête tienne sur une ligne. */
+@media (max-width: 520px) { .public-top .pt-wide { display: none; } }

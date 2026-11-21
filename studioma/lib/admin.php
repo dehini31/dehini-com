@@ -361,6 +361,7 @@ function api_admin_user_action(array $b, array $a): array
     switch ($op) {
         case 'confirm_email':
             q('UPDATE users SET email_ok = 1, chash = NULL, cexp = 0 WHERE id = ?', [$uid]);
+            promo_on_verified($uid);   // parrainage en attente (lib/promo.php)
             admin_log('confirm_email', $target, $email);
             break;
         case 'send_reset':
@@ -999,6 +1000,8 @@ function api_admin_billing(array $b, array $a): array
     }
     $users = (int) val('SELECT COUNT(*) FROM users');
     $comp = (int) val("SELECT COUNT(DISTINCT uid) FROM subscriptions WHERE provider = 'manual' AND status = 'active' AND (period_end = 0 OR period_end > ?)", [$now]);
+    // Offre de lancement (essai, année offerte) : accès Team sans paiement, jamais compté dans le MRR.
+    $promo = (int) val("SELECT COUNT(DISTINCT uid) FROM subscriptions WHERE provider = 'promo' AND period_start <= ? AND period_end > ? AND uid NOT IN (SELECT uid FROM subscriptions WHERE provider = 'manual' AND status = 'active' AND (period_end = 0 OR period_end > ?))", [$now, $now, $now]);
     $everPaid = (int) val("SELECT COUNT(DISTINCT uid) FROM subscriptions WHERE provider = 'paddle' AND env = ?", [$env]);
     $firsts = rows("SELECT uid, MIN(created) AS first FROM subscriptions WHERE provider = 'paddle' AND env = ? GROUP BY uid", [$env]);
     $conv30 = count(array_filter($firsts, function (array $r) use ($now): bool { return (int) $r['first'] >= $now - 30 * 86400; }));
@@ -1006,7 +1009,7 @@ function api_admin_billing(array $b, array $a): array
     return [
         'env' => $env, 'configured_env' => billing_env(), 'available' => billing_available(), 'missing' => billing_missing(), 'problems' => billing_config_problems(), 'enforced' => billing_enforced(),
         'metrics' => [
-            'users' => $users, 'paid' => count($best), 'free' => max(0, $users - count($best) - $comp), 'complimentary' => $comp, 'trialing' => $trialing,
+            'users' => $users, 'paid' => count($best), 'free' => max(0, $users - count($best) - $comp - $promo), 'complimentary' => $comp, 'promo' => $promo, 'trialing' => $trialing,
             'solo' => $dist['solo']['month'] + $dist['solo']['year'], 'team' => $dist['team']['month'] + $dist['team']['year'], 'distribution' => $dist,
             'mrr' => $mrr, 'arr' => array_map(function (int $v): int { return $v * 12; }, $mrr),
             'past_due' => count(array_filter($best, function (array $s): bool { return $s['status'] === 'past_due'; })),

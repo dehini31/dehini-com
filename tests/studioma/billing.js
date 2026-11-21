@@ -108,7 +108,7 @@ const isLimit = (r, feature, upgrade) => r.status === 402 && r.error === 'plan_l
   ok(JSON.parse(sql('PRAGMA user_version'))[0].user_version === 8, 'base ramenée au schéma 8 (avant les abonnements)');
   r = await old.get('billing');
   const after = JSON.parse(sql("SELECT (SELECT COUNT(*) FROM projects) p, (SELECT COUNT(*) FROM studios) s, (SELECT COUNT(*) FROM cards) c, (SELECT COUNT(*) FROM users) u"))[0];
-  ok(JSON.parse(sql('PRAGMA user_version'))[0].user_version === 10 && JSON.stringify(before) === JSON.stringify(after), 'migration additive : schéma 10 (v9 puis v10), projets, Studios, cartes et comptes intacts', { before, after });
+  ok(JSON.parse(sql('PRAGMA user_version'))[0].user_version === 11 && JSON.stringify(before) === JSON.stringify(after), 'migration additive : schéma 11 (v9, v10, v11), projets, Studios, cartes et comptes intacts', { before, after });
   ok(r.plan === 'free' && r.state === 'free' && JSON.parse(sql('SELECT COUNT(*) n FROM subscriptions'))[0].n === 0, 'compte existant sans abonnement : formule Free (aucune ligne créée, pas de doublon possible)', { plan: r.plan, state: r.state });
   ok((await old.get('board', { studio: legacyStudio })).ok, 'données existantes lisibles');
 

@@ -4,8 +4,8 @@
 # D'abord l'API seule (api.js), le partage avec des invités sans compte (share.js), le suivi Meta (meta.js), puis le serveur MCP
 # et son OAuth (mcp.js), l'administration (admin.js), les formules et abonnements avec un faux Paddle (billing.js, limites
 # appliquées, et billing-config.php pour le contrôle des réglages sandbox / production), le partage d'une carte et sa
-# publication dans la communauté (publish.js, puis publish-e2e.js dans un navigateur), puis l'application dans un
-# navigateur (e2e.js, Playwright / Chromium).
+# publication dans la communauté (publish.js, puis publish-e2e.js dans un navigateur), l'offre de lancement sans carte
+# (promo.js, promo-e2e.js), puis l'application dans un navigateur (e2e.js, Playwright / Chromium).
 set -euo pipefail
 HERE=$(cd "$(dirname "$0")" && pwd)
 REPO=$(cd "$HERE/../.." && pwd)
@@ -18,7 +18,7 @@ cleanup() { [ -n "$P1" ] || return 0; pkill -P "$P1" 2>/dev/null || true; kill "
 trap cleanup EXIT
 fresh() {
   cleanup
-  BILLING=${1:-0} "$HERE/setup.sh" "$DIR" "$PORT" >/dev/null
+  BILLING=${1:-0} PROMO=${PROMO:-0} "$HERE/setup.sh" "$DIR" "$PORT" >/dev/null
   php -r '$i = imagecreatetruecolor(900, 600); imagefill($i, 0, 0, imagecolorallocate($i, 91, 75, 255)); imagefilledellipse($i, 450, 300, 380, 380, imagecolorallocate($i, 255, 122, 89)); imagepng($i, $argv[1]);' "$DIR/photo.png"
   echo "pas une image" > "$DIR/faux.jpg"
   echo "Notes de tournage" > "$DIR/notes.txt"
@@ -39,6 +39,10 @@ fresh
 node "$HERE/admin.js" "http://127.0.0.1:$PORT" "$DIR"
 fresh 1
 node "$HERE/billing.js" "http://127.0.0.1:$PORT" "$DIR"
+PROMO=1 fresh
+node "$HERE/promo.js" "http://127.0.0.1:$PORT" "$DIR"
+PROMO=1 fresh
+node "$HERE/promo-e2e.js" "http://127.0.0.1:$PORT" "$DIR"
 fresh
 node "$HERE/publish.js" "http://127.0.0.1:$PORT" "$DIR"
 fresh
