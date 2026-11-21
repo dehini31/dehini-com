@@ -551,6 +551,12 @@ class Client {
   r = await nora.post('google', { credential: gtok({ sub: 'g-nora', email: 'Nora@Test.example', name: 'Nora Belkacem' }) });
   ok(r.ok && r.created && r.user.name === 'Nora Belkacem' && r.user.email === 'nora@test.example' && r.user.google && !r.user.has_password && r.csrf, 'nouvelle identité Google : compte créé, connecté, sans mot de passe', r.user);
   const noraId = r.user.id;
+  ok(r.user.terms === false, 'compte créé avec Google : conditions pas encore acceptées (fenêtre dans l\'application)');
+  r = await nora.post('project_save', { name: 'Trop tôt' });
+  ok(r.status === 403 && r.error === 'terms', 'avant d\'accepter les conditions : aucune écriture');
+  r = await nora.post('terms_accept', {});
+  ok(r.ok && r.user.terms === true, 'conditions acceptées');
+  ok((await nora.post('terms_accept', {})).ok, 'accepter une seconde fois : sans effet ni erreur');
   ok((await nora.get('workspace')).ok, 'session ouverte par Google utilisable');
   ok(mails().some((m) => m.to === 'nora@test.example' && /Welcome/.test(m.subject)), 'email de bienvenue (inscription avec Google)');
   const nora2 = new Client('nora2');
@@ -580,6 +586,7 @@ class Client {
   const victim = new Client('victim');
   r = await victim.post('google', { credential: gtok({ sub: 'g-victim', email: 'victim@test.example', name: 'Real Victim' }) });
   ok(r.ok && !r.created && r.password_reset && !r.user.has_password, 'Google prouve l\'adresse : compte relié, mot de passe posé par le tiers retiré');
+  ok(r.user.terms === false, 'compte repris : son vrai propriétaire accepte lui-même les conditions');
   ok((await squatter.get('workspace')).status === 401, 'la session du tiers est fermée');
   r = await new Client('squatter2').post('login', { email: 'victim@test.example', password: 'a-solid-password' });
   ok(r.status === 401, 'le tiers ne peut plus se connecter avec son mot de passe');
@@ -589,6 +596,7 @@ class Client {
   // Relier Google depuis les réglages d'un compte créé par email.
   const pia = new Client('pia');
   await pia.signup('Pia Ferhat', 'pia@test.example');
+  ok((await pia.get('me')).user.terms === true, 'inscription par email : conditions acceptées en créant le compte');
   r = await pia.post('google_link', { credential: gtok({ sub: 'g-pia', email: 'pia@test.example' }) });
   ok(r.ok && r.user.google && r.user.has_password, 'Google relié depuis les réglages');
   r = await nora.post('google_link', { credential: gtok({ sub: 'g-pia', email: 'pia@test.example' }) });
@@ -614,6 +622,7 @@ class Client {
   ok(r.status === 400 && !co.cookie, 'entreprise avec Google : nom de l\'entreprise exigé');
   r = await co.post('google', { credential: gtok({ sub: 'g-co', email: 'hello@brand.example', name: 'Brand Owner' }), kind: 'company', company: 'Brand Co' });
   ok(r.ok && r.created && r.user.kind === 'company' && r.companies.length === 1 && r.companies[0].name === 'Brand Co', 'entreprise créée avec Google, avec sa page');
+  ok(r.user.terms === false && (await co.post('company_save', { id: r.companies[0].id, name: 'Brand Co 2' })).status === 403, 'entreprise créée avec Google : conditions à accepter avant toute écriture');
   r = await co.post('account_delete', { confirm: 'wrong@test.example' });
   ok(r.status === 400, 'suppression d\'un compte sans mot de passe : adresse à retaper');
   r = await co.post('account_delete', { confirm: 'hello@brand.example' });

@@ -67,6 +67,8 @@
     }
     if (!res.ok || data.error) {
       if (data.error === 'auth' && SM.me && SM.onAuthLost) SM.onAuthLost();
+      // Conditions d'utilisation pas encore acceptées (compte créé avec Google) : la fenêtre d'acceptation s'ouvre.
+      if (data.error === 'terms' && SM.onTermsRequired) SM.onTermsRequired();
       throw new ApiError(data.error || 'server', data.message || 'Something went wrong.', res.status, data);
     }
     // Événements Meta de l'action (le serveur envoie les mêmes, avec le même event_id) : assets/meta.js.
@@ -336,7 +338,10 @@
 
   /* ------------------------------------------------------------- fenêtres */
   const modals = [];
-  /** Ouvre une fenêtre. opts : size (s | m | l | xl), cls, onClose, side (panneau latéral). */
+  /**
+   * Ouvre une fenêtre. opts : size (s | m | l | xl), cls, onClose, side (panneau latéral), locked (ne se ferme ni
+   * par Échap ni par un clic à côté : il faut choisir un des boutons).
+   */
   SM.modal = (content, opts) => {
     opts = opts || {};
     const wrap = document.createElement('div');
@@ -359,7 +364,7 @@
     };
     let downOnWrap = false;
     wrap.addEventListener('mousedown', (e) => { downOnWrap = e.target === wrap; });
-    wrap.addEventListener('click', (e) => { if (e.target === wrap && downOnWrap) m.close(); });
+    wrap.addEventListener('click', (e) => { if (e.target === wrap && downOnWrap && !opts.locked) m.close(); });
     modals.push(m);
     const focus = m.el.querySelector('[autofocus]') || (opts.side ? null : m.el.querySelector('input:not([type=hidden]), textarea, select'));
     (focus || m.el).focus({ preventScroll: true });
@@ -385,7 +390,7 @@
     if (SM.closeMenus()) return;
     if (document.body.classList.contains('is-dragging')) return;
     const m = SM.topModal();
-    if (m) { e.preventDefault(); m.close(); }
+    if (m) { e.preventDefault(); if (!m.opts.locked) m.close(); }
   });
   SM.modalHead = (title, sub) => html`<header class="modal-head"><div><h2>${title}</h2>${sub ? html`<p class="muted">${sub}</p>` : ''}</div><button class="btn-icon" data-act="modal-close" aria-label="Close">${icon('x')}</button></header>`;
   /** Demande de confirmation. opts : title, text, ok, danger, type (texte à retaper pour confirmer). */

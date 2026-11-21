@@ -1591,12 +1591,13 @@ bouton n'apparaît pas.
 - Le bouton « Continue with Google » est sur les pages de connexion et d'inscription : une nouvelle identité
   Google crée un compte (particulier, ou entreprise depuis l'inscription « Company », nom de l'entreprise
   demandé), avec la photo du compte Google reprise comme photo de profil.
-- **Sur la page d'inscription, le bouton Google est verrouillé** (grisé, avec « Tick the box above to sign up with
-  Google ») tant que la case des conditions n'est pas cochée — et, pour une entreprise, tant que son nom n'est pas
-  saisi. La fenêtre de Google étant dans un cadre de Google, un clic dessus ouvrirait le choix du compte pour rien :
-  un verrou transparent le recouvre et, au clic, ce qui manque tremble, se colore, reçoit le focus et un message
-  dit quoi faire. Le bouton se déverrouille dès que la case est cochée. Même signalement si on crée le compte par
-  email sans cocher la case.
+- **Conditions d'utilisation** : par email, elles sont acceptées en créant le compte (phrase sous « Create my
+  account », sans case à cocher). Avec Google, une fenêtre **« One last step »** les demande une fois, en arrivant
+  dans le compte : « I agree and continue » ou « Not now — sign out » (elle ne se ferme pas autrement). Tant
+  qu'elles ne sont pas acceptées, le serveur refuse toute écriture (erreur `terms`) sauf accepter, se déconnecter
+  ou supprimer son compte ; la date d'acceptation est gardée (`users.terms_at`, visible dans l'administration).
+  Les comptes existants créés par email sont considérés comme les ayant acceptées (le formulaire les exigeait) ;
+  ceux reliés à Google les acceptent une fois à leur prochaine visite.
 - Le jeton d'identité est vérifié par le serveur : signature (clés publiques de Google), émetteur, destinataire
   (notre ID client), expiration et adresse confirmée par Google. Aucun secret n'est stocké.
 - Une identité Google dont l'adresse correspond à un compte existant y est reliée. Comme les adresses des
@@ -1854,7 +1855,8 @@ parcours complet dans le navigateur, sur ordinateur et sur mobile, avec deux com
   depuis l'administration. Pas de statistiques d'ouverture ou de clic des campagnes (volontairement : aucun suivi
   dans les emails). Une seule session d'administration (le mot de passe de `/admin`), sans comptes
   d'administrateurs distincts.
-- Une seule langue (anglais) ; les conditions d'utilisation se résument à la case à cocher de l'inscription.
+- Une seule langue (anglais) ; les conditions d'utilisation se résument à une phrase (acceptée à l'inscription par
+  email, ou dans la fenêtre « One last step » pour un compte Google) : pas encore de page de conditions complète.
 - Les pages publiques sont rendues par JavaScript : elles se partagent par lien mais ne sont pas optimisées pour
   les moteurs de recherche (seule la landing l'est).
 

@@ -307,7 +307,7 @@ const signup = async (name, email, extra) => {
   const out = execFileSync('php', [path.join(DIR, 'public_html/studioma/cron.php')], { encoding: 'utf8' });
   ok(/^OK — 0 campaign email/.test(out), 'cron en ligne de commande', out);
   r = await adm.get('admin_system');
-  ok(r.system.schema === 6 && r.integrations.cron_last > 0 && r.integrations.meta_pixel === '1234567890123' && r.integrations.meta_token === true, 'système : schéma v6, dernière exécution du cron, intégrations', r.integrations);
+  ok(r.system.schema === 7 && r.integrations.cron_last > 0 && r.integrations.meta_pixel === '1234567890123' && r.integrations.meta_token === true, 'système : schéma v7, dernière exécution du cron, intégrations', r.integrations);
   const actions = r.log.map((l) => l.action);
   ok(['suspend', 'unsuspend', 'delete', 'export', 'delete_post', 'close_opp', 'delete_company', 'campaign_send', 'mail_test', 'revoke_ai'].every((a) => actions.includes(a)), 'journal de l\'administration : chaque action', actions);
   ok(r.log.some((l) => l.action === 'suspend' && l.target === 'user:' + karim.id && /Spam reports/.test(l.text)), 'journal : cible et motif');

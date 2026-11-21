@@ -13,12 +13,12 @@ secrets here. Mark anything you could not verify as *(unverified)*.
 | Base code | `main` @ `5a0b124` (Merge PR #74: Studioma administration). **`main` = production** (server cron, every 5 min) |
 | Checkpoint | the commit that last changed this file: `git log -1 --format='%H %s' -- HANDOFF.md` |
 | Uncommitted work at checkpoint | none |
-| In progress | Studioma admin (PR #74) **is live** (owner's screenshot with real data, 2026-11-21; `/studioma/admin/` answers 200). On this branch, not merged: **compact Live activity feed** and **sign-up: Google button locked until the terms box is ticked** (UI only). The server crontab had **no deployment job** for `~/dehini-com` (2026-11-20): unless the owner added it since *(unverified)*, merges go live only when copied by hand |
+| In progress | Studioma admin (PR #74) **is live** (owner's screenshot with real data, 2026-11-21; `/studioma/admin/` answers 200). On this branch, not merged: **compact Live activity feed** and **terms of use: sentence under « Create my account » + « One last step » pop-up for Google accounts, enforced server-side (DB v7)**. The server crontab had **no deployment job** for `~/dehini-com` (2026-11-20): unless the owner added it since *(unverified)*, merges go live only when copied by hand |
 | Last task changed application code? | **yes** — Studioma (DB schema v5 → v6, additive) |
 
 **Next recommended action**
 
-1. **Owner**: merge this branch (compact feed, locked Google sign-up), then on the server `cd ~/dehini-com && git checkout main && git pull
+1. **Owner**: merge this branch (compact feed, terms pop-up; DB migrates to v7 by itself), then on the server `cd ~/dehini-com && git checkout main && git pull
    && cp -rf studioma ~/public_html/` (unless the deployment cron job was added). Check that the server clone is
    on `main` (`git status --short --branch`) *(unverified)*.
    **Agents: do not assume merges deploy automatically** until the owner adds the deployment cron job (README
@@ -35,11 +35,28 @@ secrets here. Mark anything you could not verify as *(unverified)*.
 limit, whether `fastcgi_finish_request`/`litespeed_finish_request` exist in production (only affects how fast
 campaigns go out without the cron).
 
-**Validation at this checkpoint** (2026-11-20, on this branch): `tests/studioma/run.sh` **902 checks, 6 suites**
+**Validation at this checkpoint** (2026-11-21, on this branch): `tests/studioma/run.sh` **914 checks, 6 suites**
 (api, share, meta, mcp, **admin**, e2e) — all passed, 0 failures; `tests/maillage/run.sh` 181 — passed (it copies
 `admin/`); `tests/swanbida/run.sh` 119 — passed; `php -l` on 111 PHP files and `node --check` on all Studioma JS: 0 errors.
 
 ## Log (newest first)
+
+### 2026-11-21 — Claude Code — Studioma: terms of use after Google sign-in (replaces the locked button)
+- Owner: the locked Google button was not practical; wanted the terms under « Create my account » and, for Google,
+  a pop-up after getting into the account.
+- Removed the checkbox, the lock and its styles. Sign up: sentence « By creating your account, you agree… » under
+  the button (hidden `accept=1`, still required by `api_signup`). Google: non-dismissible « One last step » pop-up
+  (`SM.termsGate`, new `locked` option of `SM.modal` in `core.js`), « I agree and continue » or « Not now — sign
+  out »; opened on boot, after sign-in, and on any `terms` API error.
+- Server: DB **v7** `users.terms_at` (existing non-Google accounts backfilled as accepted); `terms_accept` route;
+  every user POST refused with `terms` (403) until accepted, except `terms_accept`, `logout`, `account_delete`;
+  `me_view` exposes `terms`; email sign-up sets it; Google account taken back from a squatter resets it. Admin
+  record shows « Terms accepted ». Decision S18.
+- Tests: full `tests/studioma/run.sh` **914 checks, 6 suites — passed** (new API checks: refused before
+  acceptance, accept, email sign-up accepted, squatter reset, company with Google; e2e: sentence under the
+  button, pop-up after Google sign-in, Escape / outside click do not close it, server refusal, accept, sign out,
+  pop-up again at next sign-in). Screenshots light/dark, desktop/mobile.
+- Committed and pushed on this branch; not merged.
 
 ### 2026-11-21 — Claude Code — Studioma sign-up: Google button locked until the terms are accepted
 - Owner's report: on Sign up, choosing a Google account first, then « Please accept the terms » appeared (and

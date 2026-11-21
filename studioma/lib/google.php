@@ -182,7 +182,8 @@ function google_user(string $sub): ?array
 function google_link(array $u, string $sub): array
 {
     $reset = (string) $u['pass'] !== '' && !(int) $u['email_ok'];
-    q('UPDATE users SET google_sub = ?, email_ok = 1' . ($reset ? ", pass = ''" : '') . ' WHERE id = ?', [$sub, $u['id']]);
+    // Compte repris à quelqu'un qui avait pris l'adresse : c'est à son vrai propriétaire d'accepter les conditions.
+    q('UPDATE users SET google_sub = ?, email_ok = 1' . ($reset ? ", pass = '', terms_at = 0" : '') . ' WHERE id = ?', [$sub, $u['id']]);
     if ($reset) q('DELETE FROM sessions WHERE uid = ?', [$u['id']]);
     return ['reset' => $reset];
 }

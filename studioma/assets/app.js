@@ -148,6 +148,42 @@
     const next = sessionStorage.getItem('stm.next');
     sessionStorage.removeItem('stm.next');
     SM.go(next || fallback || '/');
+    SM.termsGate();
+  };
+  /*
+   * Conditions d'utilisation. Inscription par email : acceptées en créant le compte (phrase sous le bouton). Compte
+   * créé avec Google : cette fenêtre, une fois, en arrivant dans l'application. Elle ne se ferme qu'en acceptant ou
+   * en se déconnectant ; le serveur refuse de toute façon chaque écriture avant (erreur « terms »).
+   */
+  let termsModal = null;
+  SM.termsGate = () => {
+    if (!SM.me || SM.me.terms || (termsModal && document.contains(termsModal.wrap))) return;
+    const first = String(SM.me.name || '').trim().split(/\s+/)[0];
+    termsModal = SM.modal(html`<div class="terms-gate">
+        <span class="terms-ico">${icon('shield')}</span>
+        <h2>One last step${first ? ', ' + first : ''}</h2>
+        <p class="muted">Studioma is a shared professional space for community managers, creators and brands. Before you start, please agree to its terms of use:</p>
+        <blockquote class="terms-box">I agree to use Studioma respectfully and to share only content I am allowed to share.</blockquote>
+        <div class="terms-actions">
+          <button class="btn btn-primary btn-block" data-act="terms-accept" autofocus>${icon('check')}I agree and continue</button>
+          <button class="btn btn-ghost btn-block" data-act="terms-signout">Not now — sign out</button>
+        </div>
+      </div>`, { size: 's', locked: true, cls: 'terms-modal' });
+  };
+  SM.onTermsRequired = () => { if (SM.me) { SM.me.terms = false; SM.termsGate(); } };
+  SM.actions['terms-accept'] = async (el) => {
+    SM.busy(el, true);
+    const r = await SM.try(SM.post('terms_accept'));
+    SM.busy(el, false);
+    if (!r) return;
+    SM.setMe(r);
+    if (termsModal) { termsModal.close(true); termsModal = null; }
+    SM.toast('Welcome to Studioma!');
+  };
+  SM.actions['terms-signout'] = async () => {
+    await SM.try(SM.post('logout'));
+    if (termsModal) { termsModal.close(true); termsModal = null; }
+    SM.me = null; SM.csrf = ''; shell(); SM.go('/login');
   };
   SM.boot = async () => {
     try {
@@ -160,6 +196,7 @@
     }
     shell();
     SM.navigate();
+    SM.termsGate();
     setInterval(() => { if (SM.me && !document.hidden) SM.get('counts').then((r) => SM.refreshCounts(r.counts)).catch(() => {}); }, 30000);
   };
   SM.actions.boot = () => SM.boot();
@@ -248,83 +285,28 @@
           <label><input type="radio" name="kind" value="individual" ${kind === 'individual' ? 'checked' : ''} data-change="signup-kind"><span>${icon('user')}<b>Individual</b><small>Community manager, creator, freelancer</small></span></label>
           <label><input type="radio" name="kind" value="company" ${kind === 'company' ? 'checked' : ''} data-change="signup-kind"><span>${icon('building')}<b>Company</b><small>Brand, agency, organization</small></span></label>
         </div>
-        <div data-company ${kind === 'company' ? '' : 'hidden'}>${field('Company name', 'company', 'text', 'maxlength="80" autocomplete="organization" data-input="signup-lock"')}</div>
-        <label class="check terms" data-terms><input type="checkbox" name="accept" data-change="signup-lock"><span>I agree to use Studioma respectfully and to share only content I am allowed to share.</span></label>
-        <p class="terms-hint" data-terms-hint role="alert" hidden></p>
-        <div class="google-block is-locked" data-google hidden>
-          <div class="google-wrap"><div class="google-btn"></div>
-            <button type="button" class="google-gate" data-act="signup-gate" aria-label="Sign up with Google"></button></div>
-          <p class="google-lock" data-google-lock>${icon('lock')}<span></span></p>
-          <div class="or"><span>or with your email</span></div>
-        </div>
+        <div data-company ${kind === 'company' ? '' : 'hidden'}>${field('Company name', 'company', 'text', 'maxlength="80" autocomplete="organization"')}</div>
+        ${googleBlock('')}
         ${field('Your name', 'name', 'text', 'maxlength="60" autocomplete="name" required')}
         ${field('Email', 'email', 'email', 'autocomplete="email" required')}
         ${field('Password', 'password', 'password', 'autocomplete="new-password" minlength="8" required placeholder="At least 8 characters"')}
+        <input type="hidden" name="accept" value="1">
         <p class="form-error" data-error hidden></p>
         <button class="btn btn-primary btn-block">Create my account</button>
+        <p class="terms-note">${icon('shield')}<span>By creating your account, you agree to use Studioma respectfully and to share only content you are allowed to share.</span></p>
       </form>
       <p class="auth-alt">Already have an account? <a href="#/login">Sign in</a></p>`));
-    signupLock(SM.$('form[data-form="signup"]'));
+    // Avec Google, les conditions sont demandées une fois dans le compte (fenêtre « One last step », SM.termsGate).
     G.mount('signup_with', (credential) => {
       const form = SM.$('form[data-form="signup"]');
       const d = SM.formData(form);
-      // Filet de sécurité (le bouton reste verrouillé tant qu'il manque quelque chose).
-      if (signupMissing(d)) { signupNudge(form); return; }
+      const err = SM.$('[data-error]', form);
+      if (d.kind === 'company' && d.company.trim().length < 2) { err.textContent = 'Enter the name of your company first.'; err.hidden = false; SM.$('input[name=company]', form).focus(); return; }
       return googleSignIn(credential, { kind: d.kind, company: d.company }, form);
     });
   }, { public: true });
-  /*
-   * Inscription : le bouton Google (dans un cadre de Google, qu'on ne peut pas intercepter) est couvert d'un
-   * verrou tant que les conditions ne sont pas acceptées (et le nom de l'entreprise saisi). Un clic sur le verrou
-   * fait trembler et surligne ce qui manque, au lieu d'ouvrir la fenêtre de Google pour rien.
-   */
-  const signupMissing = (d) => (d.kind === 'company' && (d.company || '').trim().length < 2 ? 'company' : !d.accept ? 'accept' : '');
-  function signupLock(form) {
-    if (!form) return;
-    const d = SM.formData(form);
-    const missing = signupMissing(d);
-    const block = SM.$('[data-google]', form);
-    if (block) {
-      block.classList.toggle('is-locked', !!missing);
-      const btn = SM.$('.google-btn', block);
-      if (btn) btn.inert = !!missing;   // ni clic ni tabulation vers le bouton de Google tant qu'il est verrouillé
-      SM.$('.google-gate', block).hidden = !missing;
-      const lock = SM.$('[data-google-lock]', block);
-      lock.hidden = !missing;
-      lock.lastElementChild.textContent = missing === 'company' ? 'Enter your company name and tick the box above to sign up with Google' : 'Tick the box above to sign up with Google';
-    }
-    // Ce qui vient d'être corrigé n'est plus signalé.
-    if (d.accept) SM.$('[data-terms]', form).classList.remove('is-attention');
-    const company = SM.$('[data-company] .field', form);
-    if (company && missing !== 'company') company.classList.remove('is-attention');
-    const hint = SM.$('[data-terms-hint]', form);
-    if (hint && missing !== hint.dataset.for) hint.hidden = true;
-  }
-  /** Montre ce qui manque : le champ tremble, se colore, reçoit le focus, et un message dit quoi faire. */
-  function signupNudge(form) {
-    const missing = signupMissing(SM.formData(form));
-    const target = missing === 'company' ? SM.$('[data-company] .field', form) : SM.$('[data-terms]', form);
-    if (!target) return;
-    const hint = SM.$('[data-terms-hint]', form);
-    hint.textContent = missing === 'company' ? 'Enter the name of your company first.' : 'Tick this box to accept the terms — then continue with Google or your email.';
-    hint.dataset.for = missing;
-    hint.hidden = false;
-    target.after(hint);
-    target.classList.remove('is-nudge');
-    void target.offsetWidth;   // relance l'animation à chaque clic
-    target.classList.add('is-nudge', 'is-attention');
-    target.scrollIntoView({ block: 'center', behavior: 'smooth' });
-    const input = SM.$(missing === 'company' ? 'input[name=company]' : 'input[name=accept]', form);
-    if (input) input.focus({ preventScroll: true });
-  }
-  SM.actions['signup-gate'] = (el) => signupNudge(el.closest('form'));
-  SM.changes['signup-lock'] = (el) => signupLock(el.form);
-  SM.inputs['signup-lock'] = (el) => signupLock(el.form);
-  SM.changes['signup-kind'] = (el) => { SM.$('[data-company]', el.form).hidden = el.value !== 'company'; signupLock(el.form); };
-  SM.forms.signup = async (form, data) => {
-    if (signupMissing(data)) { signupNudge(form); return; }
-    afterAuth(await SM.post('signup', data), '/welcome');
-  };
+  SM.changes['signup-kind'] = (el) => { SM.$('[data-company]', el.form).hidden = el.value !== 'company'; };
+  SM.forms.signup = async (form, data) => afterAuth(await SM.post('signup', data), '/welcome');
 
   SM.route(/^\/forgot$/, (m, ctx) => {
     SM.set(ctx.view, authCard('Reset your password', 'We will email you a link to choose a new one.', html`

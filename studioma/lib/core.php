@@ -194,7 +194,7 @@ function marks(array $a): string
 /** Schéma compatible avec les vieilles versions de SQLite des hébergeurs mutualisés. */
 function migrate(PDO $pdo): void
 {
-    if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= 6) return;
+    if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= 7) return;
     // Deux premières visites simultanées : la seconde attend la fin de la création, puis ne fait rien.
     $pdo->exec('BEGIN IMMEDIATE');
     try {
@@ -884,6 +884,17 @@ function migrate(PDO $pdo): void
         CREATE INDEX IF NOT EXISTS admin_log_c ON admin_log(created);
         PRAGMA user_version = 6;
         SQL);
+        }
+        if ($v < 7) {
+            // Acceptation des conditions d'utilisation (date ; 0 = pas encore). Inscription par email : acceptées en
+            // créant le compte. Compte créé avec Google : fenêtre à l'arrivée dans l'application. Les comptes existants
+            // sans Google sont passés par le formulaire d'inscription, qui les exigeait déjà ; ceux reliés à Google
+            // (créés parfois depuis la page de connexion, sans case à cocher) les acceptent une fois à leur prochaine visite.
+            if (!in_array('terms_at', array_column($pdo->query('PRAGMA table_info(users)')->fetchAll(), 'name'), true)) {
+                $pdo->exec('ALTER TABLE users ADD COLUMN terms_at INTEGER NOT NULL DEFAULT 0');
+                $pdo->exec("UPDATE users SET terms_at = created WHERE google_sub IS NULL OR google_sub = ''");
+            }
+            $pdo->exec('PRAGMA user_version = 7');
         }
         $pdo->exec('COMMIT');
     } catch (Throwable $e) {

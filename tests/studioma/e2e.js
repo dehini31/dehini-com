@@ -74,7 +74,6 @@ const signup = async (page, name, email, company) => {
   await page.fill('input[name=name]', name);
   await page.fill('input[name=email]', email);
   await page.fill('input[name=password]', 'a-solid-password');
-  await page.check('input[name=accept]');
   await page.click('form[data-form="signup"] button.btn-primary');
 };
 /** Événements envoyés à l'API Conversions de Meta (écrits dans meta.jsonl pendant les tests). */
@@ -122,11 +121,8 @@ const cardIn = (page, col, title) => page.locator(`${colSel(col)} .kcard:has(h3:
   await ap.click('form[data-form="signup"] button.btn-primary');
   ok(await ap.evaluate(() => !document.querySelector('form[data-form="signup"]').checkValidity()), 'mot de passe trop court refusé par le formulaire');
   await ap.fill('input[name=password]', 'a-solid-password');
-  await ap.click('form[data-form="signup"] button.btn-primary');
-  await ap.waitForSelector('[data-terms-hint]:not([hidden])');
-  ok(/Tick this box/.test(await ap.locator('[data-terms-hint]').innerText()) && await ap.locator('[data-terms].is-attention').count() === 1
-    && await ap.evaluate(() => document.activeElement.name) === 'accept', 'conditions à accepter : la case est signalée (couleur, message, focus)');
-  await ap.check('input[name=accept]');
+  ok(await ap.locator('input[name=accept][type=checkbox]').count() === 0 && /By creating your account, you agree/.test(await ap.locator('form[data-form="signup"] .terms-note').innerText()),
+    'conditions sous « Create my account » (pas de case à cocher)');
   await ap.click('form[data-form="signup"] button.btn-primary');
   await ap.waitForSelector('.welcome-card');
   ok(/#\/welcome/.test(ap.url()), 'compte créé : premiers pas');
@@ -390,7 +386,6 @@ const cardIn = (page, col, title) => page.locator(`${colSel(col)} .kcard:has(h3:
   await kp.fill('input[name=name]', 'Karim Benali');
   await kp.fill('input[name=email]', 'karim@test.example');
   await kp.fill('input[name=password]', 'a-solid-password');
-  await kp.check('input[name=accept]');
   await kp.click('form[data-form="signup"] button.btn-primary');
   await kp.waitForSelector('[data-act="invite-accept"]');
   ok(true, 'après l\'inscription : retour à l\'invitation');
@@ -446,7 +441,6 @@ const cardIn = (page, col, title) => page.locator(`${colSel(col)} .kcard:has(h3:
   await lp.fill('input[name=name]', 'Lina Mansouri');
   await lp.fill('input[name=email]', 'lina@test.example');
   await lp.fill('input[name=password]', 'a-solid-password');
-  await lp.check('input[name=accept]');
   await lp.click('form[data-form="signup"] button.btn-primary');
   await lp.waitForSelector('[data-act="invite-accept"]');
   await lp.click('[data-act="invite-accept"]');
@@ -706,6 +700,16 @@ const cardIn = (page, col, title) => page.locator(`${colSel(col)} .kcard:has(h3:
   await gp.click('.fake-google');
   await gp.waitForSelector('.welcome-card');
   ok(/Welcome, Sofia/.test(await gp.locator('.welcome-card h1').innerText()), 'nouvelle identité Google : compte créé, premiers pas');
+  await gp.waitForSelector('.terms-modal');
+  ok(/One last step, Sofia/.test(await gp.locator('.terms-modal').innerText()) && /respectfully/.test(await gp.locator('.terms-modal .terms-box').innerText()), 'compte créé avec Google : fenêtre des conditions dans le compte');
+  await shot(gp, '20-google-terms');
+  await gp.keyboard.press('Escape');
+  await gp.mouse.click(10, 10);
+  ok(await gp.locator('.terms-modal').isVisible(), 'la fenêtre ne se ferme ni par Échap ni par un clic à côté');
+  ok((await call(gp, 'project_save', { name: 'Trop tôt' })).error === 'terms' && await gp.locator('.terms-modal').count() === 1, 'écriture refusée par le serveur avant d\'accepter');
+  await gp.click('[data-act="terms-accept"]');
+  await gp.waitForSelector('.terms-modal', { state: 'detached' });
+  ok(await toast(gp, /Welcome to Studioma/) && await gp.evaluate(() => SM.me.terms === true), 'conditions acceptées : la fenêtre se ferme');
   await gp.goto(A + '#/settings');
   await gp.waitForSelector('#signin-methods');
   ok(/Connected/.test(await gp.locator('#signin-methods .method').innerText()) && await gp.locator('[data-act="google-unlink"]').isDisabled(), 'réglages : Google connecté, retrait impossible sans mot de passe');
@@ -723,7 +727,7 @@ const cardIn = (page, col, title) => page.locator(`${colSel(col)} .kcard:has(h3:
   await gp.click('.fake-google');
   await gp.waitForSelector('.composer');
   ok(await gp.evaluate(() => SM.me.name) === 'Sofia Rahmani' && await toast(gp, /Signed in with Google/), 'reconnexion avec Google : même compte');
-  // Inscription d'une entreprise : nom et conditions exigés avant Google.
+  // Inscription d'une entreprise avec Google : nom exigé avant Google, conditions demandées ensuite dans le compte.
   await gp.click('.top-avatar');
   await gp.click('.menu-item:has-text("Sign out")');
   await gp.waitForSelector('.auth-card:has(form[data-form="login"]) .fake-google');
@@ -731,27 +735,22 @@ const cardIn = (page, col, title) => page.locator(`${colSel(col)} .kcard:has(h3:
   await gp.waitForSelector('form[data-form="signup"] .fake-google');
   ok(await gp.locator('.fake-google').getAttribute('data-text') === 'signup_with', 'page d\'inscription : bouton « Sign up with Google »');
   await gp.evaluate((t) => { window.__gcred = t; }, google.token({ sub: 'g-brand', email: 'team@brand.example', name: 'Brand Team' }, {}));
-  let googleCalls = 0;
-  gp.on('request', (r) => { if (/action=google\b/.test(r.url())) googleCalls++; });
-  const locked = () => gp.locator('[data-google]').evaluate((b) => b.classList.contains('is-locked'));
-  ok(await locked() && await gp.locator('.google-gate').isVisible() && await gp.locator('.google-btn').evaluate((b) => b.inert)
-    && /company name and tick the box/.test(await gp.locator('[data-google-lock]').innerText()), 'bouton Google verrouillé (grisé, hors tabulation) tant que nom et conditions manquent');
-  await gp.click('.google-gate');
-  ok(await gp.locator('[data-company] .field.is-attention').count() === 1 && /name of your company/.test(await gp.locator('[data-terms-hint]').innerText())
-    && await gp.evaluate(() => document.activeElement.name) === 'company', 'clic sur Google : le nom de l\'entreprise tremble, se colore et reçoit le focus');
+  await gp.click('.fake-google');
+  await gp.waitForSelector('form[data-form="signup"] [data-error]:not([hidden])');
+  ok(/name of your company/.test(await gp.locator('form[data-form="signup"] [data-error]').innerText()) && await gp.evaluate(() => document.activeElement.name) === 'company', 'entreprise : nom demandé avant Google');
   await gp.fill('input[name=company]', 'Brand Co');
-  ok(await locked() && await gp.locator('[data-terms-hint]').isHidden() && /^Tick the box above/.test(await gp.locator('[data-google-lock]').innerText()), 'nom saisi : il reste la case des conditions');
-  await gp.click('.google-gate');
-  ok(await gp.locator('[data-terms].is-attention').count() === 1 && /Tick this box/.test(await gp.locator('[data-terms-hint]').innerText())
-    && await gp.evaluate(() => document.activeElement.name) === 'accept', 'clic sur Google : la case des conditions tremble, se colore et reçoit le focus');
-  await shot(gp, '20-google-signup-locked');
-  ok(googleCalls === 0 && !(await gp.locator('.welcome-card').count()), 'aucune connexion Google tentée avant d\'accepter');
-  await gp.check('input[name=accept]');
-  ok(!(await locked()) && await gp.locator('.google-gate').isHidden() && await gp.locator('[data-google-lock]').isHidden() && await gp.locator('[data-terms].is-attention').count() === 0
-    && await gp.locator('[data-terms-hint]').isHidden(), 'case cochée : bouton Google déverrouillé, signalement retiré');
   await gp.click('.fake-google');
   await gp.waitForSelector('.welcome-card');
   ok(await gp.evaluate(() => SM.me.kind === 'company' && SM.companies.length === 1 && SM.companies[0].name === 'Brand Co'), 'entreprise créée avec Google, avec sa page');
+  await gp.waitForSelector('.terms-modal');
+  await gp.click('[data-act="terms-signout"]');
+  await gp.waitForSelector('form[data-form="login"]');
+  ok(await gp.locator('.terms-modal').count() === 0 && await gp.evaluate(() => !SM.me), '« Not now — sign out » : déconnecté');
+  await gp.click('.fake-google');
+  await gp.waitForSelector('.terms-modal');
+  ok(true, 'reconnexion : la fenêtre des conditions revient tant qu\'elles ne sont pas acceptées');
+  await gp.click('[data-act="terms-accept"]');
+  await gp.waitForSelector('.terms-modal', { state: 'detached' });
   await gCtx.close();
 
   /* --------------------------------------------------- assistants IA (MCP) */
