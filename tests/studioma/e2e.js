@@ -123,8 +123,9 @@ const cardIn = (page, col, title) => page.locator(`${colSel(col)} .kcard:has(h3:
   ok(await ap.evaluate(() => !document.querySelector('form[data-form="signup"]').checkValidity()), 'mot de passe trop court refusé par le formulaire');
   await ap.fill('input[name=password]', 'a-solid-password');
   await ap.click('form[data-form="signup"] button.btn-primary');
-  await ap.waitForSelector('.form-error:not([hidden])');
-  ok(/accept the terms/.test(await ap.locator('.form-error').innerText()), 'conditions à accepter');
+  await ap.waitForSelector('[data-terms-hint]:not([hidden])');
+  ok(/Tick this box/.test(await ap.locator('[data-terms-hint]').innerText()) && await ap.locator('[data-terms].is-attention').count() === 1
+    && await ap.evaluate(() => document.activeElement.name) === 'accept', 'conditions à accepter : la case est signalée (couleur, message, focus)');
   await ap.check('input[name=accept]');
   await ap.click('form[data-form="signup"] button.btn-primary');
   await ap.waitForSelector('.welcome-card');
@@ -730,13 +731,24 @@ const cardIn = (page, col, title) => page.locator(`${colSel(col)} .kcard:has(h3:
   await gp.waitForSelector('form[data-form="signup"] .fake-google');
   ok(await gp.locator('.fake-google').getAttribute('data-text') === 'signup_with', 'page d\'inscription : bouton « Sign up with Google »');
   await gp.evaluate((t) => { window.__gcred = t; }, google.token({ sub: 'g-brand', email: 'team@brand.example', name: 'Brand Team' }, {}));
-  await gp.click('.fake-google');
-  await gp.waitForSelector('form[data-form="signup"] [data-error]:not([hidden])');
-  ok(/name of your company/.test(await gp.locator('form[data-form="signup"] [data-error]').innerText()), 'entreprise : nom demandé avant Google');
+  let googleCalls = 0;
+  gp.on('request', (r) => { if (/action=google\b/.test(r.url())) googleCalls++; });
+  const locked = () => gp.locator('[data-google]').evaluate((b) => b.classList.contains('is-locked'));
+  ok(await locked() && await gp.locator('.google-gate').isVisible() && await gp.locator('.google-btn').evaluate((b) => b.inert)
+    && /company name and tick the box/.test(await gp.locator('[data-google-lock]').innerText()), 'bouton Google verrouillé (grisé, hors tabulation) tant que nom et conditions manquent');
+  await gp.click('.google-gate');
+  ok(await gp.locator('[data-company] .field.is-attention').count() === 1 && /name of your company/.test(await gp.locator('[data-terms-hint]').innerText())
+    && await gp.evaluate(() => document.activeElement.name) === 'company', 'clic sur Google : le nom de l\'entreprise tremble, se colore et reçoit le focus');
   await gp.fill('input[name=company]', 'Brand Co');
-  await gp.click('.fake-google');
-  ok(/accept the terms/.test(await gp.locator('form[data-form="signup"] [data-error]').innerText()), 'conditions à accepter avant Google');
+  ok(await locked() && await gp.locator('[data-terms-hint]').isHidden() && /^Tick the box above/.test(await gp.locator('[data-google-lock]').innerText()), 'nom saisi : il reste la case des conditions');
+  await gp.click('.google-gate');
+  ok(await gp.locator('[data-terms].is-attention').count() === 1 && /Tick this box/.test(await gp.locator('[data-terms-hint]').innerText())
+    && await gp.evaluate(() => document.activeElement.name) === 'accept', 'clic sur Google : la case des conditions tremble, se colore et reçoit le focus');
+  await shot(gp, '20-google-signup-locked');
+  ok(googleCalls === 0 && !(await gp.locator('.welcome-card').count()), 'aucune connexion Google tentée avant d\'accepter');
   await gp.check('input[name=accept]');
+  ok(!(await locked()) && await gp.locator('.google-gate').isHidden() && await gp.locator('[data-google-lock]').isHidden() && await gp.locator('[data-terms].is-attention').count() === 0
+    && await gp.locator('[data-terms-hint]').isHidden(), 'case cochée : bouton Google déverrouillé, signalement retiré');
   await gp.click('.fake-google');
   await gp.waitForSelector('.welcome-card');
   ok(await gp.evaluate(() => SM.me.kind === 'company' && SM.companies.length === 1 && SM.companies[0].name === 'Brand Co'), 'entreprise créée avec Google, avec sa page');
