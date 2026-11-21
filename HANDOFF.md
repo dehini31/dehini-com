@@ -9,65 +9,86 @@ secrets here. Mark anything you could not verify as *(unverified)*.
 | | |
 |---|---|
 | Last agent | Claude Code (cloud session) |
-| Branch | **`claude/card-share-publish`** (tracks `origin/claude/card-share-publish`), created from `origin/main` @ `f5ff9f3` — **open PR #80 → `main`** (https://github.com/dehini31/dehini-com/pull/80, not merged: merging it ships Share & publish). Pushing to this branch updates the PR |
-| Base code | `main` @ `f5ff9f3` = Merge PR #79 (billing, admin, everything before). **`main` = production** — the server has **no deployment cron** (2026-11-20): merges go live only when copied by hand. Whether PR #79 was copied to the live site is *(unverified)* |
+| Branch | **`claude/trusting-keller-rynk1j`** (tracks `origin/claude/trusting-keller-rynk1j`), restarted from `origin/main` @ `e8f118b` (its earlier PR #79 was merged). No pull request yet for this work (open one only when the owner asks) |
+| Base code | `main` @ `e8f118b` = Merge PR #80 (Share & publish, DB v10) on top of PR #79 (billing v9). **`main` = production** — no deployment cron: the owner copies `main` by hand. Live check 2026-11-21: billing files answer 200 (PR #79 copied), `studioma/assets/publish.js` answers 404 (PR #80 **not** copied yet) |
 | Checkpoint | the commit that last changed this file: `git log -1 --format='%H %s' -- HANDOFF.md` |
 | Uncommitted work at checkpoint | none |
-| In progress | **Studioma « Share & publish »** — share a single card with guests; publish finished cards as achievements and cards in progress as opportunities with proposals; Community page. Implemented, tested, committed and pushed on `claude/card-share-publish`; **not merged, not deployed** |
-| Last task changed application code? | **yes** — Studioma, DB schema 9 → 10 (additive) |
+| In progress | **Studioma launch offer** — 30 days of full (Team) access without a card, « invite 10 friends, get 1 year free », Refer & Earn, pricing / landing / banners, admin analytics. Implemented, tested, committed and pushed on `claude/trusting-keller-rynk1j`; **not merged, not deployed** |
+| Last task changed application code? | **yes** — Studioma, DB schema 10 → 11 (additive) |
 | Codex access | **not verified** — Codex has not been run on this repository from this session |
 
 **Start here (Codex or Claude)**
 
-1. `git fetch origin`, then `git switch claude/card-share-publish` (or `git switch -c codex/<topic> origin/claude/card-share-publish`).
-   Production is `origin/main` @ `f5ff9f3`. The older branch `claude/trusting-keller-rynk1j` = `main` (merged).
-2. Read README « Studioma › 9 » and decisions S25–S27 before touching card sharing or the Community; `docs/billing.md`
-   before touching billing.
-3. Checks: `AGENTS.md` § 5 (lint, then `tests/studioma/run.sh`, ~9 min, 9 suites).
+1. `git fetch origin`, then `git switch claude/trusting-keller-rynk1j` (or `git switch -c codex/<topic> origin/claude/trusting-keller-rynk1j`).
+   Production is `origin/main` @ `e8f118b`.
+2. Read README « Studioma › 10 » and decisions S28–S30 before touching the offer; S25–S27 for Share & publish;
+   `docs/billing.md` for billing.
+3. Checks: `AGENTS.md` § 5 (lint, then `tests/studioma/run.sh`, ~13 min, 11 suites).
 
-**Done on `claude/card-share-publish`, not in `main`** (commits `6dce94a` backend, then the UI/docs commit):
-- Card sharing (reuses Studio sharing): `shares.card_id` + `shares.opts`; guest principal limited to one card,
-  chosen attachments, optional comments, no history (`studioma/lib/share.php`, `studioma/lib/cards.php`); card-aware
-  share dialog (`studioma/assets/studio.js`), single-card guest view (`studioma/assets/guest.js`).
-- Publications: `studioma/lib/pubs.php` (`pubs`, `proposals`, `posts.pub_id`), routes in `studioma/api.php`
-  (`community`, `pub_get`, `pub_save`, `pub_status`, `pub_delete`, `pub_invite`, `proposal_save`, `proposal_withdraw`,
-  `proposal_decide`), lifecycle hooks in `studioma/lib/studio.php`, feed/profile in `studioma/lib/social.php`, admin
-  moderation « Card publications » (`studioma/lib/admin.php`, `studioma/assets/admin.js`).
-- UI: `studioma/assets/publish.js` (Share & publish menu, publish forms with preview + confirmation, Community
-  `#/community`, publication pages `#/pub/<id>`, proposals), `card.js` (button, indicators), `board.js` (badges, menu),
-  `social.js` (feed block, profile Achievements), `app.js` (nav « Community »), `app.css`, `app/index.html`.
-- Tests: `tests/studioma/publish.js` (130 checks, API), `tests/studioma/publish-e2e.js` (37 checks, Chromium,
-  desktop + iPhone 13), wired in `run.sh`; `admin.js` / `billing.js` expect schema 10.
-- Docs: README « Studioma › 9 » (sections renumbered 10–12), DECISIONS S25–S27, ROADMAP, PROJECT_CONTEXT, AGENTS.md map,
-  tests README.
+**Done on this branch, not in `main`** (commits `04e8561` backend, then the UI/docs commit):
+- `studioma/lib/promo.php` (new): trial (signup or one-time claim, never over a paid/offered Team), referral codes,
+  clicks + unique visitors (`stm_vid` cookie hash, no IP), signed 30-day first-click attribution (`stm_ref`),
+  verification hooks, self-referral and abuse rules (admin review), 12-month reward once (after a running trial),
+  `api_promo`, `api_promo_claim`, `api_ref_click`, `api_admin_promo`, `api_admin_promo_review`.
+- Entitlements: `account_plan()` reads `subscriptions` rows with provider `promo` (period_start ≤ now < period_end)
+  — `studioma/lib/billing.php`; `billing_plans` exposes `promo`; constants in `studioma/lib/plans.php`; DB v11 in
+  `studioma/lib/core.php` (`ref_codes`, `ref_clicks`, `referrals`, `promo_grants`).
+- Hooks: signup and Google sign-up (`studioma/api.php`, `studioma/lib/google.php`), every place an email becomes
+  verified (confirm link, password reset, Google link/sign-in, admin), `me_view()` returns `promo`
+  (`studioma/lib/auth.php`); admin billing metrics count the offer apart (`studioma/lib/admin.php`).
+- UI: `studioma/assets/promo.js` (banners, Refer & Earn `#/refer`, claim, `?ref=` in the app), pricing and Plan &
+  billing (`studioma/assets/billing.js`), signup note and nav (`studioma/assets/app.js`), banners on Home and Projects
+  (`social.js`, `studio.js`), landing (`studioma/index.html`, `assets/landing.js`, `assets/landing.css`), admin
+  « Launch promotion » (`studioma/assets/admin.js`), `app.css`, `app/index.html`. Also fixed: the logged-out header
+  overflowed on phones because of the « Community » link added in PR #80 (now hidden below 520 px).
+- Config: `STM_LAUNCH_PROMO` (default true), `STM_REFERRAL_SAME_IP_MAX` (3), `STM_REFERRAL_BURST_MAX` (10) in
+  `studioma/config.example.php`.
+- Tests: `tests/studioma/promo.js` (76 checks), `tests/studioma/promo-e2e.js` (44 checks), `setup.sh` `PROMO=1`
+  (other suites run with the offer off), `run.sh`; `admin.js` / `billing.js` expect schema 11.
+- Docs: README « Studioma › 10 » (sections renumbered 11–13), DECISIONS S28–S30, ROADMAP, PROJECT_CONTEXT, AGENTS.md
+  map, tests README.
 
 **Unfinished / waiting**
 
-- Owner: review and merge PR #80 (`claude/card-share-publish`), then deploy
-  (`cd ~/dehini-com && git checkout main && git pull && cp -rf studioma ~/public_html/`); the database migrates to v10
-  by itself. Nothing to configure.
-- Not done (documented in README « Ce qui n'est pas fait »): Share & publish through the MCP server; member
-  reporting of publications; payments between members.
-- Carried over: Paddle sandbox test and live setup (`docs/billing.md` § 8), owner's Paddle choices (tax mode, Google
-  Pay, balance currency) **not answered**; Terms / Privacy / Refund pages and a public contact address **missing**;
+- Owner: copy `main` (PR #80) to the live site if wanted; review this branch, ask the agent for a pull request,
+  merge, deploy. The database migrates to v11 by itself; the offer is on by default.
+- Note for the owner: billing (PR #79) is live; unless `STM_PLANS_ENFORCED` is false on the server, Free limits apply
+  to accounts without the trial *(server config unverified)*. Once this branch is live, new accounts get the trial
+  automatically and existing accounts can claim it once.
+- Not done: Share & publish / offer through the MCP server; consent banner for the referral cookies; other languages.
+- Carried over: Paddle sandbox test and live setup (`docs/billing.md` § 8), owner's Paddle choices **not answered**;
+  Terms / Privacy / Refund pages and a public contact address **missing** (the offer makes them more important);
   Maillage test « stock enregistré » fails also on unmodified `main`.
 
 **Next recommended action**
 
-1. **Owner**: review PR #80, try it (open a card › *Share & publish*), merge, deploy.
-2. **Owner, billing** (unchanged): `docs/billing.md` § 6 (plans for existing accounts) and § 8.2 (sandbox test first).
-3. **Agent, next task**: Terms of Service / Privacy Policy / Refund Policy pages (ask the owner for the legal name
-   and contact email; owner reviews the text) — now also covering Community publications and proposals.
+1. **Owner**: review the branch (pricing page, landing, Refer & Earn), then ask for the pull request and merge.
+2. **Agent, next task**: Terms of Service / Privacy Policy / Refund Policy pages, now also covering the launch offer,
+   referrals and their cookies (ask the owner for the legal name and contact email).
 
-**Blockers**: none for Share & publish. Billing: Paddle approval and credentials (owner).
+**Blockers**: none for the launch offer. Billing: Paddle approval and credentials (owner).
 
-**Validation at this checkpoint** (2026-11-21, branch `claude/card-share-publish`): `tests/studioma/run.sh` —
-**1,203 checks, 9 suites, 0 failures** (api 239, share 144, meta 73, mcp 155, admin 116, billing 107, **publish 130**,
-**publish-e2e 37**, e2e 202) **+ 15 config unit checks**; `php -l` 118 PHP files and `node --check` all Studioma JS and
-tests: 0 errors. SWANBIDA and Maillage not re-run (no file of theirs changed; last run 2026-11-21: 119 passed,
-180/181 with the known Maillage failure).
+**Validation at this checkpoint** (2026-11-21, branch `claude/trusting-keller-rynk1j`): `tests/studioma/run.sh` —
+11 suites, **0 failures**: api 239, share 144, meta 73, mcp 155, admin 116, billing 107, **promo 76**, **promo-e2e 44**,
+publish 130, publish-e2e 37, e2e 202 (+ 15 config unit checks). The full run stopped once in `e2e.js` on a class name
+I had changed by mistake in the admin Accounts table; restored, `e2e.js` re-run alone: passed. `php -l` 119 PHP files
+and `node --check` 29 JS files: 0 errors. SWANBIDA and Maillage not re-run (no file of theirs changed).
 
 ## Log (newest first)
+
+### 2026-11-21 — Claude Code — Studioma: launch offer (30 days free, refer 10 friends for 1 year, no card)
+- Owner's brief: 30 days of full Team access without any card, referral program (unique link, clicks, unique
+  visitors, verified referrals, 10 → 12 months free once), pricing page CTAs, dashboard banners, Refer & Earn,
+  landing sections, admin analytics, security, no payment ever; reuse the existing entitlement system.
+- Audit: `account_plan()` already centralised plans (paid + admin-offered); five places mark an email verified;
+  public POSTs need no CSRF (landing can record clicks); signup rate limit is per IP.
+- Done: see « Current state ». Decisions S28 (offer = `promo` subscription rows, never Paddle), S29 (one trial and
+  one reward per account, unique constraint, reward after the trial), S30 (referral counting rules, abuse review, no
+  IP in clicks, no fingerprinting).
+- Fixed on the way: admin « users who reached 10 » counted 0 (threshold bound as text in a `HAVING`); logged-out
+  header overflow on phones (from PR #80).
+- Tests: see « Validation ». Committed and pushed; not merged.
+
 
 ### 2026-11-21 — Claude Code — Studioma: Share & publish (card sharing, Community, proposals)
 - Owner's brief: share individual cards with guests (public, email-restricted, edit requests, revoke, expiry),

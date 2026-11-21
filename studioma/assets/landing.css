@@ -73,3 +73,17 @@ main > section { padding: 76px max(20px, calc((100vw - 1160px) / 2)); }
 }
 @media (max-width: 480px) { .top .btn-ghost { display: none; } .roles { grid-template-columns: 1fr; } .cta .btn { flex: 1 1 100%; } }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+/* Offre de lancement (index.html › .launch) */
+.launch { text-align: center; margin: 26px auto 0; padding: 34px 22px 30px; max-width: 1100px; border-radius: 26px; color: #fff;
+  background: radial-gradient(700px 260px at 15% 0, rgba(255, 122, 89, .35), transparent 70%), linear-gradient(135deg, #2a1f8f, #5b4bff 60%, #7a4bff); box-shadow: var(--shadow-l); }
+.launch h2 { margin: 10px 0 8px; font-size: clamp(28px, 5vw, 46px); line-height: 1.1; font-weight: 800; letter-spacing: -.03em; }
+.launch p { max-width: 680px; margin: 0 auto 20px; color: rgba(255, 255, 255, .86); font-size: clamp(15.5px, 2vw, 18px); }
+.launch .btn-primary { background: #fff; color: #3a2bd6; box-shadow: 0 10px 24px rgba(0, 0, 0, .25); } .launch .btn-primary:hover { background: #f1efff; }
+.launch .btn-soft { background: rgba(255, 255, 255, .16); color: #fff; } .launch .btn-soft:hover { background: rgba(255, 255, 255, .26); }
+.launch-pill { display: inline-block; margin: 0 auto !important; padding: 4px 12px; border-radius: 999px; background: rgba(255, 255, 255, .16); font-size: 12.5px !important; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.trust { list-style: none; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 18px; margin: 22px auto 0; padding: 0; max-width: 860px; font-size: 14.5px; color: rgba(255, 255, 255, .92); }
+.trust li::before { content: "✓ "; font-weight: 800; color: #b8ffda; }
+.launch-ref { margin-top: 40px; background: radial-gradient(600px 240px at 85% 0, rgba(91, 75, 255, .45), transparent 70%), linear-gradient(135deg, #1b1a22, #2c2650); }
+[data-promo][hidden] { display: none; }
+@media (max-width: 640px) { .launch { margin: 16px 12px 0; padding: 26px 16px; border-radius: 20px; } .launch .btn-l { width: 100%; } }

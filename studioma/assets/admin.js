@@ -81,7 +81,7 @@
   };
 
   /* ---------------------------------------------------------------- cadre */
-  const NAV = [['#/', 'chart', 'Live overview'], ['#/accounts', 'users', 'Accounts'], ['#/studios', 'board', 'Studios'], ['#/content', 'shield', 'Moderation'], ['#/billing', 'zap', 'Billing'], ['#/emails', 'mail', 'Emails'], ['#/system', 'settings', 'System']];
+  const NAV = [['#/', 'chart', 'Live overview'], ['#/accounts', 'users', 'Accounts'], ['#/studios', 'board', 'Studios'], ['#/content', 'shield', 'Moderation'], ['#/billing', 'zap', 'Billing'], ['#/promo', 'award', 'Launch promotion'], ['#/emails', 'mail', 'Emails'], ['#/system', 'settings', 'System']];
   function shell() {
     SM.set($('#app'), html`<div class="app adm">
       <aside class="side">
@@ -399,7 +399,8 @@
     const s = b.subscription;
     const lim = (v) => (v == null ? '∞' : fmt.num(v));
     return html`<div class="kv">
-        <div><span>Plan</span><b>${b.plan_name}${s && s.provider === 'manual' ? ' (offered)' : ''}</b></div>
+        <div><span>Plan</span><b>${b.plan_name}${s && s.provider === 'manual' ? ' (offered)' : s && s.provider === 'promo' ? (s.status === 'trialing' ? ' (30-day free trial)' : ' (free year, referrals)') : ''}</b></div>
+        ${s && s.provider === 'promo' ? html`<div><span>Launch offer until</span><b>${fmt.date(s.period_end)}</b></div>` : ''}
         <div><span>State</span><b>${s && s.cancel_at ? 'ends ' + fmt.date(s.cancel_at) : b.state}</b></div>
         ${s && s.provider === 'paddle' ? html`<div><span>Billing</span><b>${'$' + s.amount / 100} / ${s.interval} · ${s.env}</b></div><div><span>Renews</span><b>${s.period_end ? fmt.date(s.period_end) : '—'}</b></div>` : ''}
         ${s && s.provider === 'manual' ? html`<div><span>Offered until</span><b>${s.period_end ? fmt.date(s.period_end) : 'no end date'}</b></div>` : ''}
@@ -828,6 +829,62 @@
         : html`<p class="muted">No notification received yet. Webhook address: <code>${SM.base}paddle-webhook.php</code></p>`}
     </div>`);
   });
+
+  /* ------------------------------------------------- offre de lancement */
+  const REASON = { same_network: 'Several sign-ups from the same network', burst: 'Many verified sign-ups within an hour', self: 'Same person' };
+  SM.route(/^\/promo$/, async (m, ctx) => {
+    setTitle('Launch promotion');
+    const days = +SM.query().get('days') || 0;
+    const d = await SM.get('admin_promo', { days });
+    if (!ctx.alive()) return;
+    const M = d.metrics;
+    const PER = [[0, 'All time'], [7, '7 days'], [30, '30 days'], [90, '90 days']];
+    SM.set(ctx.view, html`<div class="page">
+      <header class="page-head"><div><h1>Launch Promotion Analytics</h1><p class="muted">30 days of full access and “Invite ${d.goal} friends, get 1 year free” — no card, no payment. Real data from the database.</p></div>
+        <nav class="seg-inline">${PER.map(([n, l]) => html`<a class="btn btn-sm ${days === n ? 'btn-soft is-on' : 'btn-ghost'}" href="#/promo${n ? '?days=' + n : ''}">${l}</a>`)}</nav></header>
+      ${!d.enabled ? html`<p class="notice notice-warn">${icon('alert')}<span>The launch offer is off (STM_LAUNCH_PROMO = false): no new trial or referral reward. Access already granted continues.</span></p>` : ''}
+      <h2 class="section-title">${icon('sparkles')} 30-day trial</h2>
+      <div class="tiles">
+        ${tile('users', 'Eligible users', fmt.num(M.eligible), `can still start the trial · ${fmt.num(M.users)} accounts`)}
+        ${tile('zap', 'Trial activations', fmt.num(M.trials), days ? 'in the period' : 'all time', M.trials ? 'tile-ok' : '')}
+        ${tile('clock', 'Active trials', fmt.num(M.trials_active), 'right now')}
+        ${tile('history', 'Expired trials', fmt.num(M.trials_ended), 'back on Free (or another access)')}
+      </div>
+      <h2 class="section-title">${icon('link')} Referrals</h2>
+      <div class="tiles">
+        ${tile('external', 'Link clicks', fmt.num(M.clicks), 'opened referral links')}
+        ${tile('eye', 'Unique visitors', fmt.num(M.visitors), 'distinct browsers')}
+        ${tile('user-plus', 'Referred registrations', fmt.num(M.registrations), `conversion ${M.conversion}% of visitors`)}
+        ${tile('check', 'Verified eligible referrals', fmt.num(M.verified), `${M.verify_rate}% of registrations`, M.verified ? 'tile-ok' : '')}
+        ${tile('users', 'Users with ≥ 1 verified', fmt.num(M.referrers_1), `${fmt.num(M.referrers_goal)} reached ${d.goal}`)}
+        ${tile('alert', 'Suspicious activity', fmt.num(M.review), `${fmt.num(M.rejected)} not eligible`, M.review ? 'tile-bad' : '')}
+      </div>
+      <h2 class="section-title">${icon('award')} One-year rewards</h2>
+      <div class="tiles">
+        ${tile('award', 'Rewards granted', fmt.num(M.rewards), days ? 'in the period' : 'all time', M.rewards ? 'tile-ok' : '')}
+        ${tile('check-circle', 'Active rewards', fmt.num(M.rewards_active), 'right now')}
+        ${tile('calendar', 'Scheduled', fmt.num(M.rewards_scheduled), 'start after a trial')}
+        ${tile('history', 'Expired rewards', fmt.num(M.rewards_ended), 'back on Free (or another access)')}
+      </div>
+      <h2 class="section-title">${icon('shield')} Referrals to review <span class="count">${d.review.length}</span></h2>
+      ${d.review.length ? html`<section class="panel table-wrap"><table class="table"><thead><tr><th>Referrer</th><th>New account</th><th>Why</th><th class="hide-s">Registered</th><th></th></tr></thead>
+        <tbody>${d.review.map((r) => html`<tr><td><button class="who-btn" data-act="adm-user" data-id="${r.referrer.id}"><b>${r.referrer.name}</b><br><small>${r.referrer.email} · ${r.referrer.verified} verified</small></button></td>
+          <td><button class="who-btn" data-act="adm-user" data-id="${r.referred.id}"><b>${r.referred.name}</b><br><small>${r.referred.email}</small></button></td>
+          <td><span class="chip chip-warn">${REASON[r.reason] || r.reason}</span></td><td class="hide-s nowrap"><small>${fmt.time(r.registered_at)}</small></td>
+          <td class="nowrap"><button class="btn btn-sm btn-soft" data-act="adm-ref" data-id="${r.id}" data-decision="approve">Approve</button> <button class="btn btn-sm is-danger" data-act="adm-ref" data-id="${r.id}" data-decision="reject">Reject</button></td></tr>`)}</tbody></table></section>`
+        : html`<p class="muted">${icon('check')} Nothing to review. Sign-ups from the same network or in bursts appear here before they count.</p>`}
+      ${d.top.length ? html`<h2 class="section-title">${icon('chart')} Top referrers</h2><section class="panel list">${d.top.map((t) => html`<div class="list-row"><button class="who-btn grow" data-act="adm-user" data-id="${t.uid}"><b>${t.name}</b> <small>@${t.handle}</small></button><span class="chip ${t.verified >= d.goal ? 'chip-ok' : ''}">${t.verified} verified</span></div>`)}</section>` : ''}
+      <p class="muted small">${icon('lock')} No payment is ever involved: the trial and the free year are access periods, never Paddle subscriptions. Referral clicks store a random browser identifier, not IP addresses.</p>
+    </div>`);
+  });
+  SM.actions['adm-ref'] = async (el) => {
+    const approve = el.dataset.decision === 'approve';
+    if (!(await SM.confirm({ title: approve ? 'Approve this referral?' : 'Reject this referral?', text: approve ? 'It counts toward the referrer\'s free year (granted automatically at the goal).' : 'It will never count. The new account itself is not affected.', ok: approve ? 'Approve' : 'Reject', danger: !approve }))) return;
+    SM.busy(el, true);
+    const r = await SM.try(SM.post('admin_promo_review', { id: +el.dataset.id, decision: el.dataset.decision }));
+    SM.busy(el, false);
+    if (r) { SM.toast(approve ? 'Approved' : 'Rejected'); SM.navigate(); }
+  };
 
   /* ---------------------------------------------------------------- système */
   SM.route(/^\/system$/, async (m, ctx) => {

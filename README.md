@@ -1834,7 +1834,8 @@ propriétaire d'un projet paie pour tout ce qui s'y passe ; les invités ne sont
   est refusée, les membres en trop et les invités passent en lecture seule.
 - Paiement : **Paddle Billing** (paiement hébergé, Paddle revendeur), page `studioma/pay/`, notifications signées
   `studioma/paddle-webhook.php`. La formule n'est activée que par les données vérifiées de Paddle. **Fermé tant que
-  Paddle n'est pas configuré** (« Coming soon » sur la page des prix). Réglages, mise en route pas à pas, politique
+  Paddle n'est pas configuré** (la page des prix propose alors l'essai gratuit de l'offre de lancement, § 10 — ou
+  « Coming soon » si l'offre est coupée). Réglages, mise en route pas à pas, politique
   de paiement en échec (14 jours de grâce) et limites : **`docs/billing.md`**.
 - Administration › **Billing** : abonnés, MRR, ARR, conversions, résiliations, notifications Paddle ; dans la fiche
   d'un compte, **offrir une formule** (sans paiement, hors chiffre d'affaires).
@@ -1891,22 +1892,62 @@ bouton **Share & publish** (ou menu de la carte › *Share & publish…*). Ce qu
 - Code : `studioma/lib/pubs.php` (règles), `studioma/lib/share.php` (liens d'une carte), `studioma/assets/publish.js`
   (menu, formulaires, Communauté) ; décisions S25 à S27 de `docs/DECISIONS.md`.
 
-### 10. Fichiers envoyés
+### 10. Offre de lancement : 30 jours gratuits, 1 an pour 10 amis (sans carte)
+
+Rien à configurer : la base passe d'elle-même à la version 11. L'offre est ouverte par défaut (`STM_LAUNCH_PROMO`,
+voir `config.example.php`) ; **aucune carte, aucun paiement, aucun appel à Paddle**, jamais de renouvellement.
+
+- **30 jours d'accès complet** — toutes les fonctionnalités de la formule Team, avec ses limites (10 projets, 20
+  Studios, 5 membres). Accordés à l'inscription (email ou Google) ; un compte existant qui ne les a jamais eus les
+  réclame une fois (bannière de l'accueil ou page des prix). Jamais par-dessus un accès Team payé ou offert, jamais
+  deux fois (choisir l'autre carte de prix ne relance rien). À la fin : formule Free, rien n'est supprimé (au-delà des
+  limites, tout reste lisible, la création est refusée, y compris par l'API).
+- **Parrainage** — chaque compte a un lien permanent `https://dehini.com/studioma/?ref=<code>` (8 caractères tirés
+  au hasard, ni id ni email) : menu **Refer & Earn** (copier, partager — WhatsApp, Facebook, LinkedIn, email, partage
+  du téléphone —, message prêt à envoyer, clics, visiteurs uniques, inscriptions, parrainages vérifiés, progression,
+  historique sans nom ni adresse des amis). Un clic (JavaScript de la page : les robots d'aperçu ne comptent pas) pose
+  une attribution signée de **30 jours** ; la première attribution valable l'emporte. Un ami **compte quand il crée un
+  nouveau compte par ce lien et confirme son adresse** (lien de confirmation, Google, mot de passe oublié, ou
+  l'administration). Refusés : se parrainer soi-même (même adresse aux alias près), un compte déjà inscrit, deux
+  crédits pour un même compte. « À examiner » (administration › Launch promotion) : 3 comptes ou plus du même parrain
+  depuis la même adresse IP en 7 jours, 10 vérifications ou plus en une heure (`STM_REFERRAL_SAME_IP_MAX`,
+  `STM_REFERRAL_BURST_MAX`).
+- **10 amis vérifiés : 12 mois civils d'accès complet**, une seule fois, accordés automatiquement (notification et
+  email de félicitations). Ils commencent à la fin de l'essai s'il est en cours, sinon tout de suite ; un accès payé
+  ou offert n'est ni réduit ni remplacé. À la fin : formule Free, sans paiement.
+- **Écrans** — page des prix : annonce de l'offre, « Get 30 Days Free » et « No credit card required » sur Solo et
+  Team (même essai), prix indiqués comme prévus (abonnements pas encore ouverts), section « Invite 10 Friends. Get 1
+  Year Free. » ; page d'accueil : « 30 Days Free. All Features Unlocked. », messages de confiance, section du
+  parrainage ; bannière dans l'application (essai en cours, fin proche, essai terminé, année offerte) ;
+  Réglages › Plan & billing. Administration › **Launch promotion** : essais (accordés, actifs, terminés), clics,
+  visiteurs uniques, inscriptions, parrainages vérifiés, taux, parrains à 1 et à 10, récompenses (accordées, actives, à
+  venir, terminées), activité suspecte à approuver ou refuser, filtre de période.
+- **Données** — accès : lignes de `subscriptions` (provider « promo »), lues par la même fonction que les abonnements
+  payés (`account_plan`) : toutes les limites restent appliquées au même endroit. `promo_grants` (un essai et une année
+  par compte, contrainte d'unicité), `ref_codes`, `ref_clicks` (empreinte d'un identifiant aléatoire du navigateur,
+  cookie `stm_vid` ; aucune adresse IP), `referrals` (empreinte salée de l'adresse IP à l'inscription, pour les seuls
+  contrôles anti-abus). Cookies : `stm_vid` (1 an) et `stm_ref` (attribution signée, 30 jours), propres au site.
+- Code : `studioma/lib/promo.php`, `studioma/assets/promo.js` ; décisions S28 à S30 de `docs/DECISIONS.md`.
+
+### 11. Fichiers envoyés
 
 64 Mo par fichier (`studioma/.user.ini` et `STM_MAX_UPLOAD_MB`), 12 Mo par image. Si l'hébergeur plafonne plus
 bas, baisser les deux valeurs ensemble. Le type est vérifié sur le contenu réel du fichier.
 
-### 11. Sauvegarde
+### 12. Sauvegarde
 
 Tout tient dans `~/studioma-data/` : copier ce dossier sauvegarde la base et les fichiers.
 
-### 12. Tests
+### 13. Tests
 
 ```bash
 tests/studioma/run.sh /tmp/stm-test
 ```
 
-Faux hébergement neuf, puis neuf batteries : `publish.js` (partager une carte seule, la publier : invités limités à
+Faux hébergement neuf, puis onze batteries : `promo.js` (l'offre de lancement : essai unique aux limites Team,
+réclamation, fin de l'essai sans perte, lien et clics, attribution signée de 30 jours, vérification, parrainage de soi
+refusé, activité suspecte, récompense unique même sous vérifications simultanées, indicateurs, aucun paiement ni appel
+à Paddle), `promo-e2e.js` (les mêmes écrans dans le navigateur, ordinateur et mobile), `publish.js` (partager une carte seule, la publier : invités limités à
 la carte et aux pièces jointes choisies, demandes, retrait, opportunités, propositions, réponses, invitation après
 acceptation, fermeture automatique, réalisations, fil, profil, rien de privé, cycle de vie), `publish-e2e.js` (les
 mêmes écrans dans le navigateur, ordinateur et mobile), `billing.js` (formules et abonnements, limites appliquées, faux Paddle :
@@ -1933,6 +1974,9 @@ parcours complet dans le navigateur, sur ordinateur et sur mobile, avec deux com
 - Pas d'IA intégrée à l'application : l'assistance passe par les assistants externes connectés au serveur MCP.
 - Serveur MCP : pas de flux d'événements ni de notifications envoyées par le serveur (chaque appel reçoit sa
   réponse) ; pas encore de jeton « lecture seule ».
+- Offre de lancement : une seule langue (anglais) ; pas de bannière de consentement pour les cookies du parrainage
+  (fonctionnels, sans adresse IP) ; la vérification d'adresse ne prouve pas qu'un ami est une personne distincte —
+  les cas suspects vont à l'administration, sans empreinte d'appareil.
 - Share & publish : pas d'opportunité ni de réalisation par le serveur MCP (assistants IA) ; pas de signalement
   d'une publication par les membres (modération depuis l'administration) ; un professionnel ne peut joindre que
   des travaux déjà publiés sur son profil ; pas de paiement entre membres (le prix d'une proposition est indicatif).

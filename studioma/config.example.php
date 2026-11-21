@@ -45,6 +45,13 @@
 // Limites des formules Free / Solo / Team appliquées par le serveur (true par défaut). false = tout permis
 // (interrupteur de secours ; les compteurs continuent d'être tenus).
 // define('STM_PLANS_ENFORCED', true);
+// Offre de lancement (lib/promo.php) : 30 jours d'accès complet à l'inscription et 1 an offert pour 10 amis vérifiés,
+// sans carte ni paiement (true par défaut). false = plus de nouvel essai ni de récompense ; les accès déjà accordés
+// continuent. Règles anti-abus du parrainage (0 = coupée) : comptes du même parrain depuis la même adresse IP en
+// 7 jours (3), parrainages vérifiés en une heure (10) — au-delà, « à examiner » dans l'administration.
+// define('STM_LAUNCH_PROMO', true);
+// define('STM_REFERRAL_SAME_IP_MAX', 3);
+// define('STM_REFERRAL_BURST_MAX', 10);
 // Paiement en ligne avec Paddle Billing : reste fermé tant que STM_BILLING_ENABLED n'est pas true ET que tous les
 // réglages ci-dessous sont remplis. Commencer en « sandbox » ; « production » seulement après l'approbation du
 // compte Paddle et un paiement de test réussi. Ces valeurs sont secrètes (sauf le jeton client) : jamais dans Git.

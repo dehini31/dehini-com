@@ -12,6 +12,7 @@
     SM.me = r.user || null;
     SM.companies = r.companies || [];
     SM.counts = r.counts || {};
+    SM.promo = r.promo || null;   // offre de lancement : essai, année offerte (assets/promo.js)
     if (r.csrf) SM.csrf = r.csrf;
     if (SM.me) SM.applyTheme(SM.me.settings.theme);
     if (window.StmMeta && SM.ref) window.StmMeta.setup(SM.ref.meta_pixel, SM.me);
@@ -29,6 +30,7 @@
     { key: 'studios', path: '/studios', label: 'Studios', icon: 'board' },
     { key: 'opportunities', path: '/opportunities', label: 'Opportunities', icon: 'briefcase' },
     { sep: 'You' },
+    { key: 'refer', path: '/refer', label: 'Refer & Earn', icon: 'award' },
     { key: 'messages', path: '/messages', label: 'Messages', icon: 'message', count: 'messages' },
     { key: 'notifications', path: '/notifications', label: 'Notifications', icon: 'bell', count: 'notifs' },
     { key: 'profile', path: '/profile', label: 'Profile', icon: 'user' },
@@ -44,7 +46,7 @@
     const seg = path.split('/')[1] || '';
     return ({ '': 'home', post: 'home', discover: 'discover', network: 'network', projects: 'projects', project: 'projects', studios: 'studios', studio: 'studios', work: 'studios',
       opportunities: 'opportunities', opportunity: 'opportunities', community: 'community', pub: 'community', messages: 'messages', notifications: 'notifications', requests: 'notifications', settings: 'settings',
-      talent: 'talent', team: 'team', c: 'team', profile: 'profile' })[seg] || (seg === 'u' && SM.me && path === '/u/' + SM.me.handle ? 'profile' : '');
+      talent: 'talent', team: 'team', c: 'team', profile: 'profile', refer: 'refer' })[seg] || (seg === 'u' && SM.me && path === '/u/' + SM.me.handle ? 'profile' : '');
   };
   const badge = (n) => (n > 0 ? html`<span class="nav-badge">${n > 99 ? '99+' : n}</span>` : '');
   const navLink = (n) => (n.sep
@@ -57,7 +59,7 @@
     if (!SM.me) {
       SM.set(app, html`<div class="public">
         <header class="public-top"><a href="${SM.base}" class="logo-link">${SM.logo()}</a><span class="grow"></span>
-          <a class="btn btn-ghost" href="#/community">Community</a><a class="btn btn-ghost" href="#/login">Sign in</a><a class="btn btn-primary" href="#/signup">Join Studioma</a></header>
+          <a class="btn btn-ghost pt-wide" href="#/community">Community</a><a class="btn btn-ghost" href="#/login">Sign in</a><a class="btn btn-primary" href="#/signup">Join Studioma</a></header>
         <main id="view" class="view"></main>
       </div>`);
       return;
@@ -309,6 +311,7 @@
         <input type="hidden" name="accept" value="1">
         <p class="form-error" data-error hidden></p>
         <button class="btn btn-primary btn-block">Create my account</button>
+        ${SM.ref.launch_promo ? html`<p class="promo-note">${icon('sparkles')}<span><b>${SM.ref.promo_trial_days} days of full access included.</b> No credit card required — no payment, no automatic billing.</span></p>` : ''}
         <p class="terms-note">${icon('shield')}<span>By creating your account, you agree to use Studioma respectfully and to share only content you are allowed to share.</span></p>
       </form>
       <p class="auth-alt">Already have an account? <a href="#/login">Sign in</a></p>`));

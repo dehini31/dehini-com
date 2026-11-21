@@ -71,6 +71,7 @@
     SM.set(ctx.view, html`<div class="page">
       <header class="page-head"><div><h1>Projects</h1><p class="muted">Your private workspace. A project is a brand, a client or a campaign; each one holds its Studios.</p></div>
         <button class="btn btn-primary" data-act="project-new">${icon('plus')}New project</button></header>
+      ${SM.promoBanner ? SM.promoBanner() : ''}
       ${w.invites.length ? html`<section><h2 class="section-title">${icon('mail')}Team invitations</h2><div class="stack">${w.invites.map(inviteCard)}</div></section>` : ''}
       <div class="with-rail">
         <div class="stack-l">

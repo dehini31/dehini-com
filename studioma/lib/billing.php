@@ -430,6 +430,8 @@ function api_billing_plans(array $b, ?array $u): array
     }
     return [
         'plans' => $plans, 'fair_use_cards' => STM_FAIR_USE_CARDS, 'checkout' => billing_available(), 'env' => billing_env(),
+        // Offre de lancement ouverte (lib/promo.php) : la page des prix propose l'essai gratuit, sans carte.
+        'promo' => function_exists('promo_enabled') && promo_enabled(),
         'current' => $u ? account_plan((int) $u['id'])['plan'] : null,
     ];
 }

@@ -136,6 +136,7 @@ function reference(): array
         'languages' => STM_LANGUAGES, 'contracts' => STM_CONTRACTS, 'modes' => STM_WORK_MODES, 'availability' => STM_AVAILABILITY,
         'colors' => STM_COLORS, 'priorities' => STM_PRIORITIES, 'roles' => ROLE_LABELS, 'relations' => RELATIONS,
         'sizes' => COMPANY_SIZES, 'app_statuses' => APP_STATUSES, 'metrics' => METRIC_KEYS, 'templates' => templates_view(),
+        'launch_promo' => promo_enabled(), 'promo_trial_days' => STM_PROMO_TRIAL_DAYS, 'referral_goal' => STM_REFERRAL_GOAL,
         'opp_kinds' => OPP_KINDS, 'pub_categories' => PUB_CATEGORIES, 'currencies' => PUB_CURRENCIES, 'proposal_statuses' => PROPOSAL_STATUSES,
         'max_upload_mb' => upload_limit_mb(), 'name' => STM_NAME, 'google_client_id' => google_client_id(), 'meta_pixel' => meta_pixel_id(),
     ];
