@@ -31,7 +31,7 @@ vanilla HTML/CSS/JS in the browser. Full context: `docs/PROJECT_CONTEXT.md`. Hum
 | `swanbida/` | e-shop, cash on delivery, Meta Pixel + Conversions API | « SWANBIDA » |
 | `marketing/` | private marketing dashboard (Meta Graph API, webhooks) | « Marketing Dashboard », `docs/meta-*.md` |
 | `maillage/` | points-of-sale / distribution platform, map, in-browser image search | « Maillage », `tools/vision/` |
-| `studioma/` | social network + collaborative studio for community managers (English UI), MCP server, guest sharing, Meta Pixel/CAPI, platform admin (`studioma/admin/`) | « Studioma » |
+| `studioma/` | social network + collaborative studio for community managers (English UI), MCP server, guest sharing, Meta Pixel/CAPI, platform admin (`studioma/admin/`), plans & Paddle billing (`docs/billing.md`) | « Studioma » |
 | `.well-known/` | OAuth discovery rewrites for Studioma's MCP server | « Studioma › 4 » |
 | `tests/<project>/` | fake-hosting test suites (Studioma, SWANBIDA, Maillage) | `tests/*/README.md` |
 | `tools/` | one-off scripts (data import, vision model build, showcase screenshots) | each tool's header |
@@ -86,7 +86,7 @@ find . -name '*.php' -not -path './.git/*' -print0 | xargs -0 -n1 php -l | grep 
 for f in studioma/assets/*.js; do node --check "$f"; done
 
 # Full suites: each builds a throw-away fake cPanel hosting in the given folder (never touches production)
-tests/studioma/run.sh /tmp/stm-test      # API, guest sharing, Meta, MCP/OAuth, admin, browser e2e (~6 min, port 8097)
+tests/studioma/run.sh /tmp/stm-test      # API, sharing, Meta, MCP/OAuth, admin, billing, browser e2e (~7 min, port 8097)
 tests/swanbida/run.sh /tmp/swb-test      # ports 8090-8091
 tests/maillage/run.sh /tmp/mlg-test      # port 8096
 ```

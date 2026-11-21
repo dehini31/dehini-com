@@ -9,7 +9,7 @@ politique de sécurité (CSP).
 tests/studioma/run.sh /tmp/stm-test
 ```
 
-`run.sh` prépare un hébergement neuf, lance le serveur PHP (port 8097) et exécute six batteries, chacune sur une
+`run.sh` prépare un hébergement neuf, lance le serveur PHP (port 8097) et exécute sept batteries, chacune sur une
 base vide. Les événements Meta (API Conversions) sont écrits dans `meta.jsonl` (faux ensemble de données) ; dans le
 navigateur, un faux script du pixel note les appels à `fbq` :
 
@@ -110,6 +110,19 @@ partie d'adresse après `#`.
 - jetons : renouvellement (à usage unique, lié à l'application), application déconnectée et jeton personnel
   supprimé refusés aussitôt, client confidentiel (secret exigé), retour vers la machine locale sur un autre port,
   révocation (RFC 7009).
+
+**`billing.js` — formules et abonnements** (`setup.sh` avec `BILLING=1` : limites appliquées, Paddle sandbox pointé sur
+le faux Paddle `fake-paddle.php`, servi par `router.php` sous `/fake-paddle/`) : migration d'une base au schéma 8
+sans perte ; limites Free (projets, Studios, archivés hors compte, 30 cartes par mois, compteur qui ne recule pas,
+nouveau mois, invitations, liens privés, invités en lecture seule, validations, Insights) ; mêmes limites par le
+serveur MCP ; paiement (transaction liée au compte, rien d'activé par le retour du navigateur) ; webhooks (mauvaise
+signature, sans signature, trop ancien, corps modifié, rejeu, désordre, client inconnu) ; Solo, montée vers Team
+(prorata immédiat), places de membres et invitations en attente, invités hors places ; créations simultanées ;
+isolement entre comptes ; descente (prorata sur la prochaine facture, membres en trop en lecture seule) ;
+résiliation, reprise, fin confirmée par Paddle, dépassements ; paiement en échec, délai de grâce, régularisation ;
+espace client ; indicateurs de l'administration (MRR, ARR, sandbox séparé), formule offerte ; navigateur : page des
+prix, mensuel / annuel, invitation à changer de formule, paiement avec un faux Paddle.js, attente de la
+confirmation, réglages, Insights, mobile, aucune violation de la CSP.
 
 **`admin.js` — l'administration** (`studioma/admin/`, API seule ; `setup.sh` copie aussi `admin/` avec le mot de
 passe de test `test-owner-pass`) :

@@ -40,3 +40,20 @@
 // Campagnes de l'administration : au plus tant d'emails par heure (tous emails confondus). Rester sous la
 // limite d'envoi de l'hébergeur.
 // define('STM_MAIL_PER_HOUR', 200);
+
+// Formules et abonnements (lib/billing.php, lib/paddle.php ; guide complet : docs/billing.md).
+// Limites des formules Free / Solo / Team appliquées par le serveur (true par défaut). false = tout permis
+// (interrupteur de secours ; les compteurs continuent d'être tenus).
+// define('STM_PLANS_ENFORCED', true);
+// Paiement en ligne avec Paddle Billing : reste fermé tant que STM_BILLING_ENABLED n'est pas true ET que tous les
+// réglages ci-dessous sont remplis. Commencer en « sandbox » ; « production » seulement après l'approbation du
+// compte Paddle et un paiement de test réussi. Ces valeurs sont secrètes (sauf le jeton client) : jamais dans Git.
+// define('STM_BILLING_ENABLED', true);
+// define('STM_PADDLE_ENV', 'sandbox');                         // sandbox | production
+// define('STM_PADDLE_API_KEY', 'pdl_sdbx_apikey_…');           // Paddle › Developer tools › Authentication (secret)
+// define('STM_PADDLE_CLIENT_TOKEN', 'test_…');                 // jeton client (public, pour Paddle.js)
+// define('STM_PADDLE_WEBHOOK_SECRET', 'pdl_ntfset_…');         // secret de la destination de notifications (webhook)
+// define('STM_PADDLE_PRICE_SOLO_MONTHLY', 'pri_…');            // 12 $ / mois
+// define('STM_PADDLE_PRICE_SOLO_YEARLY', 'pri_…');             // 120 $ / an
+// define('STM_PADDLE_PRICE_TEAM_MONTHLY', 'pri_…');            // 29 $ / mois
+// define('STM_PADDLE_PRICE_TEAM_YEARLY', 'pri_…');             // 290 $ / an
