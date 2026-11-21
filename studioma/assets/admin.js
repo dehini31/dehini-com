@@ -352,7 +352,7 @@
       <div class="ud-body">
         ${u.suspended ? html`<p class="notice notice-warn">${icon('lock')}<span><b>Suspended ${fmt.ago(u.suspended)}.</b> ${u.suspend_note ? 'Reason: ' + u.suspend_note + '. ' : ''}Cannot sign in; profile and posts are hidden.</span></p>` : ''}
         <div class="chips-row">${u.online ? html`<span class="chip chip-ok"><span class="on-dot"></span>online</span>` : ''}${u.google ? html`<span class="chip">Google sign-in</span>` : ''}${u.has_password ? html`<span class="chip">Password</span>` : ''}${u.pro ? html`<span class="chip">In talent directory</span>` : ''}${u.location ? html`<span class="chip">${icon('pin')}${u.location}</span>` : ''}</div>
-        <section><h3>Activity</h3><div class="kv">${stat('Joined', fmt.date(u.created))}${stat('Last seen', u.last_seen ? fmt.ago(u.last_seen) : '—')}${stat('Active days (30)', s.active_days)}${stat('Open sessions', s.sessions)}</div>
+        <section><h3>Activity</h3><div class="kv">${stat('Joined', fmt.date(u.created))}${stat('Last seen', u.last_seen ? fmt.ago(u.last_seen) : '—')}${stat('Active days (30)', s.active_days)}${stat('Open sessions', s.sessions)}${stat('Terms accepted', u.terms_at ? fmt.date(u.terms_at) : 'not yet')}</div>
           <div class="days" title="Active days over the last 30 days" aria-label="Active on ${s.active_days} of the last 30 days">${DAYS30().map((day) => html`<i class="${on.has(day) ? 'on' : ''}" title="${day}"></i>`)}</div></section>
         <section><h3>Usage</h3><div class="kv">
           ${stat('Projects (owner)', `${s.projects} (${s.projects_owned})`)}${stat('Studios (direct)', s.studios)}${stat('Cards created', s.cards)}${stat('Card comments', s.comments)}

@@ -37,6 +37,7 @@ const ROUTES = [
     'me' => ['GET', 'public'], 'pixel' => ['GET', 'public'], 'signup' => ['POST', 'public'], 'login' => ['POST', 'public'], 'logout' => ['POST', 'public'],
     'forgot' => ['POST', 'public'], 'reset' => ['POST', 'public'], 'password' => ['POST', 'user'], 'account_save' => ['POST', 'user'],
     'account_delete' => ['POST', 'user'], 'counts' => ['GET', 'user'], 'email_confirm_send' => ['POST', 'user'], 'email_confirm' => ['POST', 'user'],
+    'terms_accept' => ['POST', 'user'],
     'google' => ['POST', 'public'], 'google_link' => ['POST', 'user'], 'google_unlink' => ['POST', 'user'],
     // Assistants IA (serveur MCP) : écran d'accord OAuth, applications connectées, jetons personnels
     'oauth_request' => ['GET', 'user'], 'oauth_decide' => ['POST', 'user'], 'ai_access' => ['GET', 'user'],
@@ -148,7 +149,7 @@ function api_signup(array $b, ?array $u): array
     if (empty($b['accept'])) fail('Please accept the terms to create your account.');
     if (val('SELECT 1 FROM users WHERE email = ?', [$email])) fail('An account already exists with this email. Sign in instead.', 409, 'exists');
     $uid = tx(function () use ($email, $name, $password, $kind, $company): int {
-        $uid = account_create($email, $name, $password, $kind);
+        $uid = account_create($email, $name, $password, $kind, true);   // conditions acceptées en créant le compte
         if ($kind === 'company') company_create(['name' => $company], $uid);
         return $uid;
     });
@@ -244,6 +245,18 @@ function api_account_save(array $b, array $u): array
         q('UPDATE users SET settings = ? WHERE id = ?', [jenc($s), $uid]);
     }
     return me_view(user_by_id($uid), (string) $u['s_csrf']);
+}
+
+/* ------------------------------------------------- conditions d'utilisation */
+
+/** Écritures permises avant d'avoir accepté les conditions : les accepter, se déconnecter, supprimer son compte. */
+const TERMS_FREE = ['terms_accept', 'logout', 'account_delete'];
+
+/** Acceptation des conditions (compte créé avec Google : fenêtre à l'arrivée dans l'application). */
+function api_terms_accept(array $b, array $u): array
+{
+    q('UPDATE users SET terms_at = ? WHERE id = ? AND terms_at = 0', [time(), $u['id']]);
+    return me_view(user_by_id((int) $u['id']), (string) $u['s_csrf']);
 }
 
 /* -------------------------------------------------- confirmation de l'adresse */
@@ -387,6 +400,11 @@ try {
         ok($fn($data, require_admin()));
     }
     $user = $route[1] === 'user' ? require_user() : current_user();
+    // Tant que les conditions ne sont pas acceptées, le compte peut tout lire mais rien enregistrer (l'application
+    // affiche alors la fenêtre d'acceptation).
+    if ($isPost && $route[1] === 'user' && (int) ($user['terms_at'] ?? 0) === 0 && !in_array($action, TERMS_FREE, true)) {
+        fail('Please accept the terms of use to continue.', 403, 'terms');
+    }
     // Campagne d'emails en cours : un petit lot part après la réponse (si le serveur le permet, lib/admin.php).
     if (campaign_waiting()) campaign_pump_later(3);
     // Les envois de fichier arrivent en multipart : leurs champs sont dans $_POST.

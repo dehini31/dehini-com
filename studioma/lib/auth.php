@@ -179,14 +179,14 @@ function user_reindex(int $uid): void
     if ($u) q('UPDATE users SET search = ? WHERE id = ?', [user_search_text($u), $uid]);
 }
 /** Crée un compte ; retourne son id. */
-function account_create(string $email, string $name, string $password, string $kind): int
+function account_create(string $email, string $name, string $password, string $kind, bool $terms = false): int
 {
     $now = time();
     $uid = insert('users', [
         'email' => $email, 'name' => $name, 'handle' => unique_slug('users', 'handle', $name),
         // Compte créé avec Google : pas de mot de passe ('' ne correspond à aucun mot de passe).
         'pass' => $password === '' ? '' : password_hash($password, PASSWORD_DEFAULT), 'kind' => $kind, 'pro' => $kind === 'company' ? 0 : 1,
-        'created' => $now, 'last_seen' => $now,
+        'created' => $now, 'last_seen' => $now, 'terms_at' => $terms ? $now : 0,
     ]);
     q('INSERT OR IGNORE INTO activity_days (day, uid) VALUES (?, ?)', [date('Y-m-d', $now), $uid]);
     user_reindex($uid);
@@ -266,6 +266,8 @@ function me_view(array $u, string $csrf): array
             'google' => (string) ($u['google_sub'] ?? '') !== '', 'has_password' => (string) $u['pass'] !== '',
             'settings' => user_settings($u),
             'onboarded' => $u['title'] !== '' || jarr($u['skills']) !== [],
+            // Conditions d'utilisation acceptées ? Sinon l'application les demande dans une fenêtre (assets/app.js).
+            'terms' => (int) ($u['terms_at'] ?? 0) > 0,
         ],
         'companies' => my_companies((int) $u['id']),
         'csrf' => $csrf,

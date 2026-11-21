@@ -93,6 +93,7 @@ function admin_user_row(array $t): array
         'created' => (int) $t['created'], 'last_seen' => (int) $t['last_seen'], 'email_ok' => (int) $t['email_ok'] === 1,
         'google' => (string) ($t['google_sub'] ?? '') !== '', 'has_password' => (string) $t['pass'] !== '',
         'suspended' => (int) $t['suspended'], 'online' => (int) $t['last_seen'] >= time() - ONLINE_WINDOW,
+        'terms_at' => (int) ($t['terms_at'] ?? 0),
     ];
 }
 /**
