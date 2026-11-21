@@ -1929,22 +1929,92 @@ voir `config.example.php`) ; **aucune carte, aucun paiement, aucun appel à Padd
   contrôles anti-abus). Cookies : `stm_vid` (1 an) et `stm_ref` (attribution signée, 30 jours), propres au site.
 - Code : `studioma/lib/promo.php`, `studioma/assets/promo.js` ; décisions S28 à S30 de `docs/DECISIONS.md`.
 
-### 11. Fichiers envoyés
+### 11. Parcours du créateur : XP, réalisations vérifiées, niveaux, passeport public
+
+Rien à configurer : la base passe d'elle-même à la version 12, et le parcours se calcule aussi à partir du travail
+déjà fait (Studios, cartes terminées, validations, invitations, réalisations publiées). Ouvert à toutes les formules,
+sans carte ni paiement ; ce qui est acquis reste quand l'abonnement change.
+
+- **Menu « My Achievements »** (`#/achievements`) — passeport du créateur (photo, nom, titre, niveau, XP vers le niveau
+  suivant, réalisations, projets terminés, réalisations vérifiées et validées par un client, résumé factuel), « Your
+  Next Milestone », collection en onglets **Verified / In Progress / Pending Verification** (et « Self reported » s'il y
+  en a), chronologie filtrable (*All Activity, Achievements, Projects, Collaboration, Client Recognition*), niveaux et
+  leurs critères, barème des XP. Détails d'une réalisation : `#/achievements/<n°>` (preuves, ce qu'elle prouve et ne
+  prouve pas, identifiant, visibilité). Réglages : `#/achievements/settings`.
+- **XP (serveur seulement)** — chaque événement s'inscrit une fois dans le grand livre `xp_transactions` (clé
+  d'idempotence par compte, version de règle, moment, projet / Studio / carte d'origine) : premier Studio 20, premier
+  projet 15, carte éligible créée 2, carte éligible terminée 10, niveau de Studio dégagé 20, projet terminé 50, Studio
+  partagé avec un collaborateur 10, réalisation publiée dans la communauté 20, validation d'un client 30. **Carte
+  éligible** : une description d'au moins 20 caractères, une pièce jointe, une liste de contrôle ou un lien publié (les
+  cartes vides ne rapportent rien). Limites par jour (10 cartes créées, 10 terminées, 3 niveaux, 2 projets, 3 partages,
+  2 publications, 5 validations) : au-delà, l'événement compte pour les réalisations mais ne rapporte pas d'XP. Une
+  carte terminée, rouverte puis terminée de nouveau, un projet rouvert puis terminé, une publication modifiée ou un
+  deuxième membre dans le même projet ne rapportent rien de plus. Le navigateur ne peut rien déclarer lui-même.
+- **Qui reçoit les points d'une carte** : son responsable et ses collaborateurs, sinon son créateur. **Niveau de Studio
+  dégagé** : au moins 3 cartes éligibles y sont passées (terminées dedans ou envoyées vers un niveau suivant) et
+  aucune carte ouverte n'y reste. **Projet terminé** : un propriétaire ou un responsable le marque (menu du projet ›
+  *Mark as completed…*) ; le serveur vérifie au moins 3 cartes éligibles terminées, aucune carte ouverte et 24 heures
+  d'existence ; chaque contributeur reçoit l'événement une fois. **Studio partagé** : un autre compte a rejoint le
+  projet ou le Studio par une invitation de la personne, ou un invité a vérifié son adresse sur un de ses liens.
+- **Validation d'un client** — compte seulement si la personne désignée décide elle-même, en tant que *Client /
+  Approver* (adresse confirmée) ou invitée vérifiée d'un lien de partage ; jamais pour soi-même, jamais quand un
+  propriétaire décide à la place du client, jamais celle d'un *Manager* (relecture interne). Une fois par carte.
+  Les décisions gardent désormais qui a décidé et à quel titre (`card_approvals.decided_by`, `decider_role`) ; celles
+  d'avant ont été retrouvées dans l'historique des cartes.
+- **Six réalisations** — *First Studio*, *First Delivery*, *Project Finisher*, *Team Player* (carte terminée avec un
+  autre compte vérifié) : **System Verified** ; *Client Approved* : **Client Verified** ; *Proven Creator* (3 projets
+  terminés et 3 validations de client sur au moins 2 projets — jamais par les XP seuls) : **Evidence Based**. **Pending
+  Verification** : une demande de validation adressée à un client attend sa réponse. **Self Reported** : réalisation
+  ajoutée par la personne (titre, description, date, lien), sans XP, jamais présentée comme vérifiée.
+- **Six niveaux** (indicateurs internes, pas des qualifications reconnues) : 01 Explorer ; 02 Organizer (150 XP, 5
+  cartes) ; 03 Creator (500 XP, 15 cartes, 1 projet) ; 04 Collaborator (1 500 XP, 2 projets, Team Player, 1 Studio
+  partagé) ; 05 Professional (3 000 XP, 3 projets, 3 validations de client) ; 06 Mentor (6 000 XP, 6 projets, Proven
+  Creator, 25 cartes dans les projets d'autres personnes, actif 6 mois différents).
+- **Célébrations** — une carte discrète dans un coin (jamais une fenêtre bloquante, sans son, mouvement réduit
+  respecté) pour une réalisation ou un niveau ; plusieurs à la fois sont regroupées ; montrée une seule fois.
+- **Partager** — chaque réalisation est **privée par défaut** ; « Anyone with the link » ou « Public on my Creator
+  Passport ». Page publique de vérification `https://dehini.com/studioma/verify/<identifiant aléatoire>` (état actuel,
+  créatrice, date, type de vérification, preuves sans nom de projet, de Studio, de carte, de fichier ni de client ;
+  le nom d'un client seulement s'il l'accepte : *Settings › Approvals you gave as a client*). Une réalisation retirée
+  affiche « Revoked », jamais « Verified ». **Image PNG** dessinée dans le navigateur (1200 × 630, 1080 × 1080,
+  1080 × 1920), avec un QR code vers la page de vérification (encodeur intégré `assets/qr.js`, sans bibliothèque
+  externe). Boutons LinkedIn, Facebook, WhatsApp, email, partage du téléphone, copie du lien : rien n'est publié sans
+  geste de la personne.
+- **Passeport public** `https://dehini.com/studioma/creator/<identifiant>` — fermé par défaut ; titre, niveau, chiffres
+  et résumé, réalisations choisies, travaux publiés du portfolio, progression et chronologie publique, chacun
+  masquable. Pages rendues par le serveur (`studioma/p.php`, aperçus des liens, sans JavaScript ; seul un passeport
+  ouvert est indexable).
+- **Administration › Creator Journey** — participants, comptes qui progressent, réalisations accordées, projets
+  terminés, réalisations validées par un client, taux de partage, passeports et leurs vues, répartition par niveau et
+  par XP ; activité à examiner (limites du jour souvent atteintes, gains très rapides, validations en série d'un même
+  client — aucune sanction automatique) ; règles modifiables (XP, limites, critères, seuils, réalisations actives ;
+  les XP déjà accordés gardent leur valeur) ; fiche d'un compte (grand livre, réalisations, preuves) avec **retrait et
+  restitution motivés** (journal de l'administration, membre prévenu).
+- Code : `studioma/lib/journey.php`, `studioma/p.php`, `studioma/assets/journey.js`, `studioma/assets/qr.js`,
+  `studioma/assets/passport.css` ; décisions S31 à S35 de `docs/DECISIONS.md`.
+
+### 12. Fichiers envoyés
 
 64 Mo par fichier (`studioma/.user.ini` et `STM_MAX_UPLOAD_MB`), 12 Mo par image. Si l'hébergeur plafonne plus
 bas, baisser les deux valeurs ensemble. Le type est vérifié sur le contenu réel du fichier.
 
-### 12. Sauvegarde
+### 13. Sauvegarde
 
 Tout tient dans `~/studioma-data/` : copier ce dossier sauvegarde la base et les fichiers.
 
-### 13. Tests
+### 14. Tests
 
 ```bash
 tests/studioma/run.sh /tmp/stm-test
 ```
 
-Faux hébergement neuf, puis onze batteries : `promo.js` (l'offre de lancement : essai unique aux limites Team,
+Faux hébergement neuf, puis treize batteries : `journey.js` (le parcours du créateur : XP inscrits une fois, cartes
+vides sans points, limites du jour, niveau de Studio dégagé, projet terminé après vérification, partage, travail en
+équipe, validations de client — désignée seulement, pas de soi-même, ni d'un propriétaire à sa place, ni d'un
+Manager —, réalisations et preuves, en attente, déclarées, niveaux, jalons, chronologie, visibilité, pages publiques
+sans rien de privé, consentement du client, règles, retrait et restitution, formule sans effet, migration rejouée,
+requêtes simultanées), `journey-e2e.js` (les mêmes écrans dans le navigateur, image PNG et QR code, ordinateur et
+mobile), `promo.js` (l'offre de lancement : essai unique aux limites Team,
 réclamation, fin de l'essai sans perte, lien et clics, attribution signée de 30 jours, vérification, parrainage de soi
 refusé, activité suspecte, récompense unique même sous vérifications simultanées, indicateurs, aucun paiement ni appel
 à Paddle), `promo-e2e.js` (les mêmes écrans dans le navigateur, ordinateur et mobile), `publish.js` (partager une carte seule, la publier : invités limités à
@@ -1974,6 +2044,11 @@ parcours complet dans le navigateur, sur ordinateur et sur mobile, avec deux com
 - Pas d'IA intégrée à l'application : l'assistance passe par les assistants externes connectés au serveur MCP.
 - Serveur MCP : pas de flux d'événements ni de notifications envoyées par le serveur (chaque appel reçoit sa
   réponse) ; pas encore de jeton « lecture seule ».
+- Parcours du créateur : pas de réalisation ni d'XP par le serveur MCP ; un niveau de Studio n'est reconnu qu'à partir
+  des passages enregistrés depuis la version 12 (et des cartes déjà terminées) ; les invitations par lien réutilisable
+  sont datées de leur création ; un invité sans compte qui valide reste « un client vérifié » (son nom n'apparaît
+  jamais) ; l'image PNG se crée dans le navigateur (pas d'image d'aperçu générée par le serveur pour les réseaux) ;
+  une seule langue (anglais).
 - Offre de lancement : une seule langue (anglais) ; pas de bannière de consentement pour les cookies du parrainage
   (fonctionnels, sans adresse IP) ; la vérification d'adresse ne prouve pas qu'un ami est une personne distincte —
   les cas suspects vont à l'administration, sans empreinte d'appareil.
@@ -1996,7 +2071,7 @@ parcours complet dans le navigateur, sur ordinateur et sur mobile, avec deux com
 - Une seule langue (anglais) ; les conditions d'utilisation se résument à une phrase (acceptée à l'inscription par
   email, ou dans la fenêtre « One last step » pour un compte Google) : pas encore de page de conditions complète.
 - Les pages publiques sont rendues par JavaScript : elles se partagent par lien mais ne sont pas optimisées pour
-  les moteurs de recherche (seule la landing l'est).
+  les moteurs de recherche (seules la landing, les pages de vérification et les passeports publics le sont).
 
 ## Référencement (SEO)
 

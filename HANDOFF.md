@@ -9,72 +9,92 @@ secrets here. Mark anything you could not verify as *(unverified)*.
 | | |
 |---|---|
 | Last agent | Claude Code (cloud session) |
-| Branch | **`claude/trusting-keller-rynk1j`** (tracks `origin/claude/trusting-keller-rynk1j`), restarted from `origin/main` @ `e8f118b` (its earlier PR #79 was merged). No pull request yet for this work (open one only when the owner asks) |
-| Base code | `main` @ `e8f118b` = Merge PR #80 (Share & publish, DB v10) on top of PR #79 (billing v9). **`main` = production** — no deployment cron: the owner copies `main` by hand. Live check 2026-11-21: billing files answer 200 (PR #79 copied), `studioma/assets/publish.js` answers 404 (PR #80 **not** copied yet) |
+| Branch | **`claude/trusting-keller-rynk1j`** (tracks `origin/claude/trusting-keller-rynk1j`), fast-forwarded to `3daad88` (= the owner's merge of `main` into it, PR #82; same tree as `origin/main` `2d53414`). No pull request yet for this work (open one only when the owner asks) |
+| Base code | `main` @ `2d53414` = Merge PR #81 (launch offer, DB v11) on top of PR #80 (Share & publish, v10) and PR #79 (billing, v9). **`main` = production** — no deployment cron: the owner copies `main` by hand. Live check 2026-11-21: `studioma/assets/publish.js` 200 (PR #80 live), `studioma/assets/promo.js` 404 (PR #81 **not** copied yet) |
 | Checkpoint | the commit that last changed this file: `git log -1 --format='%H %s' -- HANDOFF.md` |
 | Uncommitted work at checkpoint | none |
-| In progress | **Studioma launch offer** — 30 days of full (Team) access without a card, « invite 10 friends, get 1 year free », Refer & Earn, pricing / landing / banners, admin analytics. Implemented, tested, committed and pushed on `claude/trusting-keller-rynk1j`; **not merged, not deployed** |
-| Last task changed application code? | **yes** — Studioma, DB schema 10 → 11 (additive) |
+| In progress | **Studioma Creator Journey** — XP ledger, six verified achievements, six Creator levels, next milestone, celebrations, timeline, public verification pages and Creator Passport, PNG + QR sharing, client approvals with consent, project completion, admin rules and revocation. Implemented, tested, committed and pushed on `claude/trusting-keller-rynk1j`; **not merged, not deployed** |
+| Last task changed application code? | **yes** — Studioma, DB schema 11 → 12 (additive) |
 | Codex access | **not verified** — Codex has not been run on this repository from this session |
 
 **Start here (Codex or Claude)**
 
 1. `git fetch origin`, then `git switch claude/trusting-keller-rynk1j` (or `git switch -c codex/<topic> origin/claude/trusting-keller-rynk1j`).
-   Production is `origin/main` @ `e8f118b`.
-2. Read README « Studioma › 10 » and decisions S28–S30 before touching the offer; S25–S27 for Share & publish;
-   `docs/billing.md` for billing.
-3. Checks: `AGENTS.md` § 5 (lint, then `tests/studioma/run.sh`, ~13 min, 11 suites).
+   Production is `origin/main` @ `2d53414`.
+2. Read README « Studioma › 11 » and decisions S31–S35 before touching the journey; S28–S30 for the launch offer;
+   S25–S27 for Share & publish; `docs/billing.md` for billing.
+3. Checks: `AGENTS.md` § 5 (lint, then `tests/studioma/run.sh`, ~17 min, 13 suites).
 
-**Done on this branch, not in `main`** (commits `04e8561` backend, then the UI/docs commit):
-- `studioma/lib/promo.php` (new): trial (signup or one-time claim, never over a paid/offered Team), referral codes,
-  clicks + unique visitors (`stm_vid` cookie hash, no IP), signed 30-day first-click attribution (`stm_ref`),
-  verification hooks, self-referral and abuse rules (admin review), 12-month reward once (after a running trial),
-  `api_promo`, `api_promo_claim`, `api_ref_click`, `api_admin_promo`, `api_admin_promo_review`.
-- Entitlements: `account_plan()` reads `subscriptions` rows with provider `promo` (period_start ≤ now < period_end)
-  — `studioma/lib/billing.php`; `billing_plans` exposes `promo`; constants in `studioma/lib/plans.php`; DB v11 in
-  `studioma/lib/core.php` (`ref_codes`, `ref_clicks`, `referrals`, `promo_grants`).
-- Hooks: signup and Google sign-up (`studioma/api.php`, `studioma/lib/google.php`), every place an email becomes
-  verified (confirm link, password reset, Google link/sign-in, admin), `me_view()` returns `promo`
-  (`studioma/lib/auth.php`); admin billing metrics count the offer apart (`studioma/lib/admin.php`).
-- UI: `studioma/assets/promo.js` (banners, Refer & Earn `#/refer`, claim, `?ref=` in the app), pricing and Plan &
-  billing (`studioma/assets/billing.js`), signup note and nav (`studioma/assets/app.js`), banners on Home and Projects
-  (`social.js`, `studio.js`), landing (`studioma/index.html`, `assets/landing.js`, `assets/landing.css`), admin
-  « Launch promotion » (`studioma/assets/admin.js`), `app.css`, `app/index.html`. Also fixed: the logged-out header
-  overflowed on phones because of the « Community » link added in PR #80 (now hidden below 520 px).
-- Config: `STM_LAUNCH_PROMO` (default true), `STM_REFERRAL_SAME_IP_MAX` (3), `STM_REFERRAL_BURST_MAX` (10) in
-  `studioma/config.example.php`.
-- Tests: `tests/studioma/promo.js` (76 checks), `tests/studioma/promo-e2e.js` (44 checks), `setup.sh` `PROMO=1`
-  (other suites run with the offer off), `run.sh`; `admin.js` / `billing.js` expect schema 11.
-- Docs: README « Studioma › 10 » (sections renumbered 11–13), DECISIONS S28–S30, ROADMAP, PROJECT_CONTEXT, AGENTS.md
-  map, tests README.
+**Done on this branch, not in `main`** (Creator Journey):
+- `studioma/lib/journey.php` (new): rules module (`JOURNEY_EVENTS`, `JOURNEY_PARAMS`, `JOURNEY_LEVELS`,
+  `JOURNEY_ACHIEVEMENTS`, admin overrides in meta `journey_rules`), idempotent XP ledger (`journey_grant`), eligible
+  cards and contributors, level passes / cleared Studio levels, client approvals (`journey_client_ok`), project
+  completion (`api_project_complete`), retroactive evaluation (`journey_eval`), stats, achievements and evidence,
+  Creator levels, next milestones (plan-aware), timeline, passport settings, all `journey_*` APIs, `journey_after()`
+  (dispatcher: recompute + `_journey.celebrate`), admin APIs (`admin_journey`, `_rules`, `_user`, `_revoke`).
+- DB v12 in `studioma/lib/core.php`: `xp_transactions`, `user_achievements`, `achievement_evidence`,
+  `journey_progress`, `journey_log`, `level_passes`, `passport_settings`; `projects.completed_at/_by`;
+  `card_approvals.decided_by/decider_role` (backfilled from card history).
+- Hooks: `card_place()` (`studioma/lib/studio.php`), approval decision records who decided (`studioma/lib/cards.php`),
+  invitation accepted (`lib/collab.php`), guest verified (`lib/share.php`), `project_get` returns `completion`,
+  `project_view` returns `completed_at`; `api.php` routes + `journey_after`; `mcp.php` / `cron.php` require journey.php.
+- Public pages: `studioma/p.php` (server-rendered `/studioma/verify/<16-hex>` and `/studioma/creator/<handle>`),
+  `studioma/assets/passport.css`, rewrites in `studioma/.htaccess` and `tests/studioma/router.php` (with CSP).
+- UI: `studioma/assets/journey.js` (My Achievements, details, settings, share modal, PNG canvas, celebrations, next
+  milestone widget, project completion dialog), `studioma/assets/qr.js` (QR encoder, byte mode, ECC M, v1–10),
+  nav entry + `trophy` icon (`app.js`, `icons.js`), `_journey` hook (`core.js`), Home widget (`social.js`), project
+  menu / completed chip (`studio.js`), admin « Creator Journey » (`assets/admin.js`, `admin.css`), `app.css`,
+  `app/index.html`.
+- Tests: `tests/studioma/journey.js`, `tests/studioma/journey-e2e.js`, `run.sh` (13 suites); `admin.js` / `billing.js`
+  expect schema 12.
+- Docs: README « Studioma › 11 » (sections renumbered 12–14, tests, gaps), DECISIONS S31–S35, ROADMAP,
+  PROJECT_CONTEXT (schema v12), AGENTS.md map, tests README.
 
 **Unfinished / waiting**
 
-- Owner: copy `main` (PR #80) to the live site if wanted; review this branch, ask the agent for a pull request,
-  merge, deploy. The database migrates to v11 by itself; the offer is on by default.
-- Note for the owner: billing (PR #79) is live; unless `STM_PLANS_ENFORCED` is false on the server, Free limits apply
-  to accounts without the trial *(server config unverified)*. Once this branch is live, new accounts get the trial
-  automatically and existing accounts can claim it once.
-- Not done: Share & publish / offer through the MCP server; consent banner for the referral cookies; other languages.
+- Owner: copy `main` (PR #81, launch offer) to the live site if wanted; review this branch, ask the agent for a pull
+  request, merge, deploy. The database migrates to v12 by itself (existing work is credited retroactively; members
+  may see one grouped celebration on their next visit).
+- Not done (documented in README « Ce qui n'est pas fait »): journey through the MCP server; level clearing tracked
+  only from v12 (plus cards already done); no server-generated social preview image; English only.
 - Carried over: Paddle sandbox test and live setup (`docs/billing.md` § 8), owner's Paddle choices **not answered**;
-  Terms / Privacy / Refund pages and a public contact address **missing** (the offer makes them more important);
-  Maillage test « stock enregistré » fails also on unmodified `main`.
+  Terms / Privacy / Refund pages and a public contact address **missing** (agent asked for the legal name and contact
+  email — no answer yet); consent banner for referral cookies; Maillage test « stock enregistré » fails also on
+  unmodified `main`.
 
 **Next recommended action**
 
-1. **Owner**: review the branch (pricing page, landing, Refer & Earn), then ask for the pull request and merge.
-2. **Agent, next task**: Terms of Service / Privacy Policy / Refund Policy pages, now also covering the launch offer,
-   referrals and their cookies (ask the owner for the legal name and contact email).
+1. **Owner**: try the branch (My Achievements, share an achievement, Creator Passport, project « Mark as
+   completed… », admin › Creator Journey), then ask for the pull request and merge.
+2. **Agent, next task**: Terms of Service / Privacy Policy / Refund Policy pages (also covering the offer, referrals,
+   public passports and verification pages) once the owner gives the legal name and contact email.
 
-**Blockers**: none for the launch offer. Billing: Paddle approval and credentials (owner).
+**Blockers**: none for the journey. Billing: Paddle approval and credentials (owner).
 
 **Validation at this checkpoint** (2026-11-21, branch `claude/trusting-keller-rynk1j`): `tests/studioma/run.sh` —
-11 suites, **0 failures**: api 239, share 144, meta 73, mcp 155, admin 116, billing 107, **promo 76**, **promo-e2e 44**,
-publish 130, publish-e2e 37, e2e 202 (+ 15 config unit checks). The full run stopped once in `e2e.js` on a class name
-I had changed by mistake in the admin Accounts table; restored, `e2e.js` re-run alone: passed. `php -l` 119 PHP files
-and `node --check` 29 JS files: 0 errors. SWANBIDA and Maillage not re-run (no file of theirs changed).
+13 suites, **0 failures**: api 239, share 144, meta 73, mcp 155, admin 116, billing 107, promo 76, promo-e2e 44,
+**journey 135**, **journey-e2e 57**, publish 130, publish-e2e 37, e2e 202 (+ 15 config unit checks). After a last
+small change (`journey_state()`: cached progress for the Home widget), `journey.js` and `journey-e2e.js` were re-run
+alone: passed. `php -l` 121 PHP files and `node --check` 33 JS files: 0 errors. QR encoder: identical to Python
+`qrcode` on 56 matrices. SWANBIDA and Maillage not re-run (no file of theirs changed).
 
 ## Log (newest first)
+
+### 2026-11-21 — Claude Code — Studioma: Creator Journey & verified achievements (DB v12)
+- Owner's brief: My Achievements, server-side XP engine with anti-abuse, six achievements, six Creator levels,
+  verification categories, details page, public verification links, PNG sharing, Creator Passport, celebrations,
+  next milestone, client reputation, timeline, admin, no paywall, no payment change, tests, no deployment.
+- Audit: completion = cards in a `done` column (`cards.done_at`); approvals in `card_approvals` but an owner could
+  decide for the approver and the decider was not stored (fixed: `decided_by`, `decider_role`, backfilled from card
+  history); projects had no completion state (added, server-checked); invitations and verified guests give real
+  collaboration evidence; no gamification existed.
+- Done: see « Current state ». Decisions S31 (ledger, idempotency, revocation), S32 (eligible work, caps, credit),
+  S33 (client approvals), S34 (project completion, levels), S35 (privacy of public pages).
+- Fixed on the way: a SQL comparison with a parameter bound as text (`length(body) >= ?`) was always false
+  (now `CAST(? AS INTEGER)`); a mobile overflow of the timeline filters.
+- QR encoder compared module by module with Python `qrcode` (7 texts × 8 masks, v1–10, UTF-8): identical.
+- Tests: see « Validation ». Committed and pushed; not merged.
+
 
 ### 2026-11-21 — Claude Code — Studioma: launch offer (30 days free, refer 10 friends for 1 year, no card)
 - Owner's brief: 30 days of full Team access without any card, referral program (unique link, clicks, unique

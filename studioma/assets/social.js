@@ -175,6 +175,7 @@
     SM.set(ctx.view, html`<div class="page with-rail feed-page">
       <div class="feed-col">
         ${SM.promoBanner ? SM.promoBanner() : ''}
+        <div id="ms-feed" class="ms-mobile"></div>
         <div class="panel composer" data-act="compose" role="button" tabindex="0">${SM.avatar(SM.me, 'av-m')}<span class="composer-in">Share a result, a lesson learned, a behind-the-scenes…</span><span class="btn btn-soft btn-sm">${icon('image')}Media</span></div>
         <div class="tabs"><a class="tab${tab === 'home' ? ' is-active' : ''}" href="#/">${icon('home')}For you</a><a class="tab${tab === 'saved' ? ' is-active' : ''}" href="#/?tab=saved">${icon('bookmark')}Saved</a></div>
         <div id="feed" class="feed">${SM.loading(3)}</div>
@@ -182,10 +183,13 @@
       <aside class="rail">
         <section class="panel me-card"><a href="#/profile">${SM.avatar(SM.me, 'av-l')}<b>${SM.me.name}</b><span class="muted small">${SM.me.title || '@' + SM.me.handle}</span></a>
           ${SM.me.onboarded ? '' : html`<a class="btn btn-soft btn-sm btn-block" href="#/profile?edit=1">${icon('sparkles')}Complete your profile</a>`}</section>
+        <div id="ms-rail"></div>
         <section class="panel pad" id="rail-people"></section>
         <section class="panel pad" id="rail-opps"></section>
       </aside>
     </div>`);
+    // Parcours du créateur : le prochain jalon (assets/journey.js), dans la colonne de droite ou, sur téléphone, dans le fil.
+    if (SM.milestoneWidget) SM.milestoneWidget([SM.$('#ms-rail'), SM.$('#ms-feed')]);
     const empty = tab === 'saved'
       ? SM.empty('bookmark', 'Nothing saved yet', 'Tap the bookmark on a post to keep it here.')
       : SM.empty('compass', 'Your feed is ready to fill', 'Follow professionals and companies, or share your first update.', html`<div class="row"><a class="btn btn-primary" href="#/discover">${icon('compass')}Discover people</a><button class="btn btn-soft" data-act="compose">Write a post</button></div>`);

@@ -26,11 +26,14 @@ status changes; keep the history of finished items short.
 
 ## In progress
 
-- **Studioma launch offer** (2026-11-21): 30 days of full access without a card, « invite 10 friends, get 1 year
-  free », Refer & Earn, pricing and landing updates, admin analytics; DB schema v11. Done and tested on branch
+- **Studioma Creator Journey** (2026-11-21): XP ledger, six verified achievements, six Creator levels, next
+  milestone, celebrations, timeline, public verification pages and Creator Passport, PNG sharing with QR code, client
+  approvals with consent, project completion, admin rules and revocation; DB schema v12. Done and tested on branch
   `claude/trusting-keller-rynk1j` — **not in `main`, not deployed** (see `HANDOFF.md`).
-- Studioma Share & publish (DB v10) is in `main` since PR #80 (`e8f118b`); not on the live site as of 2026-11-21
-  (`studioma/assets/publish.js` answered 404).
+- Studioma launch offer (DB v11) is in `main` since PR #81 (`2d53414`); not on the live site as of 2026-11-21
+  (`studioma/assets/promo.js` answered 404).
+- Studioma Share & publish (DB v10) is in `main` since PR #80 (`e8f118b`) and live (`studioma/assets/publish.js`
+  answered 200 on 2026-11-21).
 - Studioma administration (v6) and billing (v9) are in `main` since PR #79 (`f5ff9f3`, 2026-11-21); whether they
   were copied to the live site is *(unverified)* — the server has no deployment cron.
 

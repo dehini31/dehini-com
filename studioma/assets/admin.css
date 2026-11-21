@@ -103,3 +103,6 @@
   .ud-head, .ud-body { padding-left: 16px; padding-right: 16px; }
   .tile b { font-size: 24px; }
 }
+
+/* Parcours du créateur (#/journey) */
+.jbars { display: grid; gap: 8px; margin-top: 10px; } .jbar { display: grid; grid-template-columns: 130px minmax(0, 1fr) 48px; gap: 10px; align-items: center; } .jbar b { text-align: right; }

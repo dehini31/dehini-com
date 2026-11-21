@@ -126,7 +126,8 @@
       <a class="back" href="#/projects">${icon('arrow-left')}Projects</a>
       <header class="page-head project-head">
         <div class="row grow">${SM.projectMark(p, 'pmark-l')}<div><h1>${p.name}</h1>
-          <p class="muted">${p.company ? html`<a href="#/c/${p.company.slug}">${p.company.name}</a> · ` : ''}${p.limited ? 'You are invited to part of this project' : html`You are ${SM.ref.roles[p.role]}`}${p.archived ? ' · Archived' : ''}</p></div></div>
+          <p class="muted">${p.company ? html`<a href="#/c/${p.company.slug}">${p.company.name}</a> · ` : ''}${p.limited ? 'You are invited to part of this project' : html`You are ${SM.ref.roles[p.role]}`}${p.archived ? ' · Archived' : ''}</p>
+          ${p.completed_at ? html`<span class="chip chip-ok">${icon('flag')}Completed ${fmt.date(p.completed_at)}</span>` : ''}</div></div>
         ${manage ? html`<div class="row"><button class="btn btn-soft" data-act="share" data-project="${p.id}">${icon('user-plus')}Invite</button>
           <button class="btn btn-primary" data-act="studio-new" data-project="${p.id}">${icon('plus')}New Studio</button>
           <button class="btn-icon" data-act="project-menu" aria-label="Project options">${icon('more')}</button></div>`
@@ -150,6 +151,8 @@
     const p = SM.project;
     SM.menu(el, [
       { label: 'Edit project', icon: 'edit', act: () => SM.projectDialog(p) },
+      // Projet terminé (parcours du créateur, assets/journey.js) : critères vérifiés par le serveur.
+      p.completion && SM.projectCompleteDialog ? { label: p.completed_at ? 'Reopen project' : 'Mark as completed…', icon: 'flag', act: () => SM.projectCompleteDialog(p) } : null,
       { label: p.archived ? 'Restore project' : 'Archive project', icon: p.archived ? 'restore' : 'archive', act: async () => {
         if (await SM.try(SM.post('project_archive', { id: p.id, archived: !p.archived }))) { SM.toast(p.archived ? 'Project restored' : 'Project archived. Find it with “Show archived”.'); SM.dropWorkspace(); p.archived ? SM.navigate() : SM.go('/projects'); }
       } },

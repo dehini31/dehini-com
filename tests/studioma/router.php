@@ -17,6 +17,12 @@ if (preg_match('~^/studioma/mcp/?$~', $uri)) {
     $target = 's.php';
     $_GET['t'] = $m[1];
     $_GET['c'] = $m[3] ?? '';
+} elseif (preg_match('~^/studioma/verify/([a-f0-9]{16})/?$~', $uri, $m)) {
+    $target = 'p.php';
+    $_GET['verify'] = $m[1];
+} elseif (preg_match('~^/studioma/creator/([a-z0-9-]{1,40})/?$~', $uri, $m)) {
+    $target = 'p.php';
+    $_GET['creator'] = $m[1];
 } elseif (preg_match('~^/studioma/oauth/(register|authorize|token|revoke)/?$~', $uri, $m)) {
     $target = 'oauth.php';
     $_GET['op'] = $m[1];
@@ -28,6 +34,8 @@ if (preg_match('~^/studioma/mcp/?$~', $uri)) {
     $_GET['wk'] = $m[1];
 }
 if ($target !== null) {
+    // Pages publiques du parcours (p.php) : même CSP que studioma/.htaccess (aucun script en ligne).
+    if ($target === 'p.php') header("Content-Security-Policy: default-src 'self'; script-src 'self' https://accounts.google.com/gsi/client https://connect.facebook.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://www.facebook.com; media-src 'self' blob:; connect-src 'self' https://accounts.google.com/gsi/ https://www.facebook.com https://connect.facebook.net; frame-src https://accounts.google.com/gsi/; frame-ancestors 'self'; base-uri 'self'; form-action 'self'");
     $_SERVER['SCRIPT_NAME'] = '/studioma/' . $target;
     $_SERVER['SCRIPT_FILENAME'] = $root . '/studioma/' . $target;
     chdir($root . '/studioma');

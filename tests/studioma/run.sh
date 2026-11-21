@@ -5,7 +5,8 @@
 # et son OAuth (mcp.js), l'administration (admin.js), les formules et abonnements avec un faux Paddle (billing.js, limites
 # appliquées, et billing-config.php pour le contrôle des réglages sandbox / production), le partage d'une carte et sa
 # publication dans la communauté (publish.js, puis publish-e2e.js dans un navigateur), l'offre de lancement sans carte
-# (promo.js, promo-e2e.js), puis l'application dans un navigateur (e2e.js, Playwright / Chromium).
+# (promo.js, promo-e2e.js), le parcours du créateur (journey.js, journey-e2e.js : XP, réalisations vérifiées, niveaux, pages
+# publiques), puis l'application dans un navigateur (e2e.js, Playwright / Chromium).
 set -euo pipefail
 HERE=$(cd "$(dirname "$0")" && pwd)
 REPO=$(cd "$HERE/../.." && pwd)
@@ -43,6 +44,10 @@ PROMO=1 fresh
 node "$HERE/promo.js" "http://127.0.0.1:$PORT" "$DIR"
 PROMO=1 fresh
 node "$HERE/promo-e2e.js" "http://127.0.0.1:$PORT" "$DIR"
+fresh
+node "$HERE/journey.js" "http://127.0.0.1:$PORT" "$DIR"
+fresh
+node "$HERE/journey-e2e.js" "http://127.0.0.1:$PORT" "$DIR"
 fresh
 node "$HERE/publish.js" "http://127.0.0.1:$PORT" "$DIR"
 fresh

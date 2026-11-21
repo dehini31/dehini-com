@@ -68,9 +68,10 @@ each published under its own path on the same domain:
 Each platform creates and migrates its own SQLite database on first request (schema and migrations in its
 `lib/`, guarded by `PRAGMA user_version`; never edit production databases by hand).
 
-Studioma (most active project) — `~/studioma-data/studioma.sqlite`, schema **version 9** in `main` (v6 admin, v7
-`users.terms_at`, v8 `visitors` + `visit_days`, v9 billing, v10 card sharing and Community), **version 11** (launch
-offer) on branch `claude/trusting-keller-rynk1j` until merged (`studioma/lib/core.php` › `migrate()`):
+Studioma (most active project) — `~/studioma-data/studioma.sqlite`, schema **version 11** in `main` (v6 admin, v7
+`users.terms_at`, v8 `visitors` + `visit_days`, v9 billing, v10 card sharing and Community, v11 launch offer),
+**version 12** (Creator Journey) on branch `claude/trusting-keller-rynk1j` until merged (`studioma/lib/core.php` ›
+`migrate()`):
 
 - accounts & network: `users`, `sessions`, `companies`, `company_members`, `follows`, `connections`, `posts`,
   `post_likes`, `post_saves`, `post_comments`, `portfolio`, `recommendations`, `opps`, `opp_apps`,
@@ -80,6 +81,10 @@ offer) on branch `claude/trusting-keller-rynk1j` until merged (`studioma/lib/cor
 - AI assistants (v4): `oauth_clients`, `oauth_requests`, `ai_grants`, `ai_tokens`;
 - guest sharing (v5): `shares`, `share_guests`, `share_codes`, `guest_sessions`, `share_log`
   (+ guest columns on `events`, `card_comments`, `card_approvals`, `cards`, `notifications`);
+- Creator Journey (v12): `xp_transactions` (XP ledger), `user_achievements` (+ public ids, visibility),
+  `achievement_evidence`, `journey_progress` (cache), `journey_log` (levels, celebrations), `level_passes`,
+  `passport_settings`, `projects.completed_at` / `completed_by`, `card_approvals.decided_by` / `decider_role` — see
+  README « Studioma › 11 »;
 - launch offer (v11): `ref_codes`, `ref_clicks`, `referrals`, `promo_grants` (trial and referral year are
   `subscriptions` rows with provider `promo`) — see README « Studioma › 10 »;
 - card sharing and Community (v10): `shares.card_id` / `shares.opts` (a link for one card), `pubs` (card published as
