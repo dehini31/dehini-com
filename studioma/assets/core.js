@@ -76,6 +76,8 @@
     }
     // Événements Meta de l'action (le serveur envoie les mêmes, avec le même event_id) : assets/meta.js.
     if (data._meta && window.StmMeta) window.StmMeta.fire(data._meta);
+    // Parcours du créateur : une réalisation ou un niveau à célébrer (assets/journey.js).
+    if (data._journey && SM.onJourney) SM.onJourney(data._journey);
     return data;
   };
   SM.get = (action, params) => SM.api(action, { params });

@@ -81,7 +81,7 @@
   };
 
   /* ---------------------------------------------------------------- cadre */
-  const NAV = [['#/', 'chart', 'Live overview'], ['#/accounts', 'users', 'Accounts'], ['#/studios', 'board', 'Studios'], ['#/content', 'shield', 'Moderation'], ['#/billing', 'zap', 'Billing'], ['#/promo', 'award', 'Launch promotion'], ['#/emails', 'mail', 'Emails'], ['#/system', 'settings', 'System']];
+  const NAV = [['#/', 'chart', 'Live overview'], ['#/accounts', 'users', 'Accounts'], ['#/studios', 'board', 'Studios'], ['#/content', 'shield', 'Moderation'], ['#/billing', 'zap', 'Billing'], ['#/promo', 'award', 'Launch promotion'], ['#/journey', 'trophy', 'Creator Journey'], ['#/emails', 'mail', 'Emails'], ['#/system', 'settings', 'System']];
   function shell() {
     SM.set($('#app'), html`<div class="app adm">
       <aside class="side">
@@ -884,6 +884,105 @@
     const r = await SM.try(SM.post('admin_promo_review', { id: +el.dataset.id, decision: el.dataset.decision }));
     SM.busy(el, false);
     if (r) { SM.toast(approve ? 'Approved' : 'Rejected'); SM.navigate(); }
+  };
+
+  const pad2 = (n) => String(n).padStart(2, '0');
+  /* ------------------------------------------------------- parcours du créateur */
+  // Indicateurs, règles (XP, limites du jour, critères, seuils des niveaux, réalisations actives), activité à examiner,
+  // et fiche d'un compte : grand livre, réalisations, preuves, retrait et restitution avec raison (lib/journey.php).
+  SM.route(/^\/journey$/, async (m, ctx) => {
+    setTitle('Creator Journey');
+    const d = await SM.get('admin_journey');
+    if (!ctx.alive()) return;
+    const M = d.metrics;
+    const R = d.rules;
+    const maxLv = Math.max(1, ...d.level_distribution.map((l) => l.users));
+    const maxXp = Math.max(1, ...d.xp_distribution.map((l) => l.n));
+    const bars = (list, key, label, max) => html`<div class="jbars">${list.map((x) => html`<div class="jbar"><span class="small">${label(x)}</span><span class="progress"><i style="width:${Math.round((x[key] / max) * 100)}%"></i></span><b class="small">${fmt.num(x[key])}</b></div>`)}</div>`;
+    SM.set(ctx.view, html`<div class="page">
+      <header class="page-head"><div><h1>Creator Journey</h1><p class="muted">XP, verified achievements, Creator levels and public passports — computed by the server from recorded activity. Rules version ${R.v}.</p></div></header>
+      <div class="tiles">
+        ${tile('users', 'Participants', fmt.num(M.participants), 'accounts with XP')}
+        ${tile('zap', 'Earning progress', fmt.num(M.active), `active in 30 days · ${fmt.num(M.xp_30)} XP`)}
+        ${tile('award', 'Achievements granted', fmt.num(M.achievements), `${fmt.num(M.self)} self-reported (not verified)`, M.achievements ? 'tile-ok' : '')}
+        ${tile('flag', 'Completed projects', fmt.num(M.projects), 'marked completed after checks')}
+        ${tile('shield', 'Client-verified', fmt.num(M.client), 'Client Approved achievements')}
+        ${tile('share', 'Sharing rate', M.share_rate + '%', `${fmt.num(M.shared)} achievements shared or public`)}
+        ${tile('globe', 'Creator Passports', fmt.num(M.passports), `${fmt.num(M.passport_views)} views · ${fmt.num(M.verify_views)} verification views`)}
+        ${tile('alert', 'Revoked XP records', fmt.num(M.revoked), 'kept in the ledger', M.revoked ? 'tile-bad' : '')}
+      </div>
+      <div class="grid adm-2">
+        <section class="panel pad"><h2>${icon('layers')} Progression by level</h2>${bars(d.level_distribution, 'users', (x) => pad2(x.n) + ' ' + x.name, maxLv)}</section>
+        <section class="panel pad"><h2>${icon('chart')} XP distribution</h2>${bars(d.xp_distribution, 'n', (x) => x.label + ' XP', maxXp)}</section>
+      </div>
+      <h2 class="section-title">${icon('alert')} Activity to review <span class="count">${d.flags.length}</span></h2>
+      ${d.flags.length ? html`<section class="panel list">${d.flags.map((f) => html`<div class="list-row">${who(f.user)}<span class="grow small">${f.reason}</span><button class="btn btn-sm btn-soft" data-act="adm-journey-user" data-id="${f.uid}">Inspect</button></div>`)}</section>`
+        : html`<p class="muted">${icon('check')} Nothing unusual. Repeated daily limits, very fast gains and series of approvals from one client appear here — nothing is penalized automatically.</p>`}
+      <section class="panel pad stack"><h2>${icon('search')} Inspect an account</h2>
+        <form class="row row-wrap" data-form="adm-journey-find"><label class="field"><span>Account number</span><input class="input" name="id" type="number" min="1" required></label><button class="btn btn-primary">Open</button></form>
+        <div id="jr-user"></div></section>
+      <form class="panel pad stack" data-form="adm-journey-rules">
+        <h2>${icon('settings')} Rules</h2>
+        <p class="muted small">Changes apply to new events only: XP already granted keeps its value and rule version. Levels are recalculated.</p>
+        <div class="table-wrap"><table class="table"><thead><tr><th>Event</th><th>XP</th><th>Paid per day (0 = no limit)</th></tr></thead><tbody>
+          ${R.events.map((e) => html`<tr><td>${e.label}</td><td><input class="input input-s" type="number" min="0" max="1000" name="ev_${e.key}_xp" value="${e.xp}" aria-label="${e.label} XP"></td>
+            <td><input class="input input-s" type="number" min="0" max="1000" name="ev_${e.key}_cap" value="${e.cap}" aria-label="${e.label} daily limit"></td></tr>`)}</tbody></table></div>
+        <div class="table-wrap"><table class="table"><thead><tr><th>Criterion</th><th>Value</th></tr></thead><tbody>
+          ${R.params.map((p) => html`<tr><td>${p.label} <small class="muted">(${p.min}–${p.max}, default ${p.default})</small></td><td><input class="input input-s" type="number" min="${p.min}" max="${p.max}" name="pa_${p.key}" value="${p.value}" aria-label="${p.label}"></td></tr>`)}</tbody></table></div>
+        <div class="table-wrap"><table class="table"><thead><tr><th>Level</th><th>Requirements</th></tr></thead><tbody>
+          ${R.levels.filter((l) => Object.keys(l.req).length).map((l) => html`<tr><td><b>${pad2(l.n)} ${l.name}</b></td><td class="row row-wrap">${Object.entries(l.req).map(([k, v]) => html`<label class="field"><span class="small">${k}</span><input class="input input-s" type="number" min="1" name="lv_${l.n}_${k}" value="${v}"></label>`)}</td></tr>`)}</tbody></table></div>
+        <div class="table-wrap"><table class="table"><thead><tr><th>Achievement</th><th>Verification</th><th>Granted</th><th>Revoked</th><th>Active</th></tr></thead><tbody>
+          ${d.achievements.map((a) => html`<tr><td><b>${a.title}</b></td><td>${a.verification}</td><td>${fmt.num(a.granted)}</td><td>${fmt.num(a.revoked)}</td>
+            <td><label class="check"><input type="checkbox" name="on_${a.aid}" ${a.active ? 'checked' : ''}><span>Active</span></label></td></tr>`)}</tbody></table></div>
+        <div class="row"><button class="btn btn-primary">Save the rules</button></div>
+      </form>
+      ${d.log.length ? html`<h2 class="section-title">${icon('history')} Decisions</h2><section class="panel list">${d.log.map((l) => html`<div class="list-row"><span class="grow small"><b>${l.action}</b> ${l.target} — ${l.text}</span><small class="muted nowrap">${fmt.time(l.created)}</small></div>`)}</section>` : ''}
+    </div>`);
+    SM.journeyRules = R;
+    SM.journeyAch = d.achievements;
+  });
+  SM.forms['adm-journey-rules'] = async (form, data) => {
+    const R = SM.journeyRules;
+    const body = { events: {}, params: {}, levels: {}, off: [] };
+    R.events.forEach((e) => { body.events[e.key] = { xp: +data['ev_' + e.key + '_xp'], cap: +data['ev_' + e.key + '_cap'] }; });
+    R.params.forEach((p) => { body.params[p.key] = +data['pa_' + p.key]; });
+    R.levels.forEach((l) => Object.keys(l.req).forEach((k) => { (body.levels[l.n] = body.levels[l.n] || {})[k] = +data['lv_' + l.n + '_' + k]; }));
+    SM.journeyAch.forEach((a) => { if (!data['on_' + a.aid]) body.off.push(a.aid); });
+    await SM.post('admin_journey_rules', body);
+    SM.toast('Rules saved');
+    SM.navigate();
+  };
+  SM.forms['adm-journey-find'] = (form, data) => journeyUser(+data.id);
+  SM.actions['adm-journey-user'] = (el) => { const f = SM.$('[data-form="adm-journey-find"] input'); if (f) f.value = el.dataset.id; journeyUser(+el.dataset.id); };
+  async function journeyUser(id, preloaded) {
+    const box = SM.$('#jr-user');
+    if (!box) return;
+    SM.set(box, SM.spinner());
+    let d = preloaded;
+    if (!d) { try { d = await SM.get('admin_journey_user', { id }); } catch (e) { SM.set(box, html`<p class="form-error">${e.message}</p>`); return; } }
+    SM.set(box, html`<div class="stack">
+      <div class="row">${who(d.user, d.user.email)}<span class="chip chip-soft">Level ${pad2(d.level.n)} — ${d.level.name}</span><span class="chip">${fmt.num(d.level.xp)} XP</span></div>
+      <h3>Achievements</h3>
+      ${d.achievements.length ? html`<div class="list">${d.achievements.map((a) => html`<div class="list-row"><span class="grow"><b>${a.title}</b> <span class="chip ${a.status === 'revoked' ? 'chip-bad' : a.status === 'self' ? 'chip-warn' : 'chip-ok'}">${a.label}</span>
+          <small class="muted">${fmt.date(a.earned)} · ${a.visibility}${a.revoked_reason ? ' · revoked: ' + a.revoked_reason : ''}</small>
+          ${a.evidence.map((e) => html`<small>${e.label} · ${fmt.date(e.at)}${e.project ? ' · ' + e.project : ''}${e.card ? ' › ' + e.card : ''}${e.client ? ' · ' + e.client : ''}</small>`)}</span>
+          <button class="btn btn-sm ${a.status === 'revoked' ? 'btn-soft' : 'is-danger'}" data-act="adm-journey-revoke" data-type="achievement" data-id="${a.id}" data-restore="${a.status === 'revoked' ? 1 : ''}">${a.status === 'revoked' ? 'Restore' : 'Revoke'}</button></div>`)}</div>` : html`<p class="muted small">No achievement yet.</p>`}
+      <h3>XP ledger <small class="muted">(last ${d.ledger.length})</small></h3>
+      <div class="table-wrap"><table class="table"><thead><tr><th>When</th><th>Event</th><th>Key</th><th>XP</th><th>Note</th><th></th></tr></thead><tbody>
+        ${d.ledger.map((x) => html`<tr class="${x.revoked > 0 ? 'is-muted' : ''}"><td class="nowrap"><small>${fmt.time(x.at)}</small></td><td>${x.kind}</td><td><small class="mono">${x.ikey}</small></td>
+          <td>${x.revoked > 0 ? html`<s>${x.xp}</s>` : x.xp}</td><td><small>${x.revoked > 0 ? 'revoked: ' + x.revoked_reason : x.note}${x.rule_v > 1 ? ' · rules v' + x.rule_v : ''}</small></td>
+          <td><button class="btn btn-sm ${x.revoked > 0 ? 'btn-soft' : 'btn-ghost'}" data-act="adm-journey-revoke" data-type="xp" data-id="${x.id}" data-restore="${x.revoked > 0 ? 1 : ''}">${x.revoked > 0 ? 'Restore' : 'Revoke'}</button></td></tr>`)}</tbody></table></div>
+    </div>`);
+  }
+  SM.actions['adm-journey-revoke'] = async (el) => {
+    const restore = !!el.dataset.restore;
+    let reason = '';
+    if (!restore) {
+      reason = await SM.prompt({ title: el.dataset.type === 'xp' ? 'Revoke this XP record' : 'Revoke this achievement', label: 'Reason (kept in the audit log and shown to the member)', max: 300, ok: 'Revoke' });
+      if (!reason) return;
+    }
+    const r = await SM.try(SM.post('admin_journey_revoke', { type: el.dataset.type, id: +el.dataset.id, reason, restore }));
+    if (r) { SM.toast(restore ? 'Restored' : 'Revoked'); journeyUser(r.user.id, r); }
   };
 
   /* ---------------------------------------------------------------- système */

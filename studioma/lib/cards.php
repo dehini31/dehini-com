@@ -275,8 +275,11 @@ function api_approval_decide(array $b, array $u): array
     $decision = ($b['decision'] ?? '') === 'approved' ? 'approved' : 'changes';
     $reply = str_clean($b['reply'] ?? '', 1000);
     if ($decision === 'changes' && $reply === '') fail('Explain what should be changed.');
-    $res = tx(function () use ($a, $card, $uid, $decision, $reply): array {
-        q('UPDATE card_approvals SET status = ?, reply = ?, decided = ? WHERE id = ?', [$decision, $reply, time(), $a['id']]);
+    // Qui décide, et à quel titre (seule la décision de la personne désignée, cliente ou invitée vérifiée, compte comme
+    // validation d'un client dans le parcours du créateur : lib/journey.php).
+    $deciderRole = !empty($u['guest']) ? 'guest' : (string) $card['studio']['role'];
+    $res = tx(function () use ($a, $card, $uid, $decision, $reply, $deciderRole): array {
+        q('UPDATE card_approvals SET status = ?, reply = ?, decided = ?, decided_by = ?, decider_role = ? WHERE id = ?', [$decision, $reply, time(), $uid, $deciderRole, $a['id']]);
         q('UPDATE cards SET approval = ?, updated = ? WHERE id = ?', [$decision, time(), $card['id']]);
         log_event((int) $card['studio_id'], (int) $card['id'], $uid, 'approval', $decision === 'approved' ? 'approved this card' : 'requested changes: ' . mb_substr($reply, 0, 200));
         $out = ['moved' => null, 'handoff' => null];
@@ -296,6 +299,7 @@ function api_approval_decide(array $b, array $u): array
         return $out;
     });
     notify((int) $a['by_uid'], $uid, 'approval', ($decision === 'approved' ? 'approved' : 'requested changes on') . ' “' . $card['title'] . '”', card_link($card), true);
+    if ($decision === 'approved') tx(function () use ($a): void { journey_approval((int) $a['id']); });
     return $res;
 }
 function api_approval_cancel(array $b, array $u): array

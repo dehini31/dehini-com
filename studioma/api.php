@@ -30,6 +30,7 @@ require __DIR__ . '/lib/oauth.php';
 require __DIR__ . '/lib/share.php';
 require __DIR__ . '/lib/pubs.php';
 require __DIR__ . '/lib/promo.php';
+require __DIR__ . '/lib/journey.php';
 require __DIR__ . '/lib/meta.php';
 require __DIR__ . '/lib/admin.php';
 
@@ -89,6 +90,11 @@ const ROUTES = [
     'proposal_decide' => ['POST', 'user'],
     // Offre de lancement : essai de 30 jours, parrainage, année offerte — sans carte ni paiement (lib/promo.php)
     'promo' => ['GET', 'user'], 'promo_claim' => ['POST', 'user'], 'ref_click' => ['POST', 'public'],
+    // Parcours du créateur : XP, réalisations vérifiées, niveaux, passeport public, projet terminé (lib/journey.php)
+    'journey' => ['GET', 'user'], 'journey_next' => ['GET', 'user'], 'journey_achievement' => ['GET', 'user'], 'journey_timeline' => ['GET', 'user'],
+    'journey_visibility' => ['POST', 'user'], 'journey_shared' => ['POST', 'user'], 'journey_self_save' => ['POST', 'user'], 'journey_self_delete' => ['POST', 'user'],
+    'journey_celebrations' => ['GET', 'user'], 'journey_seen' => ['POST', 'user'], 'journey_settings' => ['GET', 'user'], 'journey_passport_save' => ['POST', 'user'],
+    'journey_consent' => ['POST', 'user'], 'project_complete' => ['POST', 'user'],
     'threads' => ['GET', 'user'], 'thread' => ['GET', 'user'], 'message_send' => ['POST', 'user'],
     // Administration de la plateforme (studioma/admin/) : statistiques en direct, comptes, modération, emails, système
     'admin_live' => ['GET', 'admin'], 'admin_users' => ['GET', 'admin'], 'admin_user' => ['GET', 'admin'], 'admin_user_action' => ['POST', 'admin'],
@@ -98,6 +104,7 @@ const ROUTES = [
     'admin_campaign_test' => ['POST', 'admin'], 'admin_campaign_send' => ['POST', 'admin'], 'admin_campaign_action' => ['POST', 'admin'],
     'admin_pump' => ['POST', 'admin'], 'admin_system' => ['GET', 'admin'], 'admin_studios' => ['GET', 'admin'], 'admin_studio' => ['GET', 'admin'],
     'admin_billing' => ['GET', 'admin'], 'admin_promo' => ['GET', 'admin'], 'admin_promo_review' => ['POST', 'admin'],
+    'admin_journey' => ['GET', 'admin'], 'admin_journey_rules' => ['POST', 'admin'], 'admin_journey_user' => ['GET', 'admin'], 'admin_journey_revoke' => ['POST', 'admin'],
 ];
 
 /**
@@ -464,6 +471,8 @@ try {
     $fn = 'api_' . $action;
     $res = $fn($data, $user);
     meta_after($action, $data, $res, $user);   // événement Meta de l'action (lib/meta.php)
+    // Parcours du créateur : recalcul si besoin, et célébrations en attente (« _journey », lib/journey.php).
+    $res += journey_after($action, $isPost, $user);
     // Modifications d'invités en attente d'email : envoyées dès que leur fenêtre de regroupement est passée.
     share_digests();
     ok($res);

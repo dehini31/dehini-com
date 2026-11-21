@@ -203,6 +203,7 @@ function api_invite_accept(array $b, array $u): array
         billing_cache_clear();
     });
     notify((int) $i['by_uid'], $uid, 'invite', 'joined ' . ($s ? $s['name'] : $p['name']) . ' as ' . ROLE_LABELS[$role], $s ? 'studio/' . $s['id'] : 'project/' . $p['id']);
+    journey_dirty([(int) $i['by_uid']]);   // Studio partagé avec un collaborateur (lib/journey.php)
     return ['project_id' => (int) $p['id'], 'studio_id' => $s ? (int) $s['id'] : 0];
 }
 function api_invite_decline(array $b, array $u): array

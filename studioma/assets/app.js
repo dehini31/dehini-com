@@ -30,6 +30,7 @@
     { key: 'studios', path: '/studios', label: 'Studios', icon: 'board' },
     { key: 'opportunities', path: '/opportunities', label: 'Opportunities', icon: 'briefcase' },
     { sep: 'You' },
+    { key: 'achievements', path: '/achievements', label: 'My Achievements', icon: 'trophy' },
     { key: 'refer', path: '/refer', label: 'Refer & Earn', icon: 'award' },
     { key: 'messages', path: '/messages', label: 'Messages', icon: 'message', count: 'messages' },
     { key: 'notifications', path: '/notifications', label: 'Notifications', icon: 'bell', count: 'notifs' },
@@ -46,7 +47,7 @@
     const seg = path.split('/')[1] || '';
     return ({ '': 'home', post: 'home', discover: 'discover', network: 'network', projects: 'projects', project: 'projects', studios: 'studios', studio: 'studios', work: 'studios',
       opportunities: 'opportunities', opportunity: 'opportunities', community: 'community', pub: 'community', messages: 'messages', notifications: 'notifications', requests: 'notifications', settings: 'settings',
-      talent: 'talent', team: 'team', c: 'team', profile: 'profile', refer: 'refer' })[seg] || (seg === 'u' && SM.me && path === '/u/' + SM.me.handle ? 'profile' : '');
+      talent: 'talent', team: 'team', c: 'team', profile: 'profile', refer: 'refer', achievements: 'achievements' })[seg] || (seg === 'u' && SM.me && path === '/u/' + SM.me.handle ? 'profile' : '');
   };
   const badge = (n) => (n > 0 ? html`<span class="nav-badge">${n > 99 ? '99+' : n}</span>` : '');
   const navLink = (n) => (n.sep

@@ -9,7 +9,7 @@ politique de sécurité (CSP).
 tests/studioma/run.sh /tmp/stm-test
 ```
 
-`run.sh` prépare un hébergement neuf, lance le serveur PHP (port 8097) et exécute onze batteries, chacune sur une
+`run.sh` prépare un hébergement neuf, lance le serveur PHP (port 8097) et exécute treize batteries, chacune sur une
 base vide. Les événements Meta (API Conversions) sont écrits dans `meta.jsonl` (faux ensemble de données) ; dans le
 navigateur, un faux script du pixel note les appels à `fbq` :
 
@@ -123,6 +123,27 @@ résiliation, reprise, fin confirmée par Paddle, dépassements ; paiement en é
 espace client ; indicateurs de l'administration (MRR, ARR, sandbox séparé), formule offerte ; navigateur : page des
 prix, mensuel / annuel, invitation à changer de formule, paiement avec un faux Paddle.js, attente de la
 confirmation, réglages, Insights, mobile, aucune violation de la CSP.
+
+**`journey.js` — le parcours du créateur** : nouveau compte (Explorer, rien d'acquis, premier jalon), premier Studio et
+premier projet (une seule fois), cartes vides sans points, carte éligible (description, liste de contrôle), carte
+terminée une seule fois même rouverte, limite du jour (événements comptés, points arrêtés), niveau de Studio dégagé
+une fois, niveau Organizer et célébrations, projet terminé après vérification (âge, cartes ouvertes, rôle), Studio
+partagé (invitation acceptée, invité vérifié), Team Player (compte vérifié exigé), validations de client (pas de
+soi-même, pas d'un propriétaire à sa place, pas d'un Manager, adresse confirmée, invité vérifié), réalisation publiée,
+détails et preuves, visibilité, page de vérification publique (rien de privé, pas indexée, aucun script), consentement
+du client pour son nom, passeport public (fermé par défaut, réalisations choisies, sections masquables, identifiants
+distincts), réalisation déclarée, chronologie et filtres, résumé, jalons (rien d'acquis, rien que la formule Free
+refuse), règles de l'administration (versions, Proven Creator, réalisation désactivée), retrait et restitution
+motivés (« Revoked » sur la page publique), abonnement terminé sans effet, migration rejouée (décisions retrouvées
+dans l'historique), huit recalculs simultanés sans doublon.
+
+**`journey-e2e.js` — le parcours dans Chromium** : jalon de l'accueil, menu « My Achievements », passeport, onglets,
+en attente, chronologie filtrée, célébration regroupée non bloquante et unique, détails et preuves, partage (lien
+copié, LinkedIn / WhatsApp / Facebook / email encodés, image PNG 1200 × 630, 1080 × 1080, 1080 × 1920 avec QR code,
+jamais « Verified » sur une déclaration), page publique, réglages, passeport public, réalisation déclarée, projet
+marqué terminé, administration (indicateurs, fiche, retrait), mobile et mouvement réduit, aucune erreur ni violation
+de la CSP. L'encodeur de QR code (`assets/qr.js`) a en plus été comparé, module par module, à la bibliothèque Python
+`qrcode` (versions 1 à 10, huit masques, UTF-8) : identique.
 
 **`promo.js` — l'offre de lancement** (`setup.sh` avec `PROMO=1` : limites appliquées, paiement fermé comme en
 production, règles anti-abus réglées par le test ; les autres batteries tournent sans l'offre) : essai de 30 jours
