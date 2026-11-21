@@ -72,10 +72,69 @@ function billing_missing(): array
     }
     return $missing;
 }
-/** Le paiement en ligne est-il ouvert ? (Paddle entièrement configuré et activé par STM_BILLING_ENABLED.) */
+/**
+ * Contrôle de cohérence des réglages Paddle (fonction pure, testable sans serveur) : repère surtout le mélange
+ * sandbox / production lors du passage en production — clé ou jeton d'un environnement utilisé avec l'autre,
+ * valeur d'environnement mal écrite (« live » serait sinon lue comme sandbox), secret de webhook remplacé par une
+ * clé d'API, identifiants de prix invalides ou en double. Renvoie des messages (en anglais, pour l'administration)
+ * qui nomment les réglages sans jamais citer leur valeur. Seuls les préfixes documentés par Paddle sont reconnus :
+ * une valeur sans préfixe connu (ancien format) n'est pas signalée.
+ * $c : env, api_key, client_token, webhook_secret, prices ([plan][interval] => id), site_url.
+ */
+function billing_config_check(array $c): array
+{
+    $problems = [];
+    $env = (string) ($c['env'] ?? 'sandbox');
+    if (!in_array($env, ['sandbox', 'production'], true)) {
+        $problems[] = 'STM_PADDLE_ENV must be exactly "sandbox" or "production".';
+        $env = '';
+    }
+    $key = (string) ($c['api_key'] ?? '');
+    if ($env !== '' && $key !== '') {
+        if ($env === 'production' && str_starts_with($key, 'pdl_sdbx_')) $problems[] = 'STM_PADDLE_API_KEY is a sandbox key but STM_PADDLE_ENV is "production".';
+        if ($env === 'sandbox' && str_starts_with($key, 'pdl_live_')) $problems[] = 'STM_PADDLE_API_KEY is a live key but STM_PADDLE_ENV is "sandbox".';
+    }
+    $token = (string) ($c['client_token'] ?? '');
+    if ($env !== '' && $token !== '') {
+        if ($env === 'production' && str_starts_with($token, 'test_')) $problems[] = 'STM_PADDLE_CLIENT_TOKEN is a sandbox token (test_…) but STM_PADDLE_ENV is "production".';
+        if ($env === 'sandbox' && str_starts_with($token, 'live_')) $problems[] = 'STM_PADDLE_CLIENT_TOKEN is a live token (live_…) but STM_PADDLE_ENV is "sandbox".';
+    }
+    $secret = (string) ($c['webhook_secret'] ?? '');
+    if ($secret !== '' && (str_starts_with($secret, 'pdl_live_') || str_starts_with($secret, 'pdl_sdbx_') || ($key !== '' && hash_equals($key, $secret)))) {
+        $problems[] = 'STM_PADDLE_WEBHOOK_SECRET looks like an API key: use the secret key of the notification destination (pdl_ntfset_…).';
+    }
+    if ($token !== '' && $key !== '' && hash_equals($key, $token)) $problems[] = 'STM_PADDLE_CLIENT_TOKEN must be a client-side token, not the API key.';
+    $seen = [];
+    foreach ((array) ($c['prices'] ?? []) as $plan => $byInterval) {
+        foreach ((array) $byInterval as $interval => $id) {
+            $id = (string) $id;
+            if ($id === '') continue;
+            $name = 'STM_PADDLE_PRICE_' . strtoupper((string) $plan) . '_' . ($interval === 'month' ? 'MONTHLY' : 'YEARLY');
+            if (!preg_match('/^pri_[A-Za-z0-9_]+$/', $id)) $problems[] = $name . ' is not a Paddle price ID (pri_…).';
+            if (isset($seen[$id])) $problems[] = $name . ' uses the same price as ' . $seen[$id] . '.';
+            $seen[$id] = $name;
+        }
+    }
+    $site = (string) ($c['site_url'] ?? '');
+    if ($env === 'production' && $site !== '' && !str_starts_with($site, 'https://')) $problems[] = 'STM_SITE_URL must use https:// in production.';
+    return $problems;
+}
+/** Incohérences des réglages Paddle en vigueur (voir billing_config_check). */
+function billing_config_problems(): array
+{
+    return billing_config_check([
+        'env' => (string) billing_cfg('PADDLE_ENV', 'sandbox'), 'api_key' => (string) billing_cfg('PADDLE_API_KEY'),
+        'client_token' => (string) billing_cfg('PADDLE_CLIENT_TOKEN'), 'webhook_secret' => (string) billing_cfg('PADDLE_WEBHOOK_SECRET'),
+        'prices' => billing_prices(), 'site_url' => defined('STM_SITE_URL') ? (string) STM_SITE_URL : '',
+    ]);
+}
+/**
+ * Le paiement en ligne est-il ouvert ? (Paddle entièrement configuré, réglages cohérents et activé par
+ * STM_BILLING_ENABLED.) Un mélange sandbox / production garde le paiement fermé plutôt que d'encaisser à tort.
+ */
 function billing_available(): bool
 {
-    return billing_missing() === [];
+    return billing_missing() === [] && billing_config_problems() === [];
 }
 
 /* ------------------------------------------------------- formule d'un compte */

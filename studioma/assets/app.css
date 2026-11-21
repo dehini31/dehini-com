@@ -216,6 +216,7 @@ body.is-wide .view { padding: 0; }
 @keyframes shimmer { to { background-position: -200% 0; } }
 .notice { display: flex; gap: 10px; padding: 11px 14px; border-radius: var(--r-m); background: var(--primary-soft); color: var(--text); font-size: 13.5px; align-items: flex-start; } .notice .ico { color: var(--primary-text); margin-top: 1px; }
 .notice-ok { background: var(--ok-soft); } .notice-ok .ico { color: var(--ok); } .notice-warn { background: var(--warn-soft); } .notice-warn .ico { color: var(--warn); }
+.notice-list { margin: 6px 0 0; padding-left: 18px; } .notice-list li + li { margin-top: 3px; }
 .email-state { display: flex; gap: 8px; align-items: center; margin: 0; font-size: 13.5px; color: var(--muted); } .email-state .ico { color: var(--ok); flex: none; } .email-state b { color: var(--text); word-break: break-all; }
 .filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; } .filters select.input { width: auto; }
 .search-in { position: relative; display: block; } .search-in .ico { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--muted); pointer-events: none; } .search-in .input { padding-left: 32px; }

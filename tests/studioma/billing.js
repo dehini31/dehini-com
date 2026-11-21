@@ -311,6 +311,7 @@ const isLimit = (r, feature, upgrade) => r.status === 402 && r.error === 'plan_l
   r = await adm.get('admin_billing', { env: 'sandbox' });
   ok(r.metrics.team === 1 && r.metrics.solo === 0 && r.metrics.paid === 1 && r.metrics.mrr.USD === Math.round(29000 / 12) && r.metrics.arr.USD === Math.round(29000 / 12) * 12, 'sandbox : 1 abonné Team annuel, MRR = 290 / 12', r.metrics);
   ok(r.metrics.canceled_total === 1 && r.metrics.converted === 2, 'résiliations et conversions');
+  ok(r.available === true && Array.isArray(r.problems) && r.problems.length === 0 && r.missing.length === 0, 'réglages Paddle cohérents : aucun problème signalé', { missing: r.missing, problems: r.problems });
   r = await adm.get('admin_billing');
   ok(r.env === 'production' && r.metrics.paid === 0 && Object.keys(r.metrics.mrr).length === 0, 'production : les paiements de test ne comptent pas');
   r = await adm.post('admin_user_action', { id: lina.id, op: 'plan', plan: 'team', until: '' });

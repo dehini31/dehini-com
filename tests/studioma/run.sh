@@ -3,7 +3,8 @@
 #   tests/studioma/run.sh [dossier] [port]   (par défaut : un dossier temporaire, port 8097)
 # D'abord l'API seule (api.js), le partage avec des invités sans compte (share.js), le suivi Meta (meta.js), puis le serveur MCP
 # et son OAuth (mcp.js), l'administration (admin.js), les formules et abonnements avec un faux Paddle (billing.js, limites
-# appliquées), puis l'application dans un navigateur (e2e.js, Playwright / Chromium).
+# appliquées, et billing-config.php pour le contrôle des réglages sandbox / production), puis l'application dans un
+# navigateur (e2e.js, Playwright / Chromium).
 set -euo pipefail
 HERE=$(cd "$(dirname "$0")" && pwd)
 REPO=$(cd "$HERE/../.." && pwd)
@@ -24,6 +25,7 @@ fresh() {
   for _ in 1 2 3 4 5 6 7 8 9 10; do curl -s -o /dev/null "http://127.0.0.1:$PORT/studioma/assets/favicon.svg" && break; sleep 0.3; done
 }
 cd "$REPO"
+php "$HERE/billing-config.php"   # contrôle des réglages Paddle (sandbox / production), sans serveur
 fresh
 node "$HERE/api.js" "http://127.0.0.1:$PORT" "$DIR"
 fresh

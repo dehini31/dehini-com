@@ -37,6 +37,9 @@ status changes; keep the history of finished items short.
   (`docs/billing.md` § 5): Paddle account and approval (needs Terms of Service, Privacy Policy and Refund Policy pages
   on dehini.com — not written yet), products and four prices in sandbox, API key, client token, default payment link
   `https://dehini.com/studioma/pay/`, webhook destination, settings in `studioma/config.php`, sandbox test, then live.
+  **Sandbox → live** (`docs/billing.md` § 8): sandbox test on a staging copy first (§ 8.2, not done yet); live
+  account audited read-only on 2026-11-21 — empty (no products, prices, webhook, keys, payment link), onboarding
+  verification in progress; ID mapping table to fill (§ 8.4); owner's choices pending: tax mode, payment methods.
 - [ ] **Before deploying the billing code**: choose which existing accounts get a complimentary Solo/Team plan (admin ›
   Accounts › Plan), or set `STM_PLANS_ENFORCED` false until payments open (`docs/billing.md` § 6).
 

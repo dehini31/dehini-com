@@ -13,7 +13,7 @@ secrets here. Mark anything you could not verify as *(unverified)*.
 | Base code | `main` @ `7b703d3` (Merge PR #78 — everything before billing is in `main`). **`main` = production** — but the server has **no deployment cron** (2026-11-20): merges go live only when copied by hand |
 | Checkpoint | the commit that last changed this file: `git log -1 --format='%H %s' -- HANDOFF.md` |
 | Uncommitted work at checkpoint | none |
-| In progress | **Studioma SaaS billing (Free / Solo / Team + Paddle)** — implemented, tested, committed and pushed on this branch; **not merged, not deployed; online payment closed** until the owner configures Paddle (`docs/billing.md`) |
+| In progress | **Studioma SaaS billing (Free / Solo / Team + Paddle)** — implemented, tested, committed and pushed on this branch; **not merged, not deployed; online payment closed** until the owner configures Paddle (`docs/billing.md`). **Sandbox → live migration prepared, not done**: sandbox never tested against real Paddle; live account empty (`docs/billing.md` § 8) |
 | Last task changed application code? | **yes** — Studioma, DB schema 8 → 9 (additive) |
 
 **Next recommended action**
@@ -23,24 +23,48 @@ secrets here. Mark anything you could not verify as *(unverified)*.
    account › Plan) — or set `define('STM_PLANS_ENFORCED', false);` in `studioma/config.php` on the server until
    payments open. Then merge and deploy (`cd ~/dehini-com && git checkout main && git pull && cp -rf studioma
    ~/public_html/`); the database migrates to v9 by itself.
-2. **Owner, Paddle** (`docs/billing.md` § 5): account approval (needs Terms / Privacy / Refund pages on dehini.com —
+2. **Owner, sandbox test first** (`docs/billing.md` § 8.2): a sandbox Paddle account + a staging copy
+   `~/public_html/studioma-staging/` with its **own** `STM_DATA_DIR`, then the 9-step pass table. Live entities are
+   created only after it passes (§ 8.5); fill the ID mapping table (§ 8.4).
+3. **Owner, Paddle** (`docs/billing.md` § 5): account approval (needs Terms / Privacy / Refund pages on dehini.com —
    not written yet), products + 4 prices in sandbox, API key, client token, default payment link
    `https://dehini.com/studioma/pay/`, webhook `https://dehini.com/studioma/paddle-webhook.php`, settings in
    `studioma/config.php`, sandbox test with a Paddle test card, then live.
-3. Agent: possible next tasks — Terms of Service / Privacy / Refund pages (needed by Paddle); the pre-existing
+4. Agent: possible next tasks — Terms of Service / Privacy / Refund pages (needed by Paddle); the pre-existing
    Maillage test failure below.
 
 **Blockers**: Paddle account approval and credentials (owner). Unverified: behaviour against the real Paddle API
 (tested only against `tests/studioma/fake-paddle.php`, which follows Paddle Billing API v1 shapes); production PHP CLI
 path for cron; host's hourly email limit.
 
-**Validation at this checkpoint** (2026-11-21, this branch): `tests/studioma/run.sh` **1,035 checks, 7 suites** (api,
-share, meta, mcp, admin, **billing 106**, e2e) — all passed, 0 failures; `tests/swanbida/run.sh` 119 — passed;
+**Validation at this checkpoint** (2026-11-21, this branch): `tests/studioma/run.sh` **1,036 checks, 7 suites** (api,
+share, meta, mcp, admin, **billing 107**, e2e) **+ 15 config unit checks** (`billing-config.php`) — all passed, 0 failures; `tests/swanbida/run.sh` 119 — passed;
 `tests/maillage/run.sh` **180/181 — 1 failure that also happens on unmodified `main` (7b703d3)**: « stock enregistré :
 6 déclinaisons en stock » (no Maillage file changed; passed on 2026-11-20; flaky or date-dependent *(cause unknown)*);
 `php -l` 116 files, `node --check` all Studioma JS: 0 errors.
 
 ## Log (newest first)
+
+### 2026-11-21 — Claude Code — Studioma: Paddle sandbox → live migration preparation
+- Owner's brief: verify sandbox first, audit live read-only, prepare the live setup without publishing or taking a
+  real payment; never delete/recreate/rotate live entities; never expose credentials.
+- MCP: no `paddle-sandbox` / `paddle-live` servers in the repo or session. The owner connected the claude.ai **Paddle**
+  connector: it is the **live** account (`environment: production`) with **read-only** scopes. No sandbox connector.
+- Sandbox: **not passed** — the billing code was never deployed and no sandbox credentials exist anywhere; the only
+  evidence is the fake-Paddle suite. No live entity created.
+- Live audit (read-only, nothing changed): no products, prices, discounts, notification destinations, API keys,
+  client tokens, checkout domains; default payment link not set; website `https://dehini.com/studioma/`; tax mode
+  `location`; balance currency USD; card, PayPal, Apple Pay, Bancontact enabled (Google Pay off); statement
+  descriptor `STUDIOMA`; legal name and email filled, display name empty; onboarding verification **in progress**
+  (account setup step; automated review pending) — not started or changed by the agent.
+- Code: `billing_config_check()` / `billing_config_problems()` (`studioma/lib/billing.php`) keep payment closed on a
+  sandbox/live mix-up and list problems by name in admin › Billing (`lib/admin.php`, `assets/admin.js`, `.notice-list`
+  in `app.css`); `.env.example` (names + placeholders only); `docs/billing.md` § 8 (guard, staging sandbox test, live
+  audit, ID mapping, go-live checklist); DECISIONS S24; ROADMAP.
+- Tests: new `tests/studioma/billing-config.php` (15 checks, run first by `run.sh`); `billing.js` +1 check (no config
+  problem with the test settings). `tests/studioma/run.sh`: **1,036 checks, 7 suites + 15 unit checks — all passed**.
+- Gaps found for Paddle's website review: no Terms of Service / Privacy Policy / Refund Policy pages, no contact
+  address on the Studioma landing page or pricing page.
 
 ### 2026-11-21 — Claude Code — Studioma: SaaS plans and Paddle billing
 - Owner's brief: complete subscription system with Free / Solo ($12 / $120) / Team ($29 / $290), server-side limits,

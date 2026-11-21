@@ -979,7 +979,7 @@ function api_admin_billing(array $b, array $a): array
     $conv30 = count(array_filter($firsts, function (array $r) use ($now): bool { return (int) $r['first'] >= $now - 30 * 86400; }));
     $list = rows("SELECT s.*, u.name, u.email, u.handle, u.avatar FROM subscriptions s LEFT JOIN users u ON u.id = s.uid WHERE s.env = ? OR s.provider = 'manual' ORDER BY s.id DESC LIMIT 60", [$env]);
     return [
-        'env' => $env, 'configured_env' => billing_env(), 'available' => billing_available(), 'missing' => billing_missing(), 'enforced' => billing_enforced(),
+        'env' => $env, 'configured_env' => billing_env(), 'available' => billing_available(), 'missing' => billing_missing(), 'problems' => billing_config_problems(), 'enforced' => billing_enforced(),
         'metrics' => [
             'users' => $users, 'paid' => count($best), 'free' => max(0, $users - count($best) - $comp), 'complimentary' => $comp, 'trialing' => $trialing,
             'solo' => $dist['solo']['month'] + $dist['solo']['year'], 'team' => $dist['team']['month'] + $dist['team']['year'], 'distribution' => $dist,

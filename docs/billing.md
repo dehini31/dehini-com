@@ -97,7 +97,8 @@ give the allowance back, and the counter of a new month starts at zero. No card 
    **secret key**.
 6. On the server, add to `~/public_html/studioma/config.php` (never in Git; template in `config.example.php`):
    `STM_BILLING_ENABLED` true, `STM_PADDLE_ENV` `'sandbox'`, the API key, client token, webhook secret and the four
-   price ids. The admin › Billing page lists any missing setting by name.
+   price ids (variable names and placeholders: `.env.example`). The admin › Billing page lists any missing setting
+   by name, and any inconsistent one (« Paddle settings to fix »), without showing values.
 7. Test with a Paddle test card in sandbox: subscribe, upgrade, downgrade, cancel, keep; check admin › Billing
    (Sandbox) and the Paddle notifications log.
 8. **Live**: repeat steps 2–5 in the live Paddle dashboard (new ids, new key, new secret), set
@@ -121,6 +122,98 @@ Without step 6, the pricing page shows paid plans as « Coming soon » and every
 - No free trial, coupons or per-seat pricing; one currency (USD) as configured in Paddle.
 - Paddle Retain, tax/VAT details and invoices are Paddle's (customer portal); Studioma stores only amounts and states.
 - No automatic email from Studioma about billing (Paddle sends receipts and dunning emails).
-- The Paddle API calls could not be tested against real Paddle from the development environment (no credentials
-  and no network access to Paddle): they follow Paddle Billing API v1 and are tested against a fake API with the
-  same shapes *(real-Paddle behaviour unverified until the sandbox test in step 7)*.
+- The Paddle API calls have not been tested against real Paddle yet (no sandbox credentials in the development
+  environment, and the code is not deployed): they follow Paddle Billing API v1 and are tested against a fake API
+  with the same shapes *(real-Paddle behaviour unverified until the sandbox test of § 8)*.
+
+## 8. Sandbox → live migration
+
+Rule: **live is configured only after the sandbox test (8.2) has passed.** Never delete, archive or recreate a live
+product, price, discount or notification destination, never rotate a signing secret, never touch live customers or
+subscriptions; keys and secrets only in `config.php` on the server (names: `.env.example`).
+
+### 8.1 Safety guard in the code
+
+`billing_config_check()` (`lib/billing.php`) keeps payment **closed** when the settings mix environments: a
+`pdl_sdbx_` API key or `test_` client token with `STM_PADDLE_ENV` `production` (or the reverse), an environment
+value other than exactly `sandbox` / `production` (« live » would otherwise be read as sandbox), an API key pasted as
+webhook secret or client token, a price id that is not `pri_…` or used twice, `http://` site URL in production.
+Admin › Billing lists the problems by setting name, never by value. Unit test: `tests/studioma/billing-config.php`.
+Subscriptions are stored with their environment and a sandbox subscription never grants a plan in production.
+
+### 8.2 Sandbox end-to-end test on a staging copy (owner, on the server)
+
+A staging copy with **its own data folder** lets Paddle reach a real webhook without touching production. Do not
+check out the branch in `~/dehini-com` (it must stay on `main`, clean):
+
+```bash
+git -C ~/dehini-com fetch origin claude/trusting-keller-rynk1j
+mkdir -p ~/stm-staging-src && git -C ~/dehini-com archive FETCH_HEAD studioma | tar -x -C ~/stm-staging-src
+cp -r ~/stm-staging-src/studioma ~/public_html/studioma-staging && mkdir -p ~/studioma-staging-data
+```
+
+Then create `~/public_html/studioma-staging/config.php` (never in Git) with **`STM_DATA_DIR`
+`'/home/dehini91/studioma-staging-data'`** (without it the copy would open the production database),
+`STM_SITE_URL` `'https://dehini.com/studioma-staging/'`, `STM_META_PIXEL_ID` `''` (no test events in the Meta
+dataset), `STM_BILLING_ENABLED` true, `STM_PADDLE_ENV` `'sandbox'` and the sandbox key, client token, webhook secret
+and four price ids. In the **sandbox** dashboard: default payment link `https://dehini.com/studioma-staging/pay/`,
+notification destination `https://dehini.com/studioma-staging/paddle-webhook.php` (events of § 5 step 5).
+
+Pass criteria (Paddle test card `4242 4242 4242 4242`, any future date, any CVC; check admin › Billing › Sandbox
+of the staging copy and Paddle › Notifications log, every delivery answered 200):
+
+| # | Step | Expected |
+|---|---|---|
+| 1 | Free account → Pricing → Solo monthly → pay | `transaction.completed` + `subscription.created/activated` delivered, signature accepted; plan Solo within seconds |
+| 2 | `curl -i -X POST -H 'Paddle-Signature: ts=1;h1=bad' -d '{}' https://dehini.com/studioma-staging/paddle-webhook.php` | 401, nothing changes |
+| 3 | Same event replayed from Paddle (Notifications › replay) | 200, applied once (idempotent) |
+| 4 | Upgrade Solo → Team | prorated immediately, plan Team, `subscription.updated` |
+| 5 | Downgrade Team → Solo | scheduled at next billing period, plan stays Team until then |
+| 6 | Cancel, then « Keep my plan » | cancellation scheduled, then removed |
+| 7 | Cancel and let it end (or cancel immediately in the sandbox dashboard) | back to Free, data kept read-only above limits |
+| 8 | A declined and a 3-D Secure test card (Paddle docs › test card numbers) | no plan without a verified payment; a failed renewal gives `past_due` → 14-day grace |
+| 9 | Customer portal link | opens Paddle's portal for that customer |
+
+Clean up afterwards: `rm -rf ~/public_html/studioma-staging ~/stm-staging-src` (keep or delete
+`~/studioma-staging-data`).
+
+### 8.3 Live audit (read-only, 2026-11-21, through the Paddle connector — production, read-only scopes)
+
+| Item | Live state | Action |
+|---|---|---|
+| Products / prices / discounts | none | create after 8.2 passes (same names, amounts, intervals as sandbox) |
+| Notification destinations | none | create `https://dehini.com/studioma/paddle-webhook.php` (events of § 5) |
+| API keys / client tokens | none | create after 8.2 passes; put in `config.php` only |
+| Default payment link / checkout domains | not set / none | `https://dehini.com/studioma/pay/`, domain `dehini.com` approved by Paddle |
+| Website on the account | `https://dehini.com/studioma/` | OK |
+| Tax mode | `location` (Paddle default) | owner's choice (see below) |
+| Balance currency | USD | matches USD prices |
+| Payment methods enabled | card, PayPal, Apple Pay, Bancontact | owner's choice (Google Pay available, off) |
+| Statement descriptor | `STUDIOMA` | OK |
+| Onboarding verification | in progress (account setup step), automated review pending | owner, in the dashboard |
+
+Nothing exists in live to reuse yet: every live entity is to be created once, after the sandbox test.
+
+### 8.4 Sandbox → live ID mapping (fill in; ids are not secret, keys are)
+
+| Entity | Sandbox id | Live id |
+|---|---|---|
+| Product « Studioma Solo » | | |
+| Product « Studioma Team » | | |
+| Price Solo monthly ($12) → `STM_PADDLE_PRICE_SOLO_MONTHLY` | | |
+| Price Solo yearly ($120) → `STM_PADDLE_PRICE_SOLO_YEARLY` | | |
+| Price Team monthly ($29) → `STM_PADDLE_PRICE_TEAM_MONTHLY` | | |
+| Price Team yearly ($290) → `STM_PADDLE_PRICE_TEAM_YEARLY` | | |
+| Notification destination (`ntfset_…`) | | |
+| Client-side token (id only, `ctkn_…`) | | |
+
+### 8.5 Go-live checklist (after 8.2 passes)
+
+1. Legal pages online and linked from the pricing page and footer: Terms of Service, Privacy Policy, Refund Policy
+   (Paddle named as merchant of record), contact email — required by Paddle's website review.
+2. Live products and prices created with the same amounts/intervals as sandbox; mapping table filled.
+3. Live notification destination, API key, client token; default payment link; `dehini.com` approved.
+4. `config.php` on the server switched in one edit: `STM_PADDLE_ENV` `'production'` + live key, token, secret,
+   price ids; admin › Billing shows « Online payment is on (Paddle production) » and no « settings to fix ».
+5. No real payment is taken to « test » live: the first live payment is a real customer's (or the owner's own,
+   refunded from the dashboard if needed — owner's decision).

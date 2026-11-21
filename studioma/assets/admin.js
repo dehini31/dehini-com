@@ -797,7 +797,8 @@
     SM.set(ctx.view, html`<div class="page">
       <header class="page-head"><div><h1>Billing</h1><p class="muted">Subscriptions from verified Paddle data. ${env === 'production' ? 'Live payments only.' : 'Sandbox (test) payments — never counted as revenue.'}</p></div>
         <nav class="seg-inline">${['production', 'sandbox'].map((e) => html`<a class="btn btn-sm ${env === e ? 'btn-soft is-on' : 'btn-ghost'}" href="#/billing${e === 'sandbox' ? '?env=sandbox' : ''}">${e === 'production' ? 'Live' : 'Sandbox'}</a>`)}</nav></header>
-      ${!d.available ? html`<p class="notice notice-warn">${icon('alert')}<span><b>Online payment is off.</b> Missing settings in <code>studioma/config.php</code>: ${d.missing.join(', ')}. The pricing page shows paid plans as “Coming soon”.</span></p>` : html`<p class="notice notice-ok">${icon('check')}<span>Online payment is on (Paddle ${d.configured_env}).</span></p>`}
+      ${!d.available ? html`<p class="notice notice-warn">${icon('alert')}<span><b>Online payment is off.</b> ${d.missing.length ? html`Missing settings in <code>studioma/config.php</code>: ${d.missing.join(', ')}. ` : ''}The pricing page shows paid plans as “Coming soon”.</span></p>` : html`<p class="notice notice-ok">${icon('check')}<span>Online payment is on (Paddle ${d.configured_env}).</span></p>`}
+      ${(d.problems || []).length ? html`<div class="notice notice-warn">${icon('alert')}<span><b>Paddle settings to fix</b> (payment stays closed until they are consistent):<ul class="notice-list">${d.problems.map((p) => html`<li>${p}</li>`)}</ul></span></div>` : ''}
       ${!d.enforced ? html`<p class="notice notice-warn">${icon('alert')}<span>Plan limits are switched off (STM_PLANS_ENFORCED = false).</span></p>` : ''}
       <div class="tiles">
         ${tile('users', 'Accounts', fmt.num(M.users), `${fmt.num(M.free)} on Free · ${fmt.num(M.complimentary)} offered`)}
