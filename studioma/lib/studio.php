@@ -167,6 +167,7 @@ function api_project_save(array $b, array $u): array
     $cid = int_in($b, 'company_id');
     if ($cid && !company_admin((int) $u['id'], $cid)) forbidden('Only admins of this company can create its projects.');
     return tx(function () use ($data, $cid, $u, $b): array {
+        need_project_slot((int) $u['id'], (int) $u['id']);   // formule du compte (lib/billing.php), dans la transaction
         $id = insert('projects', $data + ['owner_uid' => $u['id'], 'company_id' => $cid, 'created' => time()]);
         insert('project_members', ['project_id' => $id, 'uid' => $u['id'], 'role' => 'owner', 'created' => time()]);
         $out = ['id' => $id];
@@ -203,7 +204,12 @@ function api_project_get(array $b, array $u): array
 function api_project_archive(array $b, array $u): array
 {
     $p = load_project(int_in($b, 'id'), $u, 'manage');
-    q('UPDATE projects SET archived = ?, updated = ? WHERE id = ?', [empty($b['archived']) ? 0 : 1, time(), $p['id']]);
+    $on = empty($b['archived']) ? 0 : 1;
+    tx(function () use ($p, $on, $u): void {
+        // Restaurer un projet archivé, c'est en avoir un actif de plus : la formule doit le permettre.
+        if (!$on && (int) $p['archived']) need_project_slot(project_account($p), (int) $u['id']);
+        q('UPDATE projects SET archived = ?, updated = ? WHERE id = ?', [$on, time(), $p['id']]);
+    });
     return [];
 }
 function api_project_delete(array $b, array $u): array
@@ -221,6 +227,7 @@ function api_project_delete(array $b, array $u): array
 
 function studio_create(int $projectId, string $name, string $tpl, int $uid): int
 {
+    need_studio_slot(project_account($projectId), $uid);   // appelée dans une transaction
     $now = time();
     $sid = insert('studios', ['project_id' => $projectId, 'name' => $name, 'created_by' => $uid, 'created' => $now, 'updated' => $now]);
     foreach (STUDIO_TEMPLATES[$tpl]['levels'] ?? [] as $i => $l) {
@@ -269,7 +276,10 @@ function api_studio_archive(array $b, array $u): array
 {
     $s = load_studio(int_in($b, 'id'), $u, 'manage');
     $on = empty($b['archived']) ? 0 : 1;
-    q('UPDATE studios SET archived = ? WHERE id = ?', [$on, $s['id']]);
+    tx(function () use ($s, $on, $u): void {
+        if (!$on && (int) $s['archived']) need_studio_slot(project_account($s['project']), (int) $u['id']);
+        q('UPDATE studios SET archived = ? WHERE id = ?', [$on, $s['id']]);
+    });
     log_event((int) $s['id'], 0, (int) $u['id'], 'studio', $on ? 'archived the Studio' : 'restored the Studio');
     studio_touch((int) $s['id']);
     return [];
@@ -738,6 +748,7 @@ function api_card_create(array $b, array $u): array
     $uid = (int) $u['id'];
     $gid = !empty($u['guest']) ? (int) $u['guest']['gid'] : 0;
     $id = tx(function () use ($col, $title, $uid, $gid, $b): int {
+        count_cards(project_account($col['studio']['project']), $uid);   // cartes du mois (formule du compte)
         $now = time();
         $id = insert('cards', ['studio_id' => $col['studio_id'], 'col_id' => $col['id'], 'pos' => 0, 'title' => $title, 'created_by' => $uid, 'created_guest' => $gid, 'created' => $now, 'updated' => $now]);
         card_place($id, $col, empty($b['top']) ? PHP_INT_MAX : 0);
@@ -878,6 +889,7 @@ function api_card_duplicate(array $b, array $u): array
     $col = col_in_studio((int) $card['col_id'], (int) $card['studio_id']);
     $uid = (int) $u['id'];
     $id = tx(function () use ($card, $col, $uid): int {
+        count_cards(project_account($card['studio']['project']), $uid);
         $now = time();
         $id = insert('cards', ['studio_id' => $card['studio_id'], 'col_id' => $col['id'], 'pos' => 0, 'title' => mb_substr($card['title'] . ' (copy)', 0, 200),
             'body' => $card['body'], 'assignee' => $card['assignee'], 'due' => $card['due'], 'priority' => $card['priority'], 'tags' => $card['tags'],
@@ -1067,6 +1079,7 @@ function api_mywork(array $b, array $u): array
 function api_studio_stats(array $b, array $u): array
 {
     $s = load_studio(int_in($b, 'studio'), $u);
+    need_feature(project_account($s['project']), 'insights');
     $sid = (int) $s['id'];
     $cards = rows('SELECT c.*, co.kind AS col_kind, co.level_id FROM cards c JOIN cols co ON co.id = c.col_id JOIN levels l ON l.id = co.level_id
         WHERE c.studio_id = ? AND c.archived = 0 AND co.archived = 0 AND l.archived = 0', [$sid]);

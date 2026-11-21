@@ -48,13 +48,14 @@ function project_role(int $uid, array $project): string
     $role = (string) (val('SELECT role FROM project_members WHERE project_id = ? AND uid = ?', [$project['id'], $uid]) ?? '');
     // Les administrateurs d'une entreprise gèrent tous ses projets.
     if ((int) $project['company_id'] > 0 && company_admin($uid, (int) $project['company_id'])) $role = role_max($role, 'manager');
-    return $role;
+    // Membre sans place dans la formule du compte propriétaire : lecture seule (lib/billing.php › seat_cap).
+    return seat_cap($role, $uid, $project);
 }
 /** Rôle dans un Studio : le plus élevé entre celui du projet et celui du Studio. */
 function studio_role(int $uid, array $studio, array $project): string
 {
     $own = (string) (val('SELECT role FROM studio_members WHERE studio_id = ? AND uid = ?', [$studio['id'], $uid]) ?? '');
-    return role_max(project_role($uid, $project), $own);
+    return seat_cap(role_max(project_role($uid, $project), $own), $uid, $project);
 }
 
 /** Projet + rôle du compte (clé « role »). Introuvable si le compte n'y a aucun accès. */

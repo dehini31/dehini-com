@@ -9,6 +9,8 @@ $uri = rawurldecode((string) parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
 $root = rtrim($_SERVER['DOCUMENT_ROOT'], '/');
 // Réécritures de studioma/.htaccess et de .well-known/.htaccess (liens de partage, serveur MCP, OAuth, découverte).
 $target = null;
+// Faux Paddle des tests d'abonnement (tests/studioma/fake-paddle.php).
+if (strpos($uri, '/fake-paddle/') === 0) { require __DIR__ . '/fake-paddle.php'; return true; }
 if (preg_match('~^/studioma/mcp/?$~', $uri)) {
     $target = 'mcp.php';
 } elseif (preg_match('~^/studioma/s/([A-Za-z0-9_-]{32})(/card/([0-9]+))?/?$~', $uri, $m)) {

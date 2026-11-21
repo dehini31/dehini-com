@@ -24,4 +24,24 @@ define('STM_META_PIXEL_ID', '1234567890123');
 define('STM_META_TOKEN', 'test-meta-token-0123456789');
 define('STM_META_LOG', '$DIR/meta.jsonl');
 PHP
+# Abonnements : les batteries historiques testent les fonctionnalités sans les limites des formules ; billing.js
+# (BILLING=1) les applique, avec un faux Paddle (tests/studioma/fake-paddle.php, servi par router.php).
+if [ "${BILLING:-0}" = "1" ]; then
+  PORT=${2:-8097}
+  cat >> "$DIR/public_html/studioma/config.php" <<PHP
+define('STM_PLANS_ENFORCED', true);
+define('STM_BILLING_ENABLED', true);
+define('STM_PADDLE_ENV', 'sandbox');
+define('STM_PADDLE_API_BASE', 'http://127.0.0.1:$PORT/fake-paddle');
+define('STM_PADDLE_API_KEY', 'test-paddle-api-key');
+define('STM_PADDLE_CLIENT_TOKEN', 'test_client_token_0123');
+define('STM_PADDLE_WEBHOOK_SECRET', 'test-webhook-secret');
+define('STM_PADDLE_PRICE_SOLO_MONTHLY', 'pri_solo_month');
+define('STM_PADDLE_PRICE_SOLO_YEARLY', 'pri_solo_year');
+define('STM_PADDLE_PRICE_TEAM_MONTHLY', 'pri_team_month');
+define('STM_PADDLE_PRICE_TEAM_YEARLY', 'pri_team_year');
+PHP
+else
+  echo "define('STM_PLANS_ENFORCED', false);" >> "$DIR/public_html/studioma/config.php"
+fi
 echo "OK $DIR"

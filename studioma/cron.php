@@ -17,6 +17,8 @@ if (PHP_SAPI !== 'cli') {
 $isPost = false;
 require __DIR__ . '/lib/core.php';
 require __DIR__ . '/lib/auth.php';
+require __DIR__ . '/lib/plans.php';
+require __DIR__ . '/lib/billing.php';
 require __DIR__ . '/lib/access.php';
 require __DIR__ . '/lib/files.php';
 require __DIR__ . '/lib/studio.php';
