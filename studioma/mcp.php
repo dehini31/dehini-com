@@ -25,6 +25,7 @@ require __DIR__ . '/lib/oauth.php';
 require __DIR__ . '/lib/share.php';
 require __DIR__ . '/lib/pubs.php';
 require __DIR__ . '/lib/promo.php';
+require __DIR__ . '/lib/journey.php';
 require __DIR__ . '/lib/mcp.php';
 
 cors_headers();

@@ -194,7 +194,7 @@ function marks(array $a): string
 /** Schéma compatible avec les vieilles versions de SQLite des hébergeurs mutualisés. */
 function migrate(PDO $pdo): void
 {
-    if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= 11) return;
+    if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= 12) return;
     // Deux premières visites simultanées : la seconde attend la fin de la création, puis ne fait rien.
     $pdo->exec('BEGIN IMMEDIATE');
     try {
@@ -1133,6 +1133,152 @@ function migrate(PDO $pdo): void
         );
         CREATE INDEX IF NOT EXISTS promo_grants_k ON promo_grants(promo, kind, ends);
         PRAGMA user_version = 11;
+        SQL);
+        }
+        if ($v < 12) {
+            // Parcours du créateur (lib/journey.php) : points d'expérience, réalisations vérifiées, niveaux, passeport public.
+            // Ajouts seulement ; les données existantes servent de preuves (cartes terminées, validations, invitations…).
+            $has = function (string $t, string $c) use ($pdo): bool { return in_array($c, array_column($pdo->query("PRAGMA table_info($t)")->fetchAll(), 'name'), true); };
+            if (!$has('projects', 'completed_at')) $pdo->exec('ALTER TABLE projects ADD COLUMN completed_at INTEGER NOT NULL DEFAULT 0');
+            if (!$has('projects', 'completed_by')) $pdo->exec('ALTER TABLE projects ADD COLUMN completed_by INTEGER NOT NULL DEFAULT 0');
+            // Qui a vraiment décidé une validation (un propriétaire peut décider à la place de la personne désignée), et
+            // à quel titre : client | manager | owner | guest. Seule la décision de la personne désignée, cliente ou invitée
+            // vérifiée, compte comme validation d'un client.
+            if (!$has('card_approvals', 'decided_by')) $pdo->exec('ALTER TABLE card_approvals ADD COLUMN decided_by INTEGER NOT NULL DEFAULT 0');
+            if (!$has('card_approvals', 'decider_role')) $pdo->exec("ALTER TABLE card_approvals ADD COLUMN decider_role TEXT NOT NULL DEFAULT ''");
+            $pdo->exec(<<<SQL
+        -- Grand livre des points d'expérience : une ligne par événement qualifiant, jamais deux pour la même clé (ikey,
+        -- ex. « done:12 » = carte 12 terminée). xp = 0 quand la limite du jour est atteinte (note) : l'événement compte
+        -- quand même pour les réalisations et les niveaux. at = moment de l'événement ; day = son jour (limites).
+        -- revoked > 0 : retiré par l'administration (moment, raison), ni compté ni accordé à nouveau.
+        CREATE TABLE IF NOT EXISTS xp_transactions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            uid INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            kind TEXT NOT NULL,
+            ikey TEXT NOT NULL,
+            xp INTEGER NOT NULL DEFAULT 0,
+            rule_v INTEGER NOT NULL DEFAULT 1,
+            project_id INTEGER NOT NULL DEFAULT 0,
+            studio_id INTEGER NOT NULL DEFAULT 0,
+            card_id INTEGER NOT NULL DEFAULT 0,
+            ref INTEGER NOT NULL DEFAULT 0,
+            peer INTEGER NOT NULL DEFAULT 0,
+            note TEXT NOT NULL DEFAULT '',
+            at INTEGER NOT NULL,
+            day TEXT NOT NULL,
+            created INTEGER NOT NULL,
+            revoked INTEGER NOT NULL DEFAULT 0,
+            revoked_reason TEXT NOT NULL DEFAULT '',
+            UNIQUE (uid, ikey)
+        );
+        CREATE INDEX IF NOT EXISTS xp_transactions_k ON xp_transactions(uid, kind, day);
+        CREATE INDEX IF NOT EXISTS xp_transactions_a ON xp_transactions(at);
+        -- Réalisation obtenue (aid = clé de sa définition, une seule fois par compte) ou déclarée par la personne elle-même
+        -- (aid = self, plusieurs, jamais présentée comme vérifiée). status : verified | self | revoked. verification :
+        -- system | client | evidence | self. public_id : identifiant aléatoire de la page de vérification publique.
+        -- visibility : private (par défaut) | link (toute personne qui a le lien) | passport (aussi sur le passeport public).
+        CREATE TABLE IF NOT EXISTS user_achievements (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            uid INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            aid TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'verified',
+            verification TEXT NOT NULL DEFAULT 'system',
+            public_id TEXT NOT NULL UNIQUE,
+            visibility TEXT NOT NULL DEFAULT 'private',
+            title TEXT NOT NULL DEFAULT '',
+            body TEXT NOT NULL DEFAULT '',
+            url TEXT NOT NULL DEFAULT '',
+            earned INTEGER NOT NULL,
+            xp INTEGER NOT NULL DEFAULT 0,
+            seen INTEGER NOT NULL DEFAULT 0,
+            shared INTEGER NOT NULL DEFAULT 0,
+            views INTEGER NOT NULL DEFAULT 0,
+            revoked_at INTEGER NOT NULL DEFAULT 0,
+            revoked_reason TEXT NOT NULL DEFAULT '',
+            created INTEGER NOT NULL,
+            updated INTEGER NOT NULL
+        );
+        CREATE UNIQUE INDEX IF NOT EXISTS user_achievements_ua ON user_achievements(uid, aid) WHERE aid <> 'self';
+        CREATE INDEX IF NOT EXISTS user_achievements_u ON user_achievements(uid);
+        -- Preuves d'une réalisation : renvois vers les enregistrements qui la justifient (ligne du grand livre, projet,
+        -- Studio, carte, validation). client_uid / client_guest : la personne cliente qui a validé ; client_named = 1 si
+        -- elle accepte que son nom apparaisse sur les pages publiques (sinon « un client vérifié »).
+        CREATE TABLE IF NOT EXISTS achievement_evidence (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ua_id INTEGER NOT NULL REFERENCES user_achievements(id) ON DELETE CASCADE,
+            kind TEXT NOT NULL,
+            xp_id INTEGER NOT NULL DEFAULT 0,
+            project_id INTEGER NOT NULL DEFAULT 0,
+            studio_id INTEGER NOT NULL DEFAULT 0,
+            card_id INTEGER NOT NULL DEFAULT 0,
+            approval_id INTEGER NOT NULL DEFAULT 0,
+            client_uid INTEGER NOT NULL DEFAULT 0,
+            client_guest INTEGER NOT NULL DEFAULT 0,
+            client_named INTEGER NOT NULL DEFAULT 0,
+            at INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS achievement_evidence_a ON achievement_evidence(ua_id);
+        CREATE INDEX IF NOT EXISTS achievement_evidence_c ON achievement_evidence(client_uid);
+        -- Progression calculée (cache) : points, niveau, compteurs. dirty = 1 : à recalculer à la prochaine requête.
+        CREATE TABLE IF NOT EXISTS journey_progress (
+            uid INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+            xp INTEGER NOT NULL DEFAULT 0,
+            level INTEGER NOT NULL DEFAULT 1,
+            stats TEXT NOT NULL DEFAULT '{}',
+            dirty INTEGER NOT NULL DEFAULT 1,
+            updated INTEGER NOT NULL DEFAULT 0
+        );
+        CREATE INDEX IF NOT EXISTS journey_progress_l ON journey_progress(level);
+        -- Étapes du parcours à célébrer ou à garder dans la chronologie : niveau atteint, réalisation retirée ou rendue.
+        -- seen = 0 : pas encore montrée (célébration).
+        CREATE TABLE IF NOT EXISTS journey_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            uid INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            kind TEXT NOT NULL,
+            ref TEXT NOT NULL DEFAULT '',
+            text TEXT NOT NULL DEFAULT '',
+            seen INTEGER NOT NULL DEFAULT 0,
+            created INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS journey_log_u ON journey_log(uid, id);
+        -- Cartes passées par un niveau d'un Studio (terminées dans ce niveau, ou envoyées vers un niveau suivant) : sert à
+        -- reconnaître un niveau mené à bien. Une seule ligne par carte et par niveau.
+        CREATE TABLE IF NOT EXISTS level_passes (
+            level_id INTEGER NOT NULL,
+            card_id INTEGER NOT NULL,
+            studio_id INTEGER NOT NULL,
+            created INTEGER NOT NULL,
+            PRIMARY KEY (level_id, card_id)
+        );
+        -- Passeport public du créateur (/studioma/creator/<identifiant>) : fermé par défaut.
+        CREATE TABLE IF NOT EXISTS passport_settings (
+            uid INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+            enabled INTEGER NOT NULL DEFAULT 0,
+            headline TEXT NOT NULL DEFAULT '',
+            show_level INTEGER NOT NULL DEFAULT 1,
+            show_stats INTEGER NOT NULL DEFAULT 1,
+            show_work INTEGER NOT NULL DEFAULT 1,
+            show_journey INTEGER NOT NULL DEFAULT 1,
+            views INTEGER NOT NULL DEFAULT 0,
+            updated INTEGER NOT NULL DEFAULT 0
+        );
+        SQL);
+            // Validations déjà décidées : la personne qui a décidé est retrouvée dans l'historique de la carte (même seconde,
+            // à 2 s près) ; un invité décide sans compte (uid 0). Son rôle est celui qu'elle a aujourd'hui dans le Studio.
+            $pdo->exec(<<<SQL
+        UPDATE card_approvals SET decided_by = COALESCE((SELECT e.uid FROM events e WHERE e.card_id = card_approvals.card_id
+            AND e.kind = 'approval' AND e.text = 'approved this card' AND e.created BETWEEN card_approvals.decided - 2 AND card_approvals.decided + 2
+            ORDER BY e.id DESC LIMIT 1), -1) WHERE status = 'approved' AND decided_by = 0;
+        UPDATE card_approvals SET decider_role = 'guest', decided_by = 0 WHERE status = 'approved' AND decided_by = 0 AND approver_guest > 0;
+        UPDATE card_approvals SET decider_role = COALESCE((SELECT sm.role FROM studio_members sm JOIN cards c ON c.studio_id = sm.studio_id
+            WHERE c.id = card_approvals.card_id AND sm.uid = card_approvals.decided_by), (SELECT pm.role FROM project_members pm JOIN studios s ON s.project_id = pm.project_id
+            JOIN cards c ON c.studio_id = s.id WHERE c.id = card_approvals.card_id AND pm.uid = card_approvals.decided_by), '')
+            WHERE status = 'approved' AND decided_by > 0 AND decider_role = '';
+        UPDATE card_approvals SET decided_by = 0 WHERE decided_by = -1;
+        -- Cartes déjà terminées : elles sont passées par le niveau de leur colonne.
+        INSERT OR IGNORE INTO level_passes (level_id, card_id, studio_id, created)
+            SELECT co.level_id, c.id, c.studio_id, c.done_at FROM cards c JOIN cols co ON co.id = c.col_id WHERE c.done_at > 0;
+        PRAGMA user_version = 12;
         SQL);
         }
         $pdo->exec('COMMIT');

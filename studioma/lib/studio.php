@@ -57,6 +57,7 @@ function project_view(array $p, array $studios = []): array
         'company_id' => (int) $p['company_id'], 'owner_uid' => (int) $p['owner_uid'],
         'role' => (string) ($p['role'] ?? ''), 'limited' => (bool) ($p['limited'] ?? false),
         'created' => (int) $p['created'], 'studios' => $studios,
+        'completed_at' => (int) ($p['completed_at'] ?? 0),   // projet marqué terminé (lib/journey.php)
     ];
 }
 /** Résumé de Studios (progression par niveau) : [studio_id => fiche]. */
@@ -188,6 +189,8 @@ function api_project_get(array $b, array $u): array
     }
     $view = project_view($p, array_values(studios_summary($studios)));
     $view['company'] = company_cards([(int) $p['company_id']])[(int) $p['company_id']] ?? null;
+    // Projet terminé : critères vérifiés par Studioma avant de pouvoir le marquer (lib/journey.php).
+    if (!$p['limited'] && can($p['role'], 'manage')) $view['completion'] = journey_completion_view($p);
     $out = ['project' => $view];
     if (!$p['limited']) {
         $members = [];
@@ -678,10 +681,13 @@ function card_place(int $cardId, array $col, int $index): void
 {
     $ids = array_map('intval', array_column(rows('SELECT id FROM cards WHERE col_id = ? AND archived = 0 AND id <> ? ORDER BY pos, id', [$col['id'], $cardId]), 'id'));
     array_splice($ids, max(0, min($index, count($ids))), 0, [$cardId]);
-    $was = (int) val('SELECT done_at FROM cards WHERE id = ?', [$cardId]);
+    $before = row('SELECT done_at, col_id FROM cards WHERE id = ?', [$cardId]);
+    $was = $before ? (int) $before['done_at'] : 0;
     q('UPDATE cards SET col_id = ?, updated = ?, done_at = ? WHERE id = ?', [$col['id'], time(), $col['kind'] === 'done' ? ($was ?: time()) : 0, $cardId]);
     foreach ($ids as $i => $id) q('UPDATE cards SET pos = ? WHERE id = ?', [$i, $id]);
     pubs_card_changed($cardId);   // terminée ou annulée : son opportunité publiée se ferme (lib/pubs.php)
+    // Parcours du créateur : carte terminée, niveau traversé ou dégagé (lib/journey.php).
+    journey_card_placed($cardId, $before ? (int) $before['col_id'] : 0, $col);
 }
 /** Personnes à prévenir pour une carte (responsable, collaborateurs, créateur), sauf $except. */
 function card_watchers(array $card, int $except = 0): array

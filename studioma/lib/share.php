@@ -534,6 +534,7 @@ function api_share_verify(array $b, array $u): array
     }
     $g = row('SELECT * FROM share_guests WHERE id = ?', [$gid]);
     share_log((int) $sh['studio_id'], (int) $sh['id'], 0, $g, 0, 'access', 'verified their email and opened the ' . $sh['kind'] . ' link');
+    journey_dirty([(int) $sh['created_by'], (int) $g['added_by']]);   // Studio partagé avec un collaborateur (lib/journey.php)
     guest_session_start($sh, $gid);
     $capped = !guest_collab_allowed(studio_account((int) $sh['studio_id']));   // formule Free : lecture seule
     $principal = ['id' => 0, 'guest' => ['share' => $sh, 'gid' => $gid, 'email' => $email, 'role' => $capped ? 'viewer' : (string) $g['role'], 'capped' => $capped,

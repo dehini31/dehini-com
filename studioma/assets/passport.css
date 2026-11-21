@@ -1,0 +1,62 @@
+/* Studioma — pages publiques du parcours du créateur (p.php) : vérification d'une réalisation et passeport public. */
+:root {
+  --bg: #0f0d1f; --surface: #17142b; --raised: #1f1b38; --border: #2d2850; --text: #f3f1ff; --text-2: #c9c4e6; --muted: #9d97c0;
+  --primary: #7c6cff; --primary-2: #5b4bff; --accent: #ff7a59; --ok: #36d39a; --warn: #f5b84a; --bad: #ff6b81; --teal: #2fc6c9;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; min-height: 100vh; font: 15px/1.6 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif; color: var(--text);
+  background: radial-gradient(1200px 600px at 80% -10%, rgba(124, 108, 255, .28), transparent 60%), radial-gradient(900px 500px at -10% 10%, rgba(255, 122, 89, .12), transparent 60%), var(--bg); }
+a { color: #b8afff; }
+h1, h2 { line-height: 1.2; margin: 0 0 .4em; } h1 { font-size: clamp(26px, 5vw, 36px); font-weight: 800; letter-spacing: -.02em; } h2 { font-size: 18px; margin-top: 1.4em; }
+code { font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--raised); padding: 2px 6px; border-radius: 6px; }
+.pp-top { display: flex; align-items: center; gap: 12px; max-width: 920px; margin: 0 auto; padding: 18px 20px; }
+.pp-logo { display: inline-flex; align-items: center; gap: 10px; color: var(--text); text-decoration: none; font-size: 18px; } .pp-logo svg { width: 32px; height: 32px; }
+.pp-grow { flex: 1; }
+.pp-btn { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; border-radius: 10px; background: var(--primary-2); color: #fff; font-weight: 700; text-decoration: none; }
+.pp-btn-soft { background: rgba(124, 108, 255, .16); color: #d9d4ff; }
+.pp-main { max-width: 920px; margin: 0 auto; padding: 8px 20px 40px; display: grid; gap: 18px; }
+.pp-card { background: linear-gradient(180deg, var(--surface), rgba(23, 20, 43, .85)); border: 1px solid var(--border); border-radius: 20px; padding: clamp(20px, 4vw, 32px); box-shadow: 0 20px 60px rgba(0, 0, 0, .35); }
+.pp-center { text-align: center; }
+.pp-kicker { margin: 0 0 6px; font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.pp-lead { font-size: 17px; color: var(--text-2); margin: 0 0 14px; }
+.pp-muted { color: var(--muted); } .pp-small { font-size: 13px; margin-top: 20px; }
+.pp-badge { width: 76px; height: 76px; border-radius: 22px; display: grid; place-items: center; margin-bottom: 16px; color: #fff;
+  background: linear-gradient(135deg, var(--primary), var(--primary-2)); box-shadow: 0 10px 30px rgba(91, 75, 255, .45); }
+.pp-badge svg { width: 38px; height: 38px; }
+.pp-badge-client { background: linear-gradient(135deg, var(--teal), #1a8f9e); box-shadow: 0 10px 30px rgba(47, 198, 201, .35); }
+.pp-badge-evidence { background: linear-gradient(135deg, var(--accent), #e0466d); box-shadow: 0 10px 30px rgba(255, 122, 89, .35); }
+.pp-badge-self { background: var(--raised); color: var(--text-2); box-shadow: none; border: 1px dashed var(--border); }
+.pp-badge-sm { width: 44px; height: 44px; border-radius: 13px; margin: 0; flex: none; } .pp-badge-sm svg { width: 22px; height: 22px; }
+.pp-state-revoked .pp-badge { filter: grayscale(1); opacity: .55; }
+.pp-status { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; padding: 12px 16px; border-radius: 12px; margin: 6px 0 18px; }
+.pp-status b { font-size: 15px; } .pp-status span { color: var(--text-2); font-size: 14px; }
+.pp-status-ok { background: rgba(54, 211, 154, .12); border: 1px solid rgba(54, 211, 154, .35); } .pp-status-ok b { color: var(--ok); }
+.pp-status-self { background: rgba(245, 184, 74, .1); border: 1px solid rgba(245, 184, 74, .35); } .pp-status-self b { color: var(--warn); }
+.pp-status-revoked { background: rgba(255, 107, 129, .1); border: 1px solid rgba(255, 107, 129, .4); } .pp-status-revoked b { color: var(--bad); }
+.pp-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin: 0; }
+.pp-facts div { background: var(--raised); border-radius: 12px; padding: 10px 14px; } .pp-facts dt { font-size: 12px; color: var(--muted); } .pp-facts dd { margin: 2px 0 0; font-weight: 600; overflow-wrap: anywhere; }
+.pp-evidence { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+.pp-evidence li { display: flex; gap: 10px; align-items: flex-start; } .pp-evidence svg { width: 18px; height: 18px; color: var(--ok); flex: none; margin-top: 3px; }
+.pp-hero { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+.pp-avatar { width: 56px; height: 56px; border-radius: 50%; overflow: hidden; display: inline-grid; place-items: center; background: var(--primary-2); color: #fff; font-weight: 800; flex: none; }
+.pp-avatar img { width: 100%; height: 100%; object-fit: cover; } .pp-avatar-l { width: 96px; height: 96px; font-size: 32px; box-shadow: 0 0 0 4px rgba(124, 108, 255, .35); }
+.pp-level { display: inline-flex; gap: 8px; align-items: center; margin: 0; padding: 6px 12px; border-radius: 99px; background: rgba(124, 108, 255, .16); color: #d9d4ff; }
+.pp-level svg { width: 18px; height: 18px; }
+.pp-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.pp-tile { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 14px 16px; display: grid; } .pp-tile b { font-size: 26px; } .pp-tile span { color: var(--muted); font-size: 13px; }
+.pp-summary { margin: 0; color: var(--text-2); }
+.pp-achievements { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+.pp-ach { display: flex; gap: 12px; align-items: center; padding: 12px; border-radius: 14px; background: var(--raised); border: 1px solid var(--border); color: var(--text); text-decoration: none; }
+.pp-ach:hover { border-color: var(--primary); } .pp-ach span:last-child { display: grid; min-width: 0; } .pp-ach small { font-size: 12px; }
+.pp-label-system, .pp-label-evidence { color: #b8afff; } .pp-label-client { color: var(--teal); } .pp-label-self { color: var(--warn); }
+.pp-work { list-style: none; padding: 0; margin: 0 0 12px; display: grid; gap: 8px; } .pp-work li { display: grid; padding: 10px 14px; border-radius: 12px; background: var(--raised); }
+.pp-bar { height: 10px; border-radius: 99px; background: var(--raised); overflow: hidden; } .pp-bar span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--primary-2), var(--accent)); }
+.pp-timeline { list-style: none; padding: 0; margin: 16px 0 0; display: grid; gap: 8px; border-left: 2px solid var(--border); }
+.pp-timeline li { display: flex; gap: 12px; padding-left: 14px; position: relative; } .pp-timeline li::before { content: ''; position: absolute; left: -6px; top: 8px; width: 10px; height: 10px; border-radius: 50%; background: var(--primary); }
+.pp-timeline time { color: var(--muted); font-size: 13px; min-width: 70px; }
+.pp-link { font-weight: 600; }
+.pp-foot { max-width: 920px; margin: 0 auto; padding: 10px 20px 40px; color: var(--muted); font-size: 13px; }
+@media (max-width: 520px) { .pp-top { padding: 14px 16px; } .pp-main { padding: 4px 16px 32px; } .pp-hero { gap: 14px; } }
+.pp-card h2:first-child { margin-top: 0; }

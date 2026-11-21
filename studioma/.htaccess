@@ -4,6 +4,9 @@ Options -Indexes
   RewriteEngine On
   # Lien de partage d'un Studio : /studioma/s/<clé>[/card/<n°>] (voir s.php).
   RewriteRule ^s/([A-Za-z0-9_-]{32})(/card/([0-9]+))?/?$ s.php?t=$1&c=$3 [L,QSA]
+  # Parcours du créateur : vérification publique d'une réalisation et passeport public (voir p.php).
+  RewriteRule ^verify/([a-f0-9]{16})/?$ p.php?verify=$1 [L,QSA]
+  RewriteRule ^creator/([a-z0-9-]{1,40})/?$ p.php?creator=$1 [L,QSA]
   # Certains hébergeurs retirent l'en-tête Authorization avant PHP : on le transmet (serveur MCP, OAuth).
   RewriteCond %{HTTP:Authorization} .
   RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
