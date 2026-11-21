@@ -9,7 +9,7 @@ secrets here. Mark anything you could not verify as *(unverified)*.
 | | |
 |---|---|
 | Last agent | Claude Code (cloud session) |
-| Branch | **`claude/card-share-publish`** (tracks `origin/claude/card-share-publish`), created from `origin/main` @ `f5ff9f3`. No pull request yet (open one only when the owner asks) |
+| Branch | **`claude/card-share-publish`** (tracks `origin/claude/card-share-publish`), created from `origin/main` @ `f5ff9f3` — **open PR #80 → `main`** (https://github.com/dehini31/dehini-com/pull/80, not merged: merging it ships Share & publish). Pushing to this branch updates the PR |
 | Base code | `main` @ `f5ff9f3` = Merge PR #79 (billing, admin, everything before). **`main` = production** — the server has **no deployment cron** (2026-11-20): merges go live only when copied by hand. Whether PR #79 was copied to the live site is *(unverified)* |
 | Checkpoint | the commit that last changed this file: `git log -1 --format='%H %s' -- HANDOFF.md` |
 | Uncommitted work at checkpoint | none |
@@ -43,7 +43,7 @@ secrets here. Mark anything you could not verify as *(unverified)*.
 
 **Unfinished / waiting**
 
-- Owner: review and merge `claude/card-share-publish` (ask the agent to open the pull request), then deploy
+- Owner: review and merge PR #80 (`claude/card-share-publish`), then deploy
   (`cd ~/dehini-com && git checkout main && git pull && cp -rf studioma ~/public_html/`); the database migrates to v10
   by itself. Nothing to configure.
 - Not done (documented in README « Ce qui n'est pas fait »): Share & publish through the MCP server; member
@@ -54,7 +54,7 @@ secrets here. Mark anything you could not verify as *(unverified)*.
 
 **Next recommended action**
 
-1. **Owner**: try it on the branch (or after merge): open a card › *Share & publish*. Then ask for the pull request.
+1. **Owner**: review PR #80, try it (open a card › *Share & publish*), merge, deploy.
 2. **Owner, billing** (unchanged): `docs/billing.md` § 6 (plans for existing accounts) and § 8.2 (sandbox test first).
 3. **Agent, next task**: Terms of Service / Privacy Policy / Refund Policy pages (ask the owner for the legal name
    and contact email; owner reviews the text) — now also covering Community publications and proposals.
