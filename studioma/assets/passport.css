@@ -60,3 +60,30 @@ code { font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; background: va
 .pp-foot { max-width: 920px; margin: 0 auto; padding: 10px 20px 40px; color: var(--muted); font-size: 13px; }
 @media (max-width: 520px) { .pp-top { padding: 14px 16px; } .pp-main { padding: 4px 16px 32px; } .pp-hero { gap: 14px; } }
 .pp-card h2:first-child { margin-top: 0; }
+/* Navigation, opportunités, prix (p.php) */
+.pp-skip { position: absolute; left: 12px; top: 8px; z-index: 10; background: var(--primary-2); color: #fff; padding: 8px 14px; border-radius: 8px; clip-path: inset(50%); }
+.pp-skip:focus { clip-path: none; }
+a:focus-visible, .pp-btn:focus-visible { outline: 3px solid #b8afff; outline-offset: 2px; }
+.pp-nav { display: flex; gap: 14px; margin-left: 10px; } .pp-nav a { color: var(--text-2); text-decoration: none; font-weight: 600; font-size: 14px; } .pp-nav a:hover { color: #fff; }
+.pp-crumbs { font-size: 13px; color: var(--muted); } .pp-crumbs a { color: var(--text-2); }
+.pp-kicker svg { width: 14px; height: 14px; vertical-align: -2px; margin-right: 6px; }
+.pp-opps { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.pp-opp h2 { margin: 0 0 6px; font-size: 20px; } .pp-opp h2 a { color: #fff; text-decoration: none; } .pp-opp h2 a:hover { text-decoration: underline; }
+.pp-excerpt { color: var(--text-2); margin: 0 0 8px; }
+.pp-facts-line { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 0 0 6px; color: var(--text-2); font-size: 14px; } .pp-facts-line span { display: inline-flex; align-items: center; gap: 6px; }
+.pp-facts-line svg { width: 15px; height: 15px; color: #b8afff; }
+.pp-pager { display: flex; gap: 12px; align-items: center; justify-content: center; }
+.pp-author { display: flex; gap: 12px; align-items: center; margin: 0 0 16px; } .pp-author span:last-child { display: grid; }
+.pp-cover { width: 100%; max-height: 420px; object-fit: cover; border-radius: 14px; margin: 18px 0 4px; background: var(--raised); }
+.pp-tags { display: flex; flex-wrap: wrap; gap: 8px; } .pp-tags span { padding: 4px 10px; border-radius: 99px; background: rgba(124, 108, 255, .16); color: #d9d4ff; font-size: 13px; }
+.pp-actions { display: flex; flex-wrap: wrap; gap: 12px 18px; align-items: center; margin-top: 22px; } .pp-share { color: var(--muted); font-size: 14px; }
+.pp-plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+.pp-plan { display: flex; flex-direction: column; gap: 6px; } .pp-plan h2 { margin: 0; } .pp-plan .pp-btn { justify-content: center; margin: 8px 0; }
+.pp-plan.is-popular { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary), 0 20px 60px rgba(91, 75, 255, .25); }
+.pp-badge-txt { margin: 0; align-self: flex-start; padding: 3px 10px; border-radius: 99px; background: var(--primary-2); color: #fff; font-size: 12px; font-weight: 700; }
+.pp-price { margin: 6px 0 0; } .pp-price b { font-size: 34px; } .pp-price span { color: var(--muted); }
+.pp-checks { list-style: none; padding: 0; margin: 8px 0 0; display: grid; gap: 7px; font-size: 14px; color: var(--text-2); }
+.pp-checks li, .pp-plan .pp-small { display: flex; gap: 8px; align-items: flex-start; } .pp-checks svg, .pp-plan .pp-small svg { width: 16px; height: 16px; flex: none; color: var(--ok); margin-top: 2px; }
+.pp-note { margin: 12px auto 0; max-width: 640px; padding: 12px 16px; border-radius: 12px; background: rgba(124, 108, 255, .14); color: var(--text-2); }
+.pp-card h3 { font-size: 15px; margin: 16px 0 4px; }
+@media (max-width: 560px) { .pp-nav { display: none; } .pp-top .pp-btn { height: 36px; padding: 0 12px; font-size: 14px; } }

@@ -18,6 +18,7 @@
   const needLogin = () => { if (SM.me) return false; sessionStorage.setItem('stm.next', SM.path()); SM.go('/signup'); return true; };
   const money = (n, cur) => (n ? new Intl.NumberFormat('en', { style: 'currency', currency: cur || 'USD', maximumFractionDigits: 0 }).format(n) : '');
   const budget = (p) => (p.budget_min || p.budget_max ? (p.budget_min && p.budget_max ? `${money(p.budget_min, p.currency)} – ${money(p.budget_max, p.currency)}` : p.budget_max ? `Up to ${money(p.budget_max, p.currency)}` : `From ${money(p.budget_min, p.currency)}`) : '');
+  SM.pubBudget = budget;   // fil d'actualité (assets/social.js)
   const day = (d) => (d ? new Date(d + 'T12:00:00').toLocaleDateString('en', { day: 'numeric', month: 'short', year: 'numeric' }) : '');
   const fileIcon = (f) => icon(f.kind === 'image' ? 'image' : f.kind === 'video' ? 'video' : 'file');
 
@@ -223,7 +224,7 @@
     return html`<div class="pub-kicker">${icon(KIND_ICON[p.opp_kind] || 'briefcase')}${p.opp_label || 'Opportunity'}
         <span class="chip ${p.status === 'open' ? 'chip-on' : ''}">${p.status === 'open' ? 'Open' : 'Closed'}</span></div>
       <h1 class="pub-title">${p.title}</h1>${byline(p)}${oppFacts(p)}
-      ${(p.skills || []).length ? html`<div><h3 class="h-s">Required skills</h3><div class="chips-list">${p.skills.map((s) => html`<span class="chip">${s}</span>`)}</div></div>` : ''}`;
+      ${(p.skills || []).length ? html`<div><h2 class="h-s">Required skills</h2><div class="chips-list">${p.skills.map((s) => html`<span class="chip">${s}</span>`)}</div></div>` : ''}`;
   }
   /** Carte d'une réalisation dans une grille. */
   SM.achCard = (p) => html`<a class="panel ach-card" href="#/pub/${p.id}">
@@ -233,7 +234,7 @@
         <footer class="row muted small">${p.status !== 'published' ? html`<span class="chip">Unpublished</span>` : ''}<span>${icon('heart')}${p.likes || 0}</span><span>${icon('comment')}${p.comments || 0}</span></footer></div></a>`;
   /** Ligne d'une opportunité (carte publiée). */
   SM.pubOppCard = (p) => html`<a class="panel opp pub-opp-card${p.status === 'open' ? '' : ' is-closed'}" href="#/pub/${p.id}">
-      <header class="row">${SM.avatar(p.author, 'av-m')}<div class="grow"><h3>${p.title}</h3><small class="muted">${p.author ? p.author.name : ''} · ${fmt.ago(p.created)}</small></div>
+      <header class="row">${SM.avatar(p.author, 'av-m')}<div class="grow"><h3>${p.title}</h2><small class="muted">${p.author ? p.author.name : ''} · ${fmt.ago(p.created)}</small></div>
         ${p.status === 'open' ? (p.my_proposal ? html`<span class="chip chip-ok">${icon('check')}${STATUS[p.my_proposal]}</span>` : '') : html`<span class="chip">Closed</span>`}</header>
       <p class="muted small clamp-2">${p.body}</p>
       <footer class="chips-list"><span class="chip chip-type">${icon(KIND_ICON[p.opp_kind] || 'briefcase')}${p.opp_label}</span>${budget(p) ? html`<span class="chip">${budget(p)}</span>` : ''}
@@ -340,9 +341,9 @@
           ${p.status !== 'published' ? html`<p class="notice notice-warn">${icon('eye')}<span>Unpublished: only you and the Studio managers can see this page.</span></p>` : ''}
           ${achHead(p)}
           ${p.body ? html`<p class="pre">${SM.linkify(p.body)}</p>` : ''}
-          ${p.outcome ? html`<div><h3 class="h-s">Outcome</h3><p class="pre">${SM.linkify(p.outcome)}</p></div>` : ''}
+          ${p.outcome ? html`<div><h2 class="h-s">Outcome</h2><p class="pre">${SM.linkify(p.outcome)}</p></div>` : ''}
           ${mediaList(p.media.slice(p.cover && p.cover.kind === 'image' ? 1 : 0))}
-          ${p.team.length ? html`<div><h3 class="h-s">Made by</h3><div class="row row-wrap">${p.team.map((t) => html`<a class="row" href="#/u/${t.handle}">${SM.avatar(t, 'av-s')}<span>${t.name}</span></a>`)}</div></div>` : ''}
+          ${p.team.length ? html`<div><h2 class="h-s">Made by</h2><div class="row row-wrap">${p.team.map((t) => html`<a class="row" href="#/u/${t.handle}">${SM.avatar(t, 'av-s')}<span>${t.name}</span></a>`)}</div></div>` : ''}
           ${p.post_id ? html`<footer class="post-actions">
             <button class="post-act${p.liked ? ' is-on' : ''}" data-act="post-like" data-id="${p.post_id}" aria-pressed="${p.liked}">${icon('heart')}<span>${p.likes || ''}</span><em>Like</em></button>
             <button class="post-act" data-act="post-comments" data-id="${p.post_id}">${icon('comment')}<span>${p.comments || ''}</span><em>Comment</em></button>
@@ -361,17 +362,29 @@
       <article class="panel pad pub-full stack">
         ${oppHead(p)}
         ${closed ? html`<p class="notice">${icon('lock')}<span>This opportunity is closed. ${p.closed_reason}</span></p>` : ''}
-        ${p.body ? html`<div><h3 class="h-s">Description</h3><p class="pre">${SM.linkify(p.body)}</p></div>` : ''}
-        ${p.deliverables ? html`<div><h3 class="h-s">Expected deliverables</h3><p class="pre">${SM.linkify(p.deliverables)}</p></div>` : ''}
-        ${p.media.length ? html`<div><h3 class="h-s">Attachments</h3>${mediaList(p.media)}</div>` : ''}
+        ${p.body ? html`<div><h2 class="h-s">Description</h2><p class="pre">${SM.linkify(p.body)}</p></div>` : ''}
+        ${p.deliverables ? html`<div><h2 class="h-s">Expected deliverables</h2><p class="pre">${SM.linkify(p.deliverables)}</p></div>` : ''}
+        ${p.media.length ? html`<div><h2 class="h-s">Attachments</h2>${mediaList(p.media)}</div>` : ''}
         <footer class="row row-wrap muted small"><span>${icon('send')}${fmt.plural(p.proposals_count, 'proposal')}</span><span class="grow"></span>
-          <button class="btn btn-ghost btn-sm" data-act="copy" data-text="${location.origin + location.pathname}#/pub/${p.id}">${icon('link')}Copy link</button></footer>
+          ${p.url ? html`<button class="btn btn-ghost btn-sm" data-act="copy" data-text="${p.url}">${icon('link')}Copy public link</button>
+            <button class="btn btn-soft btn-sm" data-act="pub-share">${icon('share')}Share</button>` : ''}</footer>
       </article>
       ${p.manage ? proposalsSection(p) : applyBox(p)}
     </div>`);
     // Formulaire de proposition affiché : les travaux du profil qu'on peut y joindre.
     if (SM.$('#prop-work')) loadWork(p.proposal ? p.proposal.work : []);
   }
+  /** Partager une opportunité : sa page publique (rendue par le serveur, aperçu des liens). Rien n'est publié automatiquement. */
+  SM.actions['pub-share'] = () => {
+    const p = cur;
+    const text = `Opportunity on Studioma: ${p.title}`;
+    SM.modal(html`${SM.modalHead('Share this opportunity', p.title)}
+      <div class="modal-body stack">
+        <div class="ref-link"><input class="input" value="${p.url}" readonly aria-label="Public link of the opportunity"><button class="btn btn-primary" data-act="copy" data-text="${p.url}">${icon('copy')}Copy link</button></div>
+        ${SM.shareButtons ? SM.shareButtons(p.url, text, p.title + ' — Studioma', 0) : ''}
+        <p class="muted small">${icon('globe')}Anyone with the link can read the opportunity. Only signed-in professionals can send a proposal. Its Studio and card stay private.</p>
+      </div>`);
+  };
   SM.actions['pub-edit'] = async () => {
     const p = cur;
     let card = null;

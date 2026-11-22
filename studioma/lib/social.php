@@ -220,7 +220,9 @@ function api_feed(array $b, ?array $u): array
             $posts = rows("SELECT p.* FROM posts p WHERE p.id < ? AND (p.uid = ?
                     OR (p.company_id = 0 AND p.uid IN (SELECT tid FROM follows WHERE uid = ? AND ttype = 'user'))
                     OR (p.company_id > 0 AND p.company_id IN (SELECT tid FROM follows WHERE uid = ? AND ttype = 'company'))
-                    OR (p.company_id = 0 AND p.uid IN (SELECT CASE WHEN a = ? THEN b ELSE a END FROM connections WHERE (a = ? OR b = ?) AND status = 'accepted')))
+                    OR (p.company_id = 0 AND p.uid IN (SELECT CASE WHEN a = ? THEN b ELSE a END FROM connections WHERE (a = ? OR b = ?) AND status = 'accepted'))
+                    -- Opportunités publiées dans la communauté : publiques par choix de leur auteur, montrées à tous.
+                    OR p.pub_id IN (SELECT id FROM pubs WHERE kind = 'opportunity' AND status = 'open'))
                 ORDER BY p.id DESC LIMIT $limit", [$before, $me, $me, $me, $me, $me, $me]);
             break;
         case 'saved':

@@ -210,7 +210,7 @@
     const btn = (cmd, ic, label, arg) => html`<button type="button" class="ed-btn" data-act="ed-cmd" data-cmd="${cmd}" data-arg="${arg || ''}" title="${label}" aria-label="${label}">${icon(ic)}</button>`;
     return html`<div class="editor ${opts.cls || ''}">
       <div class="ed-bar">${btn('bold', 'bold', 'Bold')}${btn('italic', 'italic', 'Italic')}${btn('underline', 'underline', 'Underline')}<i></i>${btn('formatBlock', 'heading', 'Heading', 'h2')}${btn('insertUnorderedList', 'list', 'Bullet list')}${btn('insertOrderedList', 'list-ol', 'Numbered list')}${btn('formatBlock', 'quote', 'Quote', 'blockquote')}<i></i>${btn('createLink', 'link', 'Link')}</div>
-      <div class="ed-body rich" contenteditable="true" role="textbox" aria-multiline="true" data-rich="${opts.name || 'body'}" data-placeholder="${opts.placeholder || 'Write here…'}">${SM.rich(value)}</div>
+      <div class="ed-body rich" contenteditable="true" role="textbox" aria-multiline="true" aria-label="${opts.label || opts.placeholder || 'Text'}" data-rich="${opts.name || 'body'}" data-placeholder="${opts.placeholder || 'Write here…'}">${SM.rich(value)}</div>
     </div>`;
   };
   SM.editorValue = (el) => {
@@ -354,6 +354,10 @@
     const wrap = document.createElement('div');
     wrap.className = 'overlay' + (opts.side ? ' overlay-side' : '');
     wrap.innerHTML = `<div class="${opts.side ? 'drawer' : 'modal modal-' + (opts.size || 'm')} ${opts.cls || ''}" role="dialog" aria-modal="true" tabindex="-1">${content}</div>`;
+    // Nom accessible de la fenêtre : son titre (ou opts.label).
+    { const h = wrap.querySelector('.modal-head h2, h1, h2'); const dlg = wrap.firstChild;
+      if (opts.label) dlg.setAttribute('aria-label', opts.label);
+      else if (h) { h.id = h.id || 'dlg-' + Math.random().toString(36).slice(2, 8); dlg.setAttribute('aria-labelledby', h.id); } }
     document.body.appendChild(wrap);
     document.body.classList.add('has-modal');
     const prev = document.activeElement;
@@ -399,7 +403,7 @@
     const m = SM.topModal();
     if (m) { e.preventDefault(); if (!m.opts.locked) m.close(); }
   });
-  SM.modalHead = (title, sub) => html`<header class="modal-head"><div><h2>${title}</h2>${sub ? html`<p class="muted">${sub}</p>` : ''}</div><button class="btn-icon" data-act="modal-close" aria-label="Close">${icon('x')}</button></header>`;
+  SM.modalHead = (title, sub) => html`<header class="modal-head" role="none"><div><h2>${title}</h2>${sub ? html`<p class="muted">${sub}</p>` : ''}</div><button class="btn-icon" data-act="modal-close" aria-label="Close">${icon('x')}</button></header>`;
   /** Demande de confirmation. opts : title, text, ok, danger, type (texte à retaper pour confirmer). */
   SM.confirm = (opts) => new Promise((resolve) => {
     let done = false;

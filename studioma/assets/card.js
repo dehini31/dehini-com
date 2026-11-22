@@ -27,7 +27,7 @@
     P.id = id;
     P.card = null;
     P.tab = 'comments';
-    const m = P.modal = SM.modal(html`<div class="cp"><div class="cp-loading">${SM.loading(4)}</div></div>`, { side: true, cls: 'drawer-card', onClose: () => { if (P.modal === m) { P.modal = null; P.id = 0; SM.go(B.home()); } } });
+    const m = P.modal = SM.modal(html`<div class="cp"><div class="cp-loading">${SM.loading(4)}</div></div>`, { side: true, cls: 'drawer-card', label: 'Card', onClose: () => { if (P.modal === m) { P.modal = null; P.id = 0; SM.go(B.home()); } } });
     try {
       const r = await SM.get('card_get', { id });
       if (P.modal !== m) return;
@@ -99,14 +99,14 @@
     const scroll = SM.$('.cp-scroll', P.modal.el);
     const top = scroll ? scroll.scrollTop : 0;
     SM.set(P.modal.el, html`<div class="cp">
-      <header class="cp-head" id="cp-head"></header>
+      <header class="cp-head" id="cp-head" role="none"></header>
       <div class="cp-scroll">
         <div class="cp-main">
           ${c.can.edit ? html`<textarea class="cp-title" rows="1" maxlength="200" data-change="card-title" data-input="autogrow" aria-label="Card title">${c.title}</textarea>` : html`<h1 class="cp-title">${c.title}</h1>`}
           <section class="cp-props" id="cp-props"></section>
           <section class="cp-pubs" id="cp-pubs"></section>
           <section class="cp-sec"><h3>${icon('edit')}Description & script<span class="cp-saving" aria-live="polite"></span></h3>
-            ${c.can.edit ? SM.editor(c.body, { placeholder: 'Write the brief, the script, the caption, the notes…', name: 'card-body' }) : (c.body ? html`<div class="rich">${SM.rich(c.body)}</div>` : html`<p class="muted">No description yet.</p>`)}</section>
+            ${c.can.edit ? SM.editor(c.body, { placeholder: 'Write the brief, the script, the caption, the notes…', name: 'card-body', label: 'Description & script' }) : (c.body ? html`<div class="rich">${SM.rich(c.body)}</div>` : html`<p class="muted">No description yet.</p>`)}</section>
           <section class="cp-sec" id="cp-checks"></section>
           <section class="cp-sec" id="cp-files"></section>
           <section class="cp-sec" id="cp-approval"></section>
@@ -126,13 +126,14 @@
 
   function drawHead() {
     const c = P.card;
+    if (P.modal && P.modal.el) P.modal.el.setAttribute('aria-label', 'Card: ' + c.title);   // nom de la fenêtre
     part('cp-head', html`
       <button class="cp-status c-${c.level ? c.level.color : 'slate'}" ${c.can.edit ? raw('data-act="cp-move" title="Move this card"') : 'disabled'}>
         <span>${c.level ? c.level.icon + ' ' + c.level.name : ''}</span>${icon('chevron-right')}<b>${c.col ? c.col.name : ''}</b>${c.can.edit ? icon('chevron-down') : ''}</button>
       ${c.can.handoff ? html`<button class="btn btn-primary btn-sm" data-act="cp-handoff">Send to ${c.level.target}${icon('arrow-right')}</button>` : ''}
       ${SM.approvalBadge(c.approval)}
       <span class="grow"></span>
-      ${!SM.guest && (c.can.share || c.can.publish) ? html`<button class="btn btn-soft btn-sm cp-sharepub" data-act="cp-sharepub" aria-haspopup="menu">${icon('share')}<span>Share & publish</span></button>` : ''}
+      ${!SM.guest && (c.can.share || c.can.publish) ? html`<button class="btn btn-soft btn-sm cp-sharepub" data-act="cp-sharepub" aria-haspopup="menu" aria-label="Share & publish">${icon('share')}<span>Share & publish</span></button>` : ''}
       <button class="btn-icon" data-act="cp-menu" aria-label="Card options">${icon('more')}</button>
       <button class="btn-icon" data-act="modal-close" aria-label="Close">${icon('x')}</button>`);
   }

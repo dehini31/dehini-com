@@ -136,9 +136,35 @@ function pub_member(array $p, int $uid): bool
 /** Publication visible par ce compte ? Réalisation masquée ou auteur suspendu : ses gestionnaires seulement. */
 function pub_visible(array $p, int $me): bool
 {
-    $public = $p['kind'] === 'opportunity' || $p['status'] === 'published';
+    // Opportunité ouverte ou fermée, réalisation publiée : publiques. Masquée (modération) : ses gestionnaires seulement.
+    $public = $p['kind'] === 'opportunity' ? in_array($p['status'], ['open', 'closed'], true) : $p['status'] === 'published';
     if ($public && !(int) val('SELECT suspended FROM users WHERE id = ?', [$p['uid']])) return true;
     return pub_manager($p, $me);
+}
+/** En ligne dans la communauté et dans le fil : réalisation publiée, opportunité ouverte. */
+function pub_live(array $p): bool
+{
+    return $p['kind'] === 'achievement' ? $p['status'] === 'published' : $p['status'] === 'open';
+}
+/**
+ * Publication du fil qui porte une publication en ligne (réalisation ou opportunité) : créée une seule fois, réutilisée
+ * quand elle est remise en ligne. Fermée, masquée ou supprimée, elle disparaît des fils (feed_pubs()).
+ */
+function pub_feed_post(array $p): void
+{
+    if (!pub_live($p)) return;
+    if ((int) $p['post_id'] && val('SELECT 1 FROM posts WHERE id = ? AND pub_id = ?', [$p['post_id'], $p['id']])) return;
+    // Une publication du fil existe déjà pour elle (lien perdu) : on la reprend plutôt que d'en créer une seconde.
+    $old = (int) (val('SELECT id FROM posts WHERE pub_id = ? ORDER BY id LIMIT 1', [$p['id']]) ?? 0);
+    if ($old) { q('UPDATE pubs SET post_id = ? WHERE id = ?', [$old, $p['id']]); return; }
+    $post = insert('posts', ['uid' => (int) $p['uid'], 'company_id' => 0, 'body' => '', 'media' => '[]', 'share_id' => 0, 'pub_id' => (int) $p['id'], 'created' => time()]);
+    q('UPDATE pubs SET post_id = ? WHERE id = ?', [$post, $p['id']]);
+}
+/** Adresse publique (page rendue par le serveur, p.php) d'une opportunité. */
+function pub_public_url(array $p): string
+{
+    $slug = trim(preg_replace('/[^a-z0-9]+/', '-', norm((string) $p['title'])) ?? '', '-');
+    return site_url() . 'opportunity/' . (int) $p['id'] . ($slug !== '' ? '-' . mb_substr($slug, 0, 70) : '');
 }
 function load_pub(int $id, ?array $u): array
 {
@@ -173,6 +199,8 @@ function pub_view(array $p, ?array $u, bool $full = false): array
         'id' => $id, 'kind' => (string) $p['kind'], 'status' => (string) $p['status'], 'title' => (string) $p['title'], 'body' => (string) $p['body'],
         'category' => (string) $p['category'], 'skills' => jarr($p['skills']), 'media' => $media, 'cover' => $media[0] ?? null, 'author' => $author,
         'created' => (int) $p['created'], 'updated' => (int) $p['updated'], 'manage' => $manage, 'mine' => $me > 0 && (int) $p['uid'] === $me,
+        // Page publique (opportunités ouvertes ou fermées) : à copier ou partager.
+        'url' => $p['kind'] === 'opportunity' && in_array($p['status'], ['open', 'closed'], true) ? pub_public_url($p) : '',
         // La carte d'origine : son existence pour tous, son adresse pour les seuls membres de son Studio.
         'source' => ['available' => $src['stage'] !== 'gone', 'stage' => $src['stage']]
             + ($me && ($manage || pub_member($p, $me)) && $src['card'] ? ['studio_id' => (int) $src['card']['studio_id'], 'card_id' => (int) $src['card']['id']] : []),
@@ -354,6 +382,8 @@ function api_pub_save(array $b, array $u): array
         $p = row('SELECT * FROM pubs WHERE card_id = ? AND kind = ?', [$card['id'], $kind]);
         // Déjà publiée par quelqu'un d'autre : seul son auteur (ou un responsable du Studio) la reprend.
         if ($p && !pub_manager($p, $uid)) fail('This card was already published by someone else on the team.', 409, 'taken');
+        // Opportunité retirée par la modération : elle ne revient pas en ligne d'elle-même.
+        if ($p && $kind === 'opportunity' && $p['status'] === 'hidden') fail('This opportunity was removed by moderation and can\'t be published again.', 403, 'moderated');
         rate('pub', 30, 3600, 'u' . $uid);
     }
     $set = pub_fields($b, $kind);
@@ -382,11 +412,8 @@ function api_pub_save(array $b, array $u): array
         }
         $row = row('SELECT * FROM pubs WHERE id = ?', [$id]);
         if ($republish) pub_media_scope(jarr($row['media']), 'public');
-        // Réalisation en ligne : sa publication du fil (mentions J'aime, commentaires, partages).
-        if ($kind === 'achievement' && $row['status'] === 'published' && (!(int) $row['post_id'] || !val('SELECT 1 FROM posts WHERE id = ?', [$row['post_id']]))) {
-            $post = insert('posts', ['uid' => $owner, 'company_id' => 0, 'body' => '', 'media' => '[]', 'share_id' => 0, 'pub_id' => $id, 'created' => $now]);
-            q('UPDATE pubs SET post_id = ? WHERE id = ?', [$post, $id]);
-        }
+        // En ligne : sa publication du fil (accueil, Discover ; mentions J'aime, commentaires, partages).
+        pub_feed_post($row);
         return $id;
     });
     $p = row('SELECT * FROM pubs WHERE id = ?', [$pid]);
@@ -407,12 +434,9 @@ function api_pub_status(array $b, array $u): array
         if ($status === 'published' && pub_source($p)['stage'] === 'gone' && !(int) $p['card_id']) fail('This achievement can\'t be published again.');
         q('UPDATE pubs SET status = ?, updated = ? WHERE id = ?', [$status, $now, $p['id']]);
         pub_media_scope(jarr($p['media']), $status === 'published' ? 'public' : 'private');
-        if ($status === 'published' && (!(int) $p['post_id'] || !val('SELECT 1 FROM posts WHERE id = ?', [$p['post_id']]))) {
-            $post = insert('posts', ['uid' => (int) $p['uid'], 'company_id' => 0, 'body' => '', 'media' => '[]', 'share_id' => 0, 'pub_id' => $p['id'], 'created' => $now]);
-            q('UPDATE pubs SET post_id = ? WHERE id = ?', [$post, $p['id']]);
-        }
     } else {
         if (!in_array($status, ['open', 'closed'], true)) fail('Choose to open or close.');
+        if ($p['status'] === 'hidden') fail('This opportunity was removed by moderation and can\'t be reopened.', 403, 'moderated');
         if ($status === 'open') {
             $src = pub_source($p);
             if ($src['stage'] === 'gone') fail('The card behind this opportunity is no longer available.', 409, 'stage');
@@ -422,6 +446,7 @@ function api_pub_status(array $b, array $u): array
         q('UPDATE pubs SET status = ?, closed_reason = ?, updated = ? WHERE id = ?', [$status, $status === 'closed' ? 'manual' : '', $now, $p['id']]);
         if ($status === 'open') pub_media_scope(jarr($p['media']), 'public');
     }
+    pub_feed_post(row('SELECT * FROM pubs WHERE id = ?', [$p['id']]));   // remise en ligne : de retour dans le fil
     return ['pub' => pub_view(row('SELECT * FROM pubs WHERE id = ?', [$p['id']]), $u, true)];
 }
 /** POST pub_delete {id} : supprime la publication, ses propositions, sa publication du fil et ses copies de fichiers. */
@@ -429,7 +454,7 @@ function api_pub_delete(array $b, array $u): array
 {
     $p = managed_pub(int_in($b, 'id'), $u);
     tx(function () use ($p): void {
-        if ((int) $p['post_id']) q('DELETE FROM posts WHERE id = ? AND pub_id = ?', [$p['post_id'], $p['id']]);
+        q('DELETE FROM posts WHERE pub_id = ?', [$p['id']]);   // ses publications du fil, toutes
         q('DELETE FROM pubs WHERE id = ?', [$p['id']]);
     });
     files_release(pub_tokens($p));
@@ -613,16 +638,25 @@ function profile_achievements(int $uid, ?array $u): array
     return array_map(function (array $p) use ($u): array { return pub_view($p, $u); },
         rows("SELECT * FROM pubs WHERE uid = ? AND kind = 'achievement' AND status = 'published' ORDER BY id DESC LIMIT 12", [$uid]));
 }
-/** Résumé d'une réalisation dans le fil (publication liée), ou null si elle n'est pas en ligne. */
+/**
+ * Résumé d'une publication dans le fil (publication liée) : réalisation publiée ou opportunité ouverte, sinon absente
+ * (le fil ne montre alors pas la publication). Une opportunité dont la carte est finie ou l'échéance passée se ferme ici.
+ */
 function feed_pubs(array $ids): array
 {
     $ids = array_values(array_unique(array_filter(array_map('intval', $ids))));
     if (!$ids) return [];
     $out = [];
-    foreach (rows("SELECT * FROM pubs WHERE status = 'published' AND id IN (" . marks($ids) . ')', $ids) as $p) {
+    foreach (rows("SELECT * FROM pubs WHERE ((kind = 'achievement' AND status = 'published') OR (kind = 'opportunity' AND status = 'open')) AND id IN (" . marks($ids) . ')', $ids) as $p) {
+        if ($p['kind'] === 'opportunity' && !pub_live($p = pub_sync($p))) continue;
         $media = files_view(pub_tokens($p));
-        $out[(int) $p['id']] = ['id' => (int) $p['id'], 'kind' => (string) $p['kind'], 'title' => (string) $p['title'], 'body' => mb_substr((string) $p['body'], 0, 280),
+        $v = ['id' => (int) $p['id'], 'kind' => (string) $p['kind'], 'title' => (string) $p['title'], 'body' => mb_substr((string) $p['body'], 0, 280),
             'category' => (string) $p['category'], 'skills' => array_slice(jarr($p['skills']), 0, 4), 'cover' => $media[0] ?? null, 'files' => count($media)];
+        if ($p['kind'] === 'opportunity') {
+            $v += ['opp_label' => OPP_KINDS[$p['opp_kind']] ?? '', 'budget_min' => (int) $p['budget_min'], 'budget_max' => (int) $p['budget_max'], 'currency' => (string) $p['currency'],
+                'apply_until' => (string) $p['apply_until'], 'deadline' => (string) $p['deadline'], 'mode' => (string) $p['mode'], 'location' => (string) $p['location'], 'url' => pub_public_url($p)];
+        }
+        $out[(int) $p['id']] = $v;
     }
     return $out;
 }

@@ -56,7 +56,7 @@
   /* -------------------------------------------------------- jalon suivant */
   /** « Your Next Milestone » : un seul pas concret, tiré de l'activité réelle (accueil). */
   const milestoneView = (n, level) => html`<section class="panel pad milestone">
-      <header class="row between"><h3>${icon('target')}Your Next Milestone</h3>${level ? html`<a class="small" href="#/achievements">${levelName(level)}</a>` : ''}</header>
+      <header class="row between"><h2 class="h3">${icon('target')}Your Next Milestone</h2>${level ? html`<a class="small" href="#/achievements">${levelName(level)}</a>` : ''}</header>
       <b class="milestone-title">${n.title}</b><p class="muted small">${n.desc}</p>
       <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="${n.need}" aria-valuenow="${n.have}" aria-label="${n.title}"><i style="width:${n.percent ? n.have : pct(n.have, n.need)}%"></i></div>
       <div class="row between small"><span class="muted">${n.percent ? n.have + '%' : fmt.num(n.have) + ' / ' + fmt.num(n.need)}</span>${n.reward ? html`<span class="chip chip-soft">+${fmt.num(n.reward)} XP</span>` : ''}</div>
@@ -272,6 +272,7 @@
   const shareButtons = (url, text, subject, id) => html`<div class="row row-wrap">
       <button class="btn btn-soft btn-sm" data-act="native-share" data-url="${url}" data-text="${text}" data-id="${id || ''}">${icon('share')}Share…</button>
       ${socials(url, text, subject).map(([label, ic, href]) => html`<a class="btn btn-ghost btn-sm" href="${href}" target="_blank" rel="noopener noreferrer" data-track="${id || ''}" data-share="${label.toLowerCase()}">${icon(ic)}${label}</a>`)}</div>`;
+  SM.shareButtons = shareButtons;   // opportunités (assets/publish.js)
   SM.actions['native-share'] = async (el) => {
     track(el.dataset.id);
     if (navigator.share) { try { await navigator.share({ title: 'Studioma', text: el.dataset.text, url: el.dataset.url }); } catch (e) { /* annulé */ } return; }

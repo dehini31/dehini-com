@@ -133,7 +133,7 @@
             <a class="btn btn-primary" href="${SM.me ? '#/refer' : '#/signup'}" data-act="promo-invite">${icon('users')}Invite & Earn</a></section>` : ''}
         <section class="panel compare-wrap"><h2 class="pad">Compare plans</h2>
           <div class="table-scroll"><table class="compare">
-            <thead><tr><th></th>${plans.map((p) => html`<th>${p.name}<small>${money(p.price[interval])}/${interval}</small></th>`)}</tr></thead>
+            <thead><tr><th><span class="sr-only">Feature</span></th>${plans.map((p) => html`<th>${p.name}<small>${money(p.price[interval])}/${interval}</small></th>`)}</tr></thead>
             <tbody>${COMPARE.map(([label, fn]) => html`<tr><th scope="row">${label}</th>${plans.map((p) => html`<td>${fn(p)}</td>`)}</tr>`)}</tbody>
           </table></div></section>
         <section class="faq"><h2>Frequently asked questions</h2>${FAQ.map(([qq, a]) => html`<details class="panel"><summary>${qq}</summary><p>${a || trialAnswer(promoOn)}</p></details>`)}</section>
