@@ -194,7 +194,7 @@ function marks(array $a): string
 /** Schéma compatible avec les vieilles versions de SQLite des hébergeurs mutualisés. */
 function migrate(PDO $pdo): void
 {
-    if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= 12) return;
+    if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= 13) return;
     // Deux premières visites simultanées : la seconde attend la fin de la création, puis ne fait rien.
     $pdo->exec('BEGIN IMMEDIATE');
     try {
@@ -1280,6 +1280,19 @@ function migrate(PDO $pdo): void
             SELECT co.level_id, c.id, c.studio_id, c.done_at FROM cards c JOIN cols co ON co.id = c.col_id WHERE c.done_at > 0;
         PRAGMA user_version = 12;
         SQL);
+        }
+        if ($v < 13) {
+            // Opportunités dans le fil (lib/pubs.php › pub_feed_post) : chaque opportunité ouverte reçoit sa publication du
+            // fil, comme les réalisations. Données seulement (aucune colonne nouvelle) ; rejouable sans doublon.
+            $open = $pdo->query("SELECT id, uid, created FROM pubs WHERE kind = 'opportunity' AND status = 'open'
+                AND (post_id = 0 OR post_id NOT IN (SELECT id FROM posts)) ORDER BY id")->fetchAll();
+            $ins = $pdo->prepare("INSERT INTO posts (uid, company_id, body, media, share_id, pub_id, created) VALUES (?, 0, '', '[]', 0, ?, ?)");
+            $upd = $pdo->prepare('UPDATE pubs SET post_id = ? WHERE id = ?');
+            foreach ($open as $o) {
+                $ins->execute([$o['uid'], $o['id'], $o['created']]);
+                $upd->execute([(int) $pdo->lastInsertId(), $o['id']]);
+            }
+            $pdo->exec('PRAGMA user_version = 13');
         }
         $pdo->exec('COMMIT');
     } catch (Throwable $e) {

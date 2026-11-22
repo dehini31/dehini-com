@@ -6,7 +6,8 @@
 # appliquées, et billing-config.php pour le contrôle des réglages sandbox / production), le partage d'une carte et sa
 # publication dans la communauté (publish.js, puis publish-e2e.js dans un navigateur), l'offre de lancement sans carte
 # (promo.js, promo-e2e.js), le parcours du créateur (journey.js, journey-e2e.js : XP, réalisations vérifiées, niveaux, pages
-# publiques), puis l'application dans un navigateur (e2e.js, Playwright / Chromium).
+# publiques), la qualité (quality.js, quality-e2e.js : opportunités dans le fil, pages publiques, référencement, téléphone),
+# puis l'application dans un navigateur (e2e.js, Playwright / Chromium).
 set -euo pipefail
 HERE=$(cd "$(dirname "$0")" && pwd)
 REPO=$(cd "$HERE/../.." && pwd)
@@ -52,5 +53,9 @@ fresh
 node "$HERE/publish.js" "http://127.0.0.1:$PORT" "$DIR"
 fresh
 node "$HERE/publish-e2e.js" "http://127.0.0.1:$PORT" "$DIR"
+fresh
+node "$HERE/quality.js" "http://127.0.0.1:$PORT" "$DIR"
+fresh
+node "$HERE/quality-e2e.js" "http://127.0.0.1:$PORT" "$DIR"
 fresh
 node "$HERE/e2e.js" "http://127.0.0.1:$PORT" "$DIR"

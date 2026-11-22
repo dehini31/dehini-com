@@ -7,6 +7,11 @@ Options -Indexes
   # Parcours du créateur : vérification publique d'une réalisation et passeport public (voir p.php).
   RewriteRule ^verify/([a-f0-9]{16})/?$ p.php?verify=$1 [L,QSA]
   RewriteRule ^creator/([a-z0-9-]{1,40})/?$ p.php?creator=$1 [L,QSA]
+  # Pages publiques rendues par le serveur : opportunités, prix, plan du site (voir p.php).
+  RewriteRule ^opportunities/?$ p.php?opps=1 [L,QSA]
+  RewriteRule ^opportunity/([0-9]{1,10})(-[^/]*)?/?$ p.php?opp=$1&slug=$2 [L,QSA]
+  RewriteRule ^pricing/?$ p.php?pricing=1 [L,QSA]
+  RewriteRule ^sitemap\.xml$ p.php?sitemap=1 [L,QSA]
   # Certains hébergeurs retirent l'en-tête Authorization avant PHP : on le transmet (serveur MCP, OAuth).
   RewriteCond %{HTTP:Authorization} .
   RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]

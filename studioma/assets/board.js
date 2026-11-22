@@ -137,6 +137,7 @@
     const tab = (view, ic, label) => html`<a class="tab${B.view === view ? ' is-active' : ''}" href="#/studio/${B.id}${view === 'board' ? '' : '/' + view}">${icon(ic)}${label}</a>`;
     SM.set(SM.$('#studio-head'), html`
       <header class="studio-head">
+        <h1 class="sr-only">${s.name} — ${s.project.name}</h1>
         <div class="crumbs">
           <button class="crumb" data-act="switch-project">${SM.projectMark(s.project, 'pmark-s')}<span>${s.project.name}</span>${icon('chevron-down')}</button>
           <span class="crumb-sep">/</span>
@@ -145,7 +146,7 @@
         </div>
         <span class="grow"></span>
         <button class="avatars-btn" data-act="share" title="Members" aria-label="Members">${SM.avatars(B.data.members, 5)}</button>
-        <button class="btn btn-soft" data-act="share">${icon('user-plus')}<span>Share</span></button>
+        <button class="btn btn-soft" data-act="share" aria-label="Share">${icon('user-plus')}<span>Share</span></button>
         <button class="btn-icon" data-act="studio-menu" aria-label="Studio options">${icon('more')}</button>
       </header>
       <div class="studio-bar">
@@ -153,8 +154,8 @@
         <span class="grow"></span>
         ${B.view === 'board' ? html`<div class="board-tools">
           <label class="search-in">${icon('search')}<input class="input input-sm" placeholder="Filter cards…" value="${B.filter.q}" data-input="board-q" aria-label="Filter cards"></label>
-          <button class="btn btn-soft btn-sm${B.filter.mine ? ' is-on' : ''}" data-act="filter-mine" aria-pressed="${B.filter.mine}">${icon('user')}<span>Mine</span></button>
-          <button class="btn btn-soft btn-sm${B.filter.assignee || B.filter.platform ? ' is-on' : ''}" data-act="filter-menu">${icon('filter')}<span>Filter</span></button>
+          <button class="btn btn-soft btn-sm${B.filter.mine ? ' is-on' : ''}" data-act="filter-mine" aria-pressed="${B.filter.mine}" aria-label="My cards only">${icon('user')}<span>Mine</span></button>
+          <button class="btn btn-soft btn-sm${B.filter.assignee || B.filter.platform ? ' is-on' : ''}" data-act="filter-menu" aria-label="Filter" aria-haspopup="menu">${icon('filter')}<span>Filter</span></button>
         </div>` : ''}
       </div>`);
   }

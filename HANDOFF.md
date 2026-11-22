@@ -4,81 +4,97 @@ Shared memory between **Claude Code** and **OpenAI Codex** (protocol: `AGENTS.md
 state » block short and true; add a log entry at the top of « Log » after every meaningful task. Never write
 secrets here. Mark anything you could not verify as *(unverified)*.
 
-## Current state — 2026-11-21
+## Current state — 2026-11-22
 
 | | |
 |---|---|
 | Last agent | Claude Code (cloud session) |
-| Branch | **`claude/trusting-keller-rynk1j`** (tracks `origin/claude/trusting-keller-rynk1j`), fast-forwarded to `3daad88` (= the owner's merge of `main` into it, PR #82; same tree as `origin/main` `2d53414`). No pull request yet for this work (open one only when the owner asks) |
-| Base code | `main` @ `2d53414` = Merge PR #81 (launch offer, DB v11) on top of PR #80 (Share & publish, v10) and PR #79 (billing, v9). **`main` = production** — no deployment cron: the owner copies `main` by hand. Live check 2026-11-21: `studioma/assets/publish.js` 200 (PR #80 live), `studioma/assets/promo.js` 404 (PR #81 **not** copied yet) |
+| Branch | **`claude/trusting-keller-rynk1j`** (tracks `origin/claude/trusting-keller-rynk1j`), fast-forwarded to `origin/main` `9da027c` (PR #83, Creator Journey, merged by the owner). No pull request yet for this work (open one only when the owner asks) |
+| Base code | `main` @ `9da027c` = Merge PR #83 (Creator Journey, DB v12). **`main` = production** — no deployment cron: the owner copies `main` by hand. Live check 2026-11-22: `studioma/assets/journey.js`, `promo.js`, `publish.js` answer 200 (PRs #80, #81, #83 live) |
 | Checkpoint | the commit that last changed this file: `git log -1 --format='%H %s' -- HANDOFF.md` |
 | Uncommitted work at checkpoint | none |
-| In progress | **Studioma Creator Journey** — XP ledger, six verified achievements, six Creator levels, next milestone, celebrations, timeline, public verification pages and Creator Passport, PNG + QR sharing, client approvals with consent, project completion, admin rules and revocation. Implemented, tested, committed and pushed on `claude/trusting-keller-rynk1j`; **not merged, not deployed** |
-| Last task changed application code? | **yes** — Studioma, DB schema 11 → 12 (additive) |
+| In progress | **Studioma quality pass** — opportunities in every member's Home feed, server-rendered public opportunities / pricing / sitemap, landing SEO, self-hosted font + deferred scripts, mobile and accessibility fixes. Implemented, tested, committed and pushed on `claude/trusting-keller-rynk1j`; **not merged, not deployed** |
+| Last task changed application code? | **yes** — Studioma (DB schema 12 → 13: data backfill only) and the root `robots.txt` |
 | Codex access | **not verified** — Codex has not been run on this repository from this session |
 
 **Start here (Codex or Claude)**
 
 1. `git fetch origin`, then `git switch claude/trusting-keller-rynk1j` (or `git switch -c codex/<topic> origin/claude/trusting-keller-rynk1j`).
-   Production is `origin/main` @ `2d53414`.
-2. Read README « Studioma › 11 » and decisions S31–S35 before touching the journey; S28–S30 for the launch offer;
-   S25–S27 for Share & publish; `docs/billing.md` for billing.
-3. Checks: `AGENTS.md` § 5 (lint, then `tests/studioma/run.sh`, ~17 min, 13 suites).
+   Production is `origin/main` @ `9da027c`.
+2. Read `docs/studioma-quality-audit.md` (issue inventory, measurements), README « Studioma › 12 » and decisions
+   S36–S39; S31–S35 for the Creator Journey; S25–S30 for Share & publish and the launch offer.
+3. Checks: `AGENTS.md` § 5 (lint, then `tests/studioma/run.sh`, ~22 min, 15 suites; a long run may need to be split —
+   each suite can run on its own fresh hosting).
 
-**Done on this branch, not in `main`** (Creator Journey):
-- `studioma/lib/journey.php` (new): rules module (`JOURNEY_EVENTS`, `JOURNEY_PARAMS`, `JOURNEY_LEVELS`,
-  `JOURNEY_ACHIEVEMENTS`, admin overrides in meta `journey_rules`), idempotent XP ledger (`journey_grant`), eligible
-  cards and contributors, level passes / cleared Studio levels, client approvals (`journey_client_ok`), project
-  completion (`api_project_complete`), retroactive evaluation (`journey_eval`), stats, achievements and evidence,
-  Creator levels, next milestones (plan-aware), timeline, passport settings, all `journey_*` APIs, `journey_after()`
-  (dispatcher: recompute + `_journey.celebrate`), admin APIs (`admin_journey`, `_rules`, `_user`, `_revoke`).
-- DB v12 in `studioma/lib/core.php`: `xp_transactions`, `user_achievements`, `achievement_evidence`,
-  `journey_progress`, `journey_log`, `level_passes`, `passport_settings`; `projects.completed_at/_by`;
-  `card_approvals.decided_by/decider_role` (backfilled from card history).
-- Hooks: `card_place()` (`studioma/lib/studio.php`), approval decision records who decided (`studioma/lib/cards.php`),
-  invitation accepted (`lib/collab.php`), guest verified (`lib/share.php`), `project_get` returns `completion`,
-  `project_view` returns `completed_at`; `api.php` routes + `journey_after`; `mcp.php` / `cron.php` require journey.php.
-- Public pages: `studioma/p.php` (server-rendered `/studioma/verify/<16-hex>` and `/studioma/creator/<handle>`),
-  `studioma/assets/passport.css`, rewrites in `studioma/.htaccess` and `tests/studioma/router.php` (with CSP).
-- UI: `studioma/assets/journey.js` (My Achievements, details, settings, share modal, PNG canvas, celebrations, next
-  milestone widget, project completion dialog), `studioma/assets/qr.js` (QR encoder, byte mode, ECC M, v1–10),
-  nav entry + `trophy` icon (`app.js`, `icons.js`), `_journey` hook (`core.js`), Home widget (`social.js`), project
-  menu / completed chip (`studio.js`), admin « Creator Journey » (`assets/admin.js`, `admin.css`), `app.css`,
-  `app/index.html`.
-- Tests: `tests/studioma/journey.js`, `tests/studioma/journey-e2e.js`, `run.sh` (13 suites); `admin.js` / `billing.js`
-  expect schema 12.
-- Docs: README « Studioma › 11 » (sections renumbered 12–14, tests, gaps), DECISIONS S31–S35, ROADMAP,
-  PROJECT_CONTEXT (schema v12), AGENTS.md map, tests README.
+**Done on this branch, not in `main`** (quality pass):
+- Opportunities → Home (root cause: no feed post for opportunities, `feed_pubs()` kept `published` only):
+  `pub_live()`, `pub_feed_post()`, `pub_public_url()`, `feed_pubs()` with opportunities, moderation guard, delete removes
+  every feed post (`studioma/lib/pubs.php`); « For you » includes every open opportunity (`lib/social.php`); admin delete
+  (`lib/admin.php`); DB v13 backfill (`lib/core.php`); feed block (`assets/social.js`), « Copy public link » + Share
+  modal (`assets/publish.js`, `SM.shareButtons` from `assets/journey.js`).
+- Public server pages (`studioma/p.php`): `/studioma/opportunities/`, `/studioma/opportunity/<id>-<slug>`,
+  `/studioma/pricing/`, `/studioma/sitemap.xml`; shared template with Open Graph image, JSON-LD, nav, skip link;
+  rewrites in `studioma/.htaccess` and `tests/studioma/router.php`; styles in `assets/passport.css`;
+  `assets/og-studioma.jpg` (1200 × 630).
+- Landing (`studioma/index.html`, `assets/landing.css`): title / description, OG + Twitter, JSON-LD (Organization,
+  WebSite, SoftwareApplication — free offer only), `h1` first, links to pricing / opportunities, « Sign in » kept on
+  phones. Root `robots.txt`: Studioma sitemap, `Allow: /studioma/api.php?action=file`.
+- Performance: `assets/fonts.css` + `assets/fonts/` (Plus Jakarta Sans, OFL), no Google Fonts; `defer` on every script
+  (`app/index.html`, `index.html`, `admin/index.html`).
+- Mobile / a11y (`assets/app.css`, `app.js`, `core.js`, `card.js`, `board.js`, `social.js`, `billing.js`, `journey.js`):
+  tall dialogs scrollable from the top on phones, Create button, tab bar and headers at 320 px, pricing table
+  containment, contrast tokens, dialog / editor / button names, `h1` per screen, heading order, underlined inline links.
+- Tests: `tests/studioma/quality.js`, `tests/studioma/quality-e2e.js` (in `run.sh`); schema 13 expected in `admin.js`,
+  `billing.js`, `journey.js`; `admin.js` accepts deferred scripts.
+- Docs: `docs/studioma-quality-audit.md` (new), README « Studioma › 12 » (sections renumbered 13–15, tests, gaps),
+  DECISIONS S36–S39, ROADMAP, PROJECT_CONTEXT (schema v13), AGENTS.md map, tests README.
 
 **Unfinished / waiting**
 
-- Owner: copy `main` (PR #81, launch offer) to the live site if wanted; review this branch, ask the agent for a pull
-  request, merge, deploy. The database migrates to v12 by itself (existing work is credited retroactively; members
-  may see one grouped celebration on their next visit).
-- Not done (documented in README « Ce qui n'est pas fait »): journey through the MCP server; level clearing tracked
-  only from v12 (plus cards already done); no server-generated social preview image; English only.
-- Carried over: Paddle sandbox test and live setup (`docs/billing.md` § 8), owner's Paddle choices **not answered**;
-  Terms / Privacy / Refund pages and a public contact address **missing** (agent asked for the legal name and contact
-  email — no answer yet); consent banner for referral cookies; Maillage test « stock enregistré » fails also on
-  unmodified `main`.
+- Owner: review the branch (phone: publish an opportunity, Home feed, public page; landing; `/studioma/pricing/`),
+  ask for the pull request, merge, deploy — and **also copy the root `robots.txt`** (the usual command copies only
+  `studioma/`). Then Search Console: verify the domain, submit `https://dehini.com/studioma/sitemap.xml`; cPanel:
+  force HTTPS and redirect `www` (see ROADMAP). Re-measure production with PageSpeed Insights after deployment.
+- Not done: Safari / WebKit and Firefox testing (only Chromium here); app-shell LCP (needs bundling or server-rendered
+  entry screens); touch drag-and-drop (the card's « Move » menu is the mobile path).
+- Carried over: Terms / Privacy / Refund pages (legal name and contact email still needed from the owner); Paddle
+  sandbox test and live setup, owner's Paddle choices; consent banner for referral cookies; Maillage test « stock
+  enregistré » fails also on unmodified `main`.
 
 **Next recommended action**
 
-1. **Owner**: try the branch (My Achievements, share an achievement, Creator Passport, project « Mark as
-   completed… », admin › Creator Journey), then ask for the pull request and merge.
-2. **Agent, next task**: Terms of Service / Privacy Policy / Refund Policy pages (also covering the offer, referrals,
-   public passports and verification pages) once the owner gives the legal name and contact email.
+1. **Owner**: review on a phone, ask for the pull request, merge, deploy (with `robots.txt`), Search Console.
+2. **Agent, next task**: legal pages once the owner gives the legal name and contact email; or, if wanted, a build-free
+   way to shorten the app's first render (e.g. server-rendered sign-in / sign-up screens).
 
-**Blockers**: none for the journey. Billing: Paddle approval and credentials (owner).
+**Blockers**: none for this work. Billing: Paddle approval and credentials (owner).
 
-**Validation at this checkpoint** (2026-11-21, branch `claude/trusting-keller-rynk1j`): `tests/studioma/run.sh` —
-13 suites, **0 failures**: api 239, share 144, meta 73, mcp 155, admin 116, billing 107, promo 76, promo-e2e 44,
-**journey 135**, **journey-e2e 57**, publish 130, publish-e2e 37, e2e 202 (+ 15 config unit checks). After a last
-small change (`journey_state()`: cached progress for the Home widget), `journey.js` and `journey-e2e.js` were re-run
-alone: passed. `php -l` 121 PHP files and `node --check` 33 JS files: 0 errors. QR encoder: identical to Python
-`qrcode` on 56 matrices. SWANBIDA and Maillage not re-run (no file of theirs changed).
+**Validation at this checkpoint** (2026-11-22, branch `claude/trusting-keller-rynk1j`): 15 Studioma suites, **0
+failures** — api 239, share 144, meta 73, mcp 155, admin 116, billing 107, promo 76, promo-e2e 44, journey 135,
+journey-e2e 57, **quality 53**, **quality-e2e 36**, publish 130, publish-e2e 37, e2e 202 (+ 15 config unit checks).
+The first eight ran in one `run.sh` pass, which then stopped on an outdated schema assertion in `journey.js` (v12 → v13,
+fixed); `journey.js` and the six remaining suites were then run one by one, each on a fresh fake hosting (same
+`setup.sh` as `run.sh`): all passed. `quality-e2e.js` passed twice in a row. `php -l` 121 PHP files, `node --check` 35 JS
+files: 0 errors. Audit tools (not in the repo): mobile sweep 0 overflow over 240 loads, axe-core 0 violations on 30
+scans, Lighthouse before / after in `docs/studioma-quality-audit.md`. SWANBIDA and Maillage not re-run (no file of
+theirs changed; root `robots.txt` changed only for Studioma lines).
 
 ## Log (newest first)
+
+### 2026-11-22 — Claude Code — Studioma: quality, mobile, opportunities on Home, SEO and performance
+- Owner's brief: audit then fix mobile usability, make published opportunities appear in the public Home feed, improve
+  UX/UI consistency and accessibility, technical SEO, performance; measure before / after; no rebuild, no payment
+  change, no deployment.
+- Audit (`docs/studioma-quality-audit.md`): 240-page mobile sweep (8 viewports), axe-core on 30 page scans,
+  Lighthouse locally and read-only on production (Meta pixel blocked). Only Chromium available (WebKit not tested).
+- Root causes: opportunities had no feed post and `feed_pubs()` ignored them; tall dialogs on phones were bottom-aligned
+  in a scroll container so their top was unreachable (publish form); a flex-shrunk Create button; grid tab bar and
+  fixed-width buttons overflowing at 320 px; an absolutely positioned element escaping the pricing table's scroll box;
+  light design tokens under 4.5:1; render-blocking Google Fonts and parser-blocking scripts.
+- Decisions S36–S39. Production already serves Brotli over HTTP/2 and HTTP/3 (local « no compression » warning is a
+  test-server artifact).
+- Tests: see « Validation ». Committed and pushed; not merged.
+
 
 ### 2026-11-21 — Claude Code — Studioma: Creator Journey & verified achievements (DB v12)
 - Owner's brief: My Achievements, server-side XP engine with anti-abuse, six achievements, six Creator levels,

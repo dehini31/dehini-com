@@ -15,10 +15,18 @@
     const a = p.author || { name: 'Former member', handle: '' };
     return html`<a class="post-by" href="#/${c ? 'c/' + c.slug : 'u/' + a.handle}">${c ? SM.logoBox(c, 'av-m') : SM.avatar(a, 'av-m')}<span><b>${c ? c.name : a.name}</b><small class="muted">${c ? (c.tagline || 'Company') : (a.title || '@' + a.handle)} · ${fmt.ago(p.created)}</small></span></a>`;
   };
-  /** Réalisation publiée depuis une carte (lib/pubs.php) : un aperçu qui mène à sa page. */
-  const pubBlock = (x) => (x ? html`<a class="post-pub" href="#/pub/${x.id}">${x.cover && x.cover.kind === 'image' ? html`<img src="${SM.fileUrl(x.cover.token)}" alt="" loading="lazy">` : ''}
-      <span class="post-pub-body"><span class="pub-kicker">${icon('award')}Achievement${x.category ? ' · ' + x.category : ''}</span><b>${x.title}</b>${x.body ? html`<span class="clamp-2 muted small">${x.body}</span>` : ''}
-      ${x.skills && x.skills.length ? html`<span class="chips-list">${x.skills.map((k) => html`<span class="chip chip-soft">${k}</span>`)}</span>` : ''}</span></a>` : '');
+  /** Réalisation ou opportunité publiée depuis une carte (lib/pubs.php) : un aperçu qui mène à sa page. */
+  const pubBlock = (x) => {
+    if (!x) return '';
+    const opp = x.kind === 'opportunity';
+    const budget = opp && SM.pubBudget ? SM.pubBudget(x) : '';
+    return html`<a class="post-pub${opp ? ' is-opp' : ''}" href="#/pub/${x.id}">${x.cover && x.cover.kind === 'image' ? html`<img src="${SM.fileUrl(x.cover.token)}" alt="" loading="lazy">` : ''}
+      <span class="post-pub-body"><span class="pub-kicker">${icon(opp ? 'briefcase' : 'award')}${opp ? 'Opportunity' + (x.opp_label ? ' · ' + x.opp_label : '') : 'Achievement' + (x.category ? ' · ' + x.category : '')}</span>
+      <b>${x.title}</b>${x.body ? html`<span class="clamp-2 muted small">${x.body}</span>` : ''}
+      ${opp ? html`<span class="opp-facts">${budget ? html`<span>${icon('target')}${budget}</span>` : ''}${x.apply_until ? html`<span>${icon('calendar')}Apply by ${fmt.day(x.apply_until)}</span>` : ''}${x.mode ? html`<span>${icon('globe')}${(SM.ref.modes || {})[x.mode] || x.mode}${x.location ? ' · ' + x.location : ''}</span>` : ''}</span>` : ''}
+      ${x.skills && x.skills.length ? html`<span class="chips-list">${x.skills.map((k) => html`<span class="chip chip-soft">${k}</span>`)}</span>` : ''}
+      ${opp ? html`<span class="btn btn-soft btn-sm post-pub-cta">${icon('send')}View and send a proposal</span>` : ''}</span></a>`;
+  };
   SM.postView = (p) => html`<article class="panel post" data-post="${p.id}">
       <header>${byline(p)}<button class="btn-icon" data-act="post-menu" data-id="${p.id}" data-mine="${p.mine ? 1 : 0}" aria-label="Post options">${icon('more')}</button></header>
       ${p.body ? html`<p class="post-body">${SM.linkify(p.body)}</p>` : ''}
@@ -26,9 +34,9 @@
       ${pubBlock(p.pub)}
       ${p.share_id ? (p.shared ? html`<div class="post-shared">${byline(p.shared)}${p.shared.body ? html`<p class="post-body clamp-4">${SM.linkify(p.shared.body)}</p>` : ''}${mediaGrid(p.shared.media)}${pubBlock(p.shared.pub)}</div>` : html`<div class="post-shared muted">This post is no longer available.</div>`) : ''}
       <footer class="post-actions">
-        <button class="post-act${p.liked ? ' is-on' : ''}" data-act="post-like" data-id="${p.id}" aria-pressed="${p.liked}">${icon('heart')}<span>${p.likes || ''}</span><em>Like</em></button>
-        <button class="post-act" data-act="post-comments" data-id="${p.id}">${icon('comment')}<span>${p.comments || ''}</span><em>Comment</em></button>
-        <button class="post-act" data-act="post-share" data-id="${p.share_id || p.id}">${icon('share')}<em>Share</em></button>
+        <button class="post-act${p.liked ? ' is-on' : ''}" data-act="post-like" data-id="${p.id}" aria-pressed="${p.liked}" aria-label="Like${p.likes ? ' (' + p.likes + ')' : ''}">${icon('heart')}<span>${p.likes || ''}</span><em>Like</em></button>
+        <button class="post-act" data-act="post-comments" data-id="${p.id}" aria-label="Comments${p.comments ? ' (' + p.comments + ')' : ''}">${icon('comment')}<span>${p.comments || ''}</span><em>Comment</em></button>
+        <button class="post-act" data-act="post-share" data-id="${p.share_id || p.id}" aria-label="Share">${icon('share')}<em>Share</em></button>
         <span class="grow"></span>
         <button class="post-act${p.saved ? ' is-on' : ''}" data-act="post-save" data-id="${p.id}" aria-pressed="${p.saved}" title="Save">${icon('bookmark')}</button>
       </footer>
@@ -174,6 +182,7 @@
     const tab = SM.query().get('tab') === 'saved' ? 'saved' : 'home';
     SM.set(ctx.view, html`<div class="page with-rail feed-page">
       <div class="feed-col">
+        <h1 class="sr-only">Home</h1>
         ${SM.promoBanner ? SM.promoBanner() : ''}
         <div id="ms-feed" class="ms-mobile"></div>
         <div class="panel composer" data-act="compose" role="button" tabindex="0">${SM.avatar(SM.me, 'av-m')}<span class="composer-in">Share a result, a lesson learned, a behind-the-scenes…</span><span class="btn btn-soft btn-sm">${icon('image')}Media</span></div>

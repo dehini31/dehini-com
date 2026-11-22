@@ -68,10 +68,10 @@ each published under its own path on the same domain:
 Each platform creates and migrates its own SQLite database on first request (schema and migrations in its
 `lib/`, guarded by `PRAGMA user_version`; never edit production databases by hand).
 
-Studioma (most active project) — `~/studioma-data/studioma.sqlite`, schema **version 11** in `main` (v6 admin, v7
-`users.terms_at`, v8 `visitors` + `visit_days`, v9 billing, v10 card sharing and Community, v11 launch offer),
-**version 12** (Creator Journey) on branch `claude/trusting-keller-rynk1j` until merged (`studioma/lib/core.php` ›
-`migrate()`):
+Studioma (most active project) — `~/studioma-data/studioma.sqlite`, schema **version 12** in `main` (v6 admin, v7
+`users.terms_at`, v8 `visitors` + `visit_days`, v9 billing, v10 card sharing and Community, v11 launch offer, v12
+Creator Journey), **version 13** (opportunities in the feed: data backfill only) on branch
+`claude/trusting-keller-rynk1j` until merged (`studioma/lib/core.php` › `migrate()`):
 
 - accounts & network: `users`, `sessions`, `companies`, `company_members`, `follows`, `connections`, `posts`,
   `post_likes`, `post_saves`, `post_comments`, `portfolio`, `recommendations`, `opps`, `opp_apps`,

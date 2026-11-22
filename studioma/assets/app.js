@@ -67,7 +67,7 @@
     }
     const items = NAV.concat(SM.adminCompanies().length ? COMPANY_NAV : []);
     SM.set(app, html`<div class="app">
-      <aside class="side" id="side">
+      <aside class="side" id="side" aria-label="Main menu">
         <a href="#/" class="logo-link">${SM.logo()}</a>
         <nav class="nav" aria-label="Main">${items.map(navLink)}</nav>
         <button class="side-user" data-act="user-menu">${SM.avatar(SM.me, 'av-m')}<span class="side-user-name"><b>${SM.me.name}</b><small>@${SM.me.handle}</small></span>${icon('chevron-down')}</button>
@@ -78,7 +78,7 @@
           <button class="btn-icon top-menu" data-act="side-open" aria-label="Menu">${icon('menu')}</button>
           <form class="top-search" data-form="search" role="search">${icon('search')}<input name="q" class="input" placeholder="Search people, companies, posts…" aria-label="Search" autocomplete="off"></form>
           <span class="grow"></span>
-          <button class="btn btn-primary top-create" data-act="create-menu">${icon('plus')}<span>Create</span></button>
+          <button class="btn btn-primary top-create" data-act="create-menu" aria-label="Create" aria-haspopup="menu">${icon('plus')}<span>Create</span></button>
           <a class="btn-icon top-ico" href="#/messages" aria-label="Messages" title="Messages">${icon('message')}<span data-count="messages">${badge(SM.counts.messages)}</span></a>
           <a class="btn-icon top-ico" href="#/notifications" aria-label="Notifications" title="Notifications">${icon('bell')}<span data-count="notifs">${badge(SM.counts.notifs)}</span></a>
           <button class="top-avatar" data-act="user-menu" aria-label="Account">${SM.avatar(SM.me, 'av-m')}</button>
@@ -257,7 +257,7 @@
     }
     box.replaceChildren();
     google.accounts.id.renderButton(box, { type: 'standard', theme: document.documentElement.dataset.theme === 'dark' ? 'filled_black' : 'outline', size: 'large', shape: 'pill',
-      text, logo_alignment: 'center', locale: 'en', width: Math.min(400, Math.max(220, Math.round(box.getBoundingClientRect().width || 320))) });
+      text, logo_alignment: 'center', locale: 'en', width: Math.max(200, Math.min(400, Math.round(block.getBoundingClientRect().width || box.getBoundingClientRect().width || 300), document.documentElement.clientWidth - 48)) });
   };
   const googleBlock = (note) => html`<div class="google-block" data-google hidden><div class="google-btn"></div>${note ? html`<p class="muted small center">${note}</p>` : ''}<div class="or"><span>or with your email</span></div></div>`;
   /** Connexion ou inscription avec le jeton reçu de Google. */

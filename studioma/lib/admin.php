@@ -564,7 +564,7 @@ function api_admin_content_action(array $b, array $a): array
         $done = true;
     } elseif ($type === 'pubs' && in_array($op, ['unpublish', 'close', 'delete'], true) && ($p = row('SELECT * FROM pubs WHERE id = ?', [$id]))) {
         if ($op === 'delete') {
-            if ((int) $p['post_id']) q('DELETE FROM posts WHERE id = ? AND pub_id = ?', [$p['post_id'], $p['id']]);
+            q('DELETE FROM posts WHERE pub_id = ?', [$p['id']]);
             q('DELETE FROM pubs WHERE id = ?', [$id]);
             files_release(pub_tokens($p));
         } elseif ($op === 'close' && $p['kind'] === 'opportunity') {

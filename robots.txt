@@ -11,6 +11,8 @@ Disallow: /maillage/espace/
 Disallow: /maillage/admin.html
 Disallow: /maillage/api.php
 Disallow: /studioma/app/
+# Fichiers publics de Studioma (photos de profil, images des publications) : lisibles par les moteurs ; le reste de l'API ne l'est pas.
+Allow: /studioma/api.php?action=file
 Disallow: /studioma/api.php
 Disallow: /swanbida/commande/
 Disallow: /swanbida/fr/commande/
@@ -18,3 +20,4 @@ Disallow: /swanbida/fr/commande/
 Sitemap: https://dehini.com/sitemap.xml
 Sitemap: https://dehini.com/impact/sitemap.xml
 Sitemap: https://dehini.com/swanbida/sitemap.xml
+Sitemap: https://dehini.com/studioma/sitemap.xml
