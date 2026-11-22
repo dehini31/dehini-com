@@ -335,7 +335,7 @@ const signup = async (name, email, extra) => {
   const out = execFileSync('php', [path.join(DIR, 'public_html/studioma/cron.php')], { encoding: 'utf8' });
   ok(/^OK — 0 campaign email/.test(out), 'cron en ligne de commande', out);
   r = await adm.get('admin_system');
-  ok(r.system.schema === 12 && r.integrations.cron_last > 0 && r.integrations.meta_pixel === '1234567890123' && r.integrations.meta_token === true, 'système : schéma v12, dernière exécution du cron, intégrations', r.integrations);
+  ok(r.system.schema === 13 && r.integrations.cron_last > 0 && r.integrations.meta_pixel === '1234567890123' && r.integrations.meta_token === true, 'système : schéma v13, dernière exécution du cron, intégrations', r.integrations);
   const actions = r.log.map((l) => l.action);
   ok(['suspend', 'unsuspend', 'delete', 'export', 'delete_post', 'close_opp', 'delete_company', 'campaign_send', 'mail_test', 'revoke_ai'].every((a) => actions.includes(a)), 'journal de l\'administration : chaque action', actions);
   ok(r.log.some((l) => l.action === 'suspend' && l.target === 'user:' + karim.id && /Spam reports/.test(l.text)), 'journal : cible et motif');
@@ -343,7 +343,7 @@ const signup = async (name, email, extra) => {
   step('Page d\'administration');
   page = await fetch(ORIGIN + '/studioma/admin/');
   body = await page.text();
-  ok(page.status === 200 && /<script src="\.\.\/assets\/admin\.js"><\/script>/.test(body) && !/<script>/.test(body) && !/<script src="[^"]*meta\.js"/.test(body), 'page servie, sans script en ligne ni pixel');
+  ok(page.status === 200 && /<script src="\.\.\/assets\/admin\.js"( defer)?><\/script>/.test(body) && !/<script>/.test(body) && !/<script src="[^"]*meta\.js"/.test(body), 'page servie, sans script en ligne ni pixel');
   ok(/script-src 'self'/.test(page.headers.get('content-security-policy') || ''), 'politique de sécurité (CSP) appliquée');
 
   console.log(failed ? `\n${failed} échec(s)` : '\nTout est bon.');

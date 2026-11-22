@@ -26,6 +26,12 @@ status changes; keep the history of finished items short.
 
 ## In progress
 
+- **Studioma quality, mobile, opportunities on Home and SEO** (2026-11-22): published opportunities in every member's
+  Home feed and Discover; server-rendered public opportunities list / detail, pricing page and sitemap; landing SEO
+  (title, description, social image, structured data); self-hosted font and deferred scripts; mobile fixes (dialog
+  reachability, header, tab bar, pricing table, Create button) and WCAG contrast / naming fixes; DB schema v13. Done and
+  tested on branch `claude/trusting-keller-rynk1j` — **not in `main`, not deployed** (see `HANDOFF.md`,
+  `docs/studioma-quality-audit.md`).
 - **Studioma Creator Journey** (2026-11-21): XP ledger, six verified achievements, six Creator levels, next
   milestone, celebrations, timeline, public verification pages and Creator Passport, PNG sharing with QR code, client
   approvals with consent, project completion, admin rules and revocation; DB schema v12. Done and tested on branch
@@ -63,7 +69,12 @@ status changes; keep the history of finished items short.
   (`chmod 600`) — *(unverified whether done; without it only the browser pixel sends events)*.
 - [ ] **Regenerate that token** (Events Manager › Settings › Conversions API): it was pasted in a chat on
   2026-11-20. Then rewrite the file.
-- [ ] **cPanel › Domains › Force HTTPS Redirect** for dehini.com (the site still answers on plain http).
+- [ ] **cPanel › Domains › Force HTTPS Redirect** for dehini.com (the site still answers on plain http) — and redirect
+  `www.dehini.com` to `dehini.com` (both answered 200 on 2026-11-22; canonical tags limit the duplicate-content effect).
+- [ ] **Google Search Console** (owner): verify the `dehini.com` domain property (DNS record at the registrar), then
+  submit `https://dehini.com/studioma/sitemap.xml` once the quality branch is live. Not done by an agent.
+- [ ] When deploying the quality branch, also copy the root `robots.txt` (it declares the Studioma sitemap): the usual
+  command copies only the `studioma/` folder.
 - [ ] **Cookie consent** for Meta tracking if EU visitors are targeted (Studioma and SWANBIDA have no banner).
 - [ ] **Marketing Dashboard**: switch to the new Meta app « chatgptapp » following
   `docs/meta-real-test-checklist.md` — *(status unverified)*.

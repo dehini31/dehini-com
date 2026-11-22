@@ -1993,22 +1993,62 @@ sans carte ni paiement ; ce qui est acquis reste quand l'abonnement change.
 - Code : `studioma/lib/journey.php`, `studioma/p.php`, `studioma/assets/journey.js`, `studioma/assets/qr.js`,
   `studioma/assets/passport.css` ; décisions S31 à S35 de `docs/DECISIONS.md`.
 
-### 12. Fichiers envoyés
+### 12. Pages publiques, référencement et qualité sur téléphone
+
+Rien à configurer : la base passe d'elle-même à la version 13 (les opportunités déjà ouvertes reçoivent leur
+publication du fil). Audit complet, mesures et liste des problèmes corrigés : `docs/studioma-quality-audit.md`.
+
+- **Opportunités dans le fil** — publier une opportunité (bouton *Share & publish* de la carte › *Publish
+  opportunity*, aperçu, confirmation) crée sa publication du fil, comme une réalisation : elle apparaît dans
+  l'accueil **« For you » de tous les membres** (pas seulement des abonnés de l'auteur) et dans *Discover*, avec son
+  type, son budget, sa date limite, son mode de travail et « View and send a proposal ». La modifier met le fil à jour ;
+  la fermer (ou terminer la carte, ou passer la date limite) la retire du fil ; la rouvrir la remet (même publication,
+  aucun doublon) ; la supprimer la retire partout. Une opportunité masquée par la modération ne peut être ni rouverte
+  ni republiée par son auteur. Partager une carte (lien privé) ne la publie jamais.
+- **Pages publiques rendues par le serveur** (`studioma/p.php`, lisibles sans JavaScript et par les moteurs) :
+  `/studioma/opportunities/` (opportunités ouvertes, 20 par page), `/studioma/opportunity/<n°>-<titre>` (une
+  opportunité : description, livrables, budget, dates, auteur, « Send a proposal », partages ; adresse canonique, 301
+  depuis une ancienne adresse, non indexée une fois fermée, 404 si masquée ou supprimée ; jamais de nom de carte, de
+  Studio ou de projet), `/studioma/pricing/` (les formules de `lib/plans.php`, avec l'offre de lancement), et
+  `/studioma/sitemap.xml` (accueil, prix, opportunités ouvertes, passeports ouverts et réalisations qu'ils montrent —
+  jamais l'application, l'API ni un lien de partage). Dans l'application, une opportunité a *Copy public link* et
+  *Share* (LinkedIn, Facebook, WhatsApp, email, partage du téléphone). Pas de données `JobPosting` : ce ne sont pas
+  des offres d'emploi.
+- **Accueil** — titre et description centrés sur la planification de contenu et la collaboration avec les clients,
+  image des aperçus de liens (`assets/og-studioma.jpg`), données structurées Organization, WebSite et
+  SoftwareApplication (formule gratuite, sans note ni avis), un seul `h1` en premier, liens vers les prix et les
+  opportunités. `robots.txt` (à la racine du site) déclare le plan du site de Studioma et laisse lire les fichiers
+  publics (`api.php?action=file`), l'application et le reste de l'API restant exclus.
+- **Performance** — police Plus Jakarta Sans hébergée sur le site (`assets/fonts/`, licence OFL ; plus aucun appel à
+  Google Fonts, donc aucune adresse IP de visiteur transmise) et préchargée ; tous les scripts des pages en `defer`
+  (ordre conservé) : la page s'affiche avant le JavaScript.
+- **Téléphone et accessibilité** — fenêtres plus hautes que l'écran défilables depuis leur haut (le haut du formulaire
+  de publication était inaccessible sur téléphone), bouton *Create* de 40 px, en-têtes et barre d'onglets sans
+  débordement à 320 px, tableau des prix défilant dans son cadre, page d'une publication : contenu avant les actions du
+  gestionnaire ; contrastes ≥ 4,5:1 (gris, vert, avatars, boutons du thème sombre), boutons d'icône nommés, fenêtres
+  nommées par leur titre, un `h1` par écran, liens soulignés dans les textes, cibles tactiles agrandies.
+
+### 13. Fichiers envoyés
 
 64 Mo par fichier (`studioma/.user.ini` et `STM_MAX_UPLOAD_MB`), 12 Mo par image. Si l'hébergeur plafonne plus
 bas, baisser les deux valeurs ensemble. Le type est vérifié sur le contenu réel du fichier.
 
-### 13. Sauvegarde
+### 14. Sauvegarde
 
 Tout tient dans `~/studioma-data/` : copier ce dossier sauvegarde la base et les fichiers.
 
-### 14. Tests
+### 15. Tests
 
 ```bash
 tests/studioma/run.sh /tmp/stm-test
 ```
 
-Faux hébergement neuf, puis treize batteries : `journey.js` (le parcours du créateur : XP inscrits une fois, cartes
+Faux hébergement neuf, puis quinze batteries : `quality.js` (opportunités dans le fil de tout le monde, détails,
+modification, fermeture et réouverture sans doublon, modération, suppression, droits, rien de privé ; pages publiques
+des opportunités et des prix, plan du site, robots.txt, métadonnées et données structurées de l'accueil ; migration
+v13), `quality-e2e.js` (sur téléphone : nouveau projet, cartes, changement de colonne sans glisser-déposer,
+publication d'une opportunité, fil, lien public, partage, menu ; 14 écrans à 320 et 390 px sans débordement, un `h1`,
+boutons nommés), `journey.js` (le parcours du créateur : XP inscrits une fois, cartes
 vides sans points, limites du jour, niveau de Studio dégagé, projet terminé après vérification, partage, travail en
 équipe, validations de client — désignée seulement, pas de soi-même, ni d'un propriétaire à sa place, ni d'un
 Manager —, réalisations et preuves, en attente, déclarées, niveaux, jalons, chronologie, visibilité, pages publiques
@@ -2044,6 +2084,10 @@ parcours complet dans le navigateur, sur ordinateur et sur mobile, avec deux com
 - Pas d'IA intégrée à l'application : l'assistance passe par les assistants externes connectés au serveur MCP.
 - Serveur MCP : pas de flux d'événements ni de notifications envoyées par le serveur (chaque appel reçoit sa
   réponse) ; pas encore de jeton « lecture seule ».
+- Qualité : testé dans Chromium seulement (Safari / WebKit et Firefox non disponibles ici) ; l'application reste une
+  page JavaScript (son premier contenu attend les scripts : LCP mobile mesuré à ~5 s en laboratoire local) ; les
+  adresses `http://` et `www.` répondent encore (balises canoniques en place ; la redirection se règle dans cPanel) ;
+  pages publiques en anglais seulement.
 - Parcours du créateur : pas de réalisation ni d'XP par le serveur MCP ; un niveau de Studio n'est reconnu qu'à partir
   des passages enregistrés depuis la version 12 (et des cartes déjà terminées) ; les invitations par lien réutilisable
   sont datées de leur création ; un invité sans compte qui valide reste « un client vérifié » (son nom n'apparaît
@@ -2071,7 +2115,7 @@ parcours complet dans le navigateur, sur ordinateur et sur mobile, avec deux com
 - Une seule langue (anglais) ; les conditions d'utilisation se résument à une phrase (acceptée à l'inscription par
   email, ou dans la fenêtre « One last step » pour un compte Google) : pas encore de page de conditions complète.
 - Les pages publiques sont rendues par JavaScript : elles se partagent par lien mais ne sont pas optimisées pour
-  les moteurs de recherche (seules la landing, les pages de vérification et les passeports publics le sont).
+  les moteurs de recherche (seules la landing, les opportunités, les prix, les pages de vérification et les passeports publics le sont).
 
 ## Référencement (SEO)
 

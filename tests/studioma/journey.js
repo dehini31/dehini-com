@@ -453,7 +453,7 @@ const BODY = 'A carousel of six slides about the spring collection, with caption
   sql('PRAGMA user_version = 11');
   const n0 = one('SELECT COUNT(*) FROM xp_transactions');
   await anon.get('me');
-  ok(one('PRAGMA user_version') === 12, 'base remise en v12');
+  ok(one('PRAGMA user_version') >= 12, 'base remise à jour (v12 et suivantes)');
   ok(one(`SELECT decided_by FROM card_approvals WHERE card_id = ${a1}`) === clara.id && one(`SELECT decider_role FROM card_approvals WHERE card_id = ${a1}`) === 'client', 'décision d\'une cliente retrouvée dans l\'historique');
   ok(one(`SELECT decided_by FROM card_approvals WHERE card_id = ${a2}`) === amel.id && one(`SELECT decider_role FROM card_approvals WHERE card_id = ${a2}`) === 'owner', 'décision d\'un propriétaire à sa place : retrouvée comme telle');
   ok(one(`SELECT decider_role FROM card_approvals WHERE card_id = ${a4}`) === 'guest', 'décision d\'un invité retrouvée');

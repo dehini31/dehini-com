@@ -23,6 +23,19 @@ if (preg_match('~^/studioma/mcp/?$~', $uri)) {
 } elseif (preg_match('~^/studioma/creator/([a-z0-9-]{1,40})/?$~', $uri, $m)) {
     $target = 'p.php';
     $_GET['creator'] = $m[1];
+} elseif (preg_match('~^/studioma/opportunities/?$~', $uri)) {
+    $target = 'p.php';
+    $_GET['opps'] = '1';
+} elseif (preg_match('~^/studioma/opportunity/([0-9]{1,10})(-[^/]*)?/?$~', $uri, $m)) {
+    $target = 'p.php';
+    $_GET['opp'] = $m[1];
+    $_GET['slug'] = $m[2] ?? '';
+} elseif (preg_match('~^/studioma/pricing/?$~', $uri)) {
+    $target = 'p.php';
+    $_GET['pricing'] = '1';
+} elseif (preg_match('~^/studioma/sitemap\.xml$~', $uri)) {
+    $target = 'p.php';
+    $_GET['sitemap'] = '1';
 } elseif (preg_match('~^/studioma/oauth/(register|authorize|token|revoke)/?$~', $uri, $m)) {
     $target = 'oauth.php';
     $_GET['op'] = $m[1];

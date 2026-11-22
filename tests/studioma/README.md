@@ -9,7 +9,7 @@ politique de sécurité (CSP).
 tests/studioma/run.sh /tmp/stm-test
 ```
 
-`run.sh` prépare un hébergement neuf, lance le serveur PHP (port 8097) et exécute treize batteries, chacune sur une
+`run.sh` prépare un hébergement neuf, lance le serveur PHP (port 8097) et exécute quinze batteries, chacune sur une
 base vide. Les événements Meta (API Conversions) sont écrits dans `meta.jsonl` (faux ensemble de données) ; dans le
 navigateur, un faux script du pixel note les appels à `fbq` :
 
@@ -123,6 +123,22 @@ résiliation, reprise, fin confirmée par Paddle, dépassements ; paiement en é
 espace client ; indicateurs de l'administration (MRR, ARR, sandbox séparé), formule offerte ; navigateur : page des
 prix, mensuel / annuel, invitation à changer de formule, paiement avec un faux Paddle.js, attente de la
 confirmation, réglages, Insights, mobile, aucune violation de la CSP.
+
+**`quality.js` — opportunités dans le fil, pages publiques, référencement** : droits de publication (non-membre,
+Viewer, visiteur), opportunité publiée → accueil « For you » d'un compte qui ne suit pas l'auteure et Discover, rien de
+la carte, du Studio ni du projet privés, republication sans doublon, page publique (canonique, Open Graph, fil d'Ariane,
+pas de JobPosting, aucun script exécutable, partages), adresse ancienne ou sans titre → 301, liste publique, modification
+(fil et adresse à jour), fermeture (retirée du fil, « Closed », non indexée, hors plan du site), réouverture, carte
+terminée, modération (ne revient pas), suppression (partout), réalisations, migration v13 rejouée sans doublon, page des
+prix (formules de `lib/plans.php`), plan du site, `robots.txt`, titre / description / données structurées / `h1` de
+l'accueil, police locale et scripts différés.
+
+**`quality-e2e.js` — sur téléphone (Chromium, iPhone 13 émulé et 320 px)** : en-tête des visiteurs, bouton Create,
+nouveau projet dans une fenêtre (dans l'écran, nommée, boutons atteignables), cartes au clavier, panneau de la carte,
+éditeur nommé, changement de colonne par le menu « Move », longue fenêtre de publication atteignable depuis son haut,
+opportunité publiée, contenu avant les actions du gestionnaire, opportunité dans le fil d'accueil, lien public copié,
+partage, page publique, menu latéral ; 14 écrans à 320 et 390 px (pas de défilement horizontal, un `h1`, boutons
+nommés) et 6 pages de visiteurs à 320 px ; aucune erreur ni violation de la CSP.
 
 **`journey.js` — le parcours du créateur** : nouveau compte (Explorer, rien d'acquis, premier jalon), premier Studio et
 premier projet (une seule fois), cartes vides sans points, carte éligible (description, liste de contrôle), carte
