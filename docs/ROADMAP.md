@@ -46,8 +46,8 @@ status changes; keep the history of finished items short.
 ## Pending — owner actions (outside the code)
 
 - [ ] **Studioma billing (Paddle)** — code on branch `claude/trusting-keller-rynk1j`, payments closed until set up
-  (`docs/billing.md` § 5): Paddle account and approval (needs Terms of Service, Privacy Policy and Refund Policy pages
-  on dehini.com — not written yet), products and four prices in sandbox, API key, client token, default payment link
+  (`docs/billing.md` § 5): Paddle account and approval (Terms of Service, Privacy Policy and Refund Policy pages
+  written on the branch — live once deployed: `/studioma/terms/`, `/privacy/`, `/refunds/`), products and four prices in sandbox, API key, client token, default payment link
   `https://dehini.com/studioma/pay/`, webhook destination, settings in `studioma/config.php`, sandbox test, then live.
   **Sandbox → live** (`docs/billing.md` § 8): sandbox test on a staging copy first (§ 8.2, not done yet); live
   account audited read-only on 2026-11-21 — empty (no products, prices, webhook, keys, payment link), onboarding
@@ -78,8 +78,9 @@ status changes; keep the history of finished items short.
 - [ ] **Cookie consent** for Meta tracking if EU visitors are targeted (Studioma and SWANBIDA have no banner).
 - [ ] **Marketing Dashboard**: switch to the new Meta app « chatgptapp » following
   `docs/meta-real-test-checklist.md` — *(status unverified)*.
-- [ ] Terms of use: Maillage shows a starting text to review and adapt; Studioma only has the sign-up checkbox
-  (no terms page yet).
+- [ ] Terms of use: Maillage shows a starting text to review and adapt. Studioma has full Terms / Privacy / Refund
+  pages (2026-11-23, decision S40): have them reviewed by a lawyer if possible; check that the legal name matches the
+  Paddle account; consider telling existing members about them (admin › Emails campaign).
 - [ ] After the Studioma admin is merged: add the cron job `/usr/local/bin/php ~/public_html/studioma/cron.php
   >/dev/null 2>&1` every 5 minutes (cPanel › Cron Jobs; PHP path *(unverified)*), check the hourly email limit of
   the host and set `STM_MAIL_PER_HOUR` in `studioma/config.php` if it is below 200, then send a test email from

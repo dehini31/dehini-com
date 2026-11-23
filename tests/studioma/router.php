@@ -36,6 +36,9 @@ if (preg_match('~^/studioma/mcp/?$~', $uri)) {
 } elseif (preg_match('~^/studioma/sitemap\.xml$~', $uri)) {
     $target = 'p.php';
     $_GET['sitemap'] = '1';
+} elseif (preg_match('~^/studioma/(terms|privacy|refunds)/?$~', $uri, $m)) {
+    $target = 'p.php';
+    $_GET['legal'] = $m[1];
 } elseif (preg_match('~^/studioma/oauth/(register|authorize|token|revoke)/?$~', $uri, $m)) {
     $target = 'oauth.php';
     $_GET['op'] = $m[1];

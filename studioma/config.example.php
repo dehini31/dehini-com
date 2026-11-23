@@ -64,3 +64,12 @@
 // define('STM_PADDLE_PRICE_SOLO_YEARLY', 'pri_…');             // 120 $ / an
 // define('STM_PADDLE_PRICE_TEAM_MONTHLY', 'pri_…');            // 29 $ / mois
 // define('STM_PADDLE_PRICE_TEAM_YEARLY', 'pri_…');             // 290 $ / an
+// Pages légales publiques (/studioma/terms/, /privacy/, /refunds/, voir p.php). Valeurs par défaut dans lib/core.php,
+// choisies par le propriétaire ; le nom doit correspondre au compte Paddle. Changer STM_LEGAL_UPDATED à chaque
+// modification du texte des pages.
+// define('STM_LEGAL_NAME', 'Mohammed Dehini');
+// define('STM_LEGAL_EMAIL', 'contact@dehini.com');
+// define('STM_LEGAL_COUNTRY', 'Algeria');
+// define('STM_LEGAL_UPDATED', '2026-11-23');
+// define('STM_MIN_AGE', 16);
+// define('STM_REFUND_DAYS', 14);

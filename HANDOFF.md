@@ -4,82 +4,87 @@ Shared memory between **Claude Code** and **OpenAI Codex** (protocol: `AGENTS.md
 state » block short and true; add a log entry at the top of « Log » after every meaningful task. Never write
 secrets here. Mark anything you could not verify as *(unverified)*.
 
-## Current state — 2026-11-22
+## Current state — 2026-11-23
 
 | | |
 |---|---|
 | Last agent | Claude Code (cloud session) |
-| Branch | **`claude/trusting-keller-rynk1j`** (tracks `origin/claude/trusting-keller-rynk1j`), fast-forwarded to `origin/main` `9da027c` (PR #83, Creator Journey, merged by the owner). No pull request yet for this work (open one only when the owner asks) |
-| Base code | `main` @ `9da027c` = Merge PR #83 (Creator Journey, DB v12). **`main` = production** — no deployment cron: the owner copies `main` by hand. Live check 2026-11-22: `studioma/assets/journey.js`, `promo.js`, `publish.js` answer 200 (PRs #80, #81, #83 live) |
+| Branch | **`claude/trusting-keller-rynk1j`** (tracks `origin/claude/trusting-keller-rynk1j`), fast-forwarded to `origin/main` `d7f37c9` (PR #84, quality pass, merged by the owner). No pull request yet for this work (open one only when the owner asks) |
+| Base code | `main` @ `d7f37c9` = Merge PR #84 (quality pass, DB v13). **`main` = production** — no deployment cron: the owner copies `main` by hand. Whether PR #84 is already copied to the live site is *(unverified)* |
 | Checkpoint | the commit that last changed this file: `git log -1 --format='%H %s' -- HANDOFF.md` |
 | Uncommitted work at checkpoint | none |
-| In progress | **Studioma quality pass** — opportunities in every member's Home feed, server-rendered public opportunities / pricing / sitemap, landing SEO, self-hosted font + deferred scripts, mobile and accessibility fixes. Implemented, tested, committed and pushed on `claude/trusting-keller-rynk1j`; **not merged, not deployed** |
-| Last task changed application code? | **yes** — Studioma (DB schema 12 → 13: data backfill only) and the root `robots.txt` |
+| In progress | **Studioma legal pages** — Terms of Service, Privacy Policy, Refund Policy (`/studioma/terms/`, `/privacy/`, `/refunds/`) and links to them. Implemented, tested, committed and pushed on `claude/trusting-keller-rynk1j`; **not merged, not deployed** |
+| Last task changed application code? | **yes** — Studioma only (no schema change; DB stays at v13) |
 | Codex access | **not verified** — Codex has not been run on this repository from this session |
 
 **Start here (Codex or Claude)**
 
 1. `git fetch origin`, then `git switch claude/trusting-keller-rynk1j` (or `git switch -c codex/<topic> origin/claude/trusting-keller-rynk1j`).
-   Production is `origin/main` @ `9da027c`.
-2. Read `docs/studioma-quality-audit.md` (issue inventory, measurements), README « Studioma › 12 » and decisions
-   S36–S39; S31–S35 for the Creator Journey; S25–S30 for Share & publish and the launch offer.
-3. Checks: `AGENTS.md` § 5 (lint, then `tests/studioma/run.sh`, ~22 min, 15 suites; a long run may need to be split —
+   Production is `origin/main` @ `d7f37c9`.
+2. Read README « Studioma › 12 » (last bullet, « Pages légales ») and decision S40; S36–S39 and
+   `docs/studioma-quality-audit.md` for the quality pass; S31–S35 for the Creator Journey.
+3. Checks: `AGENTS.md` § 5 (lint, then `tests/studioma/run.sh`, ~23 min, 16 suites; a long run may need to be split —
    each suite can run on its own fresh hosting).
 
-**Done on this branch, not in `main`** (quality pass):
-- Opportunities → Home (root cause: no feed post for opportunities, `feed_pubs()` kept `published` only):
-  `pub_live()`, `pub_feed_post()`, `pub_public_url()`, `feed_pubs()` with opportunities, moderation guard, delete removes
-  every feed post (`studioma/lib/pubs.php`); « For you » includes every open opportunity (`lib/social.php`); admin delete
-  (`lib/admin.php`); DB v13 backfill (`lib/core.php`); feed block (`assets/social.js`), « Copy public link » + Share
-  modal (`assets/publish.js`, `SM.shareButtons` from `assets/journey.js`).
-- Public server pages (`studioma/p.php`): `/studioma/opportunities/`, `/studioma/opportunity/<id>-<slug>`,
-  `/studioma/pricing/`, `/studioma/sitemap.xml`; shared template with Open Graph image, JSON-LD, nav, skip link;
-  rewrites in `studioma/.htaccess` and `tests/studioma/router.php`; styles in `assets/passport.css`;
-  `assets/og-studioma.jpg` (1200 × 630).
-- Landing (`studioma/index.html`, `assets/landing.css`): title / description, OG + Twitter, JSON-LD (Organization,
-  WebSite, SoftwareApplication — free offer only), `h1` first, links to pricing / opportunities, « Sign in » kept on
-  phones. Root `robots.txt`: Studioma sitemap, `Allow: /studioma/api.php?action=file`.
-- Performance: `assets/fonts.css` + `assets/fonts/` (Plus Jakarta Sans, OFL), no Google Fonts; `defer` on every script
-  (`app/index.html`, `index.html`, `admin/index.html`).
-- Mobile / a11y (`assets/app.css`, `app.js`, `core.js`, `card.js`, `board.js`, `social.js`, `billing.js`, `journey.js`):
-  tall dialogs scrollable from the top on phones, Create button, tab bar and headers at 320 px, pricing table
-  containment, contrast tokens, dialog / editor / button names, `h1` per screen, heading order, underlined inline links.
-- Tests: `tests/studioma/quality.js`, `tests/studioma/quality-e2e.js` (in `run.sh`); schema 13 expected in `admin.js`,
-  `billing.js`, `journey.js`; `admin.js` accepts deferred scripts.
-- Docs: `docs/studioma-quality-audit.md` (new), README « Studioma › 12 » (sections renumbered 13–15, tests, gaps),
-  DECISIONS S36–S39, ROADMAP, PROJECT_CONTEXT (schema v13), AGENTS.md map, tests README.
+**Done on this branch, not in `main`** (legal pages):
+- Owner's choices (asked 2026-11-23): operator **Mohammed Dehini**, contact **contact@dehini.com**, **Algerian** law,
+  minimum age **16**, **14-day** money-back guarantee on the first payment of a subscription (once per account;
+  renewals not refunded unless the law requires; billing errors always refunded). Constants in `studioma/lib/core.php`
+  (`STM_LEGAL_NAME`, `STM_LEGAL_EMAIL`, `STM_LEGAL_COUNTRY`, `STM_LEGAL_UPDATED`, `STM_MIN_AGE`, `STM_REFUND_DAYS`),
+  overridable in `config.php` (documented in `config.example.php`).
+- Pages in `studioma/p.php` (`p_legal_vars`, `p_legal_fill`, `p_legal_page`, `p_terms`, `p_privacy`, `p_refunds`),
+  routed **before** `db()` (readable if SQLite is down); rewrites in `studioma/.htaccess` and
+  `tests/studioma/router.php`; styles in `assets/passport.css` (`.pp-legal`, `.pp-legal-nav`, `.pp-toc`,
+  `.pp-table`); sitemap entries (lastmod = `STM_LEGAL_UPDATED`); footer of every `p.php` page (three links +
+  contact); server pricing page (guarantee + links).
+- Links in the app: sign-up note and « One last step » terms gate (`assets/app.js`, new tab), pricing FAQ « Can I get a
+  refund? » + legal links (`assets/billing.js`, days from `billing_plans.refund_days` in `lib/billing.php`), landing
+  footer (`index.html`), checkout page (`pay/index.html`), styles in `assets/app.css`.
+- Privacy text written from the code: cookies `stm_sid`, `stm_g…`, `stm_vid`, `stm_ref`, `_fbp` / `_fbc`; Meta Pixel +
+  CAPI with SHA-256 email / id; Google sign-in; Paddle as merchant of record and independent controller; retention
+  matches the code (email log 180 days, admin log 400 days, sessions 30 days).
+- Tests: `tests/studioma/legal.js` (75 checks, in `run.sh`). Docs: README « Studioma › 12 » + tests + gaps, DECISIONS
+  S40, ROADMAP, `docs/billing.md` § 5 and § 8.5, tests README, AGENTS.md map.
 
 **Unfinished / waiting**
 
-- Owner: review the branch (phone: publish an opportunity, Home feed, public page; landing; `/studioma/pricing/`),
-  ask for the pull request, merge, deploy — and **also copy the root `robots.txt`** (the usual command copies only
-  `studioma/`). Then Search Console: verify the domain, submit `https://dehini.com/studioma/sitemap.xml`; cPanel:
-  force HTTPS and redirect `www` (see ROADMAP). Re-measure production with PageSpeed Insights after deployment.
-- Not done: Safari / WebKit and Firefox testing (only Chromium here); app-shell LCP (needs bundling or server-rendered
-  entry screens); touch drag-and-drop (the card's « Move » menu is the mobile path).
-- Carried over: Terms / Privacy / Refund pages (legal name and contact email still needed from the owner); Paddle
-  sandbox test and live setup, owner's Paddle choices; consent banner for referral cookies; Maillage test « stock
-  enregistré » fails also on unmodified `main`.
+- Owner: read the three pages (texts are not reviewed by a lawyer — have them checked if possible), confirm the
+  legal name matches the Paddle account, ask for the pull request, merge, deploy. Consider an admin email campaign
+  telling existing members about the new terms (they accepted the old one-sentence terms; no forced re-acceptance).
+- **Cookie consent**: the Meta Pixel runs without a consent banner; the privacy policy describes it honestly but EU
+  visitors would normally need opt-in consent (ROADMAP, owner's decision).
+- Carried over: Search Console + sitemap submission, cPanel HTTPS / `www` redirect, root `robots.txt` copy if PR #84
+  was not fully deployed; Paddle sandbox test and live setup, owner's Paddle choices; Safari / Firefox testing;
+  Maillage test « stock enregistré » fails also on unmodified `main`.
 
 **Next recommended action**
 
-1. **Owner**: review on a phone, ask for the pull request, merge, deploy (with `robots.txt`), Search Console.
-2. **Agent, next task**: legal pages once the owner gives the legal name and contact email; or, if wanted, a build-free
-   way to shorten the app's first render (e.g. server-rendered sign-in / sign-up screens).
+1. **Owner**: review `/studioma/terms/`, `/privacy/`, `/refunds/` on the branch, ask for the pull request, merge,
+   deploy; then continue the Paddle website review with these URLs.
+2. **Agent, next task**: if the owner wants it, a cookie-consent banner that loads the Meta Pixel only after opt-in
+   (Studioma, and SWANBIDA separately).
 
 **Blockers**: none for this work. Billing: Paddle approval and credentials (owner).
 
-**Validation at this checkpoint** (2026-11-22, branch `claude/trusting-keller-rynk1j`): 15 Studioma suites, **0
-failures** — api 239, share 144, meta 73, mcp 155, admin 116, billing 107, promo 76, promo-e2e 44, journey 135,
-journey-e2e 57, **quality 53**, **quality-e2e 36**, publish 130, publish-e2e 37, e2e 202 (+ 15 config unit checks).
-The first eight ran in one `run.sh` pass, which then stopped on an outdated schema assertion in `journey.js` (v12 → v13,
-fixed); `journey.js` and the six remaining suites were then run one by one, each on a fresh fake hosting (same
-`setup.sh` as `run.sh`): all passed. `quality-e2e.js` passed twice in a row. `php -l` 121 PHP files, `node --check` 35 JS
-files: 0 errors. Audit tools (not in the repo): mobile sweep 0 overflow over 240 loads, axe-core 0 violations on 30
-scans, Lighthouse before / after in `docs/studioma-quality-audit.md`. SWANBIDA and Maillage not re-run (no file of
-theirs changed; root `robots.txt` changed only for Studioma lines).
+**Validation at this checkpoint** (2026-11-23, branch `claude/trusting-keller-rynk1j`): suites touched by this change,
+each on a fresh fake hosting (same `setup.sh` as `run.sh`), **0 failures** — **legal 75** (new), quality 53,
+quality-e2e 36, billing 107 (billing mode), promo-e2e 44 (promo mode), e2e 202. Suites whose files did not change were
+not re-run (api, share, meta, mcp, admin, promo, journey, journey-e2e, publish, publish-e2e: last full pass
+2026-11-22). `php -l` 121 PHP files, `node --check` 36 JS files: 0 errors. Pages checked by screenshots (1280 px and
+390 px).
 
 ## Log (newest first)
+
+### 2026-11-23 — Claude Code — Studioma: Terms of Service, Privacy Policy, Refund Policy
+- Owner's request: « add Terms of service, Privacy policy, Refund policy ». Choices asked and answered: legal name
+  Mohammed Dehini, contact@dehini.com, Algeria, 14-day money-back guarantee, minimum age 16.
+- Server-rendered pages in `p.php` (no database needed), linked from every public page, the landing, the app's
+  sign-up and terms gate, the pricing FAQ and the checkout page; sitemap; overridable constants. Texts derived from
+  what the code actually does (cookies, processors, retention). Decision S40.
+- Found and fixed while testing: the legal article (a grid item) widened the page at 320 px (`min-width: 0`); the
+  refund policy did not name the governing law.
+- Tests: see « Validation ». Committed and pushed; not merged.
+
 
 ### 2026-11-22 — Claude Code — Studioma: quality, mobile, opportunities on Home, SEO and performance
 - Owner's brief: audit then fix mobile usability, make published opportunities appear in the public Home feed, improve

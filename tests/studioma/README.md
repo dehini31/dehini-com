@@ -9,7 +9,7 @@ politique de sécurité (CSP).
 tests/studioma/run.sh /tmp/stm-test
 ```
 
-`run.sh` prépare un hébergement neuf, lance le serveur PHP (port 8097) et exécute quinze batteries, chacune sur une
+`run.sh` prépare un hébergement neuf, lance le serveur PHP (port 8097) et exécute seize batteries, chacune sur une
 base vide. Les événements Meta (API Conversions) sont écrits dans `meta.jsonl` (faux ensemble de données) ; dans le
 navigateur, un faux script du pixel note les appels à `fbq` :
 
@@ -139,6 +139,15 @@ nouveau projet dans une fenêtre (dans l'écran, nommée, boutons atteignables),
 opportunité publiée, contenu avant les actions du gestionnaire, opportunité dans le fil d'accueil, lien public copié,
 partage, page publique, menu latéral ; 14 écrans à 320 et 390 px (pas de défilement horizontal, un `h1`, boutons
 nommés) et 6 pages de visiteurs à 320 px ; aucune erreur ni violation de la CSP.
+
+**`legal.js` — pages légales** (`/studioma/terms/`, `/privacy/`, `/refunds/`) : valeurs par défaut choisies par le
+propriétaire, 200 indexable, titre, un `h1`, canonique, description, exploitant / contact / date / pays, aucun champ
+`{…}` oublié, sommaire dont chaque ancre existe, liens croisés, aucun script en ligne, CSP ; contenu essentiel (âge
+minimum, Paddle revendeur, renouvellement et résiliation, droit applicable, garantie, cookies réellement posés par
+`lib/*.php`, Meta en SHA-256, droits) ; pages lisibles sans base de données, type inconnu → 404 ; valeurs remplacées
+dans `config.php` (et `billing_plans.refund_days`) ; liens depuis les pages publiques, l'accueil, la page des prix, la
+page de paiement, l'inscription et la fenêtre « One last step » ; plan du site ; navigateur à 320 px, sommaire, FAQ
+des prix, fenêtre des conditions d'un compte qui ne les a pas acceptées ; aucune erreur ni violation de la CSP.
 
 **`journey.js` — le parcours du créateur** : nouveau compte (Explorer, rien d'acquis, premier jalon), premier Studio et
 premier projet (une seule fois), cartes vides sans points, carte éligible (description, liste de contrôle), carte

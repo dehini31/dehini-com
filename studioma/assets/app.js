@@ -182,7 +182,7 @@
         <span class="terms-ico">${icon('shield')}</span>
         <h2>One last step${first ? ', ' + first : ''}</h2>
         <p class="muted">Studioma is a shared professional space for community managers, creators and brands. Before you start, please agree to its terms of use:</p>
-        <blockquote class="terms-box">I agree to use Studioma respectfully and to share only content I am allowed to share.</blockquote>
+        <blockquote class="terms-box">I agree to the <a href="${SM.base}terms/" target="_blank" rel="noopener">Terms of Service</a>, to use Studioma respectfully and to share only content I am allowed to share. I have read the <a href="${SM.base}privacy/" target="_blank" rel="noopener">Privacy Policy</a>.</blockquote>
         <div class="terms-actions">
           <button class="btn btn-primary btn-block" data-act="terms-accept" autofocus>${icon('check')}I agree and continue</button>
           <button class="btn btn-ghost btn-block" data-act="terms-signout">Not now — sign out</button>
@@ -313,7 +313,7 @@
         <p class="form-error" data-error hidden></p>
         <button class="btn btn-primary btn-block">Create my account</button>
         ${SM.ref.launch_promo ? html`<p class="promo-note">${icon('sparkles')}<span><b>${SM.ref.promo_trial_days} days of full access included.</b> No credit card required — no payment, no automatic billing.</span></p>` : ''}
-        <p class="terms-note">${icon('shield')}<span>By creating your account, you agree to use Studioma respectfully and to share only content you are allowed to share.</span></p>
+        <p class="terms-note">${icon('shield')}<span>By creating your account, you agree to the <a href="${SM.base}terms/" target="_blank" rel="noopener">Terms of Service</a>, to use Studioma respectfully and to share only content you are allowed to share. See how we handle your data in the <a href="${SM.base}privacy/" target="_blank" rel="noopener">Privacy Policy</a>.</span></p>
       </form>
       <p class="auth-alt">Already have an account? <a href="#/login">Sign in</a></p>`));
     // Avec Google, les conditions sont demandées une fois dans le compte (fenêtre « One last step », SM.termsGate).

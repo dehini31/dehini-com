@@ -432,6 +432,8 @@ function api_billing_plans(array $b, ?array $u): array
         'plans' => $plans, 'fair_use_cards' => STM_FAIR_USE_CARDS, 'checkout' => billing_available(), 'env' => billing_env(),
         // Offre de lancement ouverte (lib/promo.php) : la page des prix propose l'essai gratuit, sans carte.
         'promo' => function_exists('promo_enabled') && promo_enabled(),
+        // Garantie de remboursement (jours après le premier paiement), affichée dans la FAQ ; voir /studioma/refunds/.
+        'refund_days' => (int) STM_REFUND_DAYS,
         'current' => $u ? account_plan((int) $u['id'])['plan'] : null,
     ];
 }
