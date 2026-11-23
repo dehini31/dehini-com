@@ -55,9 +55,13 @@ secrets here. Mark anything you could not verify as *(unverified)*.
 
 **Unfinished / waiting (owner)**
 
-- **Security: the PayPal sandbox and live client secrets were pasted in a chat on 2026-11-23.** They were not
-  written anywhere by the agent and not used. Replace both secrets in the PayPal app (add a new secret, disable the
-  old one) before putting them in `studioma/config.php`.
+- **PayPal dashboard done by the owner (2026-11-23, reported, *unverified* by the agent)**: the secrets pasted in a
+  chat are **disabled** (sandbox and live apps: « Secret key 1 » disabled, « Secret key 2 » active — the new secrets
+  were never shared). Webhooks to `https://dehini.com/studioma/paypal-webhook.php` with the 11 events of
+  `docs/billing.md` § 5: **sandbox** app « Default Application », webhook ID `7D705505XL3910920`; **live** webhook ID
+  `74L10208VA199193E` (IDs are not secrets). Sandbox buyer: the « Personal » sandbox account.
+- Still to do: merge + deploy this branch, then `config.php` on the server (sandbox client ID, new secret, webhook
+  ID `7D705505XL3910920`), « Create the PayPal plans », `STM_BILLING_ENABLED`, sandbox test.
 - Confirm the live PayPal account can **receive** payments (Algeria: *unverified*); tax obligations as seller.
 - Setup and sandbox test: `docs/billing.md` § 5 and § 8.1 (config, webhook + its ID, « Create the PayPal plans »,
   `STM_BILLING_ENABLED`, buy Solo with a sandbox personal account, upgrade, downgrade, cancel, refund).

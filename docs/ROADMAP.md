@@ -47,9 +47,10 @@ status changes; keep the history of finished items short.
 
 - [ ] **Studioma billing (PayPal, replaces Paddle — decision S41, 2026-11-23)** — code on branch
   `claude/trusting-keller-rynk1j`, payments closed until set up (`docs/billing.md` § 5): confirm the live PayPal
-  account can **receive** payments (Algeria: *unverified*); **replace the app secrets that were pasted in a chat**
-  (sandbox and live) before use; sandbox app Client ID / Secret in `studioma/config.php`; webhook
-  `https://dehini.com/studioma/paypal-webhook.php` and its ID; « Create the PayPal plans » in admin › Billing;
+  account can **receive** payments (Algeria: *unverified*); ~~replace the secrets pasted in a chat~~ done
+  2026-11-23 (owner); ~~webhooks~~ created 2026-11-23 (sandbox `7D705505XL3910920`, live `74L10208VA199193E`, 11
+  events); after merge + deploy: sandbox app Client ID / new Secret / webhook ID in `studioma/config.php`;
+  « Create the PayPal plans » in admin › Billing;
   `STM_BILLING_ENABLED`; sandbox test (§ 8.1); then live (§ 8.2). Owner's choices made: no tax added, upgrade right
   away. Tax obligations as seller (e.g. EU VAT): owner, with an accountant. Paddle: nothing to do (never went live).
 - [ ] **Before deploying the billing code**: choose which existing accounts get a complimentary Solo/Team plan (admin ›
