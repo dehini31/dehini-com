@@ -60,8 +60,15 @@ secrets here. Mark anything you could not verify as *(unverified)*.
   were never shared). Webhooks to `https://dehini.com/studioma/paypal-webhook.php` with the 11 events of
   `docs/billing.md` § 5: **sandbox** app « Default Application », webhook ID `7D705505XL3910920`; **live** webhook ID
   `74L10208VA199193E` (IDs are not secrets). Sandbox buyer: the « Personal » sandbox account.
-- Still to do: merge + deploy this branch, then `config.php` on the server (sandbox client ID, new secret, webhook
-  ID `7D705505XL3910920`), « Create the PayPal plans », `STM_BILLING_ENABLED`, sandbox test.
+- **PR #86 (PayPal) merged by the owner (`main` @ `ed3341d`) and deployed** — verified from outside 2026-11-23:
+  `paypal-webhook.php` answers 405 to GET (exists), `paddle-webhook.php` 404 (removed), `lib/paypal.php` 403.
+- **Incident 2026-11-23**: the server's `~/public_html/studioma/config.php` was created with the 4 PayPal lines but
+  **without `<?php`** (`php -l` does not catch that), so every Studioma response started with the file's text,
+  exposing the sandbox secret « Secret key 2 » publicly and breaking JSON replies; the settings were not applied.
+  Owner told to add `<?php` as line 1, then replace the sandbox secret (sandbox only, no real money). The agent
+  deleted its local copy of the leaked reply. **Next agent: check the live API starts with `{` again.**
+- Still to do after the fix: new sandbox secret in `config.php`, « Create the PayPal plans », `STM_BILLING_ENABLED`,
+  sandbox test.
 - Confirm the live PayPal account can **receive** payments (Algeria: *unverified*); tax obligations as seller.
 - Setup and sandbox test: `docs/billing.md` § 5 and § 8.1 (config, webhook + its ID, « Create the PayPal plans »,
   `STM_BILLING_ENABLED`, buy Solo with a sandbox personal account, upgrade, downgrade, cancel, refund).
