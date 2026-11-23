@@ -65,8 +65,9 @@ secrets here. Mark anything you could not verify as *(unverified)*.
 - **Incident 2026-11-23**: the server's `~/public_html/studioma/config.php` was created with the 4 PayPal lines but
   **without `<?php`** (`php -l` does not catch that), so every Studioma response started with the file's text,
   exposing the sandbox secret « Secret key 2 » publicly and breaking JSON replies; the settings were not applied.
-  Owner told to add `<?php` as line 1, then replace the sandbox secret (sandbox only, no real money). The agent
-  deleted its local copy of the leaked reply. **Next agent: check the live API starts with `{` again.**
+  Fixed the same day (`<?php` added; a duplicate `<?php` briefly caused HTTP 500, then removed): **verified** the
+  live API answers 200 with JSON, no leak, `env` sandbox. Still to do by the owner: replace the leaked sandbox secret
+  (sandbox only, no real money). The agent deleted its local copy of the leaked reply.
 - Still to do after the fix: new sandbox secret in `config.php`, « Create the PayPal plans », `STM_BILLING_ENABLED`,
   sandbox test.
 - Confirm the live PayPal account can **receive** payments (Algeria: *unverified*); tax obligations as seller.
