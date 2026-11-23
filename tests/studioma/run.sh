@@ -2,7 +2,7 @@
 # Lance toute la batterie de tests de Studioma sur un faux hébergement neuf :
 #   tests/studioma/run.sh [dossier] [port]   (par défaut : un dossier temporaire, port 8097)
 # D'abord l'API seule (api.js), le partage avec des invités sans compte (share.js), le suivi Meta (meta.js), puis le serveur MCP
-# et son OAuth (mcp.js), l'administration (admin.js), les formules et abonnements avec un faux Paddle (billing.js, limites
+# et son OAuth (mcp.js), l'administration (admin.js), les formules et abonnements avec un faux PayPal (billing.js, limites
 # appliquées, et billing-config.php pour le contrôle des réglages sandbox / production), le partage d'une carte et sa
 # publication dans la communauté (publish.js, puis publish-e2e.js dans un navigateur), l'offre de lancement sans carte
 # (promo.js, promo-e2e.js), le parcours du créateur (journey.js, journey-e2e.js : XP, réalisations vérifiées, niveaux, pages
@@ -29,7 +29,7 @@ fresh() {
   for _ in 1 2 3 4 5 6 7 8 9 10; do curl -s -o /dev/null "http://127.0.0.1:$PORT/studioma/assets/favicon.svg" && break; sleep 0.3; done
 }
 cd "$REPO"
-php "$HERE/billing-config.php"   # contrôle des réglages Paddle (sandbox / production), sans serveur
+php "$HERE/billing-config.php"   # contrôle des réglages PayPal (sandbox / live), sans serveur
 fresh
 node "$HERE/api.js" "http://127.0.0.1:$PORT" "$DIR"
 fresh

@@ -202,7 +202,7 @@ function marks(array $a): string
 /** Schéma compatible avec les vieilles versions de SQLite des hébergeurs mutualisés. */
 function migrate(PDO $pdo): void
 {
-    if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= 13) return;
+    if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= 14) return;
     // Deux premières visites simultanées : la seconde attend la fin de la création, puis ne fait rien.
     $pdo->exec('BEGIN IMMEDIATE');
     try {
@@ -929,10 +929,10 @@ function migrate(PDO $pdo): void
         SQL);
         }
         if ($v < 9) {
-            // Abonnements (lib/billing.php, lib/paddle.php). Aucune ligne n'est créée pour les comptes existants :
+            // Abonnements (lib/billing.php ; fournisseur : lib/paypal.php, Paddle avant). Aucune ligne n'est créée pour les comptes existants :
             // sans abonnement valable, un compte est sur la formule Free (pas de doublon possible, aucune donnée touchée).
             $pdo->exec(<<<SQL
-        -- Un abonnement d'un compte. provider : paddle | manual (offert par l'administration). env : sandbox |
+        -- Un abonnement d'un compte. provider : paypal (paddle avant) | manual (offert par l'administration) | promo. env : sandbox |
         -- production (Paddle) ou manual. status : trialing | active | past_due | paused | canceled | expired.
         -- amount : prix de l'abonnement en centimes (donnée vérifiée de Paddle) ; interval : month | year.
         -- provider_updated : date de mise à jour chez Paddle (les événements arrivés dans le désordre sont ignorés).
@@ -1301,6 +1301,15 @@ function migrate(PDO $pdo): void
                 $upd->execute([(int) $pdo->lastInsertId(), $o['id']]);
             }
             $pdo->exec('PRAGMA user_version = 13');
+        }
+        if ($v < 14) {
+            // Paiement avec PayPal (lib/paypal.php) : PayPal ne calcule pas de prorata. Après une descente de formule
+            // (Team → Solo), le compte garde la formule déjà payée (prev_plan) jusqu'à la fin de la période (prev_until).
+            // Colonnes ajoutées seulement, valeurs neutres pour les abonnements existants.
+            $cols = array_column($pdo->query('PRAGMA table_info(subscriptions)')->fetchAll(), 'name');
+            if (!in_array('prev_plan', $cols, true)) $pdo->exec("ALTER TABLE subscriptions ADD COLUMN prev_plan TEXT NOT NULL DEFAULT ''");
+            if (!in_array('prev_until', $cols, true)) $pdo->exec('ALTER TABLE subscriptions ADD COLUMN prev_until INTEGER NOT NULL DEFAULT 0');
+            $pdo->exec('PRAGMA user_version = 14');
         }
         $pdo->exec('COMMIT');
     } catch (Throwable $e) {

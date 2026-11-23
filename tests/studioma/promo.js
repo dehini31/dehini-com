@@ -9,7 +9,7 @@
  *   confirmation, mot de passe oublié), parrainage de soi-même refusé, activité suspecte à examiner ;
  *   10 parrainages vérifiés : 12 mois civils, une seule fois (même avec des vérifications simultanées), à la suite
  *   de l'essai s'il est en cours, sans réduire un accès payé ou offert ; fin de l'année offerte ;
- *   indicateurs de l'administration ; aucun paiement, aucune carte, aucun appel à Paddle ; offre coupée.
+ *   indicateurs de l'administration ; aucun paiement, aucune carte, aucun appel à PayPal ; offre coupée.
  *   node tests/studioma/promo.js <adresse> <dossier>
  */
 const fs = require('fs');
@@ -102,9 +102,9 @@ const friend = async (code, verify) => {
   return c;
 };
 const noPayment = () => {
-  const fp = path.join(DIR, 'fake-paddle.json');
+  const fp = path.join(DIR, 'fake-paypal.json');
   const calls = fs.existsSync(fp) ? (JSON.parse(fs.readFileSync(fp, 'utf8')).calls || []) : [];
-  return calls.length === 0 && one("SELECT COUNT(*) FROM subscriptions WHERE provider = 'paddle'") === 0
+  return calls.length === 0 && one("SELECT COUNT(*) FROM subscriptions WHERE provider IN ('paypal', 'paddle')") === 0
     && one('SELECT COUNT(*) FROM billing_customers') === 0 && one('SELECT COUNT(*) FROM billing_transactions') === 0;
 };
 const DAY = 86400;
@@ -335,8 +335,8 @@ const DAY = 86400;
   r = await adm.get('admin_billing');
   ok(r.metrics.promo >= 1 && Object.keys(r.metrics.mrr).length === 0, 'abonnements : l\'offre à part, jamais de chiffre d\'affaires', r.metrics);
 
-  step('14. Aucun paiement, aucune carte, aucun Paddle');
-  ok(noPayment(), 'aucun appel à Paddle, aucun client ni paiement, aucun abonnement payant');
+  step('14. Aucun paiement, aucune carte, aucun PayPal');
+  ok(noPayment(), 'aucun appel à PayPal, aucun client ni paiement, aucun abonnement payant');
   r = await amel.post('billing_checkout', { plan: 'team', interval: 'month' });
   ok(r.status === 503 && r.error === 'billing_unavailable', 'le paiement reste fermé (rien n\'est ouvert par l\'offre)', r);
   ok(one("SELECT COUNT(*) FROM subscriptions WHERE provider = 'promo' AND amount <> 0") === 0, 'aucun montant sur les accès de l\'offre');

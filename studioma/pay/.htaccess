@@ -1,7 +1,7 @@
-# Page de paiement : seule page de Studioma qui charge Paddle.js (paiement hébergé par Paddle). Sa politique de
-# sécurité autorise les domaines de Paddle, et seulement eux, en plus du site lui-même.
+# Retour de PayPal : la page ne charge aucun script tiers (le paiement a lieu sur paypal.com). Politique stricte :
+# rien d'autre que le site lui-même, aucune intégration dans un cadre.
 <IfModule mod_headers.c>
-  Header set Content-Security-Policy "default-src 'self'; script-src 'self' https://cdn.paddle.com https://*.paddle.com; style-src 'self' 'unsafe-inline' https://*.paddle.com; font-src 'self' https://*.paddle.com; img-src 'self' data: https://*.paddle.com; connect-src 'self' https://*.paddle.com; frame-src https://*.paddle.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://*.paddle.com"
-  Header set Referrer-Policy "strict-origin-when-cross-origin"
+  Header set Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'self'; frame-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+  Header set Referrer-Policy "no-referrer"
   Header set X-Robots-Tag "noindex"
 </IfModule>

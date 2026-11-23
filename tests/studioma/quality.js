@@ -168,7 +168,7 @@ const inFeed = (r, pubId) => (r.posts || []).some((p) => p.pub && p.pub.id === p
   const P = JSON.parse(plans);
   ok(pg.status === 200 && pg.html.includes('<h1>') && ['free', 'solo', 'team'].every((k) => pg.html.includes(P[k].name) && pg.html.includes(P[k].tagline)), 'page des prix : les trois formules de lib/plans.php');
   ok(pg.html.includes('$' + P.solo.price.month / 100 + '<') && pg.html.includes('$' + P.team.price.month / 100 + '<') && pg.html.includes('<link rel="canonical" href="' + ORIGIN + '/studioma/pricing/">'), 'prix exacts, adresse canonique');
-  ok(!/Checkout|card number/i.test(pg.html) && !pg.html.includes('paddle'), 'aucun paiement sur la page');
+  ok(!/Checkout|card number/i.test(pg.html) && !/paddle|paypal\.com/i.test(pg.html), 'aucun paiement sur la page');
   pg = await page('/studioma/sitemap.xml');
   ok(pg.status === 200 && /xml/.test(pg.headers.get('content-type')) && pg.html.startsWith('<?xml') && pg.html.includes('<loc>' + ORIGIN + '/studioma/</loc>') && pg.html.includes('/studioma/pricing/') && pg.html.includes('/opportunity/' + opp2 + '-'), 'plan du site : accueil, prix, opportunités ouvertes');
   ok(!/\/app\/|api\.php|\/s\/|\/verify\/|\/creator\//.test(pg.html), 'jamais l\'application, l\'API, un lien de partage, ni un passeport ou une vérification non publics');

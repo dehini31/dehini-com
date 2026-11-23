@@ -1,13 +1,16 @@
 /*
  * Studioma — formules et abonnements : page des prix (#/pricing, publique), Réglages › Plan & billing
  * (#/settings/billing), invitation à changer de formule quand une limite est atteinte (erreur « plan_limit »).
- * Les limites sont appliquées par le serveur (lib/billing.php) ; le paiement passe par Paddle (page studioma/pay/).
+ * Les limites sont appliquées par le serveur (lib/billing.php) ; le paiement a lieu sur PayPal (retour : studioma/pay/).
  */
 (function () {
   'use strict';
   const { html, icon, fmt } = SM;
   const money = (cents) => '$' + (cents % 100 ? (cents / 100).toFixed(2) : String(cents / 100));
-  const STATE = { free: ['Free forever', 'chip-soft'], active: ['Active', 'chip-ok'], trialing: ['Trial', 'chip-soft'], past_due: ['Payment failed', 'chip-bad'] };
+  const STATE = { free: ['Free forever', 'chip-soft'], active: ['Active', 'chip-ok'], trialing: ['Trial', 'chip-soft'], past_due: ['Payment failed', 'chip-bad'], canceled: ['Canceled', 'chip-warn'] };
+  const PAID = { completed: ['Paid', 'chip-ok'], payment_failed: ['Failed', 'chip-bad'], refunded: ['Refunded', 'chip-soft'], reversed: ['Reversed', 'chip-bad'], denied: ['Denied', 'chip-bad'] };
+  const planName = (k) => (k === 'team' ? 'Team' : k === 'solo' ? 'Solo' : 'Free');
+  const paypalSub = (me) => (me && me.subscription && me.subscription.provider === 'paypal' ? me.subscription : null);
 
   /* ---------------------------------------------- invitation à changer de formule */
   /** Fenêtre affichée quand le serveur refuse une action à cause de la formule (core.js › SM.api). */
@@ -52,12 +55,12 @@
     ? `Yes. Every account gets ${SM.ref.promo_trial_days || 30} days of full access to all features (the Team plan and its limits) — no credit card, no payment, no automatic billing. When it ends you continue on Free: nothing is deleted and nothing is charged. Invite 10 friends who verify their accounts and you unlock a full year.`
     : 'The Free plan is free forever, without a card. Start there and upgrade when you need more clients or a team.');
   const FAQ = [
-    ['Can I change plans later?', 'Yes. Upgrades apply right away and Paddle charges only the prorated difference. Moving to a lower plan or back to Free never deletes anything.'],
+    ['Can I change plans later?', 'Yes. An upgrade unlocks the bigger plan as soon as you approve it on PayPal; its price is charged from your next renewal. Moving to a lower plan takes effect when the period you already paid for ends. Changing plans never deletes anything.'],
     ['What happens to my work if I downgrade?', 'Everything stays: projects, Studios, cards, history. If you are above the new plan\'s limits, you can still open everything, but you can\'t create more until you archive or delete some, or upgrade again. Extra team members and guests keep read-only access.'],
     ['Do my clients and guests need to pay?', 'No. Guests open your Studio with a share link, without an account, and never count as members.'],
     ['What counts as a card on the Free plan?', 'Each new card created in your projects during the calendar month (by you, a guest or an AI assistant). The allowance renews on the 1st. Existing cards are never deleted. Paid plans have unlimited cards, with a fair-use limit of 5,000 new cards per month.'],
-    ['How does payment work?', 'Payments are handled by Paddle, our reseller and merchant of record. Your card details go to Paddle, never to Studioma. Taxes may apply depending on your country; Paddle shows the final amount before you pay and emails your invoices.'],
-    ['Can I cancel at any time?', 'Yes, from Settings › Plan & billing. You keep your paid plan until the end of the period you paid for, then your account moves to Free.'],
+    ['How does payment work?', 'You pay securely on PayPal, with your PayPal account or a card through PayPal. Your card details go to PayPal, never to Studioma. Prices are in US dollars and final: Studioma adds no tax. PayPal emails a receipt for every payment and renews your subscription automatically until you cancel.'],
+    ['Can I cancel at any time?', 'Yes, from Settings › Plan & billing (or in your PayPal account, under automatic payments). Nothing more is charged; you keep your paid plan until the end of the period you paid for, then your account moves to Free.'],
     ['Can I get a refund?', (d) => `Yes. If Studioma is not right for you, ask within ${d.refund_days || 14} days of the first payment of your subscription and we refund it in full (once per account). Renewals are not refunded, but you can cancel at any time before the next one. Details are in the Refund Policy.`],
     ['Is there a free trial?', ''],
   ];
@@ -69,7 +72,7 @@
     const me = SM.me ? await SM.get('billing').catch(() => null) : null;
     if (!ctx.alive()) return;
     const current = me ? me.plan : null;
-    const paid = me && me.subscription && me.subscription.provider === 'paddle' ? me.subscription : null;
+    const paid = paypalSub(me);
     const promoSub = me && me.subscription && me.subscription.provider === 'promo' ? me.subscription : null;
     const focus = q.get('plan');
     // Offre de lancement : 30 jours d'accès complet, sans carte (la même pour Solo et Team), et parrainage.
@@ -127,6 +130,7 @@
         ${promoOn ? html`<div class="promo-hero pricing-note">${icon('sparkles')}<div><b>Special Launch Offer: Enjoy 30 days of full access to all Studioma features — completely free. No credit card required.</b>
             ${!d.checkout ? html`<span>Paid subscriptions aren't available yet: the Solo and Team prices below are planned prices. The offer is a free trial of every feature, not a subscription — nothing is ever charged, and you return to Free when it ends without losing anything.</span>` : ''}</div></div>`
           : !d.checkout ? html`<p class="notice pricing-note">${icon('info')}<span>Online payment for Solo and Team opens soon. Start free today — everything you create stays when you upgrade.</span></p>` : ''}
+        ${q.get('checkout') === 'canceled' ? html`<p class="notice pricing-note">${icon('info')}<span>Checkout canceled on PayPal — nothing was charged.</span></p>` : ''}
         ${me && me.over && me.over.length ? html`<p class="notice notice-warn pricing-note">${icon('alert')}<span>Your account is above the ${me.plan_name} plan limits (${me.over.map((o) => `${o.label} ${o.used}/${o.max}`).join(', ')}). Nothing was deleted — <a href="#/settings/billing">see details</a>.</span></p>` : ''}
         <div class="plan-grid">${plans.map(card)}</div>
         ${promoOn ? html`<section class="panel pad promo-invite">${icon('award')}<div class="grow"><h2>Invite 10 Friends. Get 1 Year Free.</h2>
@@ -149,44 +153,65 @@
   SM.actions['promo-invite'] = (el) => { if (!SM.me) sessionStorage.setItem('stm.next', '/refer'); SM.go(SM.me ? '/refer' : '/signup'); };
   const STM_RANK = { free: 0, solo: 1, team: 2 };
 
-  /** Choisir une formule : paiement Paddle (nouvel abonnement) ou changement de l'abonnement en cours. */
+  /**
+   * Choisir une formule : nouvel abonnement (paiement sur PayPal) ou changement de l'abonnement en cours (« revise »
+   * chez PayPal, souvent avec l'accord du payeur sur PayPal). PayPal ne calcule pas de prorata : le nouveau prix
+   * s'applique au renouvellement ; une montée vaut dès l'accord, une descente à la fin de la période payée.
+   */
   SM.actions['plan-choose'] = async (el) => {
     const plan = el.dataset.plan;
     const interval = el.dataset.interval;
     if (!SM.me) { sessionStorage.setItem('stm.next', '/pricing?plan=' + plan + '&interval=' + interval); SM.go('/signup'); return; }
     const me = await SM.try(SM.get('billing'));
     if (!me) return;
-    const sub = me.subscription && me.subscription.provider === 'paddle' ? me.subscription : null;
-    const name = plan === 'solo' ? 'Solo' : 'Team';
-    if (sub) {
-      const up = STM_RANK[plan] > STM_RANK[sub.plan] || (plan === sub.plan && interval === 'year');
+    const sub = paypalSub(me);
+    const name = planName(plan);
+    const plans = await SM.get('billing_plans').catch(() => null);
+    const def = plans && plans.plans.find((p) => p.key === plan);
+    const price = def ? money(def.price[interval]) + '/' + interval : '';
+    if (sub && sub.status !== 'canceled') {
+      const up = STM_RANK[plan] > STM_RANK[sub.plan];
+      const down = STM_RANK[plan] < STM_RANK[sub.plan];
+      const renew = sub.period_end ? fmt.date(sub.period_end) : 'your next renewal';
       const ok = await SM.confirm({
         title: (up ? 'Upgrade to ' : 'Switch to ') + name + (interval === 'year' ? ' (yearly)' : ' (monthly)') + '?',
-        text: up ? 'The change applies right away. Paddle charges only the prorated difference for the rest of your current period.'
-          : 'The change applies right away; Paddle credits the difference on your next invoice. Nothing is deleted — if you are above the new limits, you can still open everything.',
-        ok: up ? 'Upgrade now' : 'Switch plan',
+        text: up ? `${name} unlocks as soon as you approve the change on PayPal. The new price (${price}) is charged from your next renewal on ${renew}.`
+          : down ? `You keep ${planName(sub.plan)} until ${renew} (already paid), then ${name} at ${price}. You approve the change on PayPal. Nothing is deleted — above the new limits, you can still open everything.`
+            : `From your next renewal on ${renew}, you'll be billed ${price}. You approve the change on PayPal.`,
+        ok: up ? 'Continue to PayPal' : 'Switch plan',
       });
       if (!ok) return;
       SM.busy(el, true);
       const r = await SM.try(SM.post('billing_change', { plan, interval }));
       SM.busy(el, false);
-      if (r) { SM.toast('Your plan is now ' + r.plan_name); SM.go('/settings/billing'); }
+      if (r && r.checkout_url) { location.href = r.checkout_url; return; }   // accord du payeur sur PayPal
+      if (r) { SM.toast(r.plan === plan ? 'Your plan is now ' + r.plan_name : 'Change saved: ' + name + ' from ' + renew); SM.go('/settings/billing'); }
       return;
     }
     SM.busy(el, true);
     const r = await SM.try(SM.post('billing_checkout', { plan, interval }));
+    if (r && r.checkout_url) { location.href = r.checkout_url; return; }   // paiement sur PayPal, retour par studioma/pay/
     SM.busy(el, false);
-    if (r && r.checkout_url) location.href = r.checkout_url;   // page de paiement Paddle (studioma/pay/)
   };
 
   /* -------------------------------------------- Réglages › Plan & billing */
   SM.route(/^\/settings\/billing$/, async (m, ctx) => {
+    const q = SM.query();
+    // Retour de PayPal (studioma/pay/) : le serveur relit l'abonnement chez PayPal ; seule sa réponse active la formule.
+    const back = q.get('checkout') === 'return';
+    let confirmErr = '';
+    if (back) {
+      const c = await SM.post('billing_confirm', { subscription_id: q.get('sub') || '' }).catch((e) => { confirmErr = (e && e.message) || 'error'; return null; });
+      if (!ctx.alive()) return;
+      if (c && c.plan !== 'free') SM.toast('Welcome to ' + c.plan_name + '!');
+    }
     let d = await SM.get('billing');
     if (!ctx.alive()) return;
-    const afterCheckout = SM.query().get('checkout') === 'done';
+    const waiting = () => back && !confirmErr && (!d.subscription || d.subscription.provider !== 'paypal' || d.plan === 'free');
     const draw = () => {
       const s = d.subscription;
-      const paddle = s && s.provider === 'paddle';
+      const pp = s && s.provider === 'paypal';
+      const live = pp && s.status !== 'canceled';
       const promoSub = s && s.provider === 'promo';
       const [stateLabel, stateCls] = promoSub ? [s.status === 'trialing' ? 'Free trial' : 'Free year (referrals)', 'chip-ok'] : s && s.provider === 'manual' ? ['Complimentary', 'chip-soft'] : s && s.cancel_at ? ['Ends ' + fmt.date(s.cancel_at), 'chip-warn'] : (STATE[d.state] || [d.state, '']);
       const L = d.limits;
@@ -200,23 +225,24 @@
       SM.set(ctx.view, html`<div class="page page-narrow">
         <header class="page-head"><div><a class="back small" href="#/settings">${icon('arrow-left')}Settings</a><h1>Plan & billing</h1></div>
           <a class="btn btn-soft" href="#/pricing">${icon('sparkles')}<span>See all plans</span></a></header>
-        ${afterCheckout && d.plan === 'free' ? html`<p class="notice" id="checkout-wait">${SM.spinner()}<span>Payment received by Paddle. Your plan is activated as soon as Paddle confirms it — usually within a few seconds.</span></p>` : ''}
-        ${d.state === 'past_due' ? html`<p class="notice notice-warn">${icon('alert')}<span><b>Your last payment failed.</b> Update your payment method before ${fmt.date(d.grace_until)} to keep the ${d.plan_name} plan. Nothing will be deleted.</span></p>` : ''}
+        ${waiting() ? html`<p class="notice" id="checkout-wait">${SM.spinner()}<span>Waiting for PayPal to confirm your subscription — usually a few seconds. You can stay on this page.</span></p>` : ''}
+        ${back && confirmErr ? html`<p class="notice notice-warn">${icon('alert')}<span>We couldn't confirm your subscription with PayPal yet (${confirmErr}). If you approved the payment, your plan appears here within a few minutes; otherwise, contact us.</span></p>` : ''}
+        ${d.state === 'past_due' ? html`<p class="notice notice-warn">${icon('alert')}<span><b>Your last payment failed.</b> PayPal tries again automatically. Update your payment method in PayPal before ${fmt.date(d.grace_until)} to keep the ${d.plan_name} plan. Nothing will be deleted.</span></p>` : ''}
         ${d.over.length ? html`<div class="notice notice-warn">${icon('alert')}<div><b>Your account is above the ${d.plan_name} plan limits.</b> Nothing was deleted and everything stays readable. To create more, archive or delete some items, or upgrade.
           <ul class="over-list">${d.over.map((o) => html`<li>${o.label}: ${o.used} of ${o.max}${o.key === 'members' ? ' — members beyond the plan have read-only access' : ''}</li>`)}</ul></div></div>` : ''}
         <section class="panel pad current-plan">
           <div class="row between"><div><small class="muted">Current plan</small><h2 class="plan-name">${d.plan_name}</h2></div><span class="chip ${stateCls}">${stateLabel}</span></div>
-          ${paddle ? html`<p>${money(s.amount)} per ${s.interval === 'year' ? 'year' : 'month'} · billed ${s.interval === 'year' ? 'yearly' : 'monthly'}${s.cancel_at ? html` · <b>ends on ${fmt.date(s.cancel_at)}</b>, then Free` : s.period_end ? ` · renews on ${fmt.date(s.period_end)}` : ''}</p>` : ''}
+          ${pp ? html`<p>${planName(s.plan)} · ${money(s.amount)} per ${s.interval === 'year' ? 'year' : 'month'} · paid with PayPal${s.cancel_at ? html` · <b>ends on ${fmt.date(s.cancel_at)}</b>, then Free. You can subscribe again from that day.` : s.period_end ? ` · renews on ${fmt.date(s.period_end)}` : ''}</p>` : ''}
+          ${pp && s.prev_plan ? html`<p class="muted">You keep ${planName(s.prev_plan)} until ${fmt.date(s.prev_until)} (already paid), then ${planName(s.plan)}.</p>` : ''}
           ${s && s.provider === 'manual' ? html`<p>Offered by Studioma${s.period_end ? ' until ' + fmt.date(s.period_end) : ''}.</p>` : ''}
           ${promoSub ? html`<p>Launch offer: full access until <b>${fmt.date(s.period_end)}</b> — no credit card, no payment, no automatic billing. Then your account returns to Free; nothing is deleted. <a href="#/refer">Invite friends to earn a free year</a>.</p>` : ''}
           ${d.plan === 'free' ? html`<p class="muted">Free forever. Upgrade when you need more projects, client approvals or a team.</p>` : ''}
           <div class="row row-wrap">
-            ${d.plan !== 'team' ? html`<a class="btn btn-primary" href="#/pricing?plan=${d.plan === 'free' ? 'solo' : 'team'}">${icon('zap')}${d.plan === 'free' ? 'Upgrade' : 'Upgrade to Team'}</a>` : ''}
-            ${paddle && d.checkout ? html`<button class="btn" data-act="plan-choose" data-plan="${s.plan}" data-interval="${s.interval === 'year' ? 'month' : 'year'}">Switch to ${s.interval === 'year' ? 'monthly' : 'yearly'} billing</button>` : ''}
-            ${paddle && d.plan === 'team' && d.checkout ? html`<button class="btn" data-act="plan-choose" data-plan="solo" data-interval="${s.interval}">Downgrade to Solo</button>` : ''}
-            ${paddle && d.checkout ? html`<button class="btn" data-act="billing-portal">${icon('external')}Manage billing</button>` : ''}
-            ${paddle && d.checkout && !s.cancel_at ? html`<button class="btn is-danger" data-act="billing-cancel">Cancel subscription</button>` : ''}
-            ${paddle && d.checkout && s.cancel_at ? html`<button class="btn btn-soft" data-act="billing-resume">Keep my subscription</button>` : ''}
+            ${d.plan !== 'team' && !(pp && s.cancel_at) ? html`<a class="btn btn-primary" href="#/pricing?plan=${d.plan === 'free' ? 'solo' : 'team'}">${icon('zap')}${d.plan === 'free' ? 'Upgrade' : 'Upgrade to Team'}</a>` : ''}
+            ${live && d.checkout ? html`<button class="btn" data-act="plan-choose" data-plan="${s.plan}" data-interval="${s.interval === 'year' ? 'month' : 'year'}">Switch to ${s.interval === 'year' ? 'monthly' : 'yearly'} billing</button>` : ''}
+            ${live && s.plan === 'team' && d.checkout ? html`<button class="btn" data-act="plan-choose" data-plan="solo" data-interval="${s.interval}">Downgrade to Solo</button>` : ''}
+            ${pp ? html`<a class="btn" href="${d.manage_url}" target="_blank" rel="noopener">${icon('external')}Manage in PayPal</a>` : ''}
+            ${live && d.checkout ? html`<button class="btn is-danger" data-act="billing-cancel">Cancel subscription</button>` : ''}
           </div>
           ${!d.checkout ? html`<p class="muted small">Online payment opens soon. Your plan and limits are already shown below.</p>` : ''}
         </section>
@@ -227,19 +253,19 @@
           ${bar('Cards created this month', U.cards_month, L.cards_month, L.cards_month == null ? 'Fair use: up to ' + fmt.num(d.fair_use_cards) + ' new cards per month.' : 'Renews on ' + fmt.date(d.renews_cards) + '. Existing cards are never deleted.')}
           ${bar('Active guest links', U.share_links, L.share_links)}
         </section>
-        ${d.transactions.length ? html`<section class="panel pad"><h2>${icon('history')} Payments</h2>${d.transactions.map((t) => html`<div class="list-row"><span class="grow"><b>${money(t.amount)} ${t.currency}</b><small class="muted">${fmt.date(t.billed_at)}</small></span><span class="chip ${t.status === 'payment_failed' ? 'chip-bad' : 'chip-ok'}">${t.status === 'payment_failed' ? 'Failed' : 'Paid'}</span></div>`)}
-          <p class="muted small">Invoices are emailed by Paddle and available in Manage billing.</p></section>` : ''}
+        ${d.transactions.length ? html`<section class="panel pad"><h2>${icon('history')} Payments</h2>${d.transactions.map((t) => { const [lbl, cls] = PAID[t.status] || [t.status, '']; return html`<div class="list-row"><span class="grow"><b>${money(t.amount)} ${t.currency}</b><small class="muted">${fmt.date(t.billed_at)}</small></span><span class="chip ${cls}">${lbl}</span></div>`; })}
+          <p class="muted small">PayPal emails a receipt for every payment; your payments are also listed in your PayPal account.</p></section>` : ''}
       </div>`);
     };
     draw();
-    if (afterCheckout && d.plan === 'free') {
-      // La formule ne change qu'à la confirmation de Paddle (webhook) : on attend, sans jamais l'activer ici.
+    if (waiting()) {
+      // PayPal peut mettre quelques secondes à activer l'abonnement : le serveur le relit, sans jamais l'activer ici.
       let n = 0;
       const t = setInterval(async () => {
-        if (!ctx.alive() || ++n > 30) { clearInterval(t); const w = SM.$('#checkout-wait'); if (w && ctx.alive()) SM.set(w, html`${icon('info')}<span>Paddle hasn't confirmed the payment yet. Refresh this page in a minute; if your plan doesn't change, contact us.</span>`); return; }
-        const r = await SM.get('billing').catch(() => null);
+        if (!ctx.alive() || ++n > 20) { clearInterval(t); const w = SM.$('#checkout-wait'); if (w && ctx.alive()) SM.set(w, html`${icon('info')}<span>PayPal hasn't confirmed the subscription yet. Refresh this page in a minute; if your plan doesn't change, contact us.</span>`); return; }
+        const r = await SM.post('billing_confirm', {}).catch(() => null) || await SM.get('billing').catch(() => null);
         if (r && r.plan !== 'free' && ctx.alive()) { clearInterval(t); d = r; SM.toast('Welcome to ' + r.plan_name + '!'); draw(); }
-      }, 3000);
+      }, 4000);
       SM.onLeave(() => clearInterval(t));
     }
   });
@@ -247,22 +273,10 @@
     const d = await SM.try(SM.get('billing'));
     if (!d || !d.subscription) return;
     const end = d.subscription.period_end ? fmt.date(d.subscription.period_end) : 'the end of your billing period';
-    if (!(await SM.confirm({ title: 'Cancel your subscription?', text: `You keep ${d.plan_name} until ${end}, then your account moves to Free. Nothing is deleted.`, ok: 'Cancel subscription', cancel: 'Keep it', danger: true }))) return;
+    if (!(await SM.confirm({ title: 'Cancel your subscription?', text: `PayPal stops all future payments. You keep ${d.plan_name} until ${end}, then your account moves to Free. Nothing is deleted. A canceled PayPal subscription can't be restarted: you can subscribe again after that date.`, ok: 'Cancel subscription', cancel: 'Keep it', danger: true }))) return;
     SM.busy(el, true);
     const r = await SM.try(SM.post('billing_cancel'));
     SM.busy(el, false);
     if (r) { SM.toast('Your subscription ends on ' + end); SM.navigate(); }
-  };
-  SM.actions['billing-resume'] = async (el) => {
-    SM.busy(el, true);
-    const r = await SM.try(SM.post('billing_resume'));
-    SM.busy(el, false);
-    if (r) { SM.toast('Your subscription continues'); SM.navigate(); }
-  };
-  SM.actions['billing-portal'] = async (el) => {
-    SM.busy(el, true);
-    const r = await SM.try(SM.post('billing_portal'));
-    SM.busy(el, false);
-    if (r && r.url) window.open(r.url, '_blank', 'noopener');
   };
 })();

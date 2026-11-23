@@ -9,8 +9,8 @@ $uri = rawurldecode((string) parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
 $root = rtrim($_SERVER['DOCUMENT_ROOT'], '/');
 // Réécritures de studioma/.htaccess et de .well-known/.htaccess (liens de partage, serveur MCP, OAuth, découverte).
 $target = null;
-// Faux Paddle des tests d'abonnement (tests/studioma/fake-paddle.php).
-if (strpos($uri, '/fake-paddle/') === 0) { require __DIR__ . '/fake-paddle.php'; return true; }
+// Faux PayPal des tests d'abonnement (tests/studioma/fake-paypal.php) : API et page d'accord du payeur.
+if (strpos($uri, '/fake-paypal/') === 0) { require __DIR__ . '/fake-paypal.php'; return true; }
 if (preg_match('~^/studioma/mcp/?$~', $uri)) {
     $target = 'mcp.php';
 } elseif (preg_match('~^/studioma/s/([A-Za-z0-9_-]{32})(/card/([0-9]+))?/?$~', $uri, $m)) {
@@ -76,8 +76,9 @@ if (substr($file, -5) === '.html') {
     header('X-Content-Type-Options: nosniff');
     header('Referrer-Policy: strict-origin-when-cross-origin');
     if (strpos($uri, '/studioma/pay/') === 0) {
-        // Même politique que studioma/pay/.htaccess : la page de paiement autorise Paddle, et seulement elle.
-        header("Content-Security-Policy: default-src 'self'; script-src 'self' https://cdn.paddle.com https://*.paddle.com; style-src 'self' 'unsafe-inline' https://*.paddle.com; font-src 'self' https://*.paddle.com; img-src 'self' data: https://*.paddle.com; connect-src 'self' https://*.paddle.com; frame-src https://*.paddle.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://*.paddle.com");
+        // Même politique que studioma/pay/.htaccess : retour de PayPal, aucun script tiers.
+        header("Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'self'; frame-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
+        header('Referrer-Policy: no-referrer');
         readfile($file);
         return true;
     }
