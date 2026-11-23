@@ -70,8 +70,18 @@ secrets here. Mark anything you could not verify as *(unverified)*.
   Then the owner generated a new sandbox secret; a manual edit broke the file's syntax (HTTP 500 for a few minutes);
   the file was rewritten with a one-line `printf` (secret typed with `read -rs`, never shown) — **verified** 200 JSON,
   no leak. Lesson: `php -l` does not catch a missing `<?php`; never keep a copy of `config.php` under `public_html`.
-- Still to do after the fix: new sandbox secret in `config.php`, « Create the PayPal plans », `STM_BILLING_ENABLED`,
-  sandbox test.
+- **Real PayPal sandbox, 2026-11-23/24 (owner's screenshots + live API check)** — working: OAuth with the new secret,
+  « Create the PayPal plans » (4 plans), `STM_BILLING_ENABLED` (live API `checkout: true`, `env: sandbox`),
+  subscription creation, redirect to PayPal's approval page (« Studioma », 12.00 USD), cancel return to pricing,
+  webhooks delivered and **verified by PayPal** (`BILLING.SUBSCRIPTION.CREATED` ×4 « processed »). **Not yet seen**:
+  an approved payment (`ACTIVATED`, `PAYMENT.SALE.COMPLETED`). The first approval failed on PayPal's page (« couldn't
+  set up your subscription using the card you selected ») with the default sandbox buyer; the sandbox **seller is
+  country DZ** — possible cause *(unverified)*: PayPal limits for Algerian sellers. Next test: a US sandbox buyer
+  with balance; if it fails the same way, test with a US sandbox seller + app, and ask PayPal about the live account.
+- Open owner questions: buyers without a PayPal account (guest card option depends on PayPal and the seller's
+  country; « PayPal account optional » setting; else a second provider), and the trial display fix (a member who pays
+  during the 30-day trial does not see the PayPal subscription in « Plan & billing » until the trial ends — offered,
+  not done).
 - Confirm the live PayPal account can **receive** payments (Algeria: *unverified*); tax obligations as seller.
 - Setup and sandbox test: `docs/billing.md` § 5 and § 8.1 (config, webhook + its ID, « Create the PayPal plans »,
   `STM_BILLING_ENABLED`, buy Solo with a sandbox personal account, upgrade, downgrade, cancel, refund).
