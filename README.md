@@ -1828,16 +1828,22 @@ cartes illimitées, liens privés, invités qui commentent / valident / modifien
 propriétaire d'un projet paie pour tout ce qui s'y passe ; les invités ne sont jamais des membres payants.
 
 - Page des prix `…/app/#/pricing` (lien « Pricing » sur la page d'accueil) ; **Settings › Plan & billing** : formule,
-  état, échéance, usage réel, dépassements, changer de formule ou de rythme, résilier ou garder, espace client
-  Paddle, paiements. Une limite atteinte ouvre une invitation à changer de formule.
+  état, échéance, usage réel, dépassements, changer de formule ou de rythme, résilier, « Manage in PayPal »
+  (paiements automatiques du compte PayPal), paiements. Une limite atteinte ouvre une invitation à changer de formule.
 - **Rien n'est jamais supprimé** par un changement de formule : au-delà des limites, tout reste lisible, la création
   est refusée, les membres en trop et les invités passent en lecture seule.
-- Paiement : **Paddle Billing** (paiement hébergé, Paddle revendeur), page `studioma/pay/`, notifications signées
-  `studioma/paddle-webhook.php`. La formule n'est activée que par les données vérifiées de Paddle. **Fermé tant que
-  Paddle n'est pas configuré** (la page des prix propose alors l'essai gratuit de l'offre de lancement, § 10 — ou
-  « Coming soon » si l'offre est coupée). Réglages, mise en route pas à pas, politique
-  de paiement en échec (14 jours de grâce) et limites : **`docs/billing.md`**.
-- Administration › **Billing** : abonnés, MRR, ARR, conversions, résiliations, notifications Paddle ; dans la fiche
+- Paiement : **PayPal** (abonnements ; remplace Paddle depuis le 2026-11-23, décision S41). Le serveur crée
+  l'abonnement chez PayPal, le membre paie sur paypal.com (compte PayPal ou carte), revient par `studioma/pay/`, et
+  la formule n'est activée que par l'état relu chez PayPal (API ou notification vérifiée par PayPal,
+  `studioma/paypal-webhook.php`). Aucun script PayPal sur Studioma. **Studioma est le vendeur** (PayPal n'est pas un
+  revendeur comme Paddle) : prix finaux en dollars, sans taxe ajoutée (choix du propriétaire). Pas de prorata chez
+  PayPal : une montée vaut tout de suite (nouveau prix au renouvellement), une descente à la fin de la période payée ;
+  une résiliation garde la formule jusqu'à la fin de la période payée. **Fermé tant que PayPal n'est pas configuré**
+  (la page des prix propose alors l'essai gratuit de l'offre de lancement, § 10 — ou « Coming soon » si l'offre est
+  coupée). Réglages (identifiants de l'application PayPal, webhook, formules créées depuis l'administration), essai en
+  sandbox, passage en live et limites : **`docs/billing.md`**.
+- Administration › **Billing** : abonnés, MRR, ARR, conversions, résiliations, notifications PayPal, adresse du
+  webhook, bouton « Create the PayPal plans » (produit et quatre formules chez PayPal) ; dans la fiche
   d'un compte, **offrir une formule** (sans paiement, hors chiffre d'affaires).
 - `STM_PLANS_ENFORCED` (true par défaut) applique les limites. Les comptes existants passent en Free : avant de
   mettre en ligne, offrir Solo ou Team aux comptes qui doivent continuer à collaborer (voir `docs/billing.md` § 6).
@@ -1895,7 +1901,7 @@ bouton **Share & publish** (ou menu de la carte › *Share & publish…*). Ce qu
 ### 10. Offre de lancement : 30 jours gratuits, 1 an pour 10 amis (sans carte)
 
 Rien à configurer : la base passe d'elle-même à la version 11. L'offre est ouverte par défaut (`STM_LAUNCH_PROMO`,
-voir `config.example.php`) ; **aucune carte, aucun paiement, aucun appel à Paddle**, jamais de renouvellement.
+voir `config.example.php`) ; **aucune carte, aucun paiement, aucun appel à PayPal**, jamais de renouvellement.
 
 - **30 jours d'accès complet** — toutes les fonctionnalités de la formule Team, avec ses limites (10 projets, 20
   Studios, 5 membres). Accordés à l'inscription (email ou Google) ; un compte existant qui ne les a jamais eus les
@@ -2032,12 +2038,12 @@ publication du fil). Audit complet, mesures et liste des problèmes corrigés : 
   données (lisibles même si SQLite est indisponible), indexées et dans le plan du site. Exploitant **Mohammed
   Dehini**, contact **contact@dehini.com**, droit **algérien**, âge minimum **16 ans**, garantie **14 jours** sur le
   premier paiement d'un abonnement (une fois par compte ; renouvellements non remboursés sauf obligation légale ;
-  erreurs de facturation toujours remboursées) ; Paddle y est nommé revendeur (*merchant of record*). Ces valeurs
+  erreurs de facturation toujours remboursées) ; paiement par PayPal, Studioma vendeur, prix sans taxe ajoutée. Ces valeurs
   sont dans `lib/core.php` (`STM_LEGAL_NAME`, `STM_LEGAL_EMAIL`, `STM_LEGAL_COUNTRY`, `STM_LEGAL_UPDATED`,
   `STM_MIN_AGE`, `STM_REFUND_DAYS`) et se remplacent dans `config.php` ; **changer `STM_LEGAL_UPDATED`** à chaque
   modification du texte. Liens : pied de page des pages publiques et de l'accueil, formulaire d'inscription,
   fenêtre « One last step », FAQ et pied de la page des prix de l'application, page de paiement. Textes rédigés à
-  partir du fonctionnement réel du code (cookies, Meta, Google, Paddle, durées de conservation) ; **ils ne
+  partir du fonctionnement réel du code (cookies, Meta, Google, PayPal, durées de conservation) ; **ils ne
   remplacent pas l'avis d'un juriste**.
 
 ### 13. Fichiers envoyés
@@ -2071,13 +2077,15 @@ requêtes simultanées), `journey-e2e.js` (les mêmes écrans dans le navigateur
 mobile), `promo.js` (l'offre de lancement : essai unique aux limites Team,
 réclamation, fin de l'essai sans perte, lien et clics, attribution signée de 30 jours, vérification, parrainage de soi
 refusé, activité suspecte, récompense unique même sous vérifications simultanées, indicateurs, aucun paiement ni appel
-à Paddle), `promo-e2e.js` (les mêmes écrans dans le navigateur, ordinateur et mobile), `publish.js` (partager une carte seule, la publier : invités limités à
+à PayPal), `promo-e2e.js` (les mêmes écrans dans le navigateur, ordinateur et mobile), `publish.js` (partager une carte seule, la publier : invités limités à
 la carte et aux pièces jointes choisies, demandes, retrait, opportunités, propositions, réponses, invitation après
 acceptation, fermeture automatique, réalisations, fil, profil, rien de privé, cycle de vie), `publish-e2e.js` (les
-mêmes écrans dans le navigateur, ordinateur et mobile), `billing.js` (formules et abonnements, limites appliquées, faux Paddle :
-migration, limites Free / Solo / Team, compteur mensuel, invités en lecture seule, paiement, webhooks signés, rejeu,
-désordre, montée, descente, résiliation, paiement en échec, places de membres, créations simultanées, isolement,
-indicateurs, page des prix et paiement dans le navigateur), `admin.js` (l'administration : accès réservé à la session `/admin`
+mêmes écrans dans le navigateur, ordinateur et mobile), `billing.js` (formules et abonnements, limites appliquées, faux PayPal :
+migration (schéma 14), limites Free / Solo / Team, compteur mensuel, invités en lecture seule, abonnement créé par le
+serveur et activé seulement par PayPal, webhooks vérifiés par PayPal, rejeu, état relu chez PayPal, montée immédiate,
+descente à la fin de la période, résiliation, double paiement refusé, paiement en échec, suspension, remboursement,
+PayPal indisponible, places de membres, créations simultanées, isolement, indicateurs, création des formules PayPal,
+page des prix, aller-retour par PayPal et page de retour dans le navigateur), `admin.js` (l'administration : accès réservé à la session `/admin`
 et à son jeton, statistiques sans contenu privé, actions sur les comptes, suspension appliquée partout,
 suppression, export CSV, modération, journal des emails, campagnes et désinscription, tâche planifiée), `meta.js` (pixel et API Conversions : chaque événement, même event_id,
 données hachées, rien de privé), `share.js` (le partage sans compte : lecture seule, Studio et

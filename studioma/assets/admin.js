@@ -402,7 +402,7 @@
         <div><span>Plan</span><b>${b.plan_name}${s && s.provider === 'manual' ? ' (offered)' : s && s.provider === 'promo' ? (s.status === 'trialing' ? ' (30-day free trial)' : ' (free year, referrals)') : ''}</b></div>
         ${s && s.provider === 'promo' ? html`<div><span>Launch offer until</span><b>${fmt.date(s.period_end)}</b></div>` : ''}
         <div><span>State</span><b>${s && s.cancel_at ? 'ends ' + fmt.date(s.cancel_at) : b.state}</b></div>
-        ${s && s.provider === 'paddle' ? html`<div><span>Billing</span><b>${'$' + s.amount / 100} / ${s.interval} · ${s.env}</b></div><div><span>Renews</span><b>${s.period_end ? fmt.date(s.period_end) : '—'}</b></div>` : ''}
+        ${s && (s.provider === 'paypal' || s.provider === 'paddle') ? html`<div><span>Billing</span><b>${'$' + s.amount / 100} / ${s.interval} · ${s.provider === 'paypal' ? 'PayPal' : 'Paddle'} ${s.env}</b></div><div><span>${s.cancel_at ? 'Paid until' : 'Renews'}</span><b>${s.period_end ? fmt.date(s.period_end) : '—'}</b></div>${s.prev_plan ? html`<div><span>Keeps ${s.prev_plan} until</span><b>${fmt.date(s.prev_until)}</b></div>` : ''}` : ''}
         ${s && s.provider === 'manual' ? html`<div><span>Offered until</span><b>${s.period_end ? fmt.date(s.period_end) : 'no end date'}</b></div>` : ''}
         <div><span>Projects</span><b>${b.usage.projects} / ${lim(b.limits.projects)}</b></div><div><span>Studios</span><b>${b.usage.studios} / ${lim(b.limits.studios)}</b></div>
         <div><span>Members</span><b>${b.usage.members} / ${lim(b.limits.members)}</b></div><div><span>Cards this month</span><b>${b.usage.cards_month} / ${lim(b.limits.cards_month)}</b></div>
@@ -410,7 +410,7 @@
       ${b.over.length ? html`<p class="notice notice-warn">${icon('alert')}<span>Above the plan: ${b.over.map((o) => o.label + ' ' + o.used + '/' + o.max).join(', ')}</span></p>` : ''}
       <form class="row row-wrap" data-form="adm-plan"><select class="input input-sm" name="plan" aria-label="Plan">${['free', 'solo', 'team'].map((k) => html`<option value="${k}" ${k === (s && s.provider === 'manual' ? s.plan : 'free') ? 'selected' : ''}>${k === 'free' ? 'No offered plan' : 'Offer ' + k[0].toUpperCase() + k.slice(1)}</option>`)}</select>
         <input class="input input-sm" type="date" name="until" aria-label="Until (optional)" style="max-width:170px"><button class="btn btn-sm" type="submit">Apply</button></form>
-      <p class="muted small">An offered plan is free for this account (no payment, not counted in revenue). Paid subscriptions are managed in Paddle.</p>`;
+      <p class="muted small">An offered plan is free for this account (no payment, not counted in revenue). Paid subscriptions are managed in PayPal (refunds from your PayPal business account).</p>`;
   };
   SM.forms['adm-plan'] = async (form, data) => {
     const r = await SM.post('admin_user_action', { id: ud.data.user.id, op: 'plan', plan: data.plan, until: data.until || '' });
@@ -799,10 +799,13 @@
     const cur = (o) => { const k = Object.keys(o); return k.length ? k.map((c) => (c === 'USD' ? '$' : c + ' ') + (o[c] / 100).toLocaleString('en-US', { maximumFractionDigits: 0 })).join(' + ') : '$0'; };
     const STATUS = { active: 'chip-ok', trialing: 'chip-soft', past_due: 'chip-bad', paused: 'chip-warn', canceled: '', expired: '' };
     SM.set(ctx.view, html`<div class="page">
-      <header class="page-head"><div><h1>Billing</h1><p class="muted">Subscriptions from verified Paddle data. ${env === 'production' ? 'Live payments only.' : 'Sandbox (test) payments — never counted as revenue.'}</p></div>
+      <header class="page-head"><div><h1>Billing</h1><p class="muted">Subscriptions from verified PayPal data. ${env === 'production' ? 'Live payments only.' : 'Sandbox (test) payments — never counted as revenue.'}</p></div>
         <nav class="seg-inline">${['production', 'sandbox'].map((e) => html`<a class="btn btn-sm ${env === e ? 'btn-soft is-on' : 'btn-ghost'}" href="#/billing${e === 'sandbox' ? '?env=sandbox' : ''}">${e === 'production' ? 'Live' : 'Sandbox'}</a>`)}</nav></header>
-      ${!d.available ? html`<p class="notice notice-warn">${icon('alert')}<span><b>Online payment is off.</b> ${d.missing.length ? html`Missing settings in <code>studioma/config.php</code>: ${d.missing.join(', ')}. ` : ''}The pricing page shows paid plans as “Coming soon”.</span></p>` : html`<p class="notice notice-ok">${icon('check')}<span>Online payment is on (Paddle ${d.configured_env}).</span></p>`}
-      ${(d.problems || []).length ? html`<div class="notice notice-warn">${icon('alert')}<span><b>Paddle settings to fix</b> (payment stays closed until they are consistent):<ul class="notice-list">${d.problems.map((p) => html`<li>${p}</li>`)}</ul></span></div>` : ''}
+      ${!d.available ? html`<p class="notice notice-warn">${icon('alert')}<span><b>Online payment is off.</b> ${d.missing.length ? html`Missing settings in <code>studioma/config.php</code>: ${d.missing.join(', ')}. ` : ''}The pricing page shows paid plans as “Coming soon”.</span></p>` : html`<p class="notice notice-ok">${icon('check')}<span>Online payment is on (PayPal ${d.configured_env === 'production' ? 'live' : 'sandbox'}).</span></p>`}
+      ${d.can_setup_plans ? html`<section class="panel pad" id="pp-setup"><h2>${icon('zap')} Create the PayPal plans</h2>
+        <p>Your PayPal app is set (${d.configured_env === 'production' ? 'live' : 'sandbox'}). Studioma can create the product “Studioma” and its four plans in PayPal — Solo $12/month and $120/year, Team $29/month and $290/year, in US dollars, no tax added — then show the four lines to copy into <code>studioma/config.php</code>.</p>
+        <button class="btn btn-primary" data-act="adm-pp-setup">${icon('zap')}Create the PayPal plans</button></section>` : ''}
+      ${(d.problems || []).length ? html`<div class="notice notice-warn">${icon('alert')}<span><b>PayPal settings to fix</b> (payment stays closed until they are consistent):<ul class="notice-list">${d.problems.map((p) => html`<li>${p}</li>`)}</ul></span></div>` : ''}
       ${!d.enforced ? html`<p class="notice notice-warn">${icon('alert')}<span>Plan limits are switched off (STM_PLANS_ENFORCED = false).</span></p>` : ''}
       <div class="tiles">
         ${tile('users', 'Accounts', fmt.num(M.users), `${fmt.num(M.free)} on Free · ${fmt.num(M.complimentary)} offered`)}
@@ -820,15 +823,29 @@
       ${d.subscriptions.length ? html`<section class="panel table-wrap"><table class="table"><thead><tr><th>Account</th><th>Plan</th><th>State</th><th class="hide-s">Price</th><th class="hide-s">Period end</th><th class="hide-s">Source</th></tr></thead>
         <tbody>${d.subscriptions.map((s) => html`<tr${s.user ? html` class="is-click" data-act="adm-user" data-id="${s.user.id}"` : ''}><td>${s.user ? html`<b>${s.user.name}</b><br><small>${s.user.email}</small>` : 'Deleted account'}</td>
           <td>${s.plan} ${s.interval ? html`<small>· ${s.interval}</small>` : ''}</td><td><span class="chip ${STATUS[s.status] || ''}">${s.status}${s.cancel_at ? ' · ends ' + fmt.date(s.cancel_at) : ''}</span>${s.note ? html`<br><small class="result-bad">${s.note}</small>` : ''}</td>
-          <td class="hide-s">${s.provider === 'manual' ? 'offered' : '$' + s.amount / 100}</td><td class="hide-s nowrap">${s.period_end ? fmt.date(s.period_end) : '—'}</td><td class="hide-s"><small>${s.provider === 'manual' ? 'admin' : 'Paddle ' + s.env}</small></td></tr>`)}</tbody></table></section>`
-        : SM.empty('zap', 'No subscription yet', 'Paid subscriptions appear here as soon as Paddle confirms them.')}
-      <h2 class="section-title">${icon('history')} Paddle notifications</h2>
+          <td class="hide-s">${s.provider === 'manual' ? 'offered' : '$' + s.amount / 100}</td><td class="hide-s nowrap">${s.period_end ? fmt.date(s.period_end) : '—'}</td><td class="hide-s"><small>${s.provider === 'manual' ? 'admin' : (s.provider === 'paypal' ? 'PayPal ' : 'Paddle ') + (s.env === 'production' ? 'live' : s.env)}</small></td></tr>`)}</tbody></table></section>`
+        : SM.empty('zap', 'No subscription yet', 'Paid subscriptions appear here as soon as PayPal confirms them.')}
+      <h2 class="section-title">${icon('history')} PayPal notifications</h2>
       ${d.events.length ? html`<section class="panel table-wrap"><table class="table"><thead><tr><th>When</th><th>Event</th><th>Result</th></tr></thead>
         <tbody>${d.events.map((e) => html`<tr><td class="nowrap"><small>${fmt.time(e.received)}</small></td><td>${e.type}<br><small class="muted">${e.event_id}</small></td>
           <td><span class="chip ${e.status === 'processed' ? 'chip-ok' : e.status === 'failed' || e.status === 'unmatched' ? 'chip-bad' : ''}">${e.status}</span>${e.error ? html`<br><small class="result-bad">${e.error}</small>` : ''}</td></tr>`)}</tbody></table></section>`
-        : html`<p class="muted">No notification received yet. Webhook address: <code>${SM.base}paddle-webhook.php</code></p>`}
+        : html`<p class="muted">No notification received yet.</p>`}
+      <p class="muted small">Webhook address for your PayPal app: <code>${d.webhook_url}</code> — events <code>BILLING.SUBSCRIPTION.*</code>, <code>PAYMENT.SALE.COMPLETED</code>, <code>PAYMENT.SALE.REFUNDED</code>, <code>PAYMENT.SALE.REVERSED</code>. Put the webhook ID shown by PayPal in <code>STM_PAYPAL_WEBHOOK_ID</code>.</p>
     </div>`);
   });
+  /** Crée chez PayPal le produit et les quatre formules ; affiche les lignes à recopier dans config.php. */
+  SM.actions['adm-pp-setup'] = async (el) => {
+    if (!(await SM.confirm({ title: 'Create the PayPal plans?', text: 'Studioma creates one product and four subscription plans in your PayPal account (the environment set in config.php). Do this once.', ok: 'Create plans' }))) return;
+    SM.busy(el, true);
+    const r = await SM.try(SM.post('admin_paypal_setup'));
+    SM.busy(el, false);
+    if (!r) return;
+    const box = SM.$('#pp-setup');
+    if (box) SM.set(box, html`<h2>${icon('check')} PayPal plans created (${r.env === 'production' ? 'live' : 'sandbox'})</h2>
+      <p>Copy these four lines into <code>studioma/config.php</code> on the server, then reload this page.</p>
+      <pre class="code-block">${r.config}</pre>
+      <ul class="notice-list">${r.plans.map((p) => html`<li>${p.setting} — ${p.price}</li>`)}</ul>`);
+  };
 
   /* ------------------------------------------------- offre de lancement */
   const REASON = { same_network: 'Several sign-ups from the same network', burst: 'Many verified sign-ups within an hour', self: 'Same person' };
@@ -874,7 +891,7 @@
           <td class="nowrap"><button class="btn btn-sm btn-soft" data-act="adm-ref" data-id="${r.id}" data-decision="approve">Approve</button> <button class="btn btn-sm is-danger" data-act="adm-ref" data-id="${r.id}" data-decision="reject">Reject</button></td></tr>`)}</tbody></table></section>`
         : html`<p class="muted">${icon('check')} Nothing to review. Sign-ups from the same network or in bursts appear here before they count.</p>`}
       ${d.top.length ? html`<h2 class="section-title">${icon('chart')} Top referrers</h2><section class="panel list">${d.top.map((t) => html`<div class="list-row"><button class="who-btn grow" data-act="adm-user" data-id="${t.uid}"><b>${t.name}</b> <small>@${t.handle}</small></button><span class="chip ${t.verified >= d.goal ? 'chip-ok' : ''}">${t.verified} verified</span></div>`)}</section>` : ''}
-      <p class="muted small">${icon('lock')} No payment is ever involved: the trial and the free year are access periods, never Paddle subscriptions. Referral clicks store a random browser identifier, not IP addresses.</p>
+      <p class="muted small">${icon('lock')} No payment is ever involved: the trial and the free year are access periods, never PayPal subscriptions. Referral clicks store a random browser identifier, not IP addresses.</p>
     </div>`);
   });
   SM.actions['adm-ref'] = async (el) => {

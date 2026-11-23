@@ -3,17 +3,17 @@
  * Abonnements et droits (« entitlements ») de Studioma : formule d'un compte, usage, contrôles appliqués côté
  * serveur à chaque création (projets, Studios, cartes, membres, liens de partage) et à chaque fonctionnalité
  * payante (liens privés, invités qui collaborent, validations, équipe, Insights). Formules : lib/plans.php ;
- * fournisseur de paiement : lib/paddle.php.
+ * fournisseur de paiement : PayPal (lib/paypal.php ; Paddle a été retiré, voir docs/billing.md).
  *
  * Qui paie ? Le compte propriétaire d'un projet (projects.owner_uid). Tout ce qui se passe dans ses projets compte
  * pour sa formule, quel que soit le membre (ou l'invité, ou l'assistant IA) qui agit.
  *
  * Réglages (config.php, ou variables d'environnement du même nom) :
  *   STM_PLANS_ENFORCED      true par défaut : limites appliquées (false = tout permis, compteurs tenus quand même)
- *   STM_BILLING_ENABLED     false par défaut : ouvre le paiement quand Paddle est configuré (voir lib/paddle.php)
- *   STM_PADDLE_ENV          sandbox (défaut) | production
- *   STM_PADDLE_API_KEY, STM_PADDLE_CLIENT_TOKEN, STM_PADDLE_WEBHOOK_SECRET
- *   STM_PADDLE_PRICE_SOLO_MONTHLY, STM_PADDLE_PRICE_SOLO_YEARLY, STM_PADDLE_PRICE_TEAM_MONTHLY, STM_PADDLE_PRICE_TEAM_YEARLY
+ *   STM_BILLING_ENABLED     false par défaut : ouvre le paiement quand PayPal est configuré (voir lib/paypal.php)
+ *   STM_PAYPAL_ENV          sandbox (défaut) | live
+ *   STM_PAYPAL_CLIENT_ID, STM_PAYPAL_SECRET (secret), STM_PAYPAL_WEBHOOK_ID
+ *   STM_PAYPAL_PLAN_SOLO_MONTHLY, STM_PAYPAL_PLAN_SOLO_YEARLY, STM_PAYPAL_PLAN_TEAM_MONTHLY, STM_PAYPAL_PLAN_TEAM_YEARLY
  *
  * Données : aucune n'est jamais supprimée ni archivée par un changement de formule. Au-delà des limites, la
  * création est refusée, les membres en trop passent en lecture seule (par ordre d'arrivée), les invités en
@@ -42,17 +42,23 @@ function billing_enforced(): bool
 }
 function billing_env(): string
 {
-    return billing_cfg('PADDLE_ENV', 'sandbox') === 'production' ? 'production' : 'sandbox';
+    // Valeur interne « production » (données déjà enregistrées, tableau de bord) ; le réglage PayPal s'écrit « live ».
+    return billing_cfg('PAYPAL_ENV', 'sandbox') === 'live' ? 'production' : 'sandbox';
 }
-/** Identifiants de prix Paddle : [plan][interval] => price id ('' si non réglé). */
+/** Identifiants des formules PayPal (« plans », P-…) : [plan][interval] => id ('' si non réglé). */
 function billing_prices(): array
 {
     return [
-        'solo' => ['month' => (string) billing_cfg('PADDLE_PRICE_SOLO_MONTHLY'), 'year' => (string) billing_cfg('PADDLE_PRICE_SOLO_YEARLY')],
-        'team' => ['month' => (string) billing_cfg('PADDLE_PRICE_TEAM_MONTHLY'), 'year' => (string) billing_cfg('PADDLE_PRICE_TEAM_YEARLY')],
+        'solo' => ['month' => (string) billing_cfg('PAYPAL_PLAN_SOLO_MONTHLY'), 'year' => (string) billing_cfg('PAYPAL_PLAN_SOLO_YEARLY')],
+        'team' => ['month' => (string) billing_cfg('PAYPAL_PLAN_TEAM_MONTHLY'), 'year' => (string) billing_cfg('PAYPAL_PLAN_TEAM_YEARLY')],
     ];
 }
-/** [plan, interval] d'un identifiant de prix Paddle, ou null s'il n'est pas l'un des nôtres. */
+/** Nom du réglage d'une formule PayPal (STM_PAYPAL_PLAN_SOLO_MONTHLY…). */
+function billing_plan_setting(string $plan, string $interval): string
+{
+    return 'STM_PAYPAL_PLAN_' . strtoupper($plan) . '_' . ($interval === 'month' ? 'MONTHLY' : 'YEARLY');
+}
+/** [plan, interval] d'un identifiant de formule PayPal, ou null s'il n'est pas l'un des nôtres. */
 function billing_price_plan(string $priceId): ?array
 {
     if ($priceId === '') return null;
@@ -66,71 +72,64 @@ function billing_missing(): array
 {
     $missing = [];
     if (!billing_flag('BILLING_ENABLED', false)) $missing[] = 'STM_BILLING_ENABLED';
-    foreach (['PADDLE_API_KEY', 'PADDLE_CLIENT_TOKEN', 'PADDLE_WEBHOOK_SECRET'] as $k) if ((string) billing_cfg($k) === '') $missing[] = 'STM_' . $k;
+    foreach (['PAYPAL_CLIENT_ID', 'PAYPAL_SECRET', 'PAYPAL_WEBHOOK_ID'] as $k) if ((string) billing_cfg($k) === '') $missing[] = 'STM_' . $k;
     foreach (billing_prices() as $plan => $byInterval) {
-        foreach ($byInterval as $interval => $id) if ($id === '') $missing[] = 'STM_PADDLE_PRICE_' . strtoupper($plan) . '_' . ($interval === 'month' ? 'MONTHLY' : 'YEARLY');
+        foreach ($byInterval as $interval => $id) if ($id === '') $missing[] = billing_plan_setting($plan, $interval);
     }
     return $missing;
 }
 /**
- * Contrôle de cohérence des réglages Paddle (fonction pure, testable sans serveur) : repère surtout le mélange
- * sandbox / production lors du passage en production — clé ou jeton d'un environnement utilisé avec l'autre,
- * valeur d'environnement mal écrite (« live » serait sinon lue comme sandbox), secret de webhook remplacé par une
- * clé d'API, identifiants de prix invalides ou en double. Renvoie des messages (en anglais, pour l'administration)
- * qui nomment les réglages sans jamais citer leur valeur. Seuls les préfixes documentés par Paddle sont reconnus :
- * une valeur sans préfixe connu (ancien format) n'est pas signalée.
- * $c : env, api_key, client_token, webhook_secret, prices ([plan][interval] => id), site_url.
+ * Contrôle de cohérence des réglages PayPal (fonction pure, testable sans serveur) : valeur d'environnement mal
+ * écrite (« production » serait sinon lue comme sandbox), secret collé à la place de l'identifiant client (ou
+ * l'inverse), identifiant de webhook ou de formule mal copié, formules en double, site en http en production.
+ * PayPal ne distingue pas ses identifiants sandbox et live par un préfixe : ce mélange-là n'est pas détectable ici
+ * (le premier appel à PayPal échoue alors, sans rien encaisser). Messages en anglais, pour l'administration, qui
+ * nomment les réglages sans jamais citer leur valeur.
+ * $c : env, client_id, secret, webhook_id, prices ([plan][interval] => id), site_url.
  */
 function billing_config_check(array $c): array
 {
     $problems = [];
     $env = (string) ($c['env'] ?? 'sandbox');
-    if (!in_array($env, ['sandbox', 'production'], true)) {
-        $problems[] = 'STM_PADDLE_ENV must be exactly "sandbox" or "production".';
+    if (!in_array($env, ['sandbox', 'live'], true)) {
+        $problems[] = 'STM_PAYPAL_ENV must be exactly "sandbox" or "live".';
         $env = '';
     }
-    $key = (string) ($c['api_key'] ?? '');
-    if ($env !== '' && $key !== '') {
-        if ($env === 'production' && str_starts_with($key, 'pdl_sdbx_')) $problems[] = 'STM_PADDLE_API_KEY is a sandbox key but STM_PADDLE_ENV is "production".';
-        if ($env === 'sandbox' && str_starts_with($key, 'pdl_live_')) $problems[] = 'STM_PADDLE_API_KEY is a live key but STM_PADDLE_ENV is "sandbox".';
+    $id = (string) ($c['client_id'] ?? '');
+    $secret = (string) ($c['secret'] ?? '');
+    if ($id !== '' && $secret !== '' && hash_equals($id, $secret)) $problems[] = 'STM_PAYPAL_SECRET is the same as STM_PAYPAL_CLIENT_ID: copy the secret key of the PayPal app.';
+    foreach (['STM_PAYPAL_CLIENT_ID' => $id, 'STM_PAYPAL_SECRET' => $secret] as $name => $v) {
+        if ($v !== '' && (preg_match('/\s/', $v) || strlen($v) < 20)) $problems[] = $name . ' looks incomplete (spaces or too short): copy it again from the PayPal app.';
     }
-    $token = (string) ($c['client_token'] ?? '');
-    if ($env !== '' && $token !== '') {
-        if ($env === 'production' && str_starts_with($token, 'test_')) $problems[] = 'STM_PADDLE_CLIENT_TOKEN is a sandbox token (test_…) but STM_PADDLE_ENV is "production".';
-        if ($env === 'sandbox' && str_starts_with($token, 'live_')) $problems[] = 'STM_PADDLE_CLIENT_TOKEN is a live token (live_…) but STM_PADDLE_ENV is "sandbox".';
-    }
-    $secret = (string) ($c['webhook_secret'] ?? '');
-    if ($secret !== '' && (str_starts_with($secret, 'pdl_live_') || str_starts_with($secret, 'pdl_sdbx_') || ($key !== '' && hash_equals($key, $secret)))) {
-        $problems[] = 'STM_PADDLE_WEBHOOK_SECRET looks like an API key: use the secret key of the notification destination (pdl_ntfset_…).';
-    }
-    if ($token !== '' && $key !== '' && hash_equals($key, $token)) $problems[] = 'STM_PADDLE_CLIENT_TOKEN must be a client-side token, not the API key.';
+    $hook = (string) ($c['webhook_id'] ?? '');
+    if ($hook !== '' && !preg_match('/^[A-Z0-9]{8,40}$/', $hook)) $problems[] = 'STM_PAYPAL_WEBHOOK_ID is not a PayPal webhook ID (the ID shown next to the webhook URL in the PayPal app).';
     $seen = [];
     foreach ((array) ($c['prices'] ?? []) as $plan => $byInterval) {
-        foreach ((array) $byInterval as $interval => $id) {
-            $id = (string) $id;
-            if ($id === '') continue;
-            $name = 'STM_PADDLE_PRICE_' . strtoupper((string) $plan) . '_' . ($interval === 'month' ? 'MONTHLY' : 'YEARLY');
-            if (!preg_match('/^pri_[A-Za-z0-9_]+$/', $id)) $problems[] = $name . ' is not a Paddle price ID (pri_…).';
-            if (isset($seen[$id])) $problems[] = $name . ' uses the same price as ' . $seen[$id] . '.';
-            $seen[$id] = $name;
+        foreach ((array) $byInterval as $interval => $pid) {
+            $pid = (string) $pid;
+            if ($pid === '') continue;
+            $name = billing_plan_setting((string) $plan, (string) $interval);
+            if (!preg_match('/^P-[A-Z0-9]{8,40}$/', $pid)) $problems[] = $name . ' is not a PayPal plan ID (P-…).';
+            if (isset($seen[$pid])) $problems[] = $name . ' uses the same plan as ' . $seen[$pid] . '.';
+            $seen[$pid] = $name;
         }
     }
     $site = (string) ($c['site_url'] ?? '');
-    if ($env === 'production' && $site !== '' && !str_starts_with($site, 'https://')) $problems[] = 'STM_SITE_URL must use https:// in production.';
+    if ($env === 'live' && $site !== '' && !str_starts_with($site, 'https://')) $problems[] = 'STM_SITE_URL must use https:// with live payments.';
     return $problems;
 }
-/** Incohérences des réglages Paddle en vigueur (voir billing_config_check). */
+/** Incohérences des réglages PayPal en vigueur (voir billing_config_check). */
 function billing_config_problems(): array
 {
     return billing_config_check([
-        'env' => (string) billing_cfg('PADDLE_ENV', 'sandbox'), 'api_key' => (string) billing_cfg('PADDLE_API_KEY'),
-        'client_token' => (string) billing_cfg('PADDLE_CLIENT_TOKEN'), 'webhook_secret' => (string) billing_cfg('PADDLE_WEBHOOK_SECRET'),
+        'env' => (string) billing_cfg('PAYPAL_ENV', 'sandbox'), 'client_id' => (string) billing_cfg('PAYPAL_CLIENT_ID'),
+        'secret' => (string) billing_cfg('PAYPAL_SECRET'), 'webhook_id' => (string) billing_cfg('PAYPAL_WEBHOOK_ID'),
         'prices' => billing_prices(), 'site_url' => defined('STM_SITE_URL') ? (string) STM_SITE_URL : '',
     ]);
 }
 /**
- * Le paiement en ligne est-il ouvert ? (Paddle entièrement configuré, réglages cohérents et activé par
- * STM_BILLING_ENABLED.) Un mélange sandbox / production garde le paiement fermé plutôt que d'encaisser à tort.
+ * Le paiement en ligne est-il ouvert ? (PayPal entièrement configuré, réglages cohérents et activé par
+ * STM_BILLING_ENABLED.) Des réglages incohérents gardent le paiement fermé plutôt que d'encaisser à tort.
  */
 function billing_available(): bool
 {
@@ -149,9 +148,11 @@ function billing_cache_clear(): void
     $GLOBALS['stm_seat_cache'] = [];
 }
 /**
- * Formule en vigueur d'un compte, d'après les seuls abonnements vérifiés (Paddle, par webhook ou réponse de son
- * API ; offert par l'administration ; ou offre de lancement, provider « promo »). Le meilleur l'emporte : plusieurs
- * accès en même temps ne se réduisent jamais. ['plan', 'status', 'sub' (ligne ou null), 'grace_until'].
+ * Formule en vigueur d'un compte, d'après les seuls abonnements vérifiés (PayPal, par webhook vérifié ou réponse de
+ * son API ; offert par l'administration ; ou offre de lancement, provider « promo »). Le meilleur l'emporte :
+ * plusieurs accès en même temps ne se réduisent jamais. Un abonnement PayPal résilié reste valable jusqu'à la fin de
+ * la période payée (cancel_at) ; après une descente, la formule déjà payée reste jusqu'à prev_until.
+ * ['plan', 'status', 'sub' (ligne ou null), 'grace_until'].
  */
 function account_plan(int $uid): array
 {
@@ -160,7 +161,8 @@ function account_plan(int $uid): array
     $best = ['plan' => 'free', 'status' => 'free', 'sub' => null, 'grace_until' => 0];
     if ($uid <= 0) return $best;
     $now = time();
-    foreach (rows("SELECT * FROM subscriptions WHERE uid = ? AND status IN ('trialing', 'active', 'past_due') ORDER BY id DESC", [$uid]) as $s) {
+    $sql = "SELECT * FROM subscriptions WHERE uid = ? AND (status IN ('trialing', 'active', 'past_due') OR (provider = 'paypal' AND status = 'canceled' AND cancel_at > ?)) ORDER BY id DESC";
+    foreach (rows($sql, [$uid, $now]) as $s) {
         if ($s['provider'] === 'manual') {
             if ((int) $s['period_end'] && (int) $s['period_end'] <= $now) continue;   // offert jusqu'à une date passée
         } elseif ($s['provider'] === 'promo') {
@@ -176,8 +178,12 @@ function account_plan(int $uid): array
             if ($grace <= $now) continue;   // paiement en échec depuis trop longtemps : formule Free
         }
         if (!isset(STM_PLANS[$s['plan']])) continue;
-        if ($best['sub'] === null || plan_def($s['plan'])['rank'] > plan_def($best['plan'])['rank']) {
-            $best = ['plan' => (string) $s['plan'], 'status' => (string) $s['status'], 'sub' => $s, 'grace_until' => $grace];
+        $plan = (string) $s['plan'];
+        // Descente de formule chez PayPal (sans prorata) : la formule supérieure déjà payée reste jusqu'à prev_until.
+        $prev = (string) ($s['prev_plan'] ?? '');
+        if ($prev !== '' && isset(STM_PLANS[$prev]) && (int) ($s['prev_until'] ?? 0) > $now && plan_def($prev)['rank'] > plan_def($plan)['rank']) $plan = $prev;
+        if ($best['sub'] === null || plan_def($plan)['rank'] > plan_def($best['plan'])['rank']) {
+            $best = ['plan' => $plan, 'status' => (string) $s['status'], 'sub' => $s, 'grace_until' => $grace];
         }
     }
     return $cache[$uid] = $best;
@@ -402,6 +408,8 @@ function subscription_view(?array $s): ?array
         'status' => (string) $s['status'], 'amount' => (int) $s['amount'], 'currency' => (string) $s['currency'],
         'period_start' => (int) $s['period_start'], 'period_end' => (int) $s['period_end'], 'cancel_at' => (int) $s['cancel_at'],
         'canceled_at' => (int) $s['canceled_at'], 'past_due_since' => (int) $s['past_due_since'], 'note' => (string) $s['note'],
+        // Descente en attente : formule déjà payée gardée jusqu'à prev_until, puis « plan ».
+        'prev_plan' => (int) ($s['prev_until'] ?? 0) > time() ? (string) ($s['prev_plan'] ?? '') : '', 'prev_until' => (int) ($s['prev_until'] ?? 0) > time() ? (int) $s['prev_until'] : 0,
     ];
 }
 /** Tout ce que l'écran « Plan & billing » montre : formule, état, usage réel, dépassements, paiements. */
@@ -437,17 +445,14 @@ function api_billing_plans(array $b, ?array $u): array
         'current' => $u ? account_plan((int) $u['id'])['plan'] : null,
     ];
 }
-/** GET billing_config : pour la page de paiement (jeton client Paddle, public par nature ; jamais la clé d'API). */
-function api_billing_config(array $b, ?array $u): array
-{
-    return ['available' => billing_available(), 'env' => billing_env(), 'client_token' => billing_available() ? (string) billing_cfg('PADDLE_CLIENT_TOKEN') : ''];
-}
 /** GET billing : l'écran « Plan & billing » du compte connecté. */
 function api_billing(array $b, array $u): array
 {
     $uid = (int) $u['id'];
     return billing_summary($uid) + [
         'checkout' => billing_available(), 'env' => billing_env(),
+        // Paiements automatiques du compte PayPal du membre : moyen de paiement, reçus, résiliation chez PayPal.
+        'manage_url' => billing_env() === 'production' ? 'https://www.paypal.com/myaccount/autopay/' : 'https://www.sandbox.paypal.com/myaccount/autopay/',
         'transactions' => array_map(function (array $t): array {
             return ['id' => (string) $t['provider_txn_id'], 'status' => (string) $t['status'], 'amount' => (int) $t['amount'], 'currency' => (string) $t['currency'], 'billed_at' => (int) $t['billed_at']];
         }, rows('SELECT * FROM billing_transactions WHERE uid = ? AND env = ? ORDER BY id DESC LIMIT 24', [$uid, billing_env()])),

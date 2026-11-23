@@ -974,16 +974,19 @@ function api_admin_studio(array $b, array $a): array
 /* ------------------------------------------------------------ abonnements */
 
 /**
- * GET admin_billing {env} : indicateurs des abonnements, calculés sur les seuls abonnements Paddle vérifiés de
- * l'environnement choisi (production par défaut ; sandbox = tests, jamais mêlés). Un compte compte une fois (son
- * meilleur abonnement en cours) ; MRR = prix mensuel, ou annuel / 12. Les formules offertes sont à part.
+ * GET admin_billing {env} : indicateurs des abonnements, calculés sur les seuls abonnements payants vérifiés (PayPal ;
+ * Paddle pour d'éventuelles données anciennes) de l'environnement choisi (production par défaut ; sandbox = tests,
+ * jamais mêlés). Un compte compte une fois (son meilleur abonnement en cours) ; MRR = prix mensuel, ou annuel / 12 ;
+ * un abonnement résilié dont la période payée court encore compte comme abonné, pas dans le MRR. Les formules
+ * offertes sont à part ; les abonnements « pending » (paiement commencé, pas terminé) ne comptent nulle part.
  */
 function api_admin_billing(array $b, array $a): array
 {
     $env = ($b['env'] ?? '') === 'sandbox' ? 'sandbox' : 'production';
     $now = time();
     $grace = $now - STM_PAST_DUE_GRACE_DAYS * 86400;
-    $live = rows("SELECT * FROM subscriptions WHERE provider = 'paddle' AND env = ? AND (status IN ('trialing', 'active') OR (status = 'past_due' AND past_due_since > ?)) ORDER BY id", [$env, $grace]);
+    $live = rows("SELECT * FROM subscriptions WHERE provider IN ('paypal', 'paddle') AND env = ? AND (status IN ('trialing', 'active') OR (status = 'past_due' AND past_due_since > ?)
+        OR (provider = 'paypal' AND status = 'canceled' AND cancel_at > ?)) ORDER BY id", [$env, $grace, $now]);
     $best = [];
     foreach ($live as $s) {
         $u = (int) $s['uid'];
@@ -995,6 +998,7 @@ function api_admin_billing(array $b, array $a): array
     foreach ($best as $s) {
         if (isset($dist[$s['plan']][$s['interval']])) $dist[$s['plan']][$s['interval']]++;
         if ($s['status'] === 'trialing') { $trialing++; continue; }   // pas encore payé
+        if ($s['status'] === 'canceled') continue;                     // payé jusqu'à cancel_at, plus de revenu ensuite
         $cur = $s['currency'] !== '' ? $s['currency'] : 'USD';
         $mrr[$cur] = ($mrr[$cur] ?? 0) + ($s['interval'] === 'year' ? (int) round((int) $s['amount'] / 12) : (int) $s['amount']);
     }
@@ -1002,20 +1006,25 @@ function api_admin_billing(array $b, array $a): array
     $comp = (int) val("SELECT COUNT(DISTINCT uid) FROM subscriptions WHERE provider = 'manual' AND status = 'active' AND (period_end = 0 OR period_end > ?)", [$now]);
     // Offre de lancement (essai, année offerte) : accès Team sans paiement, jamais compté dans le MRR.
     $promo = (int) val("SELECT COUNT(DISTINCT uid) FROM subscriptions WHERE provider = 'promo' AND period_start <= ? AND period_end > ? AND uid NOT IN (SELECT uid FROM subscriptions WHERE provider = 'manual' AND status = 'active' AND (period_end = 0 OR period_end > ?))", [$now, $now, $now]);
-    $everPaid = (int) val("SELECT COUNT(DISTINCT uid) FROM subscriptions WHERE provider = 'paddle' AND env = ?", [$env]);
-    $firsts = rows("SELECT uid, MIN(created) AS first FROM subscriptions WHERE provider = 'paddle' AND env = ? GROUP BY uid", [$env]);
+    $paidRows = "provider IN ('paypal', 'paddle') AND env = ? AND status <> 'pending'";
+    $everPaid = (int) val("SELECT COUNT(DISTINCT uid) FROM subscriptions WHERE $paidRows", [$env]);
+    $firsts = rows("SELECT uid, MIN(created) AS first FROM subscriptions WHERE $paidRows GROUP BY uid", [$env]);
     $conv30 = count(array_filter($firsts, function (array $r) use ($now): bool { return (int) $r['first'] >= $now - 30 * 86400; }));
-    $list = rows("SELECT s.*, u.name, u.email, u.handle, u.avatar FROM subscriptions s LEFT JOIN users u ON u.id = s.uid WHERE s.env = ? OR s.provider = 'manual' ORDER BY s.id DESC LIMIT 60", [$env]);
+    $list = rows("SELECT s.*, u.name, u.email, u.handle, u.avatar FROM subscriptions s LEFT JOIN users u ON u.id = s.uid WHERE (s.env = ? OR s.provider = 'manual') AND s.status <> 'pending' ORDER BY s.id DESC LIMIT 60", [$env]);
     return [
         'env' => $env, 'configured_env' => billing_env(), 'available' => billing_available(), 'missing' => billing_missing(), 'problems' => billing_config_problems(), 'enforced' => billing_enforced(),
+        // Identifiants de l'application PayPal présents mais formules pas encore créées : bouton « Create the PayPal plans ».
+        'can_setup_plans' => (string) billing_cfg('PAYPAL_CLIENT_ID') !== '' && (string) billing_cfg('PAYPAL_SECRET') !== ''
+            && count(array_filter(array_merge(...array_map('array_values', array_values(billing_prices()))))) < 4,
+        'webhook_url' => site_url() . 'paypal-webhook.php',
         'metrics' => [
             'users' => $users, 'paid' => count($best), 'free' => max(0, $users - count($best) - $comp - $promo), 'complimentary' => $comp, 'promo' => $promo, 'trialing' => $trialing,
             'solo' => $dist['solo']['month'] + $dist['solo']['year'], 'team' => $dist['team']['month'] + $dist['team']['year'], 'distribution' => $dist,
             'mrr' => $mrr, 'arr' => array_map(function (int $v): int { return $v * 12; }, $mrr),
             'past_due' => count(array_filter($best, function (array $s): bool { return $s['status'] === 'past_due'; })),
             'scheduled_cancel' => count(array_filter($best, function (array $s): bool { return (int) $s['cancel_at'] > 0; })),
-            'canceled_total' => (int) val("SELECT COUNT(*) FROM subscriptions WHERE provider = 'paddle' AND env = ? AND status = 'canceled'", [$env]),
-            'canceled_30' => (int) val("SELECT COUNT(*) FROM subscriptions WHERE provider = 'paddle' AND env = ? AND status = 'canceled' AND updated >= ?", [$env, $now - 30 * 86400]),
+            'canceled_total' => (int) val("SELECT COUNT(*) FROM subscriptions WHERE provider IN ('paypal', 'paddle') AND env = ? AND status = 'canceled'", [$env]),
+            'canceled_30' => (int) val("SELECT COUNT(*) FROM subscriptions WHERE provider IN ('paypal', 'paddle') AND env = ? AND status = 'canceled' AND updated >= ?", [$env, $now - 30 * 86400]),
             'converted' => $everPaid, 'converted_30' => $conv30, 'conversion_rate' => $users ? round($everPaid / $users * 100, 1) : 0,
             'revenue_30' => (int) val("SELECT COALESCE(SUM(amount), 0) FROM billing_transactions WHERE env = ? AND status IN ('completed', 'paid') AND billed_at >= ?", [$env, $now - 30 * 86400]),
         ],

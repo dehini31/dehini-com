@@ -38,7 +38,7 @@ const watch = (page, name) => {
 const shot = (page, name) => page.screenshot({ path: path.join(SHOTS, name + '.png') });
 const noOverflow = async (page, label) => ok(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth) <= 1, 'pas de défilement horizontal : ' + label);
 const toast = (page, re) => page.waitForFunction((src) => Array.from(document.querySelectorAll('.toast')).some((t) => new RegExp(src, 'i').test(t.textContent)), re.source, { timeout: 8000 }).then(() => true, () => false);
-const noCard = (page) => page.evaluate(() => !document.querySelector('input[autocomplete^="cc-"], input[name*="card" i], iframe[src*="paddle"], iframe[src*="checkout"]'));
+const noCard = (page) => page.evaluate(() => !document.querySelector('input[autocomplete^="cc-"], input[name*="card" i], iframe[src*="paypal"], iframe[src*="checkout"]'));
 
 /** Client d'API (amis invités) : mêmes en-têtes qu'un navigateur. */
 class Client {
@@ -70,7 +70,7 @@ const friend = async (code) => {
   const page = await ctx.newPage();
   watch(page, 'visiteur');
   let paid = 0;
-  page.on('request', (r) => { if (/\/pay\/|paddle|checkout/i.test(r.url())) paid++; });
+  page.on('request', (r) => { if (/\/pay\/|paypal|paddle|checkout/i.test(r.url())) paid++; });
 
   step('Page des prix (visiteur)');
   await page.goto(A + '#/pricing');

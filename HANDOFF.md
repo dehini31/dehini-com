@@ -9,72 +9,89 @@ secrets here. Mark anything you could not verify as *(unverified)*.
 | | |
 |---|---|
 | Last agent | Claude Code (cloud session) |
-| Branch | **`claude/trusting-keller-rynk1j`** (tracks `origin/claude/trusting-keller-rynk1j`), fast-forwarded to `origin/main` `666e21c` (PR #85, legal pages, merged by the owner on 2026-11-23). No open pull request |
-| Base code | `main` @ `666e21c` = Merge PR #85 (legal pages; DB v13). **`main` = production** — no deployment cron: the owner copies `main` by hand. Live check 2026-11-23 11:00 UTC: `studioma/assets/passport.css` on dehini.com is byte-identical to PR #84 (`d7f37c9`) → **PR #84 is live, PR #85 not copied yet**. HTML pages can't be checked from a cloud session (the host answers bots with a « One moment, please… » page, status 200) |
+| Branch | **`claude/trusting-keller-rynk1j`** (tracks `origin/claude/trusting-keller-rynk1j`), based on `origin/main` `666e21c` (PR #85, legal pages). No pull request yet for this work (open one only when the owner asks) |
+| Base code | `main` @ `666e21c` = Merge PR #85 (legal pages; DB v13). **`main` = production** — no deployment cron: the owner copies `main` by hand. Live check 2026-11-23 11:00 UTC: live `passport.css` = PR #84 version → PR #85 not copied yet *(unverified since)* |
 | Checkpoint | the commit that last changed this file: `git log -1 --format='%H %s' -- HANDOFF.md` |
 | Uncommitted work at checkpoint | none |
-| In progress | nothing. Last task: **Studioma legal pages** (Terms of Service, Privacy Policy, Refund Policy) — **merged (PR #85), not yet deployed** |
-| Last task changed application code? | **yes** — Studioma only (no schema change; DB stays at v13) |
+| In progress | **Studioma: PayPal replaces Paddle** (owner's request 2026-11-23). Implemented, tested against a fake PayPal, committed and pushed on `claude/trusting-keller-rynk1j`; **not merged, not deployed, not tested against real PayPal** |
+| Last task changed application code? | **yes** — Studioma billing (DB schema 13 → 14: two columns added) |
 | Codex access | **not verified** — Codex has not been run on this repository from this session |
 
 **Start here (Codex or Claude)**
 
 1. `git fetch origin`, then `git switch claude/trusting-keller-rynk1j` (or `git switch -c codex/<topic> origin/claude/trusting-keller-rynk1j`).
-   Production is `origin/main` @ `d7f37c9`.
-2. Read README « Studioma › 12 » (last bullet, « Pages légales ») and decision S40; S36–S39 and
-   `docs/studioma-quality-audit.md` for the quality pass; S31–S35 for the Creator Journey.
-3. Checks: `AGENTS.md` § 5 (lint, then `tests/studioma/run.sh`, ~23 min, 16 suites; a long run may need to be split —
-   each suite can run on its own fresh hosting).
+   Production is `origin/main` @ `666e21c`.
+2. Read `docs/billing.md` (whole file: PayPal architecture, lifecycle, owner setup, sandbox test, limitations) and
+   decision S41; S40 for the legal pages; S36–S39 for the quality pass.
+3. Checks: `AGENTS.md` § 5 (lint, then `tests/studioma/run.sh`, ~25 min, 16 suites + `billing-config.php`; a long run
+   may need to be split — each suite can run on its own fresh hosting).
 
-**Done, in `main` since PR #85, not yet on the live site** (legal pages):
-- Owner's choices (asked 2026-11-23): operator **Mohammed Dehini**, contact **contact@dehini.com**, **Algerian** law,
-  minimum age **16**, **14-day** money-back guarantee on the first payment of a subscription (once per account;
-  renewals not refunded unless the law requires; billing errors always refunded). Constants in `studioma/lib/core.php`
-  (`STM_LEGAL_NAME`, `STM_LEGAL_EMAIL`, `STM_LEGAL_COUNTRY`, `STM_LEGAL_UPDATED`, `STM_MIN_AGE`, `STM_REFUND_DAYS`),
-  overridable in `config.php` (documented in `config.example.php`).
-- Pages in `studioma/p.php` (`p_legal_vars`, `p_legal_fill`, `p_legal_page`, `p_terms`, `p_privacy`, `p_refunds`),
-  routed **before** `db()` (readable if SQLite is down); rewrites in `studioma/.htaccess` and
-  `tests/studioma/router.php`; styles in `assets/passport.css` (`.pp-legal`, `.pp-legal-nav`, `.pp-toc`,
-  `.pp-table`); sitemap entries (lastmod = `STM_LEGAL_UPDATED`); footer of every `p.php` page (three links +
-  contact); server pricing page (guarantee + links).
-- Links in the app: sign-up note and « One last step » terms gate (`assets/app.js`, new tab), pricing FAQ « Can I get a
-  refund? » + legal links (`assets/billing.js`, days from `billing_plans.refund_days` in `lib/billing.php`), landing
-  footer (`index.html`), checkout page (`pay/index.html`), styles in `assets/app.css`.
-- Privacy text written from the code: cookies `stm_sid`, `stm_g…`, `stm_vid`, `stm_ref`, `_fbp` / `_fbc`; Meta Pixel +
-  CAPI with SHA-256 email / id; Google sign-in; Paddle as merchant of record and independent controller; retention
-  matches the code (email log 180 days, admin log 400 days, sessions 30 days).
-- Tests: `tests/studioma/legal.js` (75 checks, in `run.sh`). Docs: README « Studioma › 12 » + tests + gaps, DECISIONS
-  S40, ROADMAP, `docs/billing.md` § 5 and § 8.5, tests README, AGENTS.md map.
+**Done on this branch, not in `main`** (PayPal):
+- Owner's choices (asked 2026-11-23): **no tax added** (prices final; Studioma is now the seller, tax obligations are
+  the owner's) and **upgrade right away** (new price from the next renewal; PayPal cannot prorate). Downgrades keep the
+  paid plan until the period ends (`subscriptions.prev_plan` / `prev_until`, DB v14).
+- `studioma/lib/paypal.php` (new): OAuth token (memory only), `billing_checkout` (server-created subscription,
+  `custom_id` = `stm:<uid>`, `pending` row, PayPal approval link), `billing_confirm` (re-reads at PayPal after the
+  return), `billing_change` (« revise », approval link or direct), `billing_cancel` (final at PayPal, plan kept until
+  paid-through date, no second subscription meanwhile), sync and status mapping, payments (`PAYMENT.SALE.*`),
+  webhook handling (verified by PayPal's `verify-webhook-signature`, raw body forwarded, subscription always re-read,
+  idempotent, 503 when PayPal is unreachable), `admin_paypal_setup` (creates product + 4 plans, returns config lines).
+- `studioma/paypal-webhook.php` (new); removed `lib/paddle.php`, `paddle-webhook.php`, `tests/studioma/fake-paddle.php`.
+- `lib/billing.php`: PayPal settings (`STM_PAYPAL_ENV` sandbox|live, `_CLIENT_ID`, `_SECRET`, `_WEBHOOK_ID`,
+  `_PLAN_*`), config check, canceled-but-paid and `prev_plan` handling in `account_plan()`, `manage_url`;
+  `billing_config` route removed. `lib/admin.php`: metrics for PayPal (pending excluded, canceled-in-period counted as
+  subscriber, not MRR), `can_setup_plans`, `webhook_url`. `api.php`: routes; **account deletion refused while a
+  PayPal subscription is active**. `lib/core.php`: migration v14.
+- UI: `assets/billing.js` (pricing FAQ and texts, plan choice → PayPal, « Plan & billing » confirmation after return,
+  Manage in PayPal, cancel, payments with refunded/failed states), `assets/pay.js` + `pay/index.html` + `pay/.htaccess`
+  (return page, strict CSP, no third-party script), `assets/admin.js` + `admin.css` (PayPal wording, « Create the
+  PayPal plans », webhook address).
+- Legal pages (`p.php`): Terms / Privacy / Refunds now say paid through PayPal, Studioma (Mohammed Dehini) is the
+  seller, no tax added, plan-change rules, PayPal as independent controller, no PayPal script.
+- Tests: `tests/studioma/fake-paypal.php` (new), `billing.js` rewritten (141 checks), `billing-config.php` (13),
+  `legal.js`, `promo.js`, `promo-e2e.js`, `quality.js`, `admin.js` (schema 14), `setup.sh`, `router.php`, `run.sh`.
+- Docs: `docs/billing.md` (rewritten), README « Studioma › 8 », tests README, DECISIONS S41, ROADMAP,
+  PROJECT_CONTEXT, AGENTS.md map, `.env.example`, `config.example.php`.
 
-**Unfinished / waiting**
+**Unfinished / waiting (owner)**
 
-- Owner: **deploy** (`cd ~/dehini-com && git pull -q && cp -rf studioma ~/public_html/` in cPanel › Terminal), then
-  open `/studioma/terms/`, `/privacy/`, `/refunds/` in a browser; texts are not reviewed by a lawyer — have them
-  checked if possible; confirm the legal name matches the Paddle account. Consider an admin email campaign
-  telling existing members about the new terms (they accepted the old one-sentence terms; no forced re-acceptance).
-- **Cookie consent**: the Meta Pixel runs without a consent banner; the privacy policy describes it honestly but EU
-  visitors would normally need opt-in consent (ROADMAP, owner's decision).
-- Carried over: Search Console + sitemap submission, cPanel HTTPS / `www` redirect, root `robots.txt` copy if PR #84
-  was not fully deployed; Paddle sandbox test and live setup, owner's Paddle choices; Safari / Firefox testing;
-  Maillage test « stock enregistré » fails also on unmodified `main`.
+- **Security: the PayPal sandbox and live client secrets were pasted in a chat on 2026-11-23.** They were not
+  written anywhere by the agent and not used. Replace both secrets in the PayPal app (add a new secret, disable the
+  old one) before putting them in `studioma/config.php`.
+- Confirm the live PayPal account can **receive** payments (Algeria: *unverified*); tax obligations as seller.
+- Setup and sandbox test: `docs/billing.md` § 5 and § 8.1 (config, webhook + its ID, « Create the PayPal plans »,
+  `STM_BILLING_ENABLED`, buy Solo with a sandbox personal account, upgrade, downgrade, cancel, refund).
+- Review, ask for the pull request, merge, deploy (`cp -rf studioma ~/public_html/`). Also still to deploy: PR #85.
+- Carried over: cookie consent for the Meta pixel; lawyer review of the legal pages; Search Console; Safari / Firefox.
 
 **Next recommended action**
 
-1. **Owner**: deploy PR #85 (command above), check the three pages live, then continue the Paddle website review
-   with these URLs.
-2. **Agent, next task**: if the owner wants it, a cookie-consent banner that loads the Meta Pixel only after opt-in
-   (Studioma, and SWANBIDA separately).
+1. **Owner**: rotate the PayPal secrets, then follow `docs/billing.md` § 5 → § 8.1 in **sandbox**; ask for the PR.
+2. **Agent, after the owner's sandbox test**: fix whatever real PayPal does differently from the fake (see
+   `docs/billing.md` § 7 « not tested against real PayPal yet »).
 
-**Blockers**: none for this work. Billing: Paddle approval and credentials (owner).
+**Blockers**: real PayPal behaviour unverified (no PayPal access from the development environment).
 
-**Validation at this checkpoint** (2026-11-23, branch `claude/trusting-keller-rynk1j`): suites touched by this change,
-each on a fresh fake hosting (same `setup.sh` as `run.sh`), **0 failures** — **legal 75** (new), quality 53,
-quality-e2e 36, billing 107 (billing mode), promo-e2e 44 (promo mode), e2e 202. Suites whose files did not change were
-not re-run (api, share, meta, mcp, admin, promo, journey, journey-e2e, publish, publish-e2e: last full pass
-2026-11-22). `php -l` 121 PHP files, `node --check` 36 JS files: 0 errors. Pages checked by screenshots (1280 px and
-390 px).
+**Validation at this checkpoint** (2026-11-23, branch `claude/trusting-keller-rynk1j`): all 16 Studioma suites +
+config check, each on a fresh fake hosting (same `setup.sh` as `run.sh`), **0 failures** — api 239, share 144,
+meta 73, mcp 155, admin 116, **billing 141** (fake PayPal, browser round trip through PayPal and `studioma/pay/`),
+promo 76, promo-e2e 44, journey 135, journey-e2e 57, publish 130, publish-e2e 37, quality 53, quality-e2e 36,
+legal 77, e2e 202, billing-config 13. (api, billing, admin and promo were re-run after the last code change;
+the others ran before the account-deletion guard, which only adds a refusal for accounts with a PayPal
+subscription.) `php -l` 121 PHP files, `node --check` 36 JS files: 0 errors.
 
 ## Log (newest first)
+
+### 2026-11-23 — Claude Code — Studioma: PayPal replaces Paddle
+- Owner: « change Paddle to PayPal payment » (developer.paypal.com/checkout) and pasted sandbox and live API
+  credentials in the chat — **not used, not stored**; owner told to rotate them.
+- Owner's choices (AskUserQuestion): no tax added; upgrade applies right away. PayPal docs read: revise = new price
+  from the next billing cycle, no proration; webhook verification API; event names.
+- Server-created subscriptions with redirect approval (no PayPal JS, strict CSP on the return page); plan only from
+  PayPal's API answer or a PayPal-verified webhook; DB v14 for downgrades; account deletion blocked while subscribed
+  (gap that also existed with Paddle). Paddle code removed (never live). Legal pages updated (Studioma is the seller).
+- Tests: see « Validation ». Committed and pushed; not merged; real PayPal untested.
+
 
 ### 2026-11-23 — Claude Code — Studioma: Terms of Service, Privacy Policy, Refund Policy
 - Owner's request: « add Terms of service, Privacy policy, Refund policy ». Choices asked and answered: legal name

@@ -2,7 +2,8 @@
  * Pages légales de Studioma (p.php : /studioma/terms/, /privacy/, /refunds/), sur le faux hébergement de run.sh :
  *   réponse 200 indexable, adresse canonique, titre, un seul h1, sommaire dont chaque ancre existe, aucun champ
  *   {…} oublié, exploitant / contact / pays / âge minimum / durée de la garantie tirés de la configuration (et
- *   remplaçables dans config.php), contenu essentiel (Paddle revendeur, renouvellement, résiliation, cookies réels de
+ *   remplaçables dans config.php), contenu essentiel (paiement par PayPal, Studioma vendeur, prix sans taxe ajoutée,
+ *   renouvellement, résiliation, changement de formule sans prorata, plus aucune mention de Paddle, cookies réels de
  *   l'application, Meta en empreintes SHA-256, droits), liens croisés, pages lisibles sans base de données, aucun
  *   script en ligne exécutable, en-têtes de sécurité ; liens depuis l'accueil, les pages publiques, la page des prix,
  *   l'inscription, la fenêtre des conditions, la FAQ des prix et la page de paiement ; plan du site ; navigateur :
@@ -31,6 +32,9 @@ const page = async (p) => {
 /** Texte visible d'une page (sans balises), pour chercher des phrases. */
 const text = (h) => h.replace(/<script[\s\S]*?<\/script>/g, ' ').replace(/<[^>]+>/g, ' ').replace(/&amp;/g, '&').replace(/&#039;|&rsquo;|’/g, "'").replace(/\s+/g, ' ');
 const PAGES = [['terms', 'Terms of Service'], ['privacy', 'Privacy Policy'], ['refunds', 'Refund Policy']];
+/** OPcache du serveur de test : config.php n'est relu qu'après opcache.revalidate_freq ; on attend que le changement soit visible. */
+const until = async (fn, ms = 15000) => { const end = Date.now() + ms; while (Date.now() < end) { if (await fn()) return true; await new Promise((r) => setTimeout(r, 300)); } return false; };
+const refundDays = async () => (await (await fetch(API + '?action=billing_plans')).json().catch(() => ({}))).refund_days;
 
 (async () => {
   const D = JSON.parse(execFileSync('php', ['-r', 'define("STM_SITE_URL", "x"); require $argv[1]; echo json_encode([STM_LEGAL_NAME, STM_LEGAL_EMAIL, STM_LEGAL_COUNTRY, STM_LEGAL_UPDATED, STM_MIN_AGE, STM_REFUND_DAYS]);', path.join(REPO, 'studioma/lib/core.php')]).toString());
@@ -63,39 +67,45 @@ const PAGES = [['terms', 'Terms of Service'], ['privacy', 'Privacy Policy'], ['r
   step('2. Contenu essentiel');
   const T = text(H.terms), P = text(H.privacy), R = text(H.refunds);
   ok(T.includes('at least ' + AGE + ' years old') && P.includes(AGE + ''), 'âge minimum (' + AGE + ' ans) dans les conditions et la confidentialité');
-  ok(/Paddle/.test(T) && /merchant of record/.test(T) && /renew automatically/.test(T) && /Settings › Plan & billing/.test(T), 'conditions : Paddle revendeur, renouvellement automatique, résiliation dans les réglages');
+  ok(/sold by Mohammed Dehini and paid through PayPal/.test(T) && /adds no tax/.test(T) && /renew automatically/.test(T) && /Settings › Plan & billing/.test(T) && /cannot be restarted/.test(T), 'conditions : vendu par l\'exploitant, payé par PayPal, sans taxe ajoutée, renouvellement, résiliation');
+  ok(/higher plan, it applies as soon as you approve the change on PayPal/.test(T) && /keep the plan already paid until the end of the period/.test(T), 'conditions : montée immédiate, descente à la fin de la période payée');
+  ok(!/paddle|merchant of record/i.test(H.terms + H.privacy + H.refunds), 'plus aucune mention de Paddle ni de « merchant of record »');
   ok(/laws of Algeria/.test(T) && /courts of Algeria/.test(T) && /consumer/i.test(T), 'conditions : droit algérien, sans retirer les droits des consommateurs');
   ok(/not a party/.test(T) && /not certifications/.test(T), 'conditions : Studioma n\'est pas partie aux accords entre membres ; niveaux ≠ certifications');
   ok(T.includes(DAYS + '-day money-back guarantee') && R.includes(DAYS + '-day') && R.includes('once per account') && /first payment/.test(R), 'garantie de ' + DAYS + ' jours sur le premier paiement, une fois par compte');
-  ok(/renewal/i.test(R) && new RegExp(EMAIL.replace('.', '\\.')).test(R) && /Paddle/.test(R), 'remboursements : renouvellements, demande par courriel ou via Paddle');
+  ok(/renewal/i.test(R) && new RegExp(EMAIL.replace('.', '\\.')).test(R) && /through PayPal/.test(R) && /never charged twice/.test(R) && /dispute/.test(R), 'remboursements : renouvellements, demande par courriel, remboursés par PayPal, jamais deux paiements pour une période');
   ok(['stm_sid', 'stm_vid', 'stm_ref', '_fbp', '_fbc'].every((c) => H.privacy.includes('<code>' + c + '</code>')), 'confidentialité : tableau des cookies réels');
   // Les cookies cités existent bien dans le code (pas de liste inventée).
   const code = ['lib/auth.php', 'lib/promo.php', 'lib/meta.php', 'lib/share.php', 'lib/core.php'].map((f) => { try { return fs.readFileSync(path.join(REPO, 'studioma', f), 'utf8'); } catch (e) { return ''; } }).join('\n')
     + fs.readdirSync(path.join(REPO, 'studioma/lib')).map((f) => fs.readFileSync(path.join(REPO, 'studioma/lib', f), 'utf8')).join('\n');
   ok(['stm_sid', 'stm_vid', 'stm_ref'].every((c) => code.includes(c)), 'ces cookies sont ceux posés par lib/*.php');
-  ok(/SHA-256/.test(P) && /Meta/.test(P) && /Google/.test(P) && /Paddle/.test(P) && /do not sell your personal data/.test(P), 'confidentialité : Meta (empreintes SHA-256), Google, Paddle, aucune vente de données');
+  ok(/SHA-256/.test(P) && /Meta/.test(P) && /Google/.test(P) && /PayPal/.test(P) && /do not sell your personal data/.test(P), 'confidentialité : Meta (empreintes SHA-256), Google, PayPal, aucune vente de données');
   ok(/access/i.test(P) && /delet/i.test(P) && /download/i.test(P) && /object/i.test(P), 'confidentialité : droits d\'accès, effacement, copie des données, opposition');
-  ok(/never/.test(P) && /Paddle/.test(P), 'confidentialité : les données de carte vont à Paddle');
+  ok(/never receive or store card numbers or your PayPal password/.test(P) && /Studioma loads no PayPal script/.test(P), 'confidentialité : aucune donnée de carte, aucun script PayPal sur Studioma');
 
   step('3. Sans base de données, adresse inconnue');
   const cfg0 = fs.readFileSync(CFG, 'utf8');
   // Dossier des données impossible à créer : toute page qui lit la base échoue, pas les pages légales.
   fs.writeFileSync(CFG, cfg0 + "\ndefine('STM_DATA_DIR', '/dev/null/studioma-nodb');\n");
+  await until(async () => (await page('/studioma/pricing/')).status === 500);
   const nodb = await page('/studioma/terms/');
   ok(nodb.status === 200 && nodb.html.includes('<h1>Terms of Service</h1>'), 'conditions lisibles même si la base est indisponible', nodb.status);
   ok((await page('/studioma/pricing/')).status === 500, 'à titre de comparaison, une page qui lit la base répond 500');
   fs.writeFileSync(CFG, cfg0);
+  await until(async () => (await page('/studioma/pricing/')).status === 200);
   ok((await page('/studioma/p.php?legal=cookies')).status === 404, 'type de page inconnu : 404');
 
   step('4. Réglages remplaçables dans config.php');
   const cfg = fs.readFileSync(CFG, 'utf8');
   fs.writeFileSync(CFG, cfg + "\ndefine('STM_LEGAL_NAME', 'Studioma Test Ltd');\ndefine('STM_LEGAL_EMAIL', 'legal@test.example');\ndefine('STM_REFUND_DAYS', 30);\ndefine('STM_MIN_AGE', 18);\n");
+  await until(async () => (await refundDays()) === 30);
   let pg = await page('/studioma/refunds/');
   ok(text(pg.html).includes('Operated by Studioma Test Ltd') && pg.html.includes('mailto:legal@test.example') && text(pg.html).includes('30-day'), 'nom, contact et durée remplacés');
   ok(text((await page('/studioma/terms/')).html).includes('at least 18 years old'), 'âge minimum remplacé');
   const bp = await (await fetch(API + '?action=billing_plans')).json();
   ok(bp.refund_days === 30, 'billing_plans renvoie la durée de la garantie (FAQ des prix)', bp.refund_days);
   fs.writeFileSync(CFG, cfg);
+  await until(async () => (await refundDays()) === DAYS);
   ok((await (await fetch(API + '?action=billing_plans')).json()).refund_days === DAYS, 'configuration rétablie');
 
   step('5. Liens depuis le reste du site');

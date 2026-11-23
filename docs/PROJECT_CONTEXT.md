@@ -59,7 +59,7 @@ each published under its own path on the same domain:
 | Email (SMTP, Brevo API) | Impact (Brevo key set in its admin), Studioma (SMTP, defaults to Impact's settings), Maillage, SWANBIDA | tests write emails to `mail.jsonl` |
 | Meta Graph API / Marketing API | Stats Meta KPIs extension, Marketing Dashboard (incl. webhooks), SWANBIDA and Studioma (Pixel + Conversions API, Graph v24.0) | Marketing's Meta app migration: `docs/meta-app-review.md` |
 | Payment links (SofizPay CIB/Edahabia, PayPal, RedotPay, CCP) | Impact « Soutenir » page | see README « Défi Impact » |
-| Paddle Billing (subscriptions, hosted checkout, webhooks) | Studioma plans Solo / Team | `docs/billing.md`; closed until configured in `studioma/config.php` |
+| PayPal (Subscriptions REST API v1, approval on paypal.com, verified webhooks; replaced Paddle on 2026-11-23) | Studioma plans Solo / Team | `docs/billing.md`; closed until configured in `studioma/config.php` |
 | OpenStreetMap tiles | Maillage map | Leaflet vendored |
 | MCP + OAuth 2.1 (Streamable HTTP, DCR, PKCE S256) | Studioma (`studioma/mcp.php`, `studioma/oauth.php`, root `.well-known/`) | Claude, ChatGPT, Gemini CLI connect as the user |
 
@@ -70,8 +70,9 @@ Each platform creates and migrates its own SQLite database on first request (sch
 
 Studioma (most active project) — `~/studioma-data/studioma.sqlite`, schema **version 12** in `main` (v6 admin, v7
 `users.terms_at`, v8 `visitors` + `visit_days`, v9 billing, v10 card sharing and Community, v11 launch offer, v12
-Creator Journey), **version 13** (opportunities in the feed: data backfill only) on branch
-`claude/trusting-keller-rynk1j` until merged (`studioma/lib/core.php` › `migrate()`):
+Creator Journey), **version 13** (opportunities in the feed: data backfill only, `main` since PR #84), **version
+14** (`subscriptions.prev_plan`, `prev_until` for PayPal downgrades) on branch `claude/trusting-keller-rynk1j` until
+merged (`studioma/lib/core.php` › `migrate()`):
 
 - accounts & network: `users`, `sessions`, `companies`, `company_members`, `follows`, `connections`, `posts`,
   `post_likes`, `post_saves`, `post_comments`, `portfolio`, `recommendations`, `opps`, `opp_apps`,
@@ -89,7 +90,8 @@ Creator Journey), **version 13** (opportunities in the feed: data backfill only)
   `subscriptions` rows with provider `promo`) — see README « Studioma › 10 »;
 - card sharing and Community (v10): `shares.card_id` / `shares.opts` (a link for one card), `pubs` (card published as
   achievement or opportunity), `proposals`, `posts.pub_id` (feed post of an achievement) — see README « Studioma › 9 »;
-- billing (v9): `subscriptions`, `billing_customers`, `billing_events` (Paddle webhooks), `billing_transactions`,
+- billing (v9, v14): `subscriptions` (provider `paypal`, `manual`, `promo`; `prev_plan` / `prev_until` since v14),
+  `billing_customers` (Paddle era, unused), `billing_events` (PayPal webhooks), `billing_transactions`,
   `usage_counters` (new cards per account and month) — see `docs/billing.md`;
 - administration (v6): `users.suspended` / `suspend_note`, `activity_days` (active accounts per day),
   `mail_log` (every email sent), `campaigns`, `mail_queue`, `admin_log`;

@@ -41,7 +41,7 @@
 // limite d'envoi de l'hébergeur.
 // define('STM_MAIL_PER_HOUR', 200);
 
-// Formules et abonnements (lib/billing.php, lib/paddle.php ; guide complet : docs/billing.md).
+// Formules et abonnements (lib/billing.php, lib/paypal.php ; guide complet : docs/billing.md).
 // Limites des formules Free / Solo / Team appliquées par le serveur (true par défaut). false = tout permis
 // (interrupteur de secours ; les compteurs continuent d'être tenus).
 // define('STM_PLANS_ENFORCED', true);
@@ -52,20 +52,21 @@
 // define('STM_LAUNCH_PROMO', true);
 // define('STM_REFERRAL_SAME_IP_MAX', 3);
 // define('STM_REFERRAL_BURST_MAX', 10);
-// Paiement en ligne avec Paddle Billing : reste fermé tant que STM_BILLING_ENABLED n'est pas true ET que tous les
-// réglages ci-dessous sont remplis. Commencer en « sandbox » ; « production » seulement après l'approbation du
-// compte Paddle et un paiement de test réussi. Ces valeurs sont secrètes (sauf le jeton client) : jamais dans Git.
+// Paiement en ligne avec PayPal (abonnements) : reste fermé tant que STM_BILLING_ENABLED n'est pas true ET que tous
+// les réglages ci-dessous sont remplis et cohérents. Commencer en « sandbox » ; « live » seulement après un paiement
+// de test réussi (docs/billing.md). Le secret est secret : seulement ici, sur le serveur, jamais dans Git ni ailleurs.
 // define('STM_BILLING_ENABLED', true);
-// define('STM_PADDLE_ENV', 'sandbox');                         // sandbox | production
-// define('STM_PADDLE_API_KEY', 'pdl_sdbx_apikey_…');           // Paddle › Developer tools › Authentication (secret)
-// define('STM_PADDLE_CLIENT_TOKEN', 'test_…');                 // jeton client (public, pour Paddle.js)
-// define('STM_PADDLE_WEBHOOK_SECRET', 'pdl_ntfset_…');         // secret de la destination de notifications (webhook)
-// define('STM_PADDLE_PRICE_SOLO_MONTHLY', 'pri_…');            // 12 $ / mois
-// define('STM_PADDLE_PRICE_SOLO_YEARLY', 'pri_…');             // 120 $ / an
-// define('STM_PADDLE_PRICE_TEAM_MONTHLY', 'pri_…');            // 29 $ / mois
-// define('STM_PADDLE_PRICE_TEAM_YEARLY', 'pri_…');             // 290 $ / an
+// define('STM_PAYPAL_ENV', 'sandbox');                    // sandbox | live
+// define('STM_PAYPAL_CLIENT_ID', 'A…');                   // developer.paypal.com › Apps & Credentials › l'application
+// define('STM_PAYPAL_SECRET', 'E…');                      // même endroit, « Secret key » (SECRET)
+// define('STM_PAYPAL_WEBHOOK_ID', '8PT5…');               // l'ID affiché à côté de l'adresse du webhook (pas un secret)
+// Les quatre formules (P-…) : créées par l'administration › Billing › « Create the PayPal plans ».
+// define('STM_PAYPAL_PLAN_SOLO_MONTHLY', 'P-…');          // 12 $ / mois
+// define('STM_PAYPAL_PLAN_SOLO_YEARLY', 'P-…');           // 120 $ / an
+// define('STM_PAYPAL_PLAN_TEAM_MONTHLY', 'P-…');          // 29 $ / mois
+// define('STM_PAYPAL_PLAN_TEAM_YEARLY', 'P-…');           // 290 $ / an
 // Pages légales publiques (/studioma/terms/, /privacy/, /refunds/, voir p.php). Valeurs par défaut dans lib/core.php,
-// choisies par le propriétaire ; le nom doit correspondre au compte Paddle. Changer STM_LEGAL_UPDATED à chaque
+// choisies par le propriétaire ; le nom doit correspondre au compte PayPal. Changer STM_LEGAL_UPDATED à chaque
 // modification du texte des pages.
 // define('STM_LEGAL_NAME', 'Mohammed Dehini');
 // define('STM_LEGAL_EMAIL', 'contact@dehini.com');

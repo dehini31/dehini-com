@@ -1,6 +1,6 @@
 <?php
 /**
- * Offre de lancement de Studioma — sans carte, sans paiement, sans Paddle.
+ * Offre de lancement de Studioma — sans carte, sans paiement, sans PayPal.
  *
  *   essai       30 jours d'accès complet (formule Team et ses limites) : accordé à l'inscription, ou réclamé une fois
  *               par un compte existant qui ne l'a jamais eu. Pas de renouvellement : à la fin, la formule Free

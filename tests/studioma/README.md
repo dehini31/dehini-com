@@ -111,18 +111,24 @@ partie d'adresse après `#`.
   supprimé refusés aussitôt, client confidentiel (secret exigé), retour vers la machine locale sur un autre port,
   révocation (RFC 7009).
 
-**`billing.js` — formules et abonnements** (`setup.sh` avec `BILLING=1` : limites appliquées, Paddle sandbox pointé sur
-le faux Paddle `fake-paddle.php`, servi par `router.php` sous `/fake-paddle/`) : migration d'une base au schéma 8
-sans perte ; limites Free (projets, Studios, archivés hors compte, 30 cartes par mois, compteur qui ne recule pas,
+**`billing.js` — formules et abonnements** (`setup.sh` avec `BILLING=1` : limites appliquées, PayPal sandbox pointé
+sur le faux PayPal `fake-paypal.php`, servi par `router.php` sous `/fake-paypal/` : jeton OAuth, abonnements, « revise »,
+résiliation, vérification des webhooks, page d'accord du payeur) : migration d'une base au schéma 8 sans perte
+(schéma 14) ; limites Free (projets, Studios, archivés hors compte, 30 cartes par mois, compteur qui ne recule pas,
 nouveau mois, invitations, liens privés, invités en lecture seule, validations, Insights) ; mêmes limites par le
-serveur MCP ; paiement (transaction liée au compte, rien d'activé par le retour du navigateur) ; webhooks (mauvaise
-signature, sans signature, trop ancien, corps modifié, rejeu, désordre, client inconnu) ; Solo, montée vers Team
-(prorata immédiat), places de membres et invitations en attente, invités hors places ; créations simultanées ;
-isolement entre comptes ; descente (prorata sur la prochaine facture, membres en trop en lecture seule) ;
-résiliation, reprise, fin confirmée par Paddle, dépassements ; paiement en échec, délai de grâce, régularisation ;
-espace client ; indicateurs de l'administration (MRR, ARR, sandbox séparé), formule offerte ; navigateur : page des
-prix, mensuel / annuel, invitation à changer de formule, paiement avec un faux Paddle.js, attente de la
-confirmation, réglages, Insights, mobile, aucune violation de la CSP.
+serveur MCP ; souscription (abonnement créé par le serveur, custom_id du compte, adresse de retour, « pending » sans
+accès, rien d'activé par le retour du navigateur, confirmation relue chez PayPal, un autre compte ne peut pas
+confirmer) ; webhooks (signés pour un autre webhook, sans signature, corps modifié, rejeu, contenu dépassé, paiement
+en double) ; Solo, montée vers Team (accord sur PayPal, Team aussitôt), places de membres et invitations en attente,
+invités hors places ; créations simultanées ; isolement entre comptes ; descente (sans accord à redemander, Team
+gardé jusqu'à la fin de la période payée, puis membres en trop en lecture seule) ; passage à l'annuel ; résiliation
+(formule gardée jusqu'à la fin de la période, double paiement refusé, puis Free et dépassements) ; paiement en échec,
+délai de grâce, régularisation, suspension, réactivation, remboursement ; notifications inexploitables (abonnement
+inconnu, compte inconnu, formule étrangère, autres événements) ; PayPal indisponible (503, renvoyée plus tard) ;
+indicateurs de l'administration (MRR, ARR, sandbox séparé, abonnements en attente exclus), création des quatre
+formules PayPal (prix, dollars, sans taxe) ; formule offerte ; navigateur : page des prix, mensuel / annuel,
+invitation à changer de formule, aller-retour par PayPal, page de retour, abandon du paiement, réglages, Insights,
+mobile, aucune violation de la CSP.
 
 **`quality.js` — opportunités dans le fil, pages publiques, référencement** : droits de publication (non-membre,
 Viewer, visiteur), opportunité publiée → accueil « For you » d'un compte qui ne suit pas l'auteure et Discover, rien de
@@ -143,7 +149,8 @@ nommés) et 6 pages de visiteurs à 320 px ; aucune erreur ni violation de la CS
 **`legal.js` — pages légales** (`/studioma/terms/`, `/privacy/`, `/refunds/`) : valeurs par défaut choisies par le
 propriétaire, 200 indexable, titre, un `h1`, canonique, description, exploitant / contact / date / pays, aucun champ
 `{…}` oublié, sommaire dont chaque ancre existe, liens croisés, aucun script en ligne, CSP ; contenu essentiel (âge
-minimum, Paddle revendeur, renouvellement et résiliation, droit applicable, garantie, cookies réellement posés par
+minimum, Studioma vendeur et paiement par PayPal, prix sans taxe, montée et descente, renouvellement et résiliation,
+plus aucune mention de Paddle, droit applicable, garantie, cookies réellement posés par
 `lib/*.php`, Meta en SHA-256, droits) ; pages lisibles sans base de données, type inconnu → 404 ; valeurs remplacées
 dans `config.php` (et `billing_plans.refund_days`) ; liens depuis les pages publiques, l'accueil, la page des prix, la
 page de paiement, l'inscription et la fenêtre « One last step » ; plan du site ; navigateur à 320 px, sommaire, FAQ
@@ -178,7 +185,7 @@ fin de l'essai (Free, rien supprimé, API comprise), lien de parrainage (code al
 ignoré), vérification par lien de confirmation et par mot de passe oublié, parrainage de soi refusé, 10 amis : 12
 mois civils à la suite de l'essai, une seule fois (même avec 12 vérifications simultanées), immédiate si l'essai est
 fini, sans réduire un accès offert, fin de l'année offerte, activité suspecte à examiner puis approuvée, indicateurs
-de l'administration, aucun appel à Paddle ni paiement, offre coupée.
+de l'administration, aucun appel à PayPal ni paiement, offre coupée.
 
 **`promo-e2e.js` — l'offre dans Chromium** : page des prix (plus de « Coming soon », « Get 30 Days Free » et « No
 credit card required » sur Solo et Team, annonce, mensuel / annuel, Most Popular, aucun champ de carte), accueil

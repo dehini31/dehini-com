@@ -25,30 +25,30 @@ define('STM_META_TOKEN', 'test-meta-token-0123456789');
 define('STM_META_LOG', '$DIR/meta.jsonl');
 PHP
 # Abonnements : les batteries historiques testent les fonctionnalités sans les limites des formules ; billing.js
-# (BILLING=1) les applique, avec un faux Paddle (tests/studioma/fake-paddle.php, servi par router.php).
+# (BILLING=1) les applique, avec un faux PayPal (tests/studioma/fake-paypal.php, servi par router.php).
 if [ "${BILLING:-0}" = "1" ]; then
   PORT=${2:-8097}
   cat >> "$DIR/public_html/studioma/config.php" <<PHP
 define('STM_PLANS_ENFORCED', true);
 define('STM_BILLING_ENABLED', true);
-define('STM_PADDLE_ENV', 'sandbox');
-define('STM_PADDLE_API_BASE', 'http://127.0.0.1:$PORT/fake-paddle');
-define('STM_PADDLE_API_KEY', 'test-paddle-api-key');
-define('STM_PADDLE_CLIENT_TOKEN', 'test_client_token_0123');
-define('STM_PADDLE_WEBHOOK_SECRET', 'test-webhook-secret');
-define('STM_PADDLE_PRICE_SOLO_MONTHLY', 'pri_solo_month');
-define('STM_PADDLE_PRICE_SOLO_YEARLY', 'pri_solo_year');
-define('STM_PADDLE_PRICE_TEAM_MONTHLY', 'pri_team_month');
-define('STM_PADDLE_PRICE_TEAM_YEARLY', 'pri_team_year');
+define('STM_PAYPAL_ENV', 'sandbox');
+define('STM_PAYPAL_API_BASE', 'http://127.0.0.1:$PORT/fake-paypal');
+define('STM_PAYPAL_CLIENT_ID', 'test-client-id-0123456789');
+define('STM_PAYPAL_SECRET', 'test-secret-0123456789abcdef');
+define('STM_PAYPAL_WEBHOOK_ID', 'WHTEST0123456789');
+define('STM_PAYPAL_PLAN_SOLO_MONTHLY', 'P-SOLOMONTH0000000000000000');
+define('STM_PAYPAL_PLAN_SOLO_YEARLY', 'P-SOLOYEAR00000000000000000');
+define('STM_PAYPAL_PLAN_TEAM_MONTHLY', 'P-TEAMMONTH0000000000000000');
+define('STM_PAYPAL_PLAN_TEAM_YEARLY', 'P-TEAMYEAR00000000000000000');
 PHP
 elif [ "${PROMO:-0}" = "1" ]; then
-  # Offre de lancement (promo.js) : limites appliquées, paiement fermé comme en production ; tout appel à Paddle irait
-  # au faux Paddle et serait noté dans fake-paddle.json (il ne doit jamais y en avoir). Règles anti-abus réglées par le test.
+  # Offre de lancement (promo.js) : limites appliquées, paiement fermé comme en production ; tout appel à PayPal irait
+  # au faux PayPal et serait noté dans fake-paypal.json (il ne doit jamais y en avoir). Règles anti-abus réglées par le test.
   PORT=${2:-8097}
   cat >> "$DIR/public_html/studioma/config.php" <<PHP
 define('STM_PLANS_ENFORCED', true);
 define('STM_LAUNCH_PROMO', true);
-define('STM_PADDLE_API_BASE', 'http://127.0.0.1:$PORT/fake-paddle');
+define('STM_PAYPAL_API_BASE', 'http://127.0.0.1:$PORT/fake-paypal');
 define('STM_REFERRAL_SAME_IP_MAX', 0);
 define('STM_REFERRAL_BURST_MAX', 0);
 PHP
