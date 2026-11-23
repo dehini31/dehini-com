@@ -82,8 +82,10 @@ give the allowance back, and the counter of a new month starts at zero. No card 
 ## 5. Paddle setup (owner — required before payments)
 
 1. **Paddle account and approval**: sign up at paddle.com; Paddle reviews the business and the website before live
-   payments. They usually require on `dehini.com`: a pricing page (`/studioma/app/#/pricing` exists), **Terms of
-   Service, Privacy Policy and Refund Policy pages** (do not exist yet — to write), and contact details. Approval
+   payments. They usually require on `dehini.com`: a pricing page (`/studioma/pricing/` and `/studioma/app/#/pricing`),
+   **Terms of Service, Privacy Policy and Refund Policy pages** (`/studioma/terms/`, `/studioma/privacy/`,
+   `/studioma/refunds/` — README « Studioma › 12 », decision S40), and contact details (contact@dehini.com). The
+   legal name on the pages (`STM_LEGAL_NAME`) must match the Paddle account. Approval
    and payouts are not guaranteed and are outside this code.
 2. **Sandbox first** (sandbox-vendors.paddle.com): create two products — *Studioma Solo*, *Studioma Team* — with
    four recurring prices in USD: $12/month, $120/year, $29/month, $290/year. Copy the four `pri_…` ids.
@@ -210,7 +212,8 @@ Nothing exists in live to reuse yet: every live entity is to be created once, af
 ### 8.5 Go-live checklist (after 8.2 passes)
 
 1. Legal pages online and linked from the pricing page and footer: Terms of Service, Privacy Policy, Refund Policy
-   (Paddle named as merchant of record), contact email — required by Paddle's website review.
+   (Paddle named as merchant of record), contact email — required by Paddle's website review. **Written** (decision
+   S40); online once the branch is deployed.
 2. Live products and prices created with the same amounts/intervals as sandbox; mapping table filled.
 3. Live notification destination, API key, client token; default payment link; `dehini.com` approved.
 4. `config.php` on the server switched in one edit: `STM_PADDLE_ENV` `'production'` + live key, token, secret,

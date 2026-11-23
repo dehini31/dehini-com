@@ -2027,6 +2027,18 @@ publication du fil). Audit complet, mesures et liste des problèmes corrigés : 
   débordement à 320 px, tableau des prix défilant dans son cadre, page d'une publication : contenu avant les actions du
   gestionnaire ; contrastes ≥ 4,5:1 (gris, vert, avatars, boutons du thème sombre), boutons d'icône nommés, fenêtres
   nommées par leur titre, un `h1` par écran, liens soulignés dans les textes, cibles tactiles agrandies.
+- **Pages légales** — `/studioma/terms/` (conditions d'utilisation), `/studioma/privacy/` (confidentialité, avec le
+  tableau des cookies réellement posés) et `/studioma/refunds/` (remboursements), rendues par `p.php` sans base de
+  données (lisibles même si SQLite est indisponible), indexées et dans le plan du site. Exploitant **Mohammed
+  Dehini**, contact **contact@dehini.com**, droit **algérien**, âge minimum **16 ans**, garantie **14 jours** sur le
+  premier paiement d'un abonnement (une fois par compte ; renouvellements non remboursés sauf obligation légale ;
+  erreurs de facturation toujours remboursées) ; Paddle y est nommé revendeur (*merchant of record*). Ces valeurs
+  sont dans `lib/core.php` (`STM_LEGAL_NAME`, `STM_LEGAL_EMAIL`, `STM_LEGAL_COUNTRY`, `STM_LEGAL_UPDATED`,
+  `STM_MIN_AGE`, `STM_REFUND_DAYS`) et se remplacent dans `config.php` ; **changer `STM_LEGAL_UPDATED`** à chaque
+  modification du texte. Liens : pied de page des pages publiques et de l'accueil, formulaire d'inscription,
+  fenêtre « One last step », FAQ et pied de la page des prix de l'application, page de paiement. Textes rédigés à
+  partir du fonctionnement réel du code (cookies, Meta, Google, Paddle, durées de conservation) ; **ils ne
+  remplacent pas l'avis d'un juriste**.
 
 ### 13. Fichiers envoyés
 
@@ -2043,7 +2055,9 @@ Tout tient dans `~/studioma-data/` : copier ce dossier sauvegarde la base et les
 tests/studioma/run.sh /tmp/stm-test
 ```
 
-Faux hébergement neuf, puis quinze batteries : `quality.js` (opportunités dans le fil de tout le monde, détails,
+Faux hébergement neuf, puis seize batteries : `legal.js` (pages légales : contenu tiré de la configuration et
+remplaçable, sommaire, liens croisés et depuis le reste du site, plan du site, lisibles sans base de données, aucun
+script en ligne, 320 px, liens de l'inscription, de la fenêtre des conditions et de la FAQ des prix), `quality.js` (opportunités dans le fil de tout le monde, détails,
 modification, fermeture et réouverture sans doublon, modération, suppression, droits, rien de privé ; pages publiques
 des opportunités et des prix, plan du site, robots.txt, métadonnées et données structurées de l'accueil ; migration
 v13), `quality-e2e.js` (sur téléphone : nouveau projet, cartes, changement de colonne sans glisser-déposer,
@@ -2112,8 +2126,9 @@ parcours complet dans le navigateur, sur ordinateur et sur mobile, avec deux com
   depuis l'administration. Pas de statistiques d'ouverture ou de clic des campagnes (volontairement : aucun suivi
   dans les emails). Une seule session d'administration (le mot de passe de `/admin`), sans comptes
   d'administrateurs distincts.
-- Une seule langue (anglais) ; les conditions d'utilisation se résument à une phrase (acceptée à l'inscription par
-  email, ou dans la fenêtre « One last step » pour un compte Google) : pas encore de page de conditions complète.
+- Une seule langue (anglais). Pages légales en anglais seulement, non relues par un juriste ; les membres inscrits
+  avant leur publication ont accepté l'ancienne phrase (« use Studioma respectfully… ») : les prévenir (campagne
+  d'administration) est conseillé, sans nouvelle acceptation forcée.
 - Les pages publiques sont rendues par JavaScript : elles se partagent par lien mais ne sont pas optimisées pour
   les moteurs de recherche (seules la landing, les opportunités, les prix, les pages de vérification et les passeports publics le sont).
 

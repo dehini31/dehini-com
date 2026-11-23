@@ -58,6 +58,7 @@
     ['What counts as a card on the Free plan?', 'Each new card created in your projects during the calendar month (by you, a guest or an AI assistant). The allowance renews on the 1st. Existing cards are never deleted. Paid plans have unlimited cards, with a fair-use limit of 5,000 new cards per month.'],
     ['How does payment work?', 'Payments are handled by Paddle, our reseller and merchant of record. Your card details go to Paddle, never to Studioma. Taxes may apply depending on your country; Paddle shows the final amount before you pay and emails your invoices.'],
     ['Can I cancel at any time?', 'Yes, from Settings › Plan & billing. You keep your paid plan until the end of the period you paid for, then your account moves to Free.'],
+    ['Can I get a refund?', (d) => `Yes. If Studioma is not right for you, ask within ${d.refund_days || 14} days of the first payment of your subscription and we refund it in full (once per account). Renewals are not refunded, but you can cancel at any time before the next one. Details are in the Refund Policy.`],
     ['Is there a free trial?', ''],
   ];
   SM.route(/^\/pricing$/, async (m, ctx) => {
@@ -136,7 +137,8 @@
             <thead><tr><th><span class="sr-only">Feature</span></th>${plans.map((p) => html`<th>${p.name}<small>${money(p.price[interval])}/${interval}</small></th>`)}</tr></thead>
             <tbody>${COMPARE.map(([label, fn]) => html`<tr><th scope="row">${label}</th>${plans.map((p) => html`<td>${fn(p)}</td>`)}</tr>`)}</tbody>
           </table></div></section>
-        <section class="faq"><h2>Frequently asked questions</h2>${FAQ.map(([qq, a]) => html`<details class="panel"><summary>${qq}</summary><p>${a || trialAnswer(promoOn)}</p></details>`)}</section>
+        <section class="faq"><h2>Frequently asked questions</h2>${FAQ.map(([qq, a]) => html`<details class="panel"><summary>${qq}</summary><p>${typeof a === 'function' ? a(d) : (a || trialAnswer(promoOn))}</p></details>`)}
+          <p class="legal-links muted"><a href="${SM.base}terms/">Terms of Service</a> · <a href="${SM.base}privacy/">Privacy Policy</a> · <a href="${SM.base}refunds/">Refund Policy</a></p></section>
       </div>`);
       const f = focus && SM.$('.plan-card.is-focus');
       if (f && f.scrollIntoView) f.scrollIntoView({ block: 'center' });

@@ -6,6 +6,7 @@
  *   https://dehini.com/studioma/opportunities/        — opportunités ouvertes publiées par les membres (p.php?opps=1)
  *   https://dehini.com/studioma/opportunity/<n°>-<titre> — une opportunité (p.php?opp=…)
  *   https://dehini.com/studioma/pricing/               — formules et prix, tirés de lib/plans.php (p.php?pricing=1)
+ *   https://dehini.com/studioma/terms/, /privacy/, /refunds/ — conditions, confidentialité, remboursements (p.php?legal=…)
  *   https://dehini.com/studioma/sitemap.xml            — plan du site : seulement les pages publiques indexables
  *
  * Seul ce que la personne a rendu visible est montré : une réalisation « privée » ou un passeport fermé répondent comme
@@ -96,6 +97,7 @@ function p_page(string $title, string $desc, string $url, string $body, bool $in
         . '<a class="pp-btn pp-btn-soft" href="' . e(site_url()) . 'app/#/signup">Join Studioma</a></header>'
         . '<main class="pp-main" id="main">' . $body . '</main>'
         . '<footer class="pp-foot"><p>Studioma — Your Work. Your Reputation. · <a href="' . e(site_url()) . '">About Studioma</a> · <a href="' . e(site_url()) . 'opportunities/">Opportunities</a> · <a href="' . e(site_url()) . 'pricing/">Pricing</a></p>'
+        . '<p><a href="' . e(site_url()) . 'terms/">Terms of Service</a> · <a href="' . e(site_url()) . 'privacy/">Privacy Policy</a> · <a href="' . e(site_url()) . 'refunds/">Refund Policy</a> · ' . e((string) STM_LEGAL_EMAIL) . '</p>'
         . (($o['journey'] ?? true) ? '<p>Levels and achievements are Studioma\'s internal indicators of professional development, based on activity recorded in Studioma. They are not externally accredited qualifications.</p>' : '') . '</footer>'
         . '</body></html>';
     exit;
@@ -402,7 +404,7 @@ function p_pricing(): void
         . '<p class="pp-lead">Plan content, collaborate with clients and get approvals in one place. Start free, then grow with Solo or Team.</p>' . $note . '</section>'
         . '<div class="pp-plans">' . $cards . '</div>'
         . '<section class="pp-card"><h2>Frequently asked questions</h2>' . implode('', array_map(function (array $q): string { return '<h3>' . e($q[0]) . '</h3><p>' . e($q[1]) . '</p>'; }, $faq))
-        . '<p class="pp-muted pp-small">Prices in US dollars. See every detail and compare plans <a href="' . e(site_url()) . 'app/#/pricing">in the app</a>.</p></section>';
+        . '<p class="pp-muted pp-small">Prices in US dollars. See every detail and compare plans <a href="' . e(site_url()) . 'app/#/pricing">in the app</a>. Paid plans: ' . (int) STM_REFUND_DAYS . '-day money-back guarantee — see the <a href="' . e(site_url()) . 'refunds/">Refund Policy</a> and the <a href="' . e(site_url()) . 'terms/">Terms of Service</a>.</p></section>';
     p_page('Pricing — Free, Solo and Team plans | Studioma', 'Studioma pricing: a free plan, Solo for freelancers managing several clients and Team for agencies — content planning, client approvals and collaboration.' . ($promo ? ' 30 days free, no credit card required.' : ''),
         site_url() . 'pricing/', $body, true, 200, ['type' => 'website', 'journey' => false,
             'jsonld' => [p_crumbs([['Studioma', site_url()], ['Pricing', site_url() . 'pricing/']])]]);
@@ -414,7 +416,9 @@ function p_pricing(): void
 function p_sitemap(): void
 {
     $base = site_url();
-    $urls = [[$base, (int) filemtime(__DIR__ . '/index.html')], [$base . 'pricing/', (int) filemtime(__DIR__ . '/lib/plans.php')]];
+    $legal = (int) strtotime((string) STM_LEGAL_UPDATED);
+    $urls = [[$base, (int) filemtime(__DIR__ . '/index.html')], [$base . 'pricing/', (int) filemtime(__DIR__ . '/lib/plans.php')],
+        [$base . 'terms/', $legal], [$base . 'privacy/', $legal], [$base . 'refunds/', $legal]];
     $open = rows("SELECT p.* FROM pubs p WHERE p.kind = 'opportunity' AND p.status = 'open' AND p.uid NOT IN (SELECT id FROM users WHERE suspended > 0) ORDER BY p.id DESC LIMIT 5000");
     if ($open) $urls[] = [$base . 'opportunities/', max(array_map('intval', array_column($open, 'updated')))];
     foreach ($open as $p) $urls[] = [pub_public_url($p), (int) $p['updated']];
@@ -433,7 +437,163 @@ function p_sitemap(): void
     exit;
 }
 
+/* ------------------------------------------------------------ pages légales */
+
+/**
+ * Conditions d'utilisation, politique de confidentialité, politique de remboursement. Les faits décrits (cookies, durées,
+ * données envoyées à Meta, Google, Paddle) sont ceux du code : à mettre à jour avec lui (README « Studioma › 13 »).
+ * Exploitant, contact, pays, âge minimum et garantie : réglages STM_LEGAL_* (lib/core.php), choisis par le propriétaire.
+ */
+function p_legal_vars(): array
+{
+    return [
+        'name' => (string) STM_LEGAL_NAME, 'email' => (string) STM_LEGAL_EMAIL, 'country' => (string) STM_LEGAL_COUNTRY,
+        'updated' => p_day((string) STM_LEGAL_UPDATED), 'age' => (int) STM_MIN_AGE, 'days' => (int) STM_REFUND_DAYS, 'site' => site_url(),
+    ];
+}
+/** Remplace {name}, {email}… par les valeurs (échappées) ; le texte lui-même est écrit ici, jamais saisi par un membre. */
+function p_legal_fill(string $html, array $v): string
+{
+    $mail = '<a href="mailto:' . e($v['email']) . '">' . e($v['email']) . '</a>';
+    return strtr($html, ['{name}' => e($v['name']), '{email}' => $mail, '{country}' => e($v['country']), '{age}' => (string) $v['age'],
+        '{days}' => (string) $v['days'], '{site}' => e($v['site']), '{terms}' => e($v['site'] . 'terms/'), '{privacy}' => e($v['site'] . 'privacy/'),
+        '{refunds}' => e($v['site'] . 'refunds/'), '{pricing}' => e($v['site'] . 'pricing/')]);
+}
+/** Gabarit d'une page légale : titre, date, sommaire, sections [id, titre, html]. */
+function p_legal_page(string $slug, string $title, string $desc, string $intro, array $sections): void
+{
+    $v = p_legal_vars();
+    $toc = '';
+    $body = '';
+    foreach ($sections as $i => [$id, $h, $html]) {
+        $h = str_replace('{days}', (string) $v['days'], $h);
+        $toc .= '<li><a href="#' . $id . '">' . e($h) . '</a></li>';
+        $body .= '<section id="' . $id . '"><h2>' . ($i + 1) . '. ' . e($h) . '</h2>' . p_legal_fill($html, $v) . '</section>';
+    }
+    $nav = '';
+    foreach ([['terms', 'Terms of Service'], ['privacy', 'Privacy Policy'], ['refunds', 'Refund Policy']] as [$s, $t]) {
+        $nav .= $s === $slug ? '<span aria-current="page">' . $t . '</span>' : '<a href="' . e(site_url() . $s . '/') . '">' . $t . '</a>';
+    }
+    $html = '<article class="pp-card pp-legal">'
+        . '<p class="pp-kicker">Studioma — legal</p><h1>' . e($title) . '</h1>'
+        . '<p class="pp-muted">Last updated: ' . e($v['updated']) . ' · Operated by ' . e($v['name']) . ' · Contact: ' . p_legal_fill('{email}', $v) . '</p>'
+        . '<nav class="pp-legal-nav" aria-label="Legal documents">' . $nav . '</nav>'
+        . '<div class="pp-lead">' . p_legal_fill($intro, $v) . '</div>'
+        . '<nav class="pp-toc" aria-label="Contents"><h2>Contents</h2><ol>' . $toc . '</ol></nav>'
+        . $body . '</article>';
+    p_page($title . ' | Studioma', $desc, site_url() . $slug . '/', $html, true, 200, ['type' => 'website', 'journey' => false,
+        'jsonld' => [p_crumbs([['Studioma', site_url()], [$title, site_url() . $slug . '/']])]]);
+}
+
+function p_terms(): void
+{
+    p_legal_page('terms', 'Terms of Service', 'The terms that apply when you use Studioma: accounts, content, collaboration, community, plans, payments through Paddle and responsibilities.',
+        '<p>These Terms of Service (the “Terms”) govern your use of Studioma, available at <a href="{site}">{site}</a> (the “Service”). Please read them together with our <a href="{privacy}">Privacy Policy</a> and our <a href="{refunds}">Refund Policy</a>.</p>', [
+        ['who', 'Who we are', '<p>Studioma is operated by {name}, established in {country} (“we”, “us”). You can reach us at {email}.</p>'],
+        ['accept', 'Accepting these Terms', '<p>By creating an account, or by using the Service as a guest of a share link, you agree to these Terms. If you use Studioma on behalf of a company or another organization, you confirm that you are allowed to accept these Terms for it, and “you” also means that organization.</p>'],
+        ['eligibility', 'Who can use Studioma', '<p>You must be at least {age} years old to create an account. To buy a paid plan you must be legally able to enter into a contract in your country, or have the permission of a parent or legal guardian.</p>'],
+        ['account', 'Your account', '<p>Give accurate information, keep your password secret and tell us at {email} if you think someone else is using your account. An account belongs to one person; you are responsible for what happens under it. You can sign in with an email and password or with Google; when you use Google, Google’s own terms also apply to that sign-in.</p>'],
+        ['service', 'The Service', '<p>Studioma lets you plan and produce content in private projects and Studios (levels, columns, cards, comments, files, approvals), invite members with roles, share a Studio or a single card with guests through links, keep a professional profile and portfolio, publish finished work as achievements and unfinished work as opportunities, receive and send proposals, follow a Creator Journey (experience points, levels and achievements) and connect AI assistants through Studioma’s MCP server.</p><p>We improve the Service continuously and may add, change or remove features. We aim to keep it available and secure but do not guarantee that it will be uninterrupted or error-free. We will give reasonable notice before removing a paid feature you rely on.</p>'],
+        ['content', 'Your content', '<p>You keep all rights to the content you put on Studioma (texts, scripts, files, comments, profile, posts, publications). You give us a worldwide, non-exclusive, royalty-free licence to host, store, copy, display and transmit that content only as needed to run the Service for you and for the people you share it with, including showing publicly what you choose to make public. The licence ends when the content is deleted, except for copies that others have legitimately received (for example a comment in someone else’s project) and backups kept for a limited time.</p><p>You are responsible for your content and must have the rights and permissions it needs — in particular the permission of your clients before you publish work done for them. Private projects and Studios stay private: nothing in them becomes public unless you, or someone with the right role, publishes it.</p>'],
+        ['workspace', 'Projects, roles and guests', '<p>The owner of a project decides who can access it and with which role (Owner, Manager, Creator, Collaborator, Client / Approver, Viewer). Share links give guests without an account access to one Studio or one card, within the rights chosen by the person who shared it; the owner is responsible for the links and invitations they create and can revoke them at any time. An approval recorded in Studioma records the decision of the person who made it; it is not a guarantee of quality given by Studioma.</p>'],
+        ['community', 'Community, opportunities and proposals', '<p>Opportunities and proposals put members in contact. Any agreement, price, payment or deliverable is a matter between the members concerned: Studioma is not a party to it, does not employ anyone, does not hold or transfer money between members and does not guarantee the identity, quality or payment of anyone. Prices shown in opportunities and proposals are indicative. Be careful and use your own judgement.</p>'],
+        ['journey', 'Creator Journey', '<p>Experience points, levels and achievements are internal indicators of activity recorded in Studioma. They are not certifications or accredited qualifications. Self-reported achievements are shown as such. We may correct or revoke points or achievements obtained in breach of these Terms (for example through fake accounts, fake approvals or automated activity); the public verification page of an achievement always shows its current status.</p>'],
+        ['use', 'Acceptable use', '<p>Use Studioma respectfully and lawfully. In particular, do not:</p><ul><li>publish illegal, hateful, harassing, sexually explicit or violent content, or content that infringes someone else’s rights (copyright, trademarks, privacy, image);</li><li>share confidential client material without permission;</li><li>send spam, unsolicited advertising or misleading opportunities;</li><li>create fake accounts or use several accounts to obtain referral rewards, trials, approvals or achievements;</li><li>impersonate a person, brand or company;</li><li>try to access data or features you are not allowed to, test or bypass security or plan limits, or disrupt the Service;</li><li>scrape or copy the Service or its content by automated means, except through features meant for it (such as the MCP server, within your own account);</li><li>upload malware or harmful code.</li></ul><p>We may remove content, limit features or suspend accounts that break these rules (see “Suspension and termination”).</p>'],
+        ['plans', 'Plans, trial and referral offer', '<p>Studioma has a free plan and paid plans (Solo and Team) described on the <a href="{pricing}">pricing page</a>, with their limits. Paid plans are subscriptions sold by our reseller <b>Paddle</b> (Paddle.com Market Limited and its affiliates), which acts as the merchant of record: Paddle processes the payment, charges applicable taxes, issues invoices and its own buyer terms apply to the purchase. Your card details go to Paddle, never to Studioma. Prices are in US dollars unless shown otherwise; taxes may be added depending on your country.</p><p>Subscriptions renew automatically at the end of each monthly or yearly period until you cancel. You can cancel at any time in Settings › Plan & billing: your plan stays active until the end of the period already paid, then your account moves to the free plan. Moving to a lower plan never deletes your content; above a plan’s limits you can still open everything but cannot create more until you are within the limits again.</p><p>Launch offer: while it runs, new accounts get a free trial of every feature and members who invite verified friends can unlock a free period, as described in the app. These offers require no payment and no card, never turn into a paid subscription by themselves, are granted once per account, have no cash value and may end at any time for new participants. Access already granted continues until its end date. Rewards obtained through fake or duplicate accounts can be withdrawn.</p>'],
+        ['refunds', 'Refunds', '<p>Refunds are described in our <a href="{refunds}">Refund Policy</a> (including a {days}-day money-back guarantee on the first payment of a subscription).</p>'],
+        ['termination', 'Suspension and termination', '<p>You can stop using Studioma and delete your account at any time in Settings (if you are the only owner of a project shared with others, transfer or delete it first). We may suspend or close an account, or remove content, if it breaks these Terms or the law, puts other users or the Service at risk, or if we are required to by law. Where reasonable we will tell you why and give you a chance to respond. If we close a paid account without a breach on your part, we will refund the unused part of the current period.</p>'],
+        ['third', 'Third-party services', '<p>Some features use services run by others: Google (sign-in), Paddle (payments), Meta (measurement of visits and sign-ups) and the AI assistants you choose to connect. Their own terms and privacy policies apply to what they do. We are not responsible for services we do not control.</p>'],
+        ['liability', 'Disclaimers and liability', '<p>The Service is provided “as is”. To the extent permitted by law, we disclaim implied warranties (for example of fitness for a particular purpose) and we are not liable for indirect or consequential losses, loss of profits, loss of opportunities or loss of data caused by events outside our reasonable control. Keep your own copies of important files. To the extent permitted by law, our total liability for any claim relating to the Service is limited to the amounts you paid for it in the 12 months before the claim, or 100 US dollars if you paid nothing.</p><p>Nothing in these Terms excludes or limits liability that cannot be excluded or limited by law, nor the rights you have as a consumer under the mandatory law of the country where you live.</p>'],
+        ['changes', 'Changes to these Terms', '<p>We may update these Terms, for example when features or the law change. The date at the top shows the latest version. For important changes we will inform members by email or in the app before they apply. If you do not agree with the new Terms, you can stop using Studioma and delete your account; continuing to use it after the changes apply means you accept them.</p>'],
+        ['law', 'Governing law and disputes', '<p>These Terms are governed by the laws of {country}. Before going to court, please contact us at {email}: most issues can be solved quickly. Any dispute that cannot be solved amicably falls under the jurisdiction of the competent courts of {country}, without depriving consumers of the protection of the mandatory rules and courts of the country where they live.</p>'],
+        ['contact', 'Contact', '<p>Questions about these Terms: {email}.</p>'],
+    ]);
+}
+
+function p_privacy(): void
+{
+    p_legal_page('privacy', 'Privacy Policy', 'How Studioma collects, uses, shares and protects personal data, which cookies it uses, how long data is kept and how to exercise your rights.',
+        '<p>This policy explains what personal data Studioma collects, why, who receives it and what choices you have. It applies to the Studioma website, app and public pages at <a href="{site}">{site}</a>.</p>', [
+        ['controller', 'Who is responsible', '<p>The data controller is {name}, established in {country}, who operates Studioma. Contact for any privacy question or request: {email}.</p>'],
+        ['collect', 'What we collect', '<ul>'
+            . '<li><b>Account data</b> — your name, email address, password (stored only as a secure hash), account type, whether your email is confirmed and, if you sign in with Google, your Google account identifier.</li>'
+            . '<li><b>Profile and public content</b> — what you add to your profile (title, bio, skills, location, photo, cover, links, portfolio), your posts, comments, likes, recommendations, and the achievements and opportunities you publish.</li>'
+            . '<li><b>Workspace content</b> — projects, Studios, cards, scripts, comments, files, approvals, invitations and the history of changes, visible only to the people who have access to them.</li>'
+            . '<li><b>Messages and proposals</b> — private messages and the proposals you send or receive.</li>'
+            . '<li><b>Guests of share links</b> — the email address a guest verifies with a one-time code, and what the guest does in the shared Studio or card.</li>'
+            . '<li><b>Plan and payment data</b> — your plan, its status and period, and identifiers and amounts received from Paddle. We never receive or store card numbers.</li>'
+            . '<li><b>Referral data</b> — your referral code, clicks on your link counted with a random browser identifier, the accounts created through it and, at sign-up, a salted hash of the IP address used only to detect abuse.</li>'
+            . '<li><b>Creator Journey</b> — experience points, achievements, levels and your Creator Passport settings, computed from your activity.</li>'
+            . '<li><b>Technical and usage data</b> — a session cookie, visit statistics (signed-in members by account, other visitors with an identifier that changes every day and is derived from a salted hash; no IP address is stored for statistics), salted hashes of IP addresses for rate limiting, the list of emails sent to you (recipient, subject, date) and security logs. Our hosting provider keeps standard server logs (including IP addresses) for a limited time.</li>'
+            . '<li><b>AI assistants</b> — when you connect an assistant, the name of the application and its access tokens (stored only as hashes).</li>'
+            . '</ul>'],
+        ['use', 'Why we use it (purposes and legal bases)', '<ul>'
+            . '<li>To provide the Service you asked for: your account, workspaces, sharing, community, messages, Creator Journey and AI connections — <i>performance of our contract with you</i>.</li>'
+            . '<li>To keep Studioma safe: preventing spam, fraud, abuse of offers and attacks, enforcing our Terms — <i>our legitimate interests</i> and <i>legal obligations</i>.</li>'
+            . '<li>To manage plans and payments with Paddle and keep accounting records — <i>contract</i> and <i>legal obligations</i>.</li>'
+            . '<li>To send service emails (confirmation, invitations, notifications you can adjust in Settings) — <i>contract</i>; and occasional news about Studioma, which you can stop at any time with the link in each email or in Settings — <i>legitimate interests or consent where the law requires it</i>.</li>'
+            . '<li>To measure visits and sign-ups and the performance of our advertising with Meta (see below) — <i>our legitimate interests or your consent where the law requires it</i>.</li>'
+            . '<li>To improve Studioma using aggregated statistics — <i>our legitimate interests</i>.</li>'
+            . '</ul><p>We do not sell your personal data and we do not use your private workspace content for advertising.</p>'],
+        ['public', 'What is public', '<p>Your profile, posts, published achievements and opportunities, portfolio case studies you publish and, if you turn them on, your Creator Passport and the achievements you choose to show can be seen by anyone, including people without an account, and can be indexed by search engines. Private projects, Studios, cards, files and messages are never public unless you or someone with the right role publishes something from them. Achievements are private by default; a client’s name is shown on a public achievement only if that client agrees.</p>'],
+        ['share', 'Who receives your data', '<ul>'
+            . '<li><b>Other people you work with</b> — members and guests of your projects, Studios and cards see what their role allows; people you message see your messages.</li>'
+            . '<li><b>Our hosting provider</b> — stores the database and files on its servers on our behalf.</li>'
+            . '<li><b>Email delivery</b> — emails are sent through our mail server.</li>'
+            . '<li><b>Paddle</b> — our reseller and merchant of record for paid plans. Paddle collects the payment and billing details it needs and acts as an independent controller for them (see Paddle’s privacy notice). We share with Paddle your account email and identifiers needed to link the subscription to your account.</li>'
+            . '<li><b>Google</b> — only if you use “Continue with Google”: Google confirms your identity and email to us; the sign-in button is loaded from Google on the sign-in pages.</li>'
+            . '<li><b>Meta Platforms</b> — the Meta Pixel and Conversions API measure page views and key actions (such as sign-ups). For signed-in members we send your email address and account identifier only as SHA-256 hashes; for everyone we send the IP address, browser information and Meta cookies (_fbp, _fbc). We never send the content of your projects, cards, messages, searches or share links.</li>'
+            . '<li><b>AI assistants you connect</b> — they access the data you authorize through Studioma’s MCP server, under their own terms.</li>'
+            . '<li><b>Authorities</b> — when the law requires it, or to protect the rights and safety of users and of Studioma.</li>'
+            . '</ul>'],
+        ['cookies', 'Cookies and similar technologies', '<p>Studioma uses its own cookies for essential functions and a few measurement cookies:</p>'
+            . '<div class="pp-table-wrap" role="region" aria-label="Cookies used by Studioma" tabindex="0"><table class="pp-table"><thead><tr><th>Name</th><th>Purpose</th><th>Duration</th></tr></thead><tbody>'
+            . '<tr><td><code>stm_sid</code></td><td>Keeps you signed in (essential)</td><td>30 days, renewed while you use Studioma</td></tr>'
+            . '<tr><td><code>stm_g…</code></td><td>Keeps a verified guest signed in to one share link (essential)</td><td>Until the guest session expires or the link is revoked</td></tr>'
+            . '<tr><td><code>stm_vid</code></td><td>Random browser identifier to count unique visitors of referral links</td><td>1 year</td></tr>'
+            . '<tr><td><code>stm_ref</code></td><td>Remembers which referral link brought you (signed)</td><td>30 days</td></tr>'
+            . '<tr><td><code>_fbp</code>, <code>_fbc</code></td><td>Meta measurement and advertising</td><td>Up to 90 days</td></tr>'
+            . '</tbody></table></div>'
+            . '<p>Google sets its own cookies when you use “Continue with Google”, and Paddle when you open the payment page. The app also stores small preferences in your browser (such as the theme). You can delete or block cookies in your browser settings; blocking essential cookies prevents signing in. You can limit Meta’s use of your data in your browser (tracking protection, extensions) and in your Meta ad settings.</p>'],
+        ['transfers', 'International transfers', '<p>Your data is stored by our hosting provider. Meta, Google and Paddle may process data in other countries, including the United States, the European Union and the United Kingdom, under their own safeguards and terms. When data leaves your country, we rely on the protections these providers offer.</p>'],
+        ['retention', 'How long we keep data', '<ul>'
+            . '<li>Account, profile and content: while your account exists. When you delete your account, your account, profile, private projects you alone belong to, posts, messages and files are deleted; contributions you made in other people’s projects (such as cards or comments) can remain there without your name.</li>'
+            . '<li>Sessions: up to 30 days. List of emails sent: 180 days. Administration audit log: about 400 days.</li>'
+            . '<li>Referral records and Creator Journey records: while the accounts concerned exist.</li>'
+            . '<li>Payment records: as long as accounting and tax rules require (Paddle keeps its own records as merchant of record).</li>'
+            . '<li>Backups, if any, are kept for a limited time and then overwritten.</li>'
+            . '</ul>'],
+        ['rights', 'Your rights', '<p>You can access, correct, download (in a common format, on request) or delete your personal data, object to some uses, and withdraw any consent you gave. Many things can be done directly: edit your profile, change your email settings, turn your Creator Passport off, make achievements private, unpublish publications, or delete your account in Settings. For anything else, write to {email} from the address of your account; we answer within one month. You can also complain to your data protection authority — in {country}, the national authority for the protection of personal data (ANPDP); in the European Union, the authority of your country.</p>'],
+        ['children', 'Children', '<p>Studioma is not intended for anyone under {age}. If you think a younger person has created an account, write to {email} and we will delete it.</p>'],
+        ['security', 'Security', '<p>Passwords are stored as hashes, connections use HTTPS, access tokens and share links are stored as hashes, private files are kept outside the public website and served only to people with access, and permissions are checked on the server for every request. No system is perfectly secure: tell us at {email} if you find a vulnerability.</p>'],
+        ['changes', 'Changes to this policy', '<p>We will update this policy when our practices change; the date at the top shows the latest version. We will inform members of important changes by email or in the app.</p>'],
+        ['contact', 'Contact', '<p>{name} — {email}.</p>'],
+    ]);
+}
+
+function p_refunds(): void
+{
+    p_legal_page('refunds', 'Refund Policy', 'Studioma refund policy: a ' . (int) STM_REFUND_DAYS . '-day money-back guarantee on the first payment of a Solo or Team subscription, cancellation at any time, payments handled by Paddle.',
+        '<p>This policy applies to Studioma’s paid plans (Solo and Team). It is part of our <a href="{terms}">Terms of Service</a>.</p>', [
+        ['free', 'Free plan and free offers', '<p>The free plan, the free trial of the launch offer and referral rewards cost nothing and require no card: there is nothing to refund, and they never turn into a paid subscription by themselves.</p>'],
+        ['paddle', 'Who handles payments', '<p>Paid subscriptions are sold by our reseller <b>Paddle</b>, the merchant of record: Paddle charges your payment method, issues the invoice and processes refunds. Refunds go back to the payment method used for the purchase.</p>'],
+        ['guarantee', '{days}-day money-back guarantee', '<p>If Studioma is not right for you, you can ask for a <b>full refund of the first payment of a subscription</b> (monthly or yearly) within <b>{days} days</b> of that payment. No justification is needed. The guarantee applies once per account.</p>'],
+        ['renewals', 'Renewals and cancellation', '<p>Subscriptions renew automatically. You can cancel at any time in Settings › Plan & billing; your plan stays active until the end of the period already paid and is not renewed. Renewal payments are not refunded, except where the law requires it or in the cases below — so please cancel before the renewal date if you no longer need the plan.</p>'],
+        ['changes', 'Upgrades and downgrades', '<p>When you change plan during a period, Paddle calculates the prorated amount automatically (you pay only the difference when upgrading).</p>'],
+        ['errors', 'Billing errors', '<p>Duplicate charges, charges after a cancellation that was correctly made, and other billing errors are always refunded in full, whenever you report them.</p>'],
+        ['how', 'How to ask for a refund', '<p>Write to {email} from the email address of your Studioma account, with the date of the payment (or the invoice number from your Paddle receipt). You can also contact Paddle directly through the link in your receipt email. We aim to confirm the refund within 5 business days; the money then usually reaches your account within 5 to 10 business days, depending on your bank.</p>'],
+        ['after', 'What happens after a refund', '<p>The refunded subscription ends and your account moves to the free plan. Nothing is deleted: above the free plan’s limits, you can still open everything but cannot create more until you are within the limits or choose a plan again.</p>'],
+        ['law', 'Your legal rights', '<p>This policy is part of our <a href="{terms}">Terms of Service</a> and is governed by the laws of {country}. It does not limit the rights you have under the consumer law of your country (for example a legal right of withdrawal). Where the law gives you more, the law applies.</p>'],
+        ['contact', 'Contact', '<p>{name} — {email}.</p>'],
+    ]);
+}
+
 try {
+    // Pages légales : texte fixe, sans base de données (elles restent lisibles même si SQLite est indisponible).
+    $legal = (string) ($_GET['legal'] ?? '');
+    if ($legal === 'terms') p_terms();
+    if ($legal === 'privacy') p_privacy();
+    if ($legal === 'refunds') p_refunds();
     db();
     $verify = (string) ($_GET['verify'] ?? '');
     $creator = (string) ($_GET['creator'] ?? '');

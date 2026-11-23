@@ -860,3 +860,6 @@ p > a:not(.btn):not(.chip), small > a:not(.btn), .auth-alt a, .muted > a:not(.bt
 .tabbar a { min-width: 0; } .tabbar a > span:not(.nav-badge):not([data-count]) { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* « Add a card » lisible sur les colonnes teintées (terminées, annulées). */
 .bcol-add { color: var(--text-2); }
+/* Liens vers les pages légales (inscription, fenêtre des conditions, FAQ des prix, page de paiement) */
+.terms-note a, .terms-box a { color: var(--primary-text); text-decoration: underline; text-underline-offset: .15em; }
+.legal-links { margin: 16px 0 0; font-size: 13px; text-align: center; }

@@ -46,6 +46,14 @@ $defaults = [
     'STM_META_TEST_CODE' => '',          // code de l'onglet « Événements de test » (à retirer ensuite)
     'STM_META_GRAPH'     => 'https://graph.facebook.com',
     'STM_META_LOG'       => '',          // tests : les événements sont écrits dans ce fichier au lieu d'être envoyés
+    // Pages légales (p.php : /terms/, /privacy/, /refunds/) : exploitant, adresse de contact publique, pays et droit
+    // applicable, âge minimum, garantie de remboursement (jours après le premier paiement). Choisis par le propriétaire.
+    'STM_LEGAL_NAME'     => 'Mohammed Dehini',
+    'STM_LEGAL_EMAIL'    => 'contact@dehini.com',
+    'STM_LEGAL_COUNTRY'  => 'Algeria',
+    'STM_LEGAL_UPDATED'  => '2026-11-23',   // date de la dernière modification des pages légales
+    'STM_MIN_AGE'        => 16,
+    'STM_REFUND_DAYS'    => 14,
 ];
 foreach ($defaults as $k => $v) {
     if (!defined($k)) define($k, $v);
