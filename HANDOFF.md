@@ -9,11 +9,11 @@ secrets here. Mark anything you could not verify as *(unverified)*.
 | | |
 |---|---|
 | Last agent | Claude Code (cloud session) |
-| Branch | **`claude/trusting-keller-rynk1j`** (tracks `origin/claude/trusting-keller-rynk1j`), fast-forwarded to `origin/main` `d7f37c9` (PR #84, quality pass, merged by the owner). No pull request yet for this work (open one only when the owner asks) |
-| Base code | `main` @ `d7f37c9` = Merge PR #84 (quality pass, DB v13). **`main` = production** — no deployment cron: the owner copies `main` by hand. Whether PR #84 is already copied to the live site is *(unverified)* |
+| Branch | **`claude/trusting-keller-rynk1j`** (tracks `origin/claude/trusting-keller-rynk1j`), fast-forwarded to `origin/main` `666e21c` (PR #85, legal pages, merged by the owner on 2026-11-23). No open pull request |
+| Base code | `main` @ `666e21c` = Merge PR #85 (legal pages; DB v13). **`main` = production** — no deployment cron: the owner copies `main` by hand. Live check 2026-11-23 11:00 UTC: `studioma/assets/passport.css` on dehini.com is byte-identical to PR #84 (`d7f37c9`) → **PR #84 is live, PR #85 not copied yet**. HTML pages can't be checked from a cloud session (the host answers bots with a « One moment, please… » page, status 200) |
 | Checkpoint | the commit that last changed this file: `git log -1 --format='%H %s' -- HANDOFF.md` |
 | Uncommitted work at checkpoint | none |
-| In progress | **Studioma legal pages** — Terms of Service, Privacy Policy, Refund Policy (`/studioma/terms/`, `/privacy/`, `/refunds/`) and links to them. Implemented, tested, committed and pushed on `claude/trusting-keller-rynk1j`; **not merged, not deployed** |
+| In progress | nothing. Last task: **Studioma legal pages** (Terms of Service, Privacy Policy, Refund Policy) — **merged (PR #85), not yet deployed** |
 | Last task changed application code? | **yes** — Studioma only (no schema change; DB stays at v13) |
 | Codex access | **not verified** — Codex has not been run on this repository from this session |
 
@@ -26,7 +26,7 @@ secrets here. Mark anything you could not verify as *(unverified)*.
 3. Checks: `AGENTS.md` § 5 (lint, then `tests/studioma/run.sh`, ~23 min, 16 suites; a long run may need to be split —
    each suite can run on its own fresh hosting).
 
-**Done on this branch, not in `main`** (legal pages):
+**Done, in `main` since PR #85, not yet on the live site** (legal pages):
 - Owner's choices (asked 2026-11-23): operator **Mohammed Dehini**, contact **contact@dehini.com**, **Algerian** law,
   minimum age **16**, **14-day** money-back guarantee on the first payment of a subscription (once per account;
   renewals not refunded unless the law requires; billing errors always refunded). Constants in `studioma/lib/core.php`
@@ -48,8 +48,9 @@ secrets here. Mark anything you could not verify as *(unverified)*.
 
 **Unfinished / waiting**
 
-- Owner: read the three pages (texts are not reviewed by a lawyer — have them checked if possible), confirm the
-  legal name matches the Paddle account, ask for the pull request, merge, deploy. Consider an admin email campaign
+- Owner: **deploy** (`cd ~/dehini-com && git pull -q && cp -rf studioma ~/public_html/` in cPanel › Terminal), then
+  open `/studioma/terms/`, `/privacy/`, `/refunds/` in a browser; texts are not reviewed by a lawyer — have them
+  checked if possible; confirm the legal name matches the Paddle account. Consider an admin email campaign
   telling existing members about the new terms (they accepted the old one-sentence terms; no forced re-acceptance).
 - **Cookie consent**: the Meta Pixel runs without a consent banner; the privacy policy describes it honestly but EU
   visitors would normally need opt-in consent (ROADMAP, owner's decision).
@@ -59,8 +60,8 @@ secrets here. Mark anything you could not verify as *(unverified)*.
 
 **Next recommended action**
 
-1. **Owner**: review `/studioma/terms/`, `/privacy/`, `/refunds/` on the branch, ask for the pull request, merge,
-   deploy; then continue the Paddle website review with these URLs.
+1. **Owner**: deploy PR #85 (command above), check the three pages live, then continue the Paddle website review
+   with these URLs.
 2. **Agent, next task**: if the owner wants it, a cookie-consent banner that loads the Meta Pixel only after opt-in
    (Studioma, and SWANBIDA separately).
 
@@ -83,7 +84,8 @@ not re-run (api, share, meta, mcp, admin, promo, journey, journey-e2e, publish, 
   what the code actually does (cookies, processors, retention). Decision S40.
 - Found and fixed while testing: the legal article (a grid item) widened the page at 320 px (`min-width: 0`); the
   refund policy did not name the governing law.
-- Tests: see « Validation ». Committed and pushed; not merged.
+- Tests: see « Validation ». Committed and pushed; merged by the owner as PR #85 (`666e21c`); not deployed at
+  2026-11-23 11:00 UTC (live `passport.css` = PR #84 version).
 
 
 ### 2026-11-22 — Claude Code — Studioma: quality, mobile, opportunities on Home, SEO and performance
