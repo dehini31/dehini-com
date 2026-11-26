@@ -78,6 +78,13 @@ secrets here. Mark anything you could not verify as *(unverified)*.
   set up your subscription using the card you selected ») with the default sandbox buyer; the sandbox **seller is
   country DZ** — possible cause *(unverified)*: PayPal limits for Algerian sellers. Next test: a US sandbox buyer
   with balance; if it fails the same way, test with a US sandbox seller + app, and ask PayPal about the live account.
+- **Key finding 2026-11-26 (sandbox)**: with the Algerian (DZ) sandbox seller every approval failed on PayPal's page;
+  with a **US sandbox seller** (app « Studioma US test », webhook `6YW32179BD764180N`, server `config.php` switched
+  by the owner; DZ settings saved outside the web root in `~/studioma-config-dz.php`) the first payment **succeeded**:
+  `BILLING.SUBSCRIPTION.ACTIVATED` + `PAYMENT.SALE.COMPLETED` « processed ». So Studioma's PayPal code works end to
+  end, and the DZ seller account is the likely blocker for live payments *(to confirm with PayPal)*. PayPal's guest
+  card form (« Pay with debit or credit card ») appears in sandbox with the current redirect flow — no extra code
+  needed for cards. The US test app's secret was pasted in chat once (sandbox only): delete that app after testing.
 - Open owner questions: buyers without a PayPal account (guest card option depends on PayPal and the seller's
   country; « PayPal account optional » setting; else a second provider), and the trial display fix (a member who pays
   during the 30-day trial does not see the PayPal subscription in « Plan & billing » until the trial ends — offered,
